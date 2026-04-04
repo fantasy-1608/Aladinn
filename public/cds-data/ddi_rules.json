@@ -1,0 +1,1865 @@
+[
+  {
+    "rule_code": "DDI-CLARI-SIMVA-001",
+    "generic_a": "clarithromycin",
+    "generic_b": "simvastatin",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng phơi nhiễm statin và nguy cơ tiêu cơ vân (rhabdomyolysis).",
+    "recommendation": "Tránh phối hợp hoặc tạm ngừng simvastatin trong thời gian dùng clarithromycin.",
+    "action_code": "avoid",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-CLARI-ATORVA-001",
+    "generic_a": "clarithromycin",
+    "generic_b": "atorvastatin",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Clarithromycin ức chế CYP3A4, tăng nồng độ atorvastatin, tăng nguy cơ tiêu cơ vân.",
+    "recommendation": "Tạm ngừng atorvastatin hoặc dùng statin không chuyển hóa qua CYP3A4 (ví dụ rosuvastatin, pravastatin).",
+    "action_code": "avoid_or_substitute",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-WARF-IBU-001",
+    "generic_a": "warfarin",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ xuất huyết: ibuprofen ức chế kết tập tiểu cầu và tăng tác dụng chống đông của warfarin.",
+    "recommendation": "Tránh phối hợp nếu không thật cần; theo dõi INR sát nếu bắt buộc dùng.",
+    "action_code": "avoid_or_monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-WARF-DICLO-001",
+    "generic_a": "warfarin",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ xuất huyết: diclofenac ức chế CYP2C9 làm tăng nồng độ warfarin.",
+    "recommendation": "Tránh phối hợp nếu không thật cần; theo dõi INR sát nếu bắt buộc dùng.",
+    "action_code": "avoid_or_monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-WARF-METRO-001",
+    "generic_a": "warfarin",
+    "generic_b": "metronidazole",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Metronidazole ức chế CYP2C9 và CYP3A4, làm tăng INR và nguy cơ xuất huyết.",
+    "recommendation": "Tránh phối hợp hoặc hiệu chỉnh liều warfarin và theo dõi INR sát.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-WARF-ASPIRIN-001",
+    "generic_a": "warfarin",
+    "generic_b": "aspirin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ xuất huyết nặng do tác dụng kép: ức chế kết tập tiểu cầu + chống đông.",
+    "recommendation": "Chỉ phối hợp khi có chỉ định rõ ràng (ví dụ van tim cơ học); theo dõi INR và dấu hiệu xuất huyết sát.",
+    "action_code": "avoid_or_monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-WARF-AMIO-001",
+    "generic_a": "warfarin",
+    "generic_b": "amiodarone",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Amiodarone ức chế CYP2C9 làm tăng nồng độ warfarin mạnh, tăng nguy cơ xuất huyết nghiêm trọng.",
+    "recommendation": "Giảm liều warfarin 30-50% khi bắt đầu amiodarone; theo dõi INR thường xuyên.",
+    "action_code": "monitor_dose_reduce",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-SPIRONO-ACEI-001",
+    "generic_a": "spironolactone",
+    "generic_b": "enalapril",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu (hyperkalemia) do cộng tác dụng giữ kali.",
+    "recommendation": "Theo dõi kali máu và chức năng thận định kỳ.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-SPIRONO-LISINOPRIL-001",
+    "generic_a": "spironolactone",
+    "generic_b": "lisinopril",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu do cộng tác dụng giữ kali.",
+    "recommendation": "Theo dõi kali máu và chức năng thận định kỳ.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-SPIRONO-RAMIPRIL-001",
+    "generic_a": "spironolactone",
+    "generic_b": "ramipril",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu do cộng tác dụng giữ kali.",
+    "recommendation": "Theo dõi kali máu và chức năng thận định kỳ.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-SPIRONO-ARB-LOSARTAN-001",
+    "generic_a": "spironolactone",
+    "generic_b": "losartan",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu do cộng tác dụng giữ kali.",
+    "recommendation": "Theo dõi kali máu và chức năng thận định kỳ.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-SPIRONO-ARB-VALSARTAN-001",
+    "generic_a": "spironolactone",
+    "generic_b": "valsartan",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu do cộng tác dụng giữ kali.",
+    "recommendation": "Theo dõi kali máu và chức năng thận định kỳ.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-OPIOID-BZD-001",
+    "generic_a": "morphine",
+    "generic_b": "diazepam",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ ức chế hô hấp và an thần sâu; có thể gây tử vong.",
+    "recommendation": "Tránh phối hợp nếu có thể; nếu bắt buộc thì dùng liều thấp nhất và theo dõi sát.",
+    "action_code": "avoid",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-TRAMADOL-BZD-001",
+    "generic_a": "tramadol",
+    "generic_b": "diazepam",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ ức chế hô hấp và an thần sâu.",
+    "recommendation": "Tránh phối hợp; theo dõi sát nếu bắt buộc dùng.",
+    "action_code": "avoid_or_monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-MTX-COTRI-001",
+    "generic_a": "methotrexate",
+    "generic_b": "cotrimoxazole",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Tăng nguy cơ suy tủy xương nặng do ức chế đồng thời dihydrofolate reductase.",
+    "recommendation": "Tránh phối hợp tuyệt đối.",
+    "action_code": "avoid",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-CLOPI-OMEPRA-001",
+    "generic_a": "clopidogrel",
+    "generic_b": "omeprazole",
+    "severity": "medium",
+    "evidence_level": "high",
+    "clinical_effect": "Omeprazole ức chế CYP2C19 làm giảm chuyển hóa clopidogrel thành dạng hoạt tính, giảm hiệu quả chống kết tập tiểu cầu lên đến 40%.",
+    "recommendation": "Ưu tiên dùng pantoprazole hoặc rabeprazole thay omeprazole khi cần phối hợp PPI với clopidogrel.",
+    "action_code": "substitute",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-CLOPI-ESOMEPRA-001",
+    "generic_a": "clopidogrel",
+    "generic_b": "esomeprazole",
+    "severity": "medium",
+    "evidence_level": "high",
+    "clinical_effect": "Esomeprazole ức chế CYP2C19 làm giảm chuyển hóa clopidogrel thành dạng hoạt tính, giảm hiệu quả chống kết tập tiểu cầu.",
+    "recommendation": "Ưu tiên dùng pantoprazole hoặc rabeprazole thay esomeprazole khi cần phối hợp PPI với clopidogrel.",
+    "action_code": "substitute",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-AMIO-DIGOXIN-001",
+    "generic_a": "amiodarone",
+    "generic_b": "digoxin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Amiodarone làm tăng nồng độ digoxin 70-100%, tăng nguy cơ ngộ độc digoxin gây loạn nhịp nguy hiểm.",
+    "recommendation": "Giảm 50% liều digoxin khi bắt đầu amiodarone; theo dõi nồng độ digoxin máu và điện tâm đồ.",
+    "action_code": "monitor_dose_reduce",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-AMIO-DOMPE-001",
+    "generic_a": "amiodarone",
+    "generic_b": "domperidone",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "action_code": "contraindicated",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-AMIO-SIMVA-001",
+    "generic_a": "amiodarone",
+    "generic_b": "simvastatin",
+    "severity": "high",
+    "evidence_level": "moderate",
+    "clinical_effect": "Amiodarone ức chế CYP3A4, tăng nồng độ simvastatin, tăng nguy cơ tiêu cơ vân (rhabdomyolysis).",
+    "recommendation": "Không dùng simvastatin liều quá 20mg/ngày khi phối hợp amiodarone; cân nhắc dùng rosuvastatin thay thế.",
+    "action_code": "dose_limit",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-DOMPERIDON-CLARI-001",
+    "generic_a": "domperidone",
+    "generic_b": "clarithromycin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Clarithromycin ức chế mạnh CYP3A4, tăng nồng độ domperidone, gây kéo dài khoảng QT và loạn nhịp thất nguy hiểm (xoắn đỉnh).",
+    "recommendation": "Chống chỉ định phối hợp tuyệt đối.",
+    "action_code": "contraindicated",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-DOMPERIDON-KETO-001",
+    "generic_a": "domperidone",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Ketoconazole ức chế CYP3A4, tăng nồng độ domperidone gây kéo dài khoảng QT, nguy cơ xoắn đỉnh và tử vong.",
+    "recommendation": "Chống chỉ định phối hợp tuyệt đối.",
+    "action_code": "contraindicated",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-DOMPERIDON-ERY-001",
+    "generic_a": "domperidone",
+    "generic_b": "erythromycin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Erythromycin ức chế CYP3A4, tăng độc tính tim mạch của domperidone gây kéo dài khoảng QT và xoắn đỉnh.",
+    "recommendation": "Chống chỉ định phối hợp tuyệt đối.",
+    "action_code": "contraindicated",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-ASPIRIN-IBUPROFEN-001",
+    "generic_a": "aspirin",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "evidence_level": "high",
+    "clinical_effect": "Ibuprofen cạnh tranh vị trí gắn kết với COX-1, làm giảm tác dụng ức chế kết tập tiểu cầu của aspirin liều thấp.",
+    "recommendation": "Nếu bắt buộc phối hợp, cho aspirin trước ibuprofen ít nhất 2 giờ hoặc dùng sau ibuprofen 8 giờ; cân nhắc paracetamol thay thế.",
+    "action_code": "timing_or_substitute",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-CLARI-DOMPERIDONE-001",
+    "generic_a": "clarithromycin",
+    "generic_b": "domperidone",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Clarithromycin ức chế mạnh CYP3A4, tăng nồng độ domperidone, gây kéo dài khoảng QT và loạn nhịp thất nguy hiểm.",
+    "recommendation": "Chống chỉ định phối hợp tuyệt đối.",
+    "action_code": "contraindicated",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-METFORMIN-CONTRAST-001",
+    "generic_a": "metformin",
+    "generic_b": "furosemide",
+    "severity": "low",
+    "evidence_level": "low",
+    "clinical_effect": "Furosemide có thể làm tăng nồng độ metformin và tăng nguy cơ nhiễm toan lactic trong tình trạng suy thận.",
+    "recommendation": "Theo dõi chức năng thận khi phối hợp, đặc biệt ở bệnh nhân cao tuổi.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-DIGOXIN-FUROSEMIDE-001",
+    "generic_a": "digoxin",
+    "generic_b": "furosemide",
+    "severity": "medium",
+    "evidence_level": "moderate",
+    "clinical_effect": "Furosemide gây hạ kali máu làm tăng độc tính của digoxin (loạn nhịp, buồn nôn, rối loạn thị giác).",
+    "recommendation": "Theo dõi kali máu và điện tâm đồ; bổ sung kali nếu cần.",
+    "action_code": "monitor",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ATOR-ERYT-0",
+    "generic_a": "atorvastatin",
+    "generic_b": "erythromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ATOR-KETO-1",
+    "generic_a": "atorvastatin",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ATOR-ITRA-2",
+    "generic_a": "atorvastatin",
+    "generic_b": "itraconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SIMV-ERYT-3",
+    "generic_a": "simvastatin",
+    "generic_b": "erythromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SIMV-KETO-4",
+    "generic_a": "simvastatin",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SIMV-ITRA-5",
+    "generic_a": "simvastatin",
+    "generic_b": "itraconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOVA-CLAR-6",
+    "generic_a": "lovastatin",
+    "generic_b": "clarithromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOVA-ERYT-7",
+    "generic_a": "lovastatin",
+    "generic_b": "erythromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOVA-KETO-8",
+    "generic_a": "lovastatin",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOVA-ITRA-9",
+    "generic_a": "lovastatin",
+    "generic_b": "itraconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ROSU-CLAR-10",
+    "generic_a": "rosuvastatin",
+    "generic_b": "clarithromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ROSU-ERYT-11",
+    "generic_a": "rosuvastatin",
+    "generic_b": "erythromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ROSU-KETO-12",
+    "generic_a": "rosuvastatin",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ROSU-ITRA-13",
+    "generic_a": "rosuvastatin",
+    "generic_b": "itraconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Ức chế chuyển hóa qua gan làm tăng nồng độ Statin gấp nhiều lần. Gây tiêu cơ vân cấp, đau cơ, suy thận.",
+    "recommendation": "Chống chỉ định phối hợp. Tạm ngưng Statin nếu phải dùng kháng sinh/kháng nấm nhóm này.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-AZIT-14",
+    "generic_a": "amiodarone",
+    "generic_b": "azithromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-CLAR-15",
+    "generic_a": "amiodarone",
+    "generic_b": "clarithromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-LEVO-16",
+    "generic_a": "amiodarone",
+    "generic_b": "levofloxacin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-HALO-17",
+    "generic_a": "amiodarone",
+    "generic_b": "haloperidol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-DOMP-18",
+    "generic_a": "amiodarone",
+    "generic_b": "domperidone",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-AMIO-ONDA-19",
+    "generic_a": "amiodarone",
+    "generic_b": "ondansetron",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Cộng hợp tác dụng kéo dài khoảng QT trên điện tâm đồ. Nguy cơ xoắn đỉnh, ngừng tim đột ngột.",
+    "recommendation": "Tránh phối hợp. Nếu bắt buộc dùng, phải theo dõi điện tâm đồ (ECG) liên tục.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-IBUP-20",
+    "generic_a": "enalapril",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-MELO-21",
+    "generic_a": "enalapril",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-DICL-22",
+    "generic_a": "enalapril",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-NAPR-23",
+    "generic_a": "enalapril",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-CELE-24",
+    "generic_a": "enalapril",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-IBUP-25",
+    "generic_a": "telmisartan",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-MELO-26",
+    "generic_a": "telmisartan",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-DICL-27",
+    "generic_a": "telmisartan",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-NAPR-28",
+    "generic_a": "telmisartan",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-CELE-29",
+    "generic_a": "telmisartan",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-IBUP-30",
+    "generic_a": "lisinopril",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-MELO-31",
+    "generic_a": "lisinopril",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-DICL-32",
+    "generic_a": "lisinopril",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-NAPR-33",
+    "generic_a": "lisinopril",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-CELE-34",
+    "generic_a": "lisinopril",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-IBUP-35",
+    "generic_a": "ramipril",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-MELO-36",
+    "generic_a": "ramipril",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-DICL-37",
+    "generic_a": "ramipril",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-NAPR-38",
+    "generic_a": "ramipril",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-CELE-39",
+    "generic_a": "ramipril",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-IBUP-40",
+    "generic_a": "valsartan",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-MELO-41",
+    "generic_a": "valsartan",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-DICL-42",
+    "generic_a": "valsartan",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-NAPR-43",
+    "generic_a": "valsartan",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-CELE-44",
+    "generic_a": "valsartan",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-IBUP-45",
+    "generic_a": "irbesartan",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-MELO-46",
+    "generic_a": "irbesartan",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-DICL-47",
+    "generic_a": "irbesartan",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-NAPR-48",
+    "generic_a": "irbesartan",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-CELE-49",
+    "generic_a": "irbesartan",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-IBUP-50",
+    "generic_a": "captopril",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-MELO-51",
+    "generic_a": "captopril",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-DICL-52",
+    "generic_a": "captopril",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-NAPR-53",
+    "generic_a": "captopril",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-CELE-54",
+    "generic_a": "captopril",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-IBUP-55",
+    "generic_a": "losartan",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-MELO-56",
+    "generic_a": "losartan",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-DICL-57",
+    "generic_a": "losartan",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-NAPR-58",
+    "generic_a": "losartan",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-CELE-59",
+    "generic_a": "losartan",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: nguy cơ làm giảm lưu lượng máu đến thận và suy thận cấp khi kết hợp với thuốc lợi tiểu.",
+    "recommendation": "Tránh phối hợp nếu có thể hoặc ưu tiên Paracetamol. Nếu kết hợp cùng lúc 3 thuốc với nhóm Lợi tiểu sẽ rất nguy hiểm.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-FURO-IBUP-60",
+    "generic_a": "furosemide",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-FURO-MELO-61",
+    "generic_a": "furosemide",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-FURO-DICL-62",
+    "generic_a": "furosemide",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-FURO-NAPR-63",
+    "generic_a": "furosemide",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-FURO-CELE-64",
+    "generic_a": "furosemide",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-HYDR-IBUP-65",
+    "generic_a": "hydrochlorothiazide",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-HYDR-MELO-66",
+    "generic_a": "hydrochlorothiazide",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-HYDR-DICL-67",
+    "generic_a": "hydrochlorothiazide",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-HYDR-NAPR-68",
+    "generic_a": "hydrochlorothiazide",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-HYDR-CELE-69",
+    "generic_a": "hydrochlorothiazide",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-INDA-IBUP-70",
+    "generic_a": "indapamide",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-INDA-MELO-71",
+    "generic_a": "indapamide",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-INDA-DICL-72",
+    "generic_a": "indapamide",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-INDA-NAPR-73",
+    "generic_a": "indapamide",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-INDA-CELE-74",
+    "generic_a": "indapamide",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-IBUP-75",
+    "generic_a": "spironolactone",
+    "generic_b": "ibuprofen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-MELO-76",
+    "generic_a": "spironolactone",
+    "generic_b": "meloxicam",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-DICL-77",
+    "generic_a": "spironolactone",
+    "generic_b": "diclofenac",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-NAPR-78",
+    "generic_a": "spironolactone",
+    "generic_b": "naproxen",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-CELE-79",
+    "generic_a": "spironolactone",
+    "generic_b": "celecoxib",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Một phần của hội chứng Triple Whammy: NSAIDs giữ nước làm giảm tác dụng lợi tiểu/hạ áp, làm tăng độc tính thận.",
+    "recommendation": "Tránh phối hợp cùng lúc 3 thuốc bao gồm cả ACEI/ARB vì nguy cơ suy thận cấp.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-COLC-CLAR-80",
+    "generic_a": "colchicine",
+    "generic_b": "clarithromycin",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tăng nồng độ Colchicin đến mức độc tính. Gây ngộ độc hệ thống, suy đa tạng, tử vong.",
+    "recommendation": "Chống chỉ định ở bệnh nhân suy gan/thận. Người bình thường cần giảm liều Colchicin và theo dõi sát.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-COLC-KETO-81",
+    "generic_a": "colchicine",
+    "generic_b": "ketoconazole",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tăng nồng độ Colchicin đến mức độc tính. Gây ngộ độc hệ thống, suy đa tạng, tử vong.",
+    "recommendation": "Chống chỉ định ở bệnh nhân suy gan/thận. Người bình thường cần giảm liều Colchicin và theo dõi sát.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-COLC-AMIO-82",
+    "generic_a": "colchicine",
+    "generic_b": "amiodarone",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tăng nồng độ Colchicin đến mức độc tính. Gây ngộ độc hệ thống, suy đa tạng, tử vong.",
+    "recommendation": "Chống chỉ định ở bệnh nhân suy gan/thận. Người bình thường cần giảm liều Colchicin và theo dõi sát.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ASPI-MELO-83",
+    "generic_a": "aspirin",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ASPI-DICL-84",
+    "generic_a": "aspirin",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ASPI-NAPR-85",
+    "generic_a": "aspirin",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ASPI-CELE-86",
+    "generic_a": "aspirin",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CLOP-IBUP-87",
+    "generic_a": "clopidogrel",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CLOP-MELO-88",
+    "generic_a": "clopidogrel",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CLOP-DICL-89",
+    "generic_a": "clopidogrel",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CLOP-NAPR-90",
+    "generic_a": "clopidogrel",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CLOP-CELE-91",
+    "generic_a": "clopidogrel",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TICA-IBUP-92",
+    "generic_a": "ticagrelor",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TICA-MELO-93",
+    "generic_a": "ticagrelor",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TICA-DICL-94",
+    "generic_a": "ticagrelor",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TICA-NAPR-95",
+    "generic_a": "ticagrelor",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TICA-CELE-96",
+    "generic_a": "ticagrelor",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ACEN-IBUP-97",
+    "generic_a": "acenocoumarol",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ACEN-MELO-98",
+    "generic_a": "acenocoumarol",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ACEN-DICL-99",
+    "generic_a": "acenocoumarol",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ACEN-NAPR-100",
+    "generic_a": "acenocoumarol",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ACEN-CELE-101",
+    "generic_a": "acenocoumarol",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-WARF-MELO-102",
+    "generic_a": "warfarin",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-WARF-NAPR-103",
+    "generic_a": "warfarin",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-WARF-CELE-104",
+    "generic_a": "warfarin",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DABI-IBUP-105",
+    "generic_a": "dabigatran",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DABI-MELO-106",
+    "generic_a": "dabigatran",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DABI-DICL-107",
+    "generic_a": "dabigatran",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DABI-NAPR-108",
+    "generic_a": "dabigatran",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DABI-CELE-109",
+    "generic_a": "dabigatran",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RIVA-IBUP-110",
+    "generic_a": "rivaroxaban",
+    "generic_b": "ibuprofen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RIVA-MELO-111",
+    "generic_a": "rivaroxaban",
+    "generic_b": "meloxicam",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RIVA-DICL-112",
+    "generic_a": "rivaroxaban",
+    "generic_b": "diclofenac",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RIVA-NAPR-113",
+    "generic_a": "rivaroxaban",
+    "generic_b": "naproxen",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RIVA-CELE-114",
+    "generic_a": "rivaroxaban",
+    "generic_b": "celecoxib",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Tác dụng hiệp đồng chống kết tập tiểu cầu và gây loét dạ dày. Nguy cơ xuất huyết tiêu hóa ồ ạt.",
+    "recommendation": "Tránh phối hợp. Nếu cần giảm đau ngắn hạn, dùng Paracetamol. Nếu bắt buộc dùng, cần thêm thuốc bảo vệ dạ dày.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-POTA-115",
+    "generic_a": "enalapril",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-KALI-116",
+    "generic_a": "enalapril",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ENAL-ORES-117",
+    "generic_a": "enalapril",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-POTA-118",
+    "generic_a": "telmisartan",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-KALI-119",
+    "generic_a": "telmisartan",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TELM-ORES-120",
+    "generic_a": "telmisartan",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-POTA-121",
+    "generic_a": "lisinopril",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-KALI-122",
+    "generic_a": "lisinopril",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LISI-ORES-123",
+    "generic_a": "lisinopril",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-POTA-124",
+    "generic_a": "ramipril",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-KALI-125",
+    "generic_a": "ramipril",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-RAMI-ORES-126",
+    "generic_a": "ramipril",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-POTA-127",
+    "generic_a": "valsartan",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-KALI-128",
+    "generic_a": "valsartan",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-VALS-ORES-129",
+    "generic_a": "valsartan",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-POTA-130",
+    "generic_a": "irbesartan",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-KALI-131",
+    "generic_a": "irbesartan",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-IRBE-ORES-132",
+    "generic_a": "irbesartan",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-POTA-133",
+    "generic_a": "captopril",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-KALI-134",
+    "generic_a": "captopril",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CAPT-ORES-135",
+    "generic_a": "captopril",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-POTA-136",
+    "generic_a": "losartan",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-KALI-137",
+    "generic_a": "losartan",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LOSA-ORES-138",
+    "generic_a": "losartan",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-POTA-139",
+    "generic_a": "spironolactone",
+    "generic_b": "potassium chloride",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-KALI-140",
+    "generic_a": "spironolactone",
+    "generic_b": "kali clorid",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-SPIR-ORES-141",
+    "generic_a": "spironolactone",
+    "generic_b": "oresol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Các thuốc này đều giữ Kali lại trong cơ thể. Gây tăng Kali máu, dẫn đến loạn nhịp tim, ngừng tim.",
+    "recommendation": "Theo dõi chỉ số Kali huyết định kỳ. Hạn chế thực phẩm quá giàu Kali khi đang dùng thuốc.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-IRON-142",
+    "generic_a": "levofloxacin",
+    "generic_b": "iron",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-CALC-143",
+    "generic_a": "levofloxacin",
+    "generic_b": "calcium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-MAGN-144",
+    "generic_a": "levofloxacin",
+    "generic_b": "magnesium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-ALUM-145",
+    "generic_a": "levofloxacin",
+    "generic_b": "aluminum",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-SẮT-146",
+    "generic_a": "levofloxacin",
+    "generic_b": "sắt",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-LEVO-CANX-147",
+    "generic_a": "levofloxacin",
+    "generic_b": "canxi",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-IRON-148",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "iron",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-CALC-149",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "calcium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-MAGN-150",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "magnesium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-ALUM-151",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "aluminum",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-SẮT-152",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "sắt",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-CIPR-CANX-153",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "canxi",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-IRON-154",
+    "generic_a": "doxycycline",
+    "generic_b": "iron",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-CALC-155",
+    "generic_a": "doxycycline",
+    "generic_b": "calcium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-MAGN-156",
+    "generic_a": "doxycycline",
+    "generic_b": "magnesium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-ALUM-157",
+    "generic_a": "doxycycline",
+    "generic_b": "aluminum",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-SẮT-158",
+    "generic_a": "doxycycline",
+    "generic_b": "sắt",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-DOXY-CANX-159",
+    "generic_a": "doxycycline",
+    "generic_b": "canxi",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-IRON-160",
+    "generic_a": "tetracycline",
+    "generic_b": "iron",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-CALC-161",
+    "generic_a": "tetracycline",
+    "generic_b": "calcium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-MAGN-162",
+    "generic_a": "tetracycline",
+    "generic_b": "magnesium",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-ALUM-163",
+    "generic_a": "tetracycline",
+    "generic_b": "aluminum",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-SẮT-164",
+    "generic_a": "tetracycline",
+    "generic_b": "sắt",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-TETR-CANX-165",
+    "generic_a": "tetracycline",
+    "generic_b": "canxi",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Các ion kim loại (trong thuốc dạ dày, vitamin) tạo phức chelat với kháng sinh, làm kháng sinh không hấp thu được.",
+    "recommendation": "Uống cách nhau ít nhất 2 giờ. (Uống kháng sinh trước 2h hoặc sau 4-6h khi dùng thuốc khoáng chất).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ALLO-AMOX-166",
+    "generic_a": "allopurinol",
+    "generic_b": "amoxicillin",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Tăng tỷ lệ xảy ra phản ứng quá mẫn, phát ban da, dị ứng nghiêm trọng.",
+    "recommendation": "Theo dõi các dấu hiệu bất thường trên da (ngứa, đỏ, ban).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-ALLO-AMPI-167",
+    "generic_a": "allopurinol",
+    "generic_b": "ampicillin",
+    "severity": "medium",
+    "clinical_effect": "[Cần check lại] Tăng tỷ lệ xảy ra phản ứng quá mẫn, phát ban da, dị ứng nghiêm trọng.",
+    "recommendation": "Theo dõi các dấu hiệu bất thường trên da (ngứa, đỏ, ban).",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-METF-IOPR-168",
+    "generic_a": "metformin",
+    "generic_b": "iopromide",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Nguy cơ gây nhiễm toan acid lactic và suy thận cấp do thuốc cản quang tĩnh mạch.",
+    "recommendation": "Tạm ngưng Metformin 48 giờ trước và sau khi thực hiện kỹ thuật có tiêm thuốc cản quang.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-METF-IOHE-169",
+    "generic_a": "metformin",
+    "generic_b": "iohexol",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Nguy cơ gây nhiễm toan acid lactic và suy thận cấp do thuốc cản quang tĩnh mạch.",
+    "recommendation": "Tạm ngưng Metformin 48 giờ trước và sau khi thực hiện kỹ thuật có tiêm thuốc cản quang.",
+    "is_active": true
+  },
+  {
+    "rule_code": "DDI-PDFTRIPLE-METF-THUỐ-170",
+    "generic_a": "metformin",
+    "generic_b": "thuốc cản quang",
+    "severity": "high",
+    "clinical_effect": "[Cần check lại] Nguy cơ gây nhiễm toan acid lactic và suy thận cấp do thuốc cản quang tĩnh mạch.",
+    "recommendation": "Tạm ngưng Metformin 48 giờ trước và sau khi thực hiện kỹ thuật có tiêm thuốc cản quang.",
+    "is_active": true
+  }
+]

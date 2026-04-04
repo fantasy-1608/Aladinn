@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Popup Menu (Apple Dark)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== DESIGN TOKENS (Apple Dark) ===== */
+        :root {
+            --bg-primary: #000000;
+            --bg-elevated: #1c1c1e;
+            --bg-secondary: #2c2c2e;
+            --bg-tertiary: #3a3a3c;
+            --fill-hover: rgba(255,255,255,0.06);
+            --separator: rgba(255,255,255,0.08);
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #636366;
+            --accent-blue: #0a84ff;
+            --accent-green: #30d158;
+            --accent-orange: #ff9f0a;
+            --accent-red: #ff453a;
+            --accent-teal: #64d2ff;
+            --accent-gold: #fbbf24;
+            --accent-gold-dim: rgba(251, 191, 36, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-title: 'Cinzel', serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        /* ===== POPUP CONTAINER ===== */
+        .popup {
+            width: 380px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid rgba(251, 191, 36, 0.08);
+            box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            padding: 20px 20px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--separator);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .header:hover::before { opacity: 1; }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1;
+        }
+
+        .lamp-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.3));
+            transition: filter 0.3s, transform 0.3s;
+        }
+
+        .header:hover .lamp-icon {
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.5));
+            transform: scale(1.05) rotate(-3deg);
+        }
+
+        .app-name {
+            font-family: var(--font-title);
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--accent-gold), #fff8e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: var(--bg-secondary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* ===== FEATURE TOGGLES ===== */
+        .toggles {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 14px 16px;
+            gap: 8px;
+            border-bottom: 1px solid var(--separator);
+        }
+
+        .toggle-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .toggle-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--separator);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toggle-icon svg { width: 16px; height: 16px; stroke: var(--text-secondary); fill: none; stroke-width: 1.8; transition: stroke 0.25s; }
+
+        .toggle-item.active .toggle-icon {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 12px rgba(10, 132, 255, 0.3);
+        }
+
+        .toggle-item.active .toggle-icon svg { stroke: white; }
+
+        .toggle-name {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            transition: color 0.25s;
+        }
+
+        .toggle-item.active .toggle-name { color: var(--accent-blue); }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            padding: 0 16px;
+            gap: 2px;
+            border-bottom: 1px solid var(--separator);
+            background: var(--bg-elevated);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            background: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .tab svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .tab:hover { color: var(--text-secondary); }
+
+        .tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--text-primary);
+        }
+
+        /* ===== TAB CONTENT ===== */
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeUp 0.25s ease;
+        }
+
+        .tab-content.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== ACTION GRID ===== */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-md);
+            padding: 18px 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .action-btn svg { width: 22px; height: 22px; stroke: var(--accent-blue); fill: none; stroke-width: 1.8; }
+
+        .action-btn:hover {
+            border-color: rgba(251, 191, 36, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .action-btn:active { transform: scale(0.98); }
+
+        /* ===== VOICE STATUS ===== */
+        .voice-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-md);
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 14px;
+        }
+
+        .voice-indicator {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1.5px solid var(--separator);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .voice-indicator svg { width: 24px; height: 24px; stroke: var(--text-tertiary); fill: none; }
+
+        .voice-indicator.on {
+            background: rgba(10, 132, 255, 0.15);
+            border-color: var(--accent-blue);
+        }
+
+        .voice-indicator.on svg { stroke: var(--accent-blue); }
+
+        .voice-indicator.on::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 1.5px solid var(--accent-blue);
+            animation: voicePulse 2s infinite ease-out;
+        }
+
+        @keyframes voicePulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .voice-title { font-size: 15px; font-weight: 600; }
+        .voice-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+        /* ===== SIGN TAB ===== */
+        .sign-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--separator);
+            margin-bottom: 12px;
+        }
+
+        .sign-toggle-label { font-size: 13px; font-weight: 500; }
+
+        /* iOS-style toggle */
+        .ios-toggle {
+            position: relative;
+            width: 44px;
+            height: 26px;
+            cursor: pointer;
+        }
+
+        .ios-toggle input { display: none; }
+
+        .ios-toggle-track {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-tertiary);
+            border-radius: 26px;
+            transition: background 0.3s;
+        }
+
+        .ios-toggle input:checked + .ios-toggle-track { background: var(--accent-green); }
+
+        .ios-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .ios-toggle input:checked ~ .ios-toggle-thumb { transform: translateX(18px); }
+
+        .sign-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .sign-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-sm);
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .sign-stat-val {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .sign-stat-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--separator);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-link {
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: none;
+            font-family: var(--font);
+        }
+
+        .footer-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .footer-link:hover { color: var(--text-primary); }
+
+        .footer-author { font-size: 11px; color: var(--text-tertiary); }
+
+        /* ===== FLOATING SPARKLES ===== */
+        .sparkle {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 0;
+            animation: sparkleFloat linear forwards;
+        }
+
+        @keyframes sparkleFloat {
+            0% { opacity: 0; transform: translateY(0) scale(0); }
+            15% { opacity: 0.8; transform: translateY(-15px) scale(1); }
+            85% { opacity: 0.4; }
+            100% { opacity: 0; transform: translateY(-80px) scale(0); }
+        }
+
+        /* ===== MAGIC TAP BURST ===== */
+        .magic-burst {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: burst 0.6s ease-out forwards;
+        }
+
+        @keyframes burst {
+            0% { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+        }
+
+        /* ===== VERSION BADGE EASTER EGG ===== */
+        .version {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: var(--bg-secondary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .version.magic-glow {
+            color: var(--accent-gold);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        /* ===== HIDDEN DEV PANEL ===== */
+        .dev-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s;
+            background: linear-gradient(180deg, rgba(251, 191, 36, 0.04), transparent);
+            border-bottom: 0px solid var(--separator);
+            padding: 0 20px;
+        }
+
+        .dev-panel.open {
+            max-height: 200px;
+            padding: 14px 20px;
+            border-bottom-width: 1px;
+        }
+
+        .dev-panel-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dev-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .dev-info-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--separator);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .dev-info-label {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dev-info-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ===== ACTION BTN MAGIC HOVER ===== */
+        .action-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-md);
+            padding: 18px 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent,
+                rgba(251, 191, 36, 0.06),
+                transparent,
+                rgba(10, 132, 255, 0.06),
+                transparent
+            );
+            opacity: 0;
+            transition: opacity 0.4s;
+            animation: magicSpin 4s linear infinite paused;
+        }
+
+        .action-btn:hover::after {
+            opacity: 1;
+            animation-play-state: running;
+        }
+
+        @keyframes magicSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .action-btn svg { position: relative; z-index: 1; }
+        .action-btn span, .action-btn { position: relative; z-index: 1; }
+
+        /* ===== LAMP WISH ANIMATION ===== */
+        .lamp-icon.wishing {
+            animation: lampWish 0.8s ease;
+        }
+
+        @keyframes lampWish {
+            0% { transform: rotate(0); }
+            20% { transform: rotate(-10deg); }
+            40% { transform: rotate(10deg); }
+            60% { transform: rotate(-5deg); }
+            80% { transform: rotate(5deg); }
+            100% { transform: rotate(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="popup">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-group">
+            <div class="lamp-icon">
+                <svg width="30" height="30" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Smoke wisps -->
+                    <path d="M28 8c0-3 2-5 4-5s3 2 2 5c-1 2 1 4 3 3" stroke="#fbbf24" stroke-width="1.2" stroke-linecap="round" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite"/>
+                    </path>
+                    <path d="M34 10c0-2 1-4 3-4s2 2 1 4" stroke="#fbbf24" stroke-width="1" stroke-linecap="round" opacity="0.3">
+                        <animate attributeName="opacity" values="0.1;0.4;0.1" dur="2.5s" repeatCount="indefinite"/>
+                    </path>
+                    <!-- Lamp body -->
+                    <ellipse cx="32" cy="44" rx="16" ry="5" fill="url(#lampGrad)" />
+                    <path d="M20 44c0 0 2-10 12-10s12 10 12 10" fill="url(#lampGrad)" />
+                    <ellipse cx="32" cy="34" rx="4" ry="1.5" fill="#fde68a" opacity="0.6" />
+                    <!-- Spout -->
+                    <path d="M44 42c3-1 7-2 10-1" stroke="url(#lampGrad)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <!-- Handle -->
+                    <path d="M20 42c-2-1-3-4-2-7 1-2 3-3 5-2" stroke="url(#lampGrad)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <!-- Base -->
+                    <ellipse cx="32" cy="49" rx="12" ry="3" fill="url(#lampGrad)" opacity="0.7"/>
+                    <defs>
+                        <linearGradient id="lampGrad" x1="16" y1="30" x2="48" y2="50">
+                            <stop offset="0%" stop-color="#fbbf24"/>
+                            <stop offset="100%" stop-color="#d97706"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <span class="app-name">Aladinn</span>
+        </div>
+        <span class="version" id="versionBadge">v1.0.0</span>
+    </div>
+
+    <!-- Hidden Dev Panel (Easter Egg) -->
+    <div class="dev-panel" id="devPanel">
+        <div class="dev-panel-title">✨ Chế Độ Phát Triển</div>
+        <div class="dev-info">
+            <div class="dev-info-item">
+                <div class="dev-info-label">Build</div>
+                <div class="dev-info-value">#2026.03.29</div>
+            </div>
+            <div class="dev-info-item">
+                <div class="dev-info-label">Engine</div>
+                <div class="dev-info-value">CDS v3.1</div>
+            </div>
+            <div class="dev-info-item">
+                <div class="dev-info-label">Thuốc DB</div>
+                <div class="dev-info-value">1,247 items</div>
+            </div>
+            <div class="dev-info-item">
+                <div class="dev-info-label">Tương tác</div>
+                <div class="dev-info-value">2,891 rules</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Toggles -->
+    <div class="toggles">
+        <div class="toggle-item active" onclick="this.classList.toggle('active')">
+            <div class="toggle-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="13" r="3"/><path d="M17 6.5h.01"/></svg>
+            </div>
+            <span class="toggle-name">Scanner</span>
+        </div>
+        <div class="toggle-item active" onclick="this.classList.toggle('active')">
+            <div class="toggle-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            </div>
+            <span class="toggle-name">Voice AI</span>
+        </div>
+        <div class="toggle-item active" onclick="this.classList.toggle('active')">
+            <div class="toggle-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15l2 2 4-4"/></svg>
+            </div>
+            <span class="toggle-name">Ký số</span>
+        </div>
+        <div class="toggle-item active" onclick="this.classList.toggle('active')">
+            <div class="toggle-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+            </div>
+            <span class="toggle-name">C.D.S</span>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(this, 'scanner')">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="13" r="3"/></svg>
+            Quét
+        </button>
+        <button class="tab" onclick="switchTab(this, 'voice')">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            Nhập liệu
+        </button>
+        <button class="tab" onclick="switchTab(this, 'sign')">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M9 15l2 2 4-4"/></svg>
+            Ký số
+        </button>
+    </div>
+
+    <!-- Tab: Scanner -->
+    <div class="tab-content active" id="tc-scanner">
+        <div class="action-grid">
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                Quét Phòng
+            </button>
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                Sinh hiệu
+            </button>
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                Dashboard
+            </button>
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                Giao diện
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab: Voice -->
+    <div class="tab-content" id="tc-voice">
+        <div class="voice-card">
+            <div class="voice-indicator on">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            </div>
+            <div>
+                <div class="voice-title">Voice AI Đang Bật</div>
+                <div class="voice-desc">Nhấn vào icon mic trên trang HIS để sử dụng</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Sign -->
+    <div class="tab-content" id="tc-sign">
+        <div class="sign-toggle-row">
+            <span class="sign-toggle-label">Tự động ký</span>
+            <label class="ios-toggle">
+                <input type="checkbox" checked>
+                <div class="ios-toggle-track"></div>
+                <div class="ios-toggle-thumb"></div>
+            </label>
+        </div>
+        <div class="action-grid">
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Chọn tất cả
+            </button>
+            <button class="action-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15l2 2 4-4"/></svg>
+                Bắt đầu Ký
+            </button>
+        </div>
+        <div class="sign-stats">
+            <div class="sign-stat">
+                <div class="sign-stat-val">12</div>
+                <div class="sign-stat-label">Đã chọn</div>
+            </div>
+            <div class="sign-stat">
+                <div class="sign-stat-val">8</div>
+                <div class="sign-stat-label">Đã ký</div>
+            </div>
+            <div class="sign-stat">
+                <div class="sign-stat-val">2</div>
+                <div class="sign-stat-label">Bỏ qua</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <button class="footer-link">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            Cài đặt Aladinn
+        </button>
+        <span class="footer-author">By Huỳnh Trung Anh</span>
+    </div>
+</div>
+
+<script>
+    function switchTab(el, name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tc-' + name).classList.add('active');
+    }
+
+    // ===== MAGIC SPARKLES =====
+    function spawnSparkle() {
+        const popup = document.querySelector('.popup');
+        const rect = popup.getBoundingClientRect();
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left = rect.left + Math.random() * rect.width + 'px';
+        s.style.top = rect.top + Math.random() * rect.height + 'px';
+        s.style.width = s.style.height = (1.5 + Math.random() * 2.5) + 'px';
+        s.style.animationDuration = (2 + Math.random() * 3) + 's';
+        s.style.background = Math.random() > 0.6 ? '#fbbf24' : '#fff8e1';
+        document.body.appendChild(s);
+        s.addEventListener('animationend', () => s.remove());
+    }
+    setInterval(spawnSparkle, 800);
+
+    // ===== 5-TAP EASTER EGG =====
+    let tapCount = 0;
+    let tapTimer = null;
+    const badge = document.getElementById('versionBadge');
+    const devPanel = document.getElementById('devPanel');
+
+    badge.addEventListener('click', (e) => {
+        tapCount++;
+        badge.style.transform = 'scale(0.92)';
+        setTimeout(() => badge.style.transform = '', 150);
+
+        // Magic burst particles on each tap
+        for (let i = 0; i < 5; i++) {
+            const p = document.createElement('div');
+            p.className = 'magic-burst';
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 20 + Math.random() * 30;
+            p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+            p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+            p.style.background = ['#fbbf24', '#fff8e1', '#d97706', '#fde68a'][Math.floor(Math.random() * 4)];
+            p.style.left = e.offsetX + 'px';
+            p.style.top = e.offsetY + 'px';
+            badge.appendChild(p);
+            p.addEventListener('animationend', () => p.remove());
+        }
+
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => { tapCount = 0; badge.classList.remove('magic-glow'); }, 2000);
+
+        if (tapCount >= 3) badge.classList.add('magic-glow');
+
+        if (tapCount >= 5) {
+            tapCount = 0;
+            devPanel.classList.toggle('open');
+            badge.classList.remove('magic-glow');
+
+            // Lamp wish animation
+            const lamp = document.querySelector('.lamp-icon');
+            lamp.classList.add('wishing');
+            lamp.addEventListener('animationend', () => lamp.classList.remove('wishing'), { once: true });
+        }
+    });
+
+    // ===== LAMP CLICK GLOW =====
+    document.querySelector('.lamp-icon').addEventListener('click', function() {
+        this.classList.add('wishing');
+        this.addEventListener('animationend', () => this.classList.remove('wishing'), { once: true });
+
+        // Spawn burst of sparkles from lamp
+        for (let i = 0; i < 8; i++) {
+            setTimeout(() => {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                const rect = this.getBoundingClientRect();
+                s.style.left = rect.left + rect.width / 2 + (Math.random() - 0.5) * 40 + 'px';
+                s.style.top = rect.top + 'px';
+                s.style.width = s.style.height = (2 + Math.random() * 3) + 'px';
+                s.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+                document.body.appendChild(s);
+                s.addEventListener('animationend', () => s.remove());
+            }, i * 60);
+        }
+    });
+</script>
+</body>
+</html>

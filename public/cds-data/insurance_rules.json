@@ -1,0 +1,24 @@
+[
+  {
+    "rule_code": "INS-CELECOXIB-ICD-001",
+    "generic_name": "celecoxib",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M15,M16,M17,M19",
+    "severity": "medium",
+    "message": "Thuốc cần chẩn đoán phù hợp để đáp ứng điều kiện thanh toán BHYT (viêm khớp thoái hóa M15–M19).",
+    "recommendation": "Rà soát lại mã ICD10 hoặc lựa chọn phương án điều trị phù hợp với danh mục BHYT.",
+    "version": "1.1.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-OUTPATIENT-OPIOID-001",
+    "generic_name": "morphine",
+    "condition_type": "care_setting",
+    "condition_value": "inpatient",
+    "severity": "high",
+    "message": "Morphine chỉ được thanh toán BHYT trong điều kiện điều trị nội trú.",
+    "recommendation": "Cân nhắc thuốc giảm đau thay thế nếu bệnh nhân đang điều trị ngoại trú.",
+    "version": "1.1.0",
+    "is_active": true
+  }
+]

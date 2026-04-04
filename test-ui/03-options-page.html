@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — Options Page (Apple Dark)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-elevated: #1c1c1e;
+            --bg-secondary: #2c2c2e;
+            --bg-tertiary: #3a3a3c;
+            --fill-hover: rgba(255,255,255,0.06);
+            --separator: rgba(255,255,255,0.08);
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #636366;
+            --accent-blue: #0a84ff;
+            --accent-green: #30d158;
+            --accent-orange: #ff9f0a;
+            --accent-red: #ff453a;
+            --accent-purple: #bf5af2;
+            --accent-gold: #fbbf24;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-title: 'Cinzel', serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 40px 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 920px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 32px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: sticky;
+            top: 40px;
+            height: fit-content;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--separator);
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.3));
+        }
+
+        .brand-icon svg { width: 22px; height: 22px; stroke: white; fill: none; stroke-width: 2; }
+
+        .brand-text h1 {
+            font-family: var(--font-title);
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--accent-gold), #fff8e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text .ver {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .nav { display: flex; flex-direction: column; gap: 2px; }
+
+        .nav-item {
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid transparent;
+        }
+
+        .nav-item svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+        .nav-item:hover { background: var(--fill-hover); color: var(--text-primary); }
+
+        .nav-item.active {
+            background: rgba(10, 132, 255, 0.1);
+            color: var(--accent-blue);
+            border-color: rgba(10, 132, 255, 0.15);
+        }
+
+        .save-btn {
+            width: 100%;
+            margin-top: 28px;
+            padding: 12px;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .save-btn svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2; }
+        .save-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        /* ===== MAIN CONTENT ===== */
+        .main { display: flex; flex-direction: column; gap: 24px; }
+
+        .section {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--separator);
+            padding: 32px;
+            display: none;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--separator);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title svg { width: 20px; height: 20px; stroke: var(--accent-blue); fill: none; stroke-width: 2; }
+
+        /* Form */
+        .form-group { margin-bottom: 20px; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.15); }
+
+        .form-row { display: flex; gap: 8px; }
+        .form-row .form-input { flex: 1; }
+
+        .form-btn-secondary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .form-btn-secondary:hover { background: var(--bg-tertiary); }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .form-hint a { color: var(--accent-blue); text-decoration: none; }
+        .form-hint a:hover { text-decoration: underline; }
+
+        select.form-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a6' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        /* Toggle Row */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            transition: border-color 0.15s;
+        }
+
+        .toggle-row:hover { border-color: rgba(255,255,255,0.12); }
+
+        .toggle-info strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .toggle-info span {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            line-height: 1.4;
+            display: block;
+        }
+
+        /* iOS Toggle */
+        .ios-toggle { position: relative; width: 44px; height: 26px; cursor: pointer; flex-shrink: 0; }
+        .ios-toggle input { display: none; }
+        .ios-toggle-track { position: absolute; inset: 0; background: var(--bg-tertiary); border-radius: 26px; transition: background 0.3s; }
+        .ios-toggle input:checked + .ios-toggle-track { background: var(--accent-green); }
+        .ios-toggle-thumb {
+            position: absolute; top: 2px; left: 2px;
+            width: 22px; height: 22px;
+            background: white; border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .ios-toggle input:checked ~ .ios-toggle-thumb { transform: translateX(18px); }
+
+        /* PIN Boxes */
+        .pin-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+        .pin-box {
+            width: 42px;
+            height: 48px;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--separator);
+            border-radius: var(--radius-sm);
+            font-size: 20px;
+            text-align: center;
+            color: white;
+            outline: none;
+            font-family: var(--font);
+            transition: all 0.2s;
+        }
+
+        .pin-box:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.15); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">
+                <svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M28 8c0-3 2-5 4-5s3 2 2 5c-1 2 1 4 3 3" stroke="#fbbf24" stroke-width="1.2" stroke-linecap="round" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite"/>
+                    </path>
+                    <ellipse cx="32" cy="44" rx="16" ry="5" fill="url(#lampGradOpt)" />
+                    <path d="M20 44c0 0 2-10 12-10s12 10 12 10" fill="url(#lampGradOpt)" />
+                    <ellipse cx="32" cy="34" rx="4" ry="1.5" fill="#fde68a" opacity="0.6" />
+                    <path d="M44 42c3-1 7-2 10-1" stroke="url(#lampGradOpt)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <path d="M20 42c-2-1-3-4-2-7 1-2 3-3 5-2" stroke="url(#lampGradOpt)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <ellipse cx="32" cy="49" rx="12" ry="3" fill="url(#lampGradOpt)" opacity="0.7"/>
+                    <defs>
+                        <linearGradient id="lampGradOpt" x1="16" y1="30" x2="48" y2="50">
+                            <stop offset="0%" stop-color="#fbbf24"/>
+                            <stop offset="100%" stop-color="#d97706"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h1>Aladinn</h1>
+                <span class="ver">Version 1.0.0</span>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-item active" onclick="switchSection(this, 'voice')">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                AI Nhập liệu
+            </div>
+            <div class="nav-item" onclick="switchSection(this, 'scanner')">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="13" r="3"/></svg>
+                Smart Scanner
+            </div>
+            <div class="nav-item" onclick="switchSection(this, 'sign')">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M9 15l2 2 4-4"/></svg>
+                Ký số tự động
+            </div>
+            <div class="nav-item" onclick="switchSection(this, 'cds')">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                Cảnh báo C.D.S
+            </div>
+            <div class="nav-item" onclick="switchSection(this, 'security')">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Bảo mật
+            </div>
+        </nav>
+
+        <button class="save-btn" onclick="showToast()">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Lưu Cấu Hình
+        </button>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+        <!-- Voice -->
+        <section class="section active" id="sec-voice">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                AI Nhập liệu & Giọng nói
+            </div>
+            <div class="form-group">
+                <label class="form-label">Gemini API Key</label>
+                <div class="form-row">
+                    <input type="password" class="form-input" placeholder="AIzaSy...">
+                    <button class="form-btn-secondary">Dò tìm</button>
+                </div>
+                <div class="form-hint">Lấy key miễn phí tại <a href="#">Google AI Studio</a></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mô hình AI ưu tiên</label>
+                <select class="form-input">
+                    <option>Gemini 2.5 Flash (Nhanh nhất)</option>
+                    <option>Gemini 2.0 Flash</option>
+                    <option>Gemini 2.5 Pro (Thông minh)</option>
+                </select>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <strong>Tự động điền PKĐK</strong>
+                    <span>Tự động chọn và điền mẫu "Chuyển viện PKĐK"</span>
+                </div>
+                <label class="ios-toggle">
+                    <input type="checkbox"><div class="ios-toggle-track"></div><div class="ios-toggle-thumb"></div>
+                </label>
+            </div>
+        </section>
+
+        <!-- Scanner -->
+        <section class="section" id="sec-scanner">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="13" r="3"/></svg>
+                Cấu hình Smart Scanner
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <strong>Hiển thị Tooltip Sinh hiệu</strong>
+                    <span>Tự động hiện tooltip sinh hiệu khi di chuột vào giường</span>
+                </div>
+                <label class="ios-toggle">
+                    <input type="checkbox" checked><div class="ios-toggle-track"></div><div class="ios-toggle-thumb"></div>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <strong>Tự động Form Dinh Dưỡng</strong>
+                    <span>Điền mẫu DD-03 tự động dựa trên mã bệnh</span>
+                </div>
+                <label class="ios-toggle">
+                    <input type="checkbox" checked><div class="ios-toggle-track"></div><div class="ios-toggle-thumb"></div>
+                </label>
+            </div>
+        </section>
+
+        <!-- Sign -->
+        <section class="section" id="sec-sign">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M9 15l2 2 4-4"/></svg>
+                Ký số tự động
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <strong>Chế độ Ký an toàn (Khuyên dùng)</strong>
+                    <span>Xác nhận trước khi tự động click nút Ký số</span>
+                </div>
+                <label class="ios-toggle">
+                    <input type="checkbox" checked><div class="ios-toggle-track"></div><div class="ios-toggle-thumb"></div>
+                </label>
+            </div>
+        </section>
+
+        <!-- CDS -->
+        <section class="section" id="sec-cds">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                Cảnh báo Lâm sàng (C.D.S)
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <strong>Lọc cảnh báo mức thấp</strong>
+                    <span>Chỉ hiện Warning & Critical, ẩn Info/Low</span>
+                </div>
+                <label class="ios-toggle">
+                    <input type="checkbox" checked><div class="ios-toggle-track"></div><div class="ios-toggle-thumb"></div>
+                </label>
+            </div>
+            <div class="form-group" style="margin-top: 16px;">
+                <button class="form-btn-secondary" style="width: 100%; padding: 12px; text-align: center;">Cập nhật CSDL Thuốc</button>
+                <div class="form-hint" style="text-align: center;">Tải lại luật JSON vào IndexedDB</div>
+            </div>
+        </section>
+
+        <!-- Security -->
+        <section class="section" id="sec-security">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Bảo mật
+            </div>
+            <div class="form-group">
+                <label class="form-label">Thiết lập mã PIN (6 số)</label>
+                <div class="pin-row">
+                    <input type="password" maxlength="1" class="pin-box">
+                    <input type="password" maxlength="1" class="pin-box">
+                    <input type="password" maxlength="1" class="pin-box">
+                    <input type="password" maxlength="1" class="pin-box">
+                    <input type="password" maxlength="1" class="pin-box">
+                    <input type="password" maxlength="1" class="pin-box">
+                </div>
+                <div class="form-hint">Bảo vệ cấu hình và quyền sử dụng Voice AI</div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="toast" id="toast">Đã lưu cấu hình thành công!</div>
+
+<script>
+    function switchSection(el, name) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('sec-' + name).classList.add('active');
+    }
+
+    function showToast() {
+        const t = document.getElementById('toast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // PIN auto-focus
+    document.querySelectorAll('.pin-box').forEach((box, i, all) => {
+        box.addEventListener('input', () => {
+            if (box.value && i < all.length - 1) all[i + 1].focus();
+        });
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !box.value && i > 0) all[i - 1].focus();
+        });
+    });
+</script>
+</body>
+</html>

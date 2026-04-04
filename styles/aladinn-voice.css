@@ -1,0 +1,1187 @@
+/**
+ * HIS Voice Assistant - Panel Styles
+ * Extracted from content.js for better maintainability
+ */
+
+:root {
+  --his-primary: #00f0ff; /* Teal */
+  --his-primary-hover: #ffd700; /* Gold */
+  --his-success: #10b981;
+  --his-danger: #f43f5e;
+  --his-bg-glass: rgba(26, 11, 46, 0.85); /* Primary Dark */
+  --his-bg-secondary: rgba(45, 27, 78, 0.8);
+  --his-bg-tertiary: rgba(0, 240, 255, 0.1);
+  --his-text-primary: #f0f0f0;
+  --his-text-secondary: #d0e0ff;
+  --his-border: rgba(255, 215, 0, 0.3);
+  --his-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --his-glass-shadow: 0 0 15px rgba(0, 240, 255, 0.3) inset, 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --his-lit-edge: 0 1px 0 0 rgba(255, 215, 0, 0.3) inset;
+}
+
+/* ========================================
+   Floating Panel
+   ======================================== */
+#his-floating-panel {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  background: var(--his-bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--his-border);
+  border-radius: 20px;
+  box-shadow: var(--his-shadow), var(--his-glass-shadow);
+  z-index: 999998;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  will-change: opacity, transform;
+}
+
+/* Simple Entrance Animation */
+@keyframes aladinn-fade-in-up {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.aladinn-panel-appear {
+  animation: aladinn-fade-in-up 0.3s ease forwards;
+}
+
+#his-floating-panel.aladinn-hidden {
+  display: none !important;
+}
+
+/* Simplified Idle State - Zero geometry changes to prevent flickering */
+#his-floating-panel.faded {
+  opacity: 0.2;
+  filter: none;
+  cursor: pointer;
+}
+
+#his-floating-panel.faded:hover {
+  opacity: 1;
+}
+
+/* Remove all complex aura/glow */
+#his-floating-panel::before {
+    display: none;
+}
+
+/* ========================================
+   Panel Header
+   ======================================== */
+.his-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--his-border);
+  cursor: move;
+}
+
+.his-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--his-text-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.his-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.his-panel-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.his-panel-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: var(--his-bg-tertiary);
+  color: var(--his-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.his-panel-btn:hover {
+  background: var(--his-primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.his-panel-btn.danger:hover {
+  background: var(--his-danger);
+}
+
+/* ========================================
+   Panel Body
+   ======================================== */
+.his-panel-body {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(100vh - 200px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--his-bg-tertiary) transparent;
+}
+
+.his-panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.his-panel-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.his-panel-body::-webkit-scrollbar-thumb {
+  background: var(--his-bg-tertiary);
+  border-radius: 10px;
+}
+
+.his-panel-body::-webkit-scrollbar-thumb:hover {
+  background: var(--his-text-secondary);
+}
+
+/* ========================================
+   Quick Actions Bar
+   ======================================== */
+.his-quick-actions {
+  display: flex;
+  gap: 6px;
+  margin: -12px -12px 10px -12px;
+  padding: 10px 12px;
+  position: sticky;
+  top: -12px;
+  background: var(--his-bg-primary);
+  z-index: 100;
+  border-bottom: 1px solid var(--his-border);
+  backdrop-filter: blur(10px);
+}
+
+.his-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
+  background: var(--his-bg-secondary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.his-quick-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  filter: brightness(1.2) saturate(1.1);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.his-quick-primary {
+  background: linear-gradient(135deg, #1e88e5, #1565c0);
+  flex: 1.5;
+  animation: pulse-subtle 3s infinite;
+}
+
+.his-quick-hoichan {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  flex: 1.2;
+}
+
+.his-quick-chuyenvien {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  flex: 1.2;
+}
+
+@keyframes pulse-subtle {
+  0% {
+    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(30, 136, 229, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0);
+  }
+}
+
+.his-quick-demo {
+  flex: 0 0 auto;
+  width: 38px;
+  background: var(--his-bg-tertiary);
+  color: var(--his-text-secondary);
+}
+
+.his-quick-demo:hover {
+  background: var(--his-primary);
+  color: white;
+}
+
+/* SVG Animations */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-soft {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.his-btn-ai:not(:disabled) svg {
+  animation: spin-slow 4s linear infinite;
+}
+
+.his-btn-primary.recording svg {
+  animation: pulse-soft 1s ease-in-out infinite;
+}
+
+
+/* Scrollbar đẹp hơn */
+.his-results-compact::-webkit-scrollbar {
+  width: 4px;
+}
+
+.his-results-compact::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+/* ========================================
+   Global Tooltip (JS driven)
+   ======================================== */
+.his-tooltip {
+  position: fixed;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  color: #f8fafc;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 9999999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transition:
+    opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0.2s;
+  transform-origin: bottom center;
+}
+
+.his-tooltip:not(.aladinn-hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.his-tooltip.his-tooltip-bottom {
+  transform-origin: top center;
+  transform: translateY(-10px) scale(0.95);
+}
+
+.his-tooltip.his-tooltip-bottom:not(.aladinn-hidden) {
+  transform: translateY(0) scale(1);
+}
+
+/* ========================================
+   Vital Signs - Compact 2-col Grid
+   ======================================== */
+.his-vitals-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 8px;
+  margin-top: 6px;
+}
+
+.his-vital-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--his-bg-tertiary);
+  border-radius: 6px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.his-vital-pill:hover {
+  background: var(--his-success);
+  color: white;
+}
+
+.his-vital-pill .label {
+  color: var(--his-text-secondary);
+  font-size: 8px;
+}
+
+.his-vital-pill .val {
+  color: var(--his-success);
+  font-weight: 600;
+  font-size: 10px;
+}
+
+/* ========================================
+   Sections
+   ======================================== */
+.his-section {
+  margin-bottom: 10px;
+}
+
+.his-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.his-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--his-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   Record Area
+   ======================================== */
+.his-record-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+.his-record-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--his-bg-tertiary), var(--his-bg-secondary));
+  color: var(--his-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.his-record-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.his-record-btn:hover {
+  transform: scale(1.05);
+}
+
+.his-record-btn.recording {
+  background: linear-gradient(135deg, var(--his-danger), #dc2626);
+  color: white;
+  animation: pulse-record 1.5s infinite;
+}
+
+@keyframes pulse-record {
+
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 2px 16px rgba(239, 68, 68, 0.6);
+  }
+}
+
+.his-record-status {
+  font-size: 11px;
+  color: var(--his-text-secondary);
+}
+
+.his-record-status.recording {
+  color: var(--his-danger);
+}
+
+/* ========================================
+   Textarea
+   ======================================== */
+.his-textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  background: var(--his-bg-tertiary);
+  border: 1px solid var(--his-border);
+  border-radius: 8px;
+  color: var(--his-text-primary);
+  font-size: 12.5px;
+  line-height: 1.6;
+  resize: none; /* Cleaner look */
+  transition: all 0.3s ease;
+  box-shadow: var(--his-lit-edge);
+}
+
+.his-textarea:focus {
+  outline: none;
+  border-color: var(--his-primary);
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+.his-btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  align-items: center;
+}
+
+.his-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.his-btn-ai {
+  flex: 1;
+  background: linear-gradient(135deg, var(--his-primary), #6366f1);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.his-btn-ai:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  filter: brightness(1.1);
+}
+
+.his-btn-ai:disabled {
+  background: var(--his-bg-tertiary);
+  color: var(--his-text-secondary);
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.his-btn-primary {
+  background: var(--his-bg-secondary);
+  color: var(--his-primary);
+  border: 1px solid var(--his-border);
+}
+
+.his-btn-primary.recording {
+  background: linear-gradient(135deg, var(--his-danger), #dc2626);
+  color: white;
+  border: none;
+  animation: pulse-record 1.5s infinite;
+}
+
+/* ========================================
+   Results
+   ======================================== */
+.his-results-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px;
+}
+
+.his-result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--his-bg-secondary);
+  border: 1px solid var(--his-border);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.his-result-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateX(4px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3), var(--his-lit-edge);
+}
+
+.his-result-icon {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--his-primary);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.his-result-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.his-result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.his-result-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--his-text-secondary);
+  margin-bottom: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.his-result-value {
+  font-size: 11px;
+  color: var(--his-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* ========================================
+   Copy Button
+   ======================================== */
+.his-copy-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--his-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.his-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.his-result-item:hover .his-copy-btn {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.his-copy-btn:hover {
+  background: var(--his-primary) !important;
+  color: white !important;
+  border-color: var(--his-primary);
+  transform: scale(1.1);
+}
+
+.his-copy-btn.copied {
+  background: var(--his-success) !important;
+  color: white !important;
+  border-color: var(--his-success);
+}
+
+/* ========================================
+   Auto Fill Button
+   ======================================== */
+.his-autofill-btn {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border-color: #10b981 !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+.his-autofill-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  transform: scale(1.02);
+}
+
+.his-field-highlight {
+  animation: highlight-pulse 2s ease-out;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    background-color: rgba(16, 185, 129, 0.2);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* ========================================
+   Vital Signs
+   ======================================== */
+.his-vitals-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.his-vital-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  background: var(--his-bg-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.his-vital-pill:hover {
+  background: var(--his-success);
+  transform: scale(1.02);
+}
+
+.his-vital-pill .label {
+  font-size: 7px;
+  font-weight: 600;
+  color: var(--his-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 0;
+  letter-spacing: 0.2px;
+}
+
+.his-vital-pill:hover .label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.his-vital-pill .value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--his-success);
+  line-height: 1.2;
+}
+
+.his-vital-pill:hover .value {
+  color: white;
+}
+
+.his-vital-pill .unit {
+  font-size: 6px;
+  color: var(--his-text-secondary);
+  margin-top: -1px;
+}
+
+.his-vital-pill:hover .unit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.his-mini-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: var(--his-success);
+  border: 2px solid var(--his-bg-primary);
+  border-radius: 50%;
+}
+
+/* ========================================
+   Mini Button
+   ======================================== */
+#his-mini-btn {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 999997;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#his-mini-btn:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+#his-mini-btn.recording {
+  background: linear-gradient(135deg, var(--his-danger), #dc2626);
+  border-color: var(--his-danger);
+  color: white;
+  animation: pulse-record 1.5s infinite;
+}
+
+#his-mini-btn.aladinn-hidden {
+  display: none !important;
+}
+
+#his-mini-lock-btn {
+  position: fixed;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  z-index: 999997;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  right: 20px;
+  bottom: 20px;
+}
+
+#his-mini-lock-btn:hover {
+  transform: scale(1.1);
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#his-mini-lock-btn.aladinn-hidden {
+  display: none !important;
+}
+
+/* ========================================
+   Toast
+   ======================================== */
+.his-toast {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  padding: 10px 16px;
+  background: var(--his-success);
+  color: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 999999;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.his-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.his-toast.error {
+  background: var(--his-danger);
+}
+
+/* ========================================
+   Loading
+   ======================================== */
+.his-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.his-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--his-border);
+  border-top-color: var(--his-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Settings
+   ======================================== */
+.his-settings {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.his-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.his-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--his-bg-tertiary);
+  border: 1px solid var(--his-border);
+  border-radius: 6px;
+  color: var(--his-text-primary);
+  font-size: 12px;
+}
+
+.his-input:focus {
+  outline: none;
+  border-color: var(--his-primary);
+}
+
+/* ========================================
+   Security & Lock Screen
+   ======================================== */
+.his-lock-overlay {
+  position: fixed;
+  width: 380px;
+  height: 380px;
+  background: var(--his-bg-secondary);
+  backdrop-filter: blur(20px) saturate(180%);
+  z-index: 999998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  border: 1px solid var(--his-border);
+  box-shadow: var(--his-shadow), var(--his-glass-shadow);
+  padding: 30px;
+}
+
+.his-lock-overlay.aladinn-hidden {
+  display: none !important;
+}
+
+/* Removed old genie-smoke keyframes */
+
+/* Minimize button inside lock panel */
+.his-lock-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+
+.his-lock-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.his-lock-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.5));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.his-lock-title {
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 15px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.his-pin-container {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 25px;
+  margin-top: 10px;
+}
+
+.his-pin-digit {
+  width: 42px;
+  height: 54px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.his-pin-digit.filled {
+  border-color: #818cf8;
+  background: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.his-hidden-pin-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 10;
+  cursor: text;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  border: none;
+  outline: none;
+}
+
+.his-btn-full {
+  width: 80%;
+  padding: 12px !important;
+  font-size: 14px !important;
+}
+
+.his-shake {
+  animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* ========================================
+   ICD-10 Suggestions Section
+   ======================================== */
+.his-icd10-section {
+  margin-top: 10px;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(30, 41, 59, 0.4));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.his-icd10-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.his-icd10-header .icon svg {
+  width: 14px;
+  height: 14px;
+  color: #a78bfa;
+}
+
+.his-icd10-header .title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.his-icd10-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.his-icd10-chip {
+  display: flex;
+  align-items: stretch;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.his-icd10-chip:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateX(3px);
+  background: rgba(30, 41, 59, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.his-icd10-chip .code {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: white;
+  padding: 6px 12px;
+  font-size: 10.5px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  min-width: 60px;
+  justify-content: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.his-icd10-chip .code:hover {
+  filter: brightness(1.15);
+}
+
+.his-icd10-chip .code.copied {
+  background: var(--his-success);
+}
+
+.his-icd10-chip .name {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+  cursor: pointer;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.his-icd10-chip .name:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.his-icd10-chip .name.copied {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+}

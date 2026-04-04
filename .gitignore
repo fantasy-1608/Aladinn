@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# Build files
+dist/
+dist-zip/
+build/
+
+# Mac OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Log files
+logs
+*.log

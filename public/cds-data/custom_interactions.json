@@ -1,0 +1,44 @@
+[
+  {
+    "Drug_A": "domperidon",
+    "Drug_B": "ketoconazole",
+    "Level": "Major",
+    "Effect": "Ketoconazole ức chế CYP3A4 tăng nồng độ Domperidone gây kéo dài khoảng QT nguy cơ xoắn đỉnh rủi ro tử vong.",
+    "Recommendation": "Chống chỉ định phối hợp tuyệt đối."
+  },
+  {
+    "Drug_A": "domperidon",
+    "Drug_B": "erythromycin",
+    "Level": "Major",
+    "Effect": "Erythromycin ức chế CYP3A4 gây tăng độc tính tim mạch của Domperidone gây kéo dài khoảng QT xoắn đỉnh.",
+    "Recommendation": "Chống chỉ định phối hợp tuyệt đối."
+  },
+  {
+    "Drug_A": "domperidon",
+    "Drug_B": "clarithromycin",
+    "Level": "Major",
+    "Effect": "Clarithromycin ức chế mạnh CYP3A4 tăng nồng độ Domperidone gây loạn nhịp thất nguy hiểm.",
+    "Recommendation": "Chống chỉ định phối hợp tuyệt đối."
+  },
+  {
+    "Drug_A": "amiodarone",
+    "Drug_B": "simvastatin",
+    "Level": "Major",
+    "Effect": "Amiodarone ức chế CYP3A4 tăng nồng độ Simvastatin tăng nguy cơ tiêu cơ vân (rhabdomyolysis).",
+    "Recommendation": "Không dùng Simvastatin liều dùng quá 20mg/ngày khi phối hợp Amiodarone."
+  },
+  {
+    "Drug_A": "amiodarone",
+    "Drug_B": "digoxin",
+    "Level": "Major",
+    "Effect": "Amiodarone làm tăng nồng độ Digoxin (lên đến 70-100%) tăng nguy cơ ngộ độc Digoxin gây loạn nhịp.",
+    "Recommendation": "Giảm 50% liều Digoxin và theo dõi nồng độ Digoxin máu khi phối hợp."
+  },
+  {
+    "Drug_A": "paracetamol",
+    "Drug_B": "amiodarone",
+    "Level": "Moderate",
+    "Effect": "Phối hợp có thể làm tăng nhẹ nguy cơ suy giảm chức năng gan do chuyển hóa chéo.",
+    "Recommendation": "Cần theo dõi các xét nghiệm men gan định kỳ."
+  }
+]

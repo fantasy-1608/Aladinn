@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test — CDS Panel (Apple Dark)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-elevated: #1c1c1e;
+            --bg-secondary: #2c2c2e;
+            --bg-tertiary: #3a3a3c;
+            --fill-hover: rgba(255,255,255,0.06);
+            --separator: rgba(255,255,255,0.08);
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #636366;
+            --accent-blue: #0a84ff;
+            --accent-green: #30d158;
+            --accent-orange: #ff9f0a;
+            --accent-red: #ff453a;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: #2c3e50;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            min-height: 100vh;
+            padding: 32px;
+            color: var(--text-primary);
+        }
+
+        /* ===== DRAWER WRAPPER ===== */
+        .drawer {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        /* ===== PANEL ===== */
+        .panel {
+            width: 340px;
+            background: rgba(28, 28, 30, 0.96);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 20px;
+            border: 1px solid var(--separator);
+            box-shadow: 0 16px 56px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 70vh;
+        }
+
+        /* Header */
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--separator);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .panel-title svg { width: 18px; height: 18px; stroke: var(--accent-blue); fill: none; stroke-width: 2; }
+
+        .close-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .close-btn svg { width: 14px; height: 14px; stroke: var(--text-tertiary); fill: none; stroke-width: 2; }
+        .close-btn:hover { background: var(--bg-tertiary); }
+        .close-btn:hover svg { stroke: var(--text-primary); }
+
+        /* Body */
+        .panel-body {
+            flex: 1;
+            padding: 16px 20px;
+            overflow-y: auto;
+        }
+
+        .panel-body::-webkit-scrollbar { width: 3px; }
+        .panel-body::-webkit-scrollbar-track { background: transparent; }
+        .panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+        /* Status Banner */
+        .status-safe {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            background: rgba(48, 209, 88, 0.08);
+            border: 1px solid rgba(48, 209, 88, 0.15);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .status-safe svg { width: 18px; height: 18px; stroke: var(--accent-green); fill: none; stroke-width: 2; }
+
+        .status-warning {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px;
+            background: rgba(255, 159, 10, 0.08);
+            border: 1px solid rgba(255, 159, 10, 0.15);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-orange);
+        }
+
+        .status-warning svg { width: 18px; height: 18px; stroke: var(--accent-orange); fill: none; stroke-width: 2; }
+
+        /* Alert Card */
+        .alert-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 1px solid var(--separator);
+            border-left: 3px solid var(--text-tertiary);
+        }
+
+        .alert-card.high { border-left-color: var(--accent-red); }
+        .alert-card.medium { border-left-color: var(--accent-orange); }
+
+        .alert-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .alert-title .severity {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .severity.high { background: rgba(255, 69, 58, 0.15); color: var(--accent-red); }
+        .severity.medium { background: rgba(255, 159, 10, 0.15); color: var(--accent-orange); }
+
+        .alert-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; }
+
+        .alert-rec {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-green);
+            background: rgba(48, 209, 88, 0.08);
+            padding: 5px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .alert-drugs { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+        .drug-tag {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            font-family: 'Inter', monospace;
+        }
+
+        /* Coverage Summary */
+        .coverage-section { margin-top: 16px; }
+
+        .coverage-group {
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+
+        .cov-checked {
+            background: rgba(48, 209, 88, 0.06);
+            border: 1px solid rgba(48, 209, 88, 0.12);
+        }
+
+        .cov-unchecked {
+            background: rgba(255, 159, 10, 0.06);
+            border: 1px solid rgba(255, 159, 10, 0.12);
+        }
+
+        .cov-label {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cov-label svg { width: 14px; height: 14px; fill: none; stroke-width: 2; }
+        .cov-checked .cov-label svg { stroke: var(--accent-green); }
+        .cov-unchecked .cov-label svg { stroke: var(--accent-orange); }
+
+        .cov-count { color: var(--text-tertiary); font-weight: 400; }
+
+        .cov-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+
+        .pill {
+            font-size: 10px;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-family: 'Inter', monospace;
+            border: 1px solid transparent;
+        }
+
+        .pill.ok { background: rgba(48, 209, 88, 0.1); color: #6ee7b7; border-color: rgba(48, 209, 88, 0.18); }
+
+        .pill.unknown {
+            background: rgba(255, 159, 10, 0.08);
+            color: #fcd34d;
+            border-color: rgba(255, 159, 10, 0.18);
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .pill.unknown:hover { background: rgba(255, 159, 10, 0.18); }
+
+        .cov-hint { font-size: 10px; color: var(--text-tertiary); font-style: italic; margin-top: 5px; }
+
+        /* Footer */
+        .panel-footer {
+            padding: 10px 20px;
+            border-top: 1px solid var(--separator);
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            background: rgba(0,0,0,0.15);
+        }
+
+        /* Shield Button */
+        .shield {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(28, 28, 30, 0.92);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .shield:hover { transform: scale(1.05); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+        .shield svg { width: 22px; height: 22px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .shield.safe svg { stroke: var(--accent-green); }
+        .shield.warning svg { stroke: var(--accent-orange); }
+        .shield.critical svg { stroke: var(--accent-red); }
+
+        .shield.warning {
+            border-color: var(--accent-orange);
+            animation: pulseWarn 2s infinite;
+        }
+
+        @keyframes pulseWarn {
+            0% { box-shadow: 0 0 0 0 rgba(255, 159, 10, 0.35); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 159, 10, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 159, 10, 0); }
+        }
+
+        /* Demo Controls */
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--separator);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .demo-controls h3 { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+
+        .demo-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--separator);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: var(--font);
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .demo-btn:hover { background: var(--bg-tertiary); }
+        .demo-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+<!-- Demo Controls -->
+<div class="demo-controls">
+    <h3>Demo States</h3>
+    <button class="demo-btn active" onclick="showState('safe')">Safe (No alerts)</button>
+    <button class="demo-btn" onclick="showState('warning')">Warning (Interactions)</button>
+</div>
+
+<div class="drawer">
+    <!-- Panel -->
+    <div class="panel" id="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
+                An Toàn Kê Đơn
+            </div>
+            <button class="close-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="panel-body" id="panel-body">
+            <!-- Dynamic content -->
+        </div>
+
+        <div class="panel-footer" id="panel-footer">
+            Đã phân tích: 5/5 thuốc
+        </div>
+    </div>
+
+    <!-- Shield -->
+    <div class="shield safe" id="shield">
+        <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+    </div>
+</div>
+
+<script>
+    const safeHTML = `
+        <div class="status-safe">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            Đơn thuốc an toàn!
+        </div>
+        <div class="coverage-section">
+            <div class="coverage-group cov-checked">
+                <div class="cov-label">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Đã kiểm tra tương tác <span class="cov-count">(5)</span>
+                </div>
+                <div class="cov-pills">
+                    <span class="pill ok">enoxaparin (natri)</span>
+                    <span class="pill ok">natri clorid</span>
+                    <span class="pill ok">nefopam hydroclorid</span>
+                    <span class="pill ok">netilmicin sulfat</span>
+                    <span class="pill ok">paracetamol</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const warningHTML = `
+        <div class="status-warning">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            Phát hiện tương tác thuốc!
+        </div>
+
+        <div class="alert-card high">
+            <div class="alert-title">
+                <span class="severity high">Cao</span>
+                Tương tác thuốc nguy hiểm
+            </div>
+            <div class="alert-desc">Enoxaparin + Nefopam: Tăng nguy cơ chảy máu đáng kể khi phối hợp.</div>
+            <div class="alert-rec">Theo dõi đông máu chặt chẽ</div>
+            <div class="alert-drugs">
+                <span class="drug-tag">enoxaparin</span>
+                <span class="drug-tag">nefopam</span>
+            </div>
+        </div>
+
+        <div class="alert-card medium">
+            <div class="alert-title">
+                <span class="severity medium">TB</span>
+                Trùng nhóm điều trị
+            </div>
+            <div class="alert-desc">Paracetamol và Nefopam cùng nhóm giảm đau. Xem xét giảm liều.</div>
+            <div class="alert-rec">Cân nhắc chỉ dùng 1 loại</div>
+            <div class="alert-drugs">
+                <span class="drug-tag">paracetamol</span>
+                <span class="drug-tag">nefopam</span>
+            </div>
+        </div>
+
+        <div class="coverage-section">
+            <div class="coverage-group cov-checked">
+                <div class="cov-label">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Đã kiểm tra <span class="cov-count">(4)</span>
+                </div>
+                <div class="cov-pills">
+                    <span class="pill ok">enoxaparin</span>
+                    <span class="pill ok">nefopam</span>
+                    <span class="pill ok">paracetamol</span>
+                    <span class="pill ok">natri clorid</span>
+                </div>
+            </div>
+            <div class="coverage-group cov-unchecked">
+                <div class="cov-label">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    Chưa có dữ liệu <span class="cov-count">(1)</span>
+                </div>
+                <div class="cov-pills">
+                    <a class="pill unknown" href="#">amlodipine stella 10mg</a>
+                </div>
+                <div class="cov-hint">Nhấn vào tên thuốc để tra Google</div>
+            </div>
+        </div>
+    `;
+
+    function showState(state) {
+        const body = document.getElementById('panel-body');
+        const shield = document.getElementById('shield');
+        const footer = document.getElementById('panel-footer');
+        document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (state === 'safe') {
+            body.innerHTML = safeHTML;
+            shield.className = 'shield safe';
+            shield.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
+            footer.textContent = 'Đã phân tích: 5/5 thuốc';
+        } else {
+            body.innerHTML = warningHTML;
+            shield.className = 'shield warning';
+            shield.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
+            footer.textContent = 'Đã phân tích: 4/5 thuốc';
+        }
+    }
+
+    // Init
+    showState('safe');
+</script>
+</body>
+</html>

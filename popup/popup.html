@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Aladinn — Trợ lý VNPT HIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="stars"></div>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <img src="../assets/icons/icon128.png" class="genie-img" alt="Aladinn Lamp">
+                <span class="app-title">Aladinn</span>
+            </div>
+            <div class="smoke-container">
+                <div class="smoke" style="animation-delay: 0s;"></div>
+                <div class="smoke" style="animation-delay: 1s;"></div>
+                <div class="smoke" style="animation-delay: 2s;"></div>
+            </div>
+            <div class="version-badge">v1.0.0</div>
+        </header>
+
+        <!-- Feature Toggles -->
+        <div class="feature-toggles">
+            <label class="toggle-item">
+                <span class="toggle-label">📸 Smart Scanner</span>
+                <input type="checkbox" id="toggle-scanner" checked>
+                <span class="toggle-slider"></span>
+            </label>
+            <label class="toggle-item">
+                <span class="toggle-label">🎙️ Voice AI</span>
+                <input type="checkbox" id="toggle-voice" checked>
+                <span class="toggle-slider"></span>
+            </label>
+            <label class="toggle-item">
+                <span class="toggle-label">✍️ Ký số</span>
+                <input type="checkbox" id="toggle-sign" checked>
+                <span class="toggle-slider"></span>
+            </label>
+            <label class="toggle-item">
+                <span class="toggle-label">🧠 Cảnh báo C.D.S</span>
+                <input type="checkbox" id="toggle-cds" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-target="tab-scanner">📸 Quét</button>
+            <button class="tab-btn" data-target="tab-voice">🎙️ Nhập liệu</button>
+            <button class="tab-btn" data-target="tab-sign">✍️ Ký số</button>
+        </nav>
+
+        <!-- Tab Content: Scanner -->
+        <div id="tab-scanner" class="tab-content active">
+            <div class="action-grid">
+                <button id="scan-room-btn" class="action-btn primary">
+                    <span class="icon">🏥</span> Quét Phòng/Giường
+                </button>
+                <button id="scan-vitals-btn" class="action-btn">
+                    <span class="icon">❤️</span> Quét Sinh hiệu
+                </button>
+                <button id="show-dashboard-btn" class="action-btn">
+                    <span class="icon">📊</span> Mở Dashboard
+                </button>
+                <button id="toggle-ui-btn" class="action-btn">
+                    <span class="icon">⚙️</span> Tắt/Bật Giao diện
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content: Voice -->
+        <div id="tab-voice" class="tab-content">
+            <div class="voice-status-card">
+                <div class="status-indicator active" id="voice-indicator">
+                    <div class="pulse"></div>
+                </div>
+                <div class="status-text">
+                    <div class="status-title" id="voice-status-title">Voice AI Đang Bật</div>
+                    <div class="status-desc" id="voice-status-desc">Nhấn vào icon mic trên trang HIS để dùng AI</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Sign -->
+        <div id="tab-sign" class="tab-content">
+            <div class="sign-controls">
+                <label class="toggle-item sign-auto-toggle">
+                    <span class="toggle-label">⚡ Tự động ký</span>
+                    <input type="checkbox" id="sign-auto-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <div class="action-grid">
+                    <button id="sign-select-all-btn" class="action-btn">
+                        <span class="icon">☑️</span> Chọn tất cả
+                    </button>
+                    <button id="sign-start-btn" class="action-btn primary">
+                        <span class="icon">✍️</span> Bắt đầu Ký
+                    </button>
+                </div>
+                <div class="sign-stats">
+                    <div class="sign-stat-item">
+                        <div class="sign-stat-label">Đã chọn</div>
+                        <div class="sign-stat-value" id="sign-stat-selected">0</div>
+                    </div>
+                    <div class="sign-stat-item">
+                        <div class="sign-stat-label">Đã ký</div>
+                        <div class="sign-stat-value" id="sign-stat-signed">0</div>
+                    </div>
+                    <div class="sign-stat-item">
+                        <div class="sign-stat-label">Bỏ qua</div>
+                        <div class="sign-stat-value" id="sign-stat-skipped">0</div>
+                    </div>
+                </div>
+                <div class="sign-history-section">
+                    <div class="sign-history-header">Lịch sử phiên</div>
+                    <ul id="sign-history-list" class="sign-history-list">
+                        <li class="sign-history-empty">Chưa có phiên ký số</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <button id="open-options-btn" class="footer-btn">
+            ⚙️ Cài đặt Aladinn
+        </button>
+        <div class="author-info">By Huỳnh Trung Anh</div>
+    </footer>
+    </div>
+    <script type="module" src="popup.js"></script>
+</body>
+
+</html>

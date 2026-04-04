@@ -1,0 +1,38 @@
+[
+  {
+    "rule_code": "ALG-PENI-AMOX-001",
+    "allergy_text": "penicillin",
+    "generic_name": "amoxicillin",
+    "severity": "high",
+    "recommendation": "Tránh dùng các dẫn xuất penicillin. Cân nhắc kháng sinh nhóm macrolide hoặc quinolone tùy chỉ định.",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "ALG-PENI-AMOXCLAV-001",
+    "allergy_text": "penicillin",
+    "generic_name": "amoxicillin-clavulanate",
+    "severity": "high",
+    "recommendation": "Tránh dùng các dẫn xuất penicillin. Cân nhắc kháng sinh nhóm macrolide hoặc quinolone tùy chỉ định.",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "ALG-CEPH-001",
+    "allergy_text": "cephalosporin",
+    "generic_name": "cefuroxime",
+    "severity": "medium",
+    "recommendation": "Thận trọng khi dùng nhóm cephalosporin (có thể có phản ứng chéo với penicillin). Theo dõi sát dấu hiệu dị ứng.",
+    "is_active": true,
+    "version": "1.1.0"
+  },
+  {
+    "rule_code": "ALG-SULFA-001",
+    "allergy_text": "sulfonamide",
+    "generic_name": "cotrimoxazole",
+    "severity": "high",
+    "recommendation": "Tránh dùng thuốc nhóm sulfonamide. Cân nhắc kháng sinh thay thế phù hợp với chỉ định.",
+    "is_active": true,
+    "version": "1.1.0"
+  }
+]

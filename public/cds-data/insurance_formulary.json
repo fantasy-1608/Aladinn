@@ -1,0 +1,27 @@
+[
+  {
+    "generic_name": "paracetamol",
+    "is_covered": true,
+    "note": "Thuoc giam dau thong dung duoc BHYT chi tra."
+  },
+  {
+    "generic_name": "celecoxib",
+    "is_covered": true,
+    "note": "Duoc chi tra co dieu kien."
+  },
+  {
+    "generic_name": "warfarin",
+    "is_covered": true,
+    "note": "Can theo doi khi su dung."
+  },
+  {
+    "generic_name": "ibuprofen",
+    "is_covered": true,
+    "note": "NSAID thong dung."
+  },
+  {
+    "generic_name": "morphine",
+    "is_covered": false,
+    "note": "Khong duoc chi tra trong ngoai tru."
+  }
+]

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>🧞 Aladinn — Test Runner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'SF Mono', 'Fira Code', monospace; 
+            background: #0d1117; color: #c9d1d9; 
+            padding: 24px; line-height: 1.6; 
+        }
+        h1 { color: #58a6ff; margin-bottom: 8px; }
+        .summary { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+        .suite { 
+            background: #161b22; border: 1px solid #30363d; 
+            border-radius: 8px; margin-bottom: 16px; overflow: hidden;
+        }
+        .suite-header { 
+            padding: 12px 16px; font-weight: 700; font-size: 15px;
+            border-bottom: 1px solid #30363d; color: #f0f6fc;
+        }
+        .test-row { 
+            padding: 8px 16px; border-bottom: 1px solid #21262d; 
+            display: flex; align-items: center; gap: 10px; font-size: 13px; 
+        }
+        .test-row:last-child { border-bottom: none; }
+        .test-row.pass { color: #3fb950; }
+        .test-row.fail { color: #f85149; }
+        .test-row .icon { width: 20px; text-align: center; }
+        .test-row .dur { margin-left: auto; color: #8b949e; font-size: 12px; }
+        .stats { 
+            margin-top: 24px; padding: 16px; background: #161b22; 
+            border-radius: 8px; border: 1px solid #30363d; 
+            display: flex; gap: 32px; font-size: 14px; 
+        }
+        .stats .pass-count { color: #3fb950; font-weight: 700; }
+        .stats .fail-count { color: #f85149; font-weight: 700; }
+        .stats .total { color: #58a6ff; font-weight: 700; }
+        .error-msg { 
+            color: #f85149; font-size: 12px; padding: 4px 16px 8px 46px;
+            background: #1a0f0f; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🧞 Aladinn Test Runner</h1>
+    <p class="summary">Unit tests for crypto, safe-click, and signing state modules</p>
+    <div id="output"></div>
+    <div id="stats" class="stats" style="display:none"></div>
+
+    <script>
+    // =============================================
+    // MINI TEST FRAMEWORK
+    // =============================================
+    const TestRunner = {
+        suites: [],
+        current: null,
+        results: { pass: 0, fail: 0 },
+        output: document.getElementById('output'),
+
+        describe(name, fn) {
+            this.current = { name, tests: [] };
+            this.suites.push(this.current);
+            fn();
+            this.current = null;
+        },
+
+        it(name, fn) {
+            this.current.tests.push({ name, fn });
+        },
+
+        assert(condition, msg = 'Assertion failed') {
+            if (!condition) throw new Error(msg);
+        },
+
+        assertEqual(a, b, msg) {
+            if (a !== b) throw new Error(msg || `Expected "${b}", got "${a}"`);
+        },
+
+        assertNotEqual(a, b, msg) {
+            if (a === b) throw new Error(msg || `Expected not "${b}", but got "${a}"`);
+        },
+
+        assertTruthy(val, msg) {
+            if (!val) throw new Error(msg || `Expected truthy, got "${val}"`);
+        },
+
+        async run() {
+            for (const suite of this.suites) {
+                const suiteDiv = document.createElement('div');
+                suiteDiv.className = 'suite';
+                const header = document.createElement('div');
+                header.className = 'suite-header';
+                header.textContent = suite.name;
+                suiteDiv.appendChild(header);
+
+                for (const test of suite.tests) {
+                    const start = performance.now();
+                    let passed = false;
+                    let error = null;
+
+                    try {
+                        const result = test.fn();
+                        if (result instanceof Promise) await result;
+                        passed = true;
+                        this.results.pass++;
+                    } catch (e) {
+                        error = e;
+                        this.results.fail++;
+                    }
+
+                    const dur = (performance.now() - start).toFixed(1);
+                    const row = document.createElement('div');
+                    row.className = `test-row ${passed ? 'pass' : 'fail'}`;
+                    row.innerHTML = `
+                        <span class="icon">${passed ? '✅' : '❌'}</span>
+                        <span>${test.name}</span>
+                        <span class="dur">${dur}ms</span>
+                    `;
+                    suiteDiv.appendChild(row);
+
+                    if (error) {
+                        const errDiv = document.createElement('div');
+                        errDiv.className = 'error-msg';
+                        errDiv.textContent = error.message;
+                        suiteDiv.appendChild(errDiv);
+                    }
+                }
+                this.output.appendChild(suiteDiv);
+            }
+
+            const statsDiv = document.getElementById('stats');
+            statsDiv.style.display = 'flex';
+            statsDiv.innerHTML = `
+                <span class="total">Total: ${this.results.pass + this.results.fail}</span>
+                <span class="pass-count">✅ Pass: ${this.results.pass}</span>
+                <span class="fail-count">❌ Fail: ${this.results.fail}</span>
+            `;
+        }
+    };
+    const T = TestRunner;
+
+    // =============================================
+    // CRYPTO HELPERS (mirrors content/shared/crypto.js)
+    // =============================================
+    const TestCrypto = {
+        ITERATIONS: 100000,
+        KEY_LENGTH: 256,
+
+        generateSalt() {
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            return btoa(String.fromCharCode(...salt));
+        },
+
+        async hashPIN(pin, salt) {
+            const encoder = new TextEncoder();
+            const pinData = encoder.encode(pin);
+            const saltData = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+            const baseKey = await crypto.subtle.importKey('raw', pinData, 'PBKDF2', false, ['deriveBits']);
+            const hashBits = await crypto.subtle.deriveBits(
+                { name: 'PBKDF2', salt: saltData, iterations: this.ITERATIONS, hash: 'SHA-256' },
+                baseKey, this.KEY_LENGTH
+            );
+            return btoa(String.fromCharCode(...new Uint8Array(hashBits)));
+        },
+
+        async deriveKey(pin, salt) {
+            const encoder = new TextEncoder();
+            const pinData = encoder.encode(pin);
+            const saltData = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+            const baseKey = await crypto.subtle.importKey('raw', pinData, 'PBKDF2', false, ['deriveKey']);
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt: saltData, iterations: this.ITERATIONS, hash: 'SHA-256' },
+                baseKey, { name: 'AES-GCM', length: this.KEY_LENGTH }, false, ['encrypt', 'decrypt']
+            );
+        },
+
+        async encrypt(plaintext, key) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(plaintext);
+            const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+            return btoa(String.fromCharCode(...iv)) + ':' + btoa(String.fromCharCode(...new Uint8Array(ct)));
+        },
+
+        async decrypt(encryptedText, key) {
+            if (!encryptedText || !encryptedText.includes(':')) return null;
+            const [ivB64, cB64] = encryptedText.split(':');
+            const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+            const ct = Uint8Array.from(atob(cB64), c => c.charCodeAt(0));
+            const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+            return new TextDecoder().decode(dec);
+        }
+    };
+
+    // =============================================
+    // TEST SUITE 1: CRYPTO
+    // =============================================
+    T.describe('🔐 Crypto: Salt Generation', () => {
+        T.it('generateSalt returns a base64 string', () => {
+            const salt = TestCrypto.generateSalt();
+            T.assertTruthy(salt, 'Salt should not be empty');
+            T.assert(salt.length > 10, 'Salt should be a reasonable length');
+        });
+        T.it('generateSalt returns unique values', () => {
+            const s1 = TestCrypto.generateSalt();
+            const s2 = TestCrypto.generateSalt();
+            T.assertNotEqual(s1, s2, 'Two salts should be different');
+        });
+    });
+
+    T.describe('🔐 Crypto: PIN Hashing (PBKDF2)', () => {
+        T.it('hashPIN returns consistent hash for same input', async () => {
+            const salt = TestCrypto.generateSalt();
+            const h1 = await TestCrypto.hashPIN('123456', salt);
+            const h2 = await TestCrypto.hashPIN('123456', salt);
+            T.assertEqual(h1, h2, 'Same PIN + salt should produce same hash');
+        });
+        T.it('hashPIN returns different hashes for different PINs', async () => {
+            const salt = TestCrypto.generateSalt();
+            const h1 = await TestCrypto.hashPIN('123456', salt);
+            const h2 = await TestCrypto.hashPIN('654321', salt);
+            T.assertNotEqual(h1, h2);
+        });
+        T.it('hashPIN returns different hashes for different salts', async () => {
+            const s1 = TestCrypto.generateSalt();
+            const s2 = TestCrypto.generateSalt();
+            const h1 = await TestCrypto.hashPIN('123456', s1);
+            const h2 = await TestCrypto.hashPIN('123456', s2);
+            T.assertNotEqual(h1, h2);
+        });
+        T.it('hash is not the plaintext PIN', async () => {
+            const salt = TestCrypto.generateSalt();
+            const hash = await TestCrypto.hashPIN('123456', salt);
+            T.assertNotEqual(hash, '123456');
+        });
+    });
+
+    T.describe('🔐 Crypto: AES-GCM Encrypt/Decrypt', () => {
+        T.it('encrypt then decrypt returns original text', async () => {
+            const salt = TestCrypto.generateSalt();
+            const key = await TestCrypto.deriveKey('123456', salt);
+            const original = 'AIzaSyB-test-api-key-12345';
+            const enc = await TestCrypto.encrypt(original, key);
+            const dec = await TestCrypto.decrypt(enc, key);
+            T.assertEqual(dec, original);
+        });
+        T.it('encrypted format is iv:ciphertext', async () => {
+            const salt = TestCrypto.generateSalt();
+            const key = await TestCrypto.deriveKey('123456', salt);
+            const enc = await TestCrypto.encrypt('test', key);
+            T.assert(enc.includes(':'));
+            T.assertEqual(enc.split(':').length, 2);
+        });
+        T.it('each encryption produces different ciphertext (random IV)', async () => {
+            const salt = TestCrypto.generateSalt();
+            const key = await TestCrypto.deriveKey('123456', salt);
+            const e1 = await TestCrypto.encrypt('same', key);
+            const e2 = await TestCrypto.encrypt('same', key);
+            T.assertNotEqual(e1, e2);
+        });
+        T.it('wrong key cannot decrypt', async () => {
+            const salt = TestCrypto.generateSalt();
+            const k1 = await TestCrypto.deriveKey('123456', salt);
+            const k2 = await TestCrypto.deriveKey('999999', salt);
+            const enc = await TestCrypto.encrypt('secret', k1);
+            let failed = false;
+            try { await TestCrypto.decrypt(enc, k2); } catch (e) { failed = true; }
+            T.assert(failed, 'Wrong key must fail');
+        });
+        T.it('handles null gracefully', async () => {
+            const r = await TestCrypto.decrypt(null, null);
+            T.assertEqual(r, null);
+        });
+    });
+
+    T.describe('🔐 Crypto: Full Verification Flow', () => {
+        T.it('set PIN → verify correct → verify wrong', async () => {
+            const pin = '567890';
+            const salt = TestCrypto.generateSalt();
+            const hash = await TestCrypto.hashPIN(pin, salt);
+            T.assertEqual(await TestCrypto.hashPIN(pin, salt), hash, 'Correct PIN matches');
+            T.assertNotEqual(await TestCrypto.hashPIN('000000', salt), hash, 'Wrong PIN differs');
+        });
+        T.it('encrypt API key → decrypt with same PIN', async () => {
+            const pin = '123456';
+            const salt = TestCrypto.generateSalt();
+            const apiKey = 'AIzaSyB-real-api-key-example';
+            const key = await TestCrypto.deriveKey(pin, salt);
+            const enc = await TestCrypto.encrypt(apiKey, key);
+            const key2 = await TestCrypto.deriveKey(pin, salt);
+            const dec = await TestCrypto.decrypt(enc, key2);
+            T.assertEqual(dec, apiKey);
+        });
+    });
+
+    // =============================================
+    // TEST SUITE 2: SAFE-CLICK
+    // =============================================
+    function createMockModal(type) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;';
+        const modal = document.createElement('div');
+        modal.className = type === 'jBox' ? 'jBox-container' : type === 'ui-dialog' ? 'ui-dialog' : 'modal show';
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;width:300px;height:200px;background:white;z-index:10000;';
+        const closeBtn = document.createElement('button');
+        closeBtn.className = type === 'jBox' ? 'jBox-closeButton' : type === 'ui-dialog' ? 'ui-dialog-titlebar-close' : 'btn-close';
+        closeBtn.textContent = 'X';
+        closeBtn.style.cssText = 'width:30px;height:30px;display:block;';
+        closeBtn.dataset.clicked = 'false';
+        closeBtn.addEventListener('click', () => { closeBtn.dataset.clicked = 'true'; });
+        const bodyBtn = document.createElement('button');
+        bodyBtn.textContent = 'Submit';
+        bodyBtn.style.cssText = 'width:80px;height:30px;display:block;';
+        bodyBtn.dataset.clicked = 'false';
+        bodyBtn.addEventListener('click', () => { bodyBtn.dataset.clicked = 'true'; });
+        modal.appendChild(closeBtn);
+        modal.appendChild(bodyBtn);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        return { overlay, modal, closeBtn, bodyBtn };
+    }
+    function createOutsideButton(text) {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.cssText = 'width:80px;height:30px;display:block;position:fixed;bottom:10px;right:10px;z-index:1;';
+        btn.dataset.clicked = 'false';
+        btn.addEventListener('click', () => { btn.dataset.clicked = 'true'; });
+        document.body.appendChild(btn);
+        return btn;
+    }
+    function cleanup(...els) { els.forEach(el => el?.parentNode?.removeChild(el)); }
+
+    T.describe('🛡️ Safe-Click: findSafeButton logic', () => {
+        T.it('finds button by matching text within a container', () => {
+            const c = document.createElement('div');
+            c.style.cssText = 'width:100px;height:50px;display:block;';
+            const btn = document.createElement('button');
+            btn.textContent = 'Xác nhận';
+            btn.style.cssText = 'width:80px;height:30px;display:block;';
+            c.appendChild(btn);
+            document.body.appendChild(c);
+            const found = c.querySelector('button');
+            T.assertTruthy(found);
+            T.assertEqual(found.textContent, 'Xác nhận');
+            cleanup(c);
+        });
+        T.it('excludes buttons with excluded text', () => {
+            const c = document.createElement('div');
+            c.style.cssText = 'width:200px;height:100px;display:block;';
+            const excludes = ['Hủy', 'Đóng', 'Thoát'];
+            ['Hủy', 'Đóng', 'Xác nhận'].forEach(t => {
+                const b = document.createElement('button');
+                b.textContent = t; b.style.cssText = 'width:60px;height:25px;display:inline-block;';
+                c.appendChild(b);
+            });
+            document.body.appendChild(c);
+            const btns = c.querySelectorAll('button');
+            let found = null;
+            for (const b of btns) { if (!excludes.includes(b.textContent.trim())) { found = b; break; } }
+            T.assertTruthy(found);
+            T.assertEqual(found.textContent, 'Xác nhận');
+            cleanup(c);
+        });
+    });
+
+    T.describe('🛡️ Safe-Click: Modal close restriction', () => {
+        T.it('close button inside modal gets clicked', () => {
+            const { overlay, closeBtn, bodyBtn } = createMockModal('jBox');
+            const modal = document.querySelector('.jBox-container');
+            if (modal) { const btn = modal.querySelector('.jBox-closeButton'); if (btn) btn.click(); }
+            T.assertEqual(closeBtn.dataset.clicked, 'true', 'Close button should be clicked');
+            T.assertEqual(bodyBtn.dataset.clicked, 'false', 'Submit button should NOT be clicked');
+            cleanup(overlay);
+        });
+        T.it('buttons outside the modal are NOT clicked', () => {
+            const { overlay, closeBtn } = createMockModal('jBox');
+            const outside = createOutsideButton('Đóng');
+            const modal = document.querySelector('.jBox-container');
+            if (modal) { const btn = modal.querySelector('.jBox-closeButton'); if (btn) btn.click(); }
+            T.assertEqual(closeBtn.dataset.clicked, 'true');
+            T.assertEqual(outside.dataset.clicked, 'false', 'Outside must NOT be clicked');
+            cleanup(overlay, outside);
+        });
+        T.it('ui-dialog close button is found correctly', () => {
+            const { overlay, closeBtn } = createMockModal('ui-dialog');
+            const modal = document.querySelector('.ui-dialog');
+            if (modal) { const btn = modal.querySelector('.ui-dialog-titlebar-close'); if (btn) btn.click(); }
+            T.assertEqual(closeBtn.dataset.clicked, 'true');
+            cleanup(overlay);
+        });
+        T.it('no click when no modal is present', () => {
+            const outside = createOutsideButton('Đóng');
+            const sels = ['.jBox-container', '.ui-dialog', '.modal.show'];
+            let found = null;
+            for (const s of sels) { found = document.querySelector(s); if (found) break; }
+            T.assert(!found, 'No modal should be present');
+            T.assertEqual(outside.dataset.clicked, 'false');
+            cleanup(outside);
+        });
+    });
+
+    // =============================================
+    // TEST SUITE 3: SIGNING STATE
+    // =============================================
+    function createWorkflow() {
+        return { queue: [], currentIndex: -1, isActive: false, stats: { completed: 0, skipped: 0 } };
+    }
+
+    T.describe('✍️ Signing: Workflow State Machine', () => {
+        T.it('initial state is inactive with empty queue', () => {
+            const wf = createWorkflow();
+            T.assertEqual(wf.isActive, false);
+            T.assertEqual(wf.queue.length, 0);
+            T.assertEqual(wf.currentIndex, -1);
+        });
+        T.it('startSession activates workflow with queue', () => {
+            const wf = createWorkflow();
+            wf.queue = ['r1', 'r2', 'r3'];
+            wf.isActive = true;
+            T.assertEqual(wf.isActive, true);
+            T.assertEqual(wf.queue.length, 3);
+        });
+        T.it('processNext increments currentIndex', () => {
+            const wf = createWorkflow();
+            wf.queue = ['r1', 'r2', 'r3'];
+            wf.isActive = true;
+            wf.currentIndex++;
+            T.assertEqual(wf.currentIndex, 0);
+            T.assertEqual(wf.queue[wf.currentIndex], 'r1');
+            wf.currentIndex++;
+            T.assertEqual(wf.queue[wf.currentIndex], 'r2');
+        });
+        T.it('session ends when queue exhausted', () => {
+            const wf = createWorkflow();
+            wf.queue = ['r1'];
+            wf.isActive = true;
+            wf.currentIndex++;
+            wf.stats.completed++;
+            wf.currentIndex++;
+            T.assert(wf.currentIndex >= wf.queue.length);
+            wf.isActive = false;
+            wf.queue = [];
+            T.assertEqual(wf.isActive, false);
+        });
+        T.it('stats track completed and skipped', () => {
+            const wf = createWorkflow();
+            wf.queue = ['r1', 'r2', 'r3', 'r4', 'r5'];
+            wf.stats.completed = 3;
+            wf.stats.skipped = 2;
+            T.assertEqual(wf.stats.completed + wf.stats.skipped, wf.queue.length);
+        });
+    });
+
+    T.describe('✍️ Signing: Auto-Sign State', () => {
+        T.it('auto-sign initial state flags are all false', () => {
+            const a = { isEnabled: true, hasClickedConfirm: false, hasClickedOk: false, hasClickedSign: false };
+            T.assertEqual(a.hasClickedConfirm, false);
+            T.assertEqual(a.hasClickedOk, false);
+            T.assertEqual(a.hasClickedSign, false);
+        });
+        T.it('state resets between patients', () => {
+            const a = { hasClickedConfirm: true, hasClickedOk: true, hasClickedSign: true };
+            a.hasClickedConfirm = false; a.hasClickedOk = false; a.hasClickedSign = false;
+            T.assertEqual(a.hasClickedConfirm, false);
+            T.assertEqual(a.hasClickedOk, false);
+        });
+        T.it('cooldown prevents rapid re-clicks', () => {
+            const a = { lastConfirmTime: Date.now() };
+            const canClick = (Date.now() - a.lastConfirmTime) > 800;
+            T.assertEqual(canClick, false);
+        });
+    });
+
+    // =============================================
+    // RUN ALL
+    // =============================================
+    T.run();
+    </script>
+</body>
+</html>

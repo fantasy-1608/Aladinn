@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cào Thuốc HIS Siêu Tốc - Aladinn</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 640px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        h1 { color: #f1f5f9; font-size: 26px; margin-bottom: 12px; }
+        .subtitle { color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 32px; }
+        .bookmarklet-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            color: white;
+            padding: 18px 36px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            margin: 8px 0 32px;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .bookmarklet-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 32px rgba(99, 102, 241, 0.45); }
+        .bookmarklet-btn:active { cursor: grabbing; }
+        .instruction {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .instruction h3 { color: #f1f5f9; font-size: 15px; margin-bottom: 12px; }
+        .instruction ol { padding-left: 20px; color: #cbd5e1; font-size: 14px; line-height: 1.7; }
+        .instruction li { margin-bottom: 8px; }
+        .instruction li b { color: #60a5fa; }
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 20px 0; }
+        .tag {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .feature-box {
+            margin-top: 24px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 16px 20px;
+            border-radius: 12px;
+        }
+        .feature-box h4 { color: #a5b4fc; font-size: 13px; margin-bottom: 8px; }
+        .feature-box ul { list-style: none; padding: 0; color: #94a3b8; font-size: 13px; }
+        .feature-box li { padding: 2px 0; }
+        .feature-box li::before { content: "✨ "; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <span class="tag">CÔNG CỤ NỘI BỘ • v3.0 — Auto Import</span>
+    <h1>💊 Cào Thuốc HIS Siêu Tốc</h1>
+    <p class="subtitle">Cào toàn bộ danh mục thuốc từ VNPT HIS và <b>tự động cập nhật</b> vào cơ sở dữ liệu CDS Aladinn.</p>
+
+    <a class="bookmarklet-btn" id="bm-link" href="javascript:void(0)">
+        💊 Cào Thuốc HIS
+    </a>
+
+    <div class="instruction">
+        <h3>🛠️ Cách cài đặt (Chỉ làm 1 lần):</h3>
+        <ol>
+            <li><b>Nhấp giữ chuột trái</b> vào nút <b>💊 Cào Thuốc HIS</b> ở trên.</li>
+            <li><b>Kéo và thả</b> nó lên <b>thanh Dấu trang (Bookmarks bar)</b> của Chrome.</li>
+            <li>Nếu thanh Bookmark chưa hiện, bấm <b>Ctrl+Shift+B</b> để bật.</li>
+            <li>⚠️ Nếu đã có phiên bản cũ, <b>xóa cái cũ đi</b> rồi kéo lại!</li>
+        </ol>
+
+        <hr class="divider">
+
+        <h3>🚀 Cách sử dụng:</h3>
+        <ol>
+            <li>Trong VNPT HIS, mở <b>form kê đơn thuốc</b>.</li>
+            <li>Click vào ô <b>"Tên thuốc"</b> để <b>bảng dropdown bung ra</b>.</li>
+            <li>Bấm nút <b>💊 Cào Thuốc HIS</b> trên <b>thanh Bookmark</b>.</li>
+            <li>✅ Dữ liệu tự động cập nhật vào Aladinn CDS + tải CSV backup.</li>
+        </ol>
+
+        <hr class="divider">
+
+        <h3>⚠️ Lưu ý quan trọng:</h3>
+        <ol>
+            <li>Phải <b>bung bảng thuốc ra trước</b> rồi mới bấm nút!</li>
+            <li>Nếu có nhiều <b>kho thuốc</b>, chọn đúng kho trước khi cào.</li>
+            <li><b>Không đóng tab</b> trong lúc đang cào.</li>
+        </ol>
+
+        <div class="feature-box">
+            <h4>🆕 Tính năng v3.0</h4>
+            <ul>
+                <li>Tự động import vào database CDS Aladinn</li>
+                <li>Hiển thị ngày cập nhật data trên panel CDS</li>
+                <li>Tải CSV backup song song</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Bookmarklet v3.1 — Dùng overlay thay vì alert (HIS override alert gây tự tắt)
+// Regex fix: \\s → \s (single escape for whitespace class)
+var bmCode = 'javascript:void((async()=>{try{var T=document,d=T;T.querySelectorAll("iframe").forEach(i=>{try{if(i.contentDocument){var c=i.contentDocument;if(c.querySelector(".cg-autocomplete"))d=c}}catch(e){}});var gs=[...d.querySelectorAll(".cg-autocomplete.combogrid")].filter(g=>g.offsetWidth>0);var ov=T.createElement("div");ov.id="ala-ov";ov.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.95);color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 22px system-ui;text-align:center;cursor:pointer";ov.onclick=function(){ov.remove()};if(!gs.length){ov.textContent="Bang thuoc chua bung! Click o Ten thuoc truoc. (Nhan de dong)";T.body.appendChild(ov);return}var g=gs[gs.length-1],tp=1,pi=g.querySelector("[id*=navInfo]");if(pi){var m=pi.innerText.match(/of\\s*(\\d+)/i);if(m)tp=+m[1]}ov.textContent="Dang cao... 0/"+tp;ov.onclick=null;ov.style.cursor="wait";T.body.appendChild(ov);var R=[],S=new Set();for(var p=1;p<=tp;p++){var its=g.querySelectorAll(".cg-comboItem");for(var i=0;i<its.length;i++){var cs=its[i].querySelectorAll(".cg-DivItem");if(cs.length>=3){var n=cs[1]?cs[1].innerText.trim():"",h=cs[2]?cs[2].innerText.trim():"";if(n&&!S.has(n)){S.add(n);R.push({ten:n,hc:h})}}}ov.textContent="Dang cao... "+p+"/"+tp+" ("+R.length+" thuoc)";if(p<tp){var nb=g.querySelector(".ui-icon-seek-next");if(nb){var b=nb.closest(".cg-pg-button")||nb.parentElement;if(b&&!b.classList.contains("cg-state-disabled")){var ft=its[0]?its[0].querySelector(".cg-DivItem:nth-child(2)"):"";ft=ft?ft.innerText.trim():"";b.click();var w=0;while(w<8e3){await new Promise(r=>setTimeout(r,20));w+=20;var nf=g.querySelector(".cg-comboItem .cg-DivItem:nth-child(2)");if(nf&&nf.innerText.trim()!==ft)break}}else break}else break}}ov.style.cursor="pointer";ov.onclick=function(){ov.remove()};if(!R.length){ov.textContent="0 thuoc! (Nhan de dong)";return}window.dispatchEvent(new CustomEvent("ALADINN_CRAWL_RESULT",{detail:{drugs:R}}));ov.textContent="Da cao "+R.length+" thuoc va cap nhat CDS! (Nhan de dong)"}catch(e){var o=T.getElementById("ala-ov")||T.createElement("div");o.id="ala-ov";o.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.95);color:#f87171;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 18px system-ui;text-align:center;cursor:pointer";o.onclick=function(){o.remove()};o.textContent="Loi: "+e.message+" (Nhan de dong)";if(!o.parentNode)T.body.appendChild(o)}})())';
+
+// Validate
+try { new Function(bmCode.replace('javascript:','')); console.log('[Bookmarklet] OK! Size:', bmCode.length); } catch(e) { console.error('[Bookmarklet] SYNTAX ERROR:', e.message); }
+document.getElementById('bm-link').href = bmCode;
+</script>
+
+</body>
+</html>

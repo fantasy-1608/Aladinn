@@ -1,0 +1,180 @@
+/**
+ * 🧞 Aladinn — Core CSS
+ * Shared styles, z-index scale, CSS variables, animations
+ */
+
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
+:root {
+    /* Colors - Aladdin Theme */
+    --aladinn-primary: #a855f7;
+    --aladinn-primary-hover: #9333ea;
+    --primary-dark: #1a0b2e;
+    --primary-light: #2d1b4e;
+    --accent-gold: #ffd700;
+    --accent-gold-glow: rgba(255, 215, 0, 0.6);
+    --magic-teal: #00f0ff;
+    --magic-teal-glow: rgba(0, 240, 255, 0.5);
+    
+    --aladinn-success: #10b981;
+    --aladinn-warning: #f59e0b;
+    --aladinn-error: #ef4444;
+    --aladinn-info: #00f0ff;
+
+    /* Text */
+    --aladinn-text-primary: #f0f0f0;
+    --aladinn-text-secondary: #00f0ff;
+    --aladinn-text-muted: #d0e0ff;
+
+    /* Backgrounds */
+    --aladinn-bg-primary: #1a0b2e;
+    --aladinn-bg-secondary: #2d1b4e;
+    --aladinn-bg-hover: rgba(255, 215, 0, 0.1);
+    --aladinn-bg-glass: rgba(45, 27, 78, 0.6);
+
+    /* Borders */
+    --aladinn-border: rgba(255, 215, 0, 0.3);
+    --aladinn-border-hover: var(--accent-gold);
+
+    /* Shadows */
+    --aladinn-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --aladinn-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --aladinn-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    --aladinn-shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.1), 0 0 30px var(--magic-teal-glow);
+
+    /* Radius */
+    --aladinn-radius-sm: 6px;
+    --aladinn-radius-md: 12px;
+    --aladinn-radius-lg: 16px;
+    --aladinn-radius-xl: 24px;
+
+    /* Font */
+    --aladinn-font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --aladinn-font-title: 'Cinzel', serif;
+}
+
+/* ========================================
+   TOAST ANIMATIONS
+   ======================================== */
+@keyframes aladinnToastIn {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes aladinnToastOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}
+
+@keyframes aladinnFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes aladinnSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes aladinnPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes aladinnSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes aladinnShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* ========================================
+   TOAST CONTAINER
+   ======================================== */
+#aladinn-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9600;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.aladinn-toast {
+    padding: 10px 16px;
+    border-radius: var(--aladinn-radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+    pointer-events: auto;
+    box-shadow: var(--aladinn-shadow-lg);
+    animation: aladinnToastIn 0.3s ease;
+    font-family: var(--aladinn-font);
+}
+
+.aladinn-toast-success { background: var(--aladinn-success); }
+.aladinn-toast-error { background: var(--aladinn-error); }
+.aladinn-toast-warning { background: var(--aladinn-warning); }
+.aladinn-toast-info { background: var(--aladinn-info); }
+
+/* ========================================
+   SHARED UTILITY CLASSES
+   ======================================== */
+.aladinn-hidden { display: none !important; }
+.aladinn-glass {
+    background: var(--aladinn-bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--aladinn-border);
+}
+
+.glass-panel {
+    background: var(--aladinn-bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--aladinn-border);
+    border-radius: var(--aladinn-radius-xl);
+    box-shadow: var(--aladinn-shadow-xl);
+}
+
+.glow-gold {
+    box-shadow: 0 0 15px var(--accent-gold-glow);
+}
+
+.glow-teal {
+    box-shadow: 0 0 15px var(--magic-teal-glow);
+}
+
+.aladinn-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-top: 2px solid var(--accent-gold);
+    border-radius: 50%;
+    animation: aladinnSpin 0.8s linear infinite;
+}

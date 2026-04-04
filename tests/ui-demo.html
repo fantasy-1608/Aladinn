@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aladinn UI Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-dark: #1a0b2e;
+            --primary-light: #2d1b4e;
+            --accent-gold: #ffd700;
+            --accent-gold-glow: rgba(255, 215, 0, 0.6);
+            --magic-teal: #00f0ff;
+            --magic-teal-glow: rgba(0, 240, 255, 0.5);
+            --text-light: #f0f0f0;
+            --glass-bg: rgba(45, 27, 78, 0.6);
+            --glass-border: rgba(255, 215, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(255, 215, 0, 0.15) 0%, transparent 25%);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Magical ambient particles */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: transparent url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxjaXJjbGUgY3g9IjEwJSIgY3k9IjIwJSIgcj0iMSIgZmlsbD0iI0ZGRCIgb3BhY2l0eT0iMC44Ii8+PGNpcmNsZSBjeD0iMzAlIiBjeT0iNzAlIiByPSIyIiBmaWxsPSIjRkZEIiBvcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSI4MCUiIGN5PSI0MCUiIHI9IjEuNSIgZmlsbD0iI0ZGRCIgb3BhY2l0eT0iMC42Ii8+PGNpcmNsZSBjeD0iNjAlIiBjeT0iMTAlIiByPSIxIiBmaWxsPSIjRkZEIiBvcGFjaXR5PSIwLjkiLz48Y2lyY2xlIGN4PSI5MCUiIGN5PSI5MCUiIHI9IjIiIGZpbGw9IiNGRkQiIG9wYWNpdHk9IjAuNCIvPjwvc3ZnPg==') repeat;
+            animation: twinkle 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* Main Container: The Lamp Interface */
+        .aladinn-app-container {
+            width: 400px;
+            height: 600px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.5),
+                inset 0 0 20px rgba(255, 215, 0, 0.1),
+                0 0 30px var(--magic-teal-glow);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Stylized Header */
+        .app-header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .lamp-icon {
+            font-size: 3rem;
+            color: var(--accent-gold);
+            filter: drop-shadow(0 0 15px var(--accent-gold-glow));
+            margin-bottom: 10px;
+            animation: pulse-glow 2s infinite alternate;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .lamp-icon:hover {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 10px var(--accent-gold-glow)); }
+            100% { filter: drop-shadow(0 0 25px var(--accent-gold)); }
+        }
+
+        .app-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--accent-gold), #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .app-subtitle {
+            font-size: 0.9rem;
+            color: var(--magic-teal);
+            letter-spacing: 1px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Mystical Smoke Effect originating from Lamp */
+        .smoke-container {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .lamp-icon:hover + .smoke-container {
+            opacity: 1;
+        }
+
+        .smoke {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, var(--magic-teal-glow) 0%, transparent 60%);
+            filter: blur(10px);
+            animation: rise 3s infinite linear;
+            border-radius: 50%;
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(0) scale(0.5); opacity: 0.8; }
+            100% { transform: translateY(-80px) scale(2); opacity: 0; }
+        }
+
+        /* Action Buttons Area */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .magic-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px 15px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .magic-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .magic-btn:hover::before {
+            left: 100%;
+        }
+
+        .magic-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--accent-gold);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3), 0 0 15px var(--accent-gold-glow);
+        }
+
+        .magic-btn i {
+            font-size: 1.8rem;
+            color: var(--magic-teal);
+            transition: color 0.3s ease;
+        }
+
+        .magic-btn:hover i {
+            color: var(--accent-gold);
+            animation: bounce 0.5s ease infinite alternate;
+        }
+
+        @keyframes bounce {
+            to { transform: translateY(-3px); }
+        }
+
+        .magic-btn span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Status/Prompt Area */
+        .genie-prompt {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(45, 27, 78, 0.4));
+            border: 1px solid var(--magic-teal);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: auto;
+            position: relative;
+        }
+
+        .genie-prompt::before {
+            content: '🧞‍♂️';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 1.5rem;
+            background: var(--primary-dark);
+            border-radius: 50%;
+            padding: 2px;
+            box-shadow: 0 0 10px var(--magic-teal-glow);
+        }
+
+        .prompt-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #d0e0ff;
+            font-style: italic;
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            width: 5px;
+            height: 15px;
+            background: var(--magic-teal);
+            margin-left: 5px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Decorative Elements */
+        .ornate-border {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--accent-gold);
+            opacity: 0.3;
+        }
+        .top-left { top: 15px; left: 15px; border-right: none; border-bottom: none; border-top-left-radius: 10px; }
+        .top-right { top: 15px; right: 15px; border-left: none; border-bottom: none; border-top-right-radius: 10px; }
+        .bottom-left { bottom: 15px; left: 15px; border-right: none; border-top: none; border-bottom-left-radius: 10px; }
+        .bottom-right { bottom: 15px; right: 15px; border-left: none; border-top: none; border-bottom-right-radius: 10px; }
+
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <div class="aladinn-app-container">
+        <!-- Ornate Corners -->
+        <div class="ornate-border top-left"></div>
+        <div class="ornate-border top-right"></div>
+        <div class="ornate-border bottom-left"></div>
+        <div class="ornate-border bottom-right"></div>
+
+        <div class="app-header">
+            <i class="fa-solid fa-cloud-meatball lamp-icon" style="display:none;"></i>
+             <!-- Using a custom SVG for the Magic Lamp since FontAwesome might not have a perfect one -->
+            <svg class="lamp-icon" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 14c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm-2.12-6.52c-.89 1.16-1.36 2.6-1.36 4.14 0 1.25.33 2.47.96 3.55-2.07.56-4.54.83-7.48.83s-5.41-.27-7.48-.83c.63-1.08.96-2.3.96-3.55 0-1.54-.47-2.98-1.36-4.14 1.48.55 3.03.88 4.67 1.01-1.35-1.92-1.96-4.22-1.74-6.56C5.07 1 6.55 0 8.23 0h7.54c1.68 0 3.16 1 4.18 2.53.22 2.34-.39 4.64-1.74 6.56 1.64-.13 3.19-.46 4.67-1.01zM11 16.5c-4.42 0-8 1.57-8 3.5S6.58 23.5 11 23.5s8-1.57 8-3.5-3.58-3.5-8-3.5z"/>
+            </svg>
+            <div class="smoke-container">
+                <div class="smoke" style="animation-delay: 0s;"></div>
+                <div class="smoke" style="animation-delay: 1s;"></div>
+                <div class="smoke" style="animation-delay: 2s;"></div>
+            </div>
+            <h1 class="app-title">ALADINN</h1>
+            <div class="app-subtitle">Trợ lý Thần Đèn VNPT HIS</div>
+        </div>
+
+        <div class="action-grid">
+            <button class="magic-btn">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Tự động Điền</span>
+            </button>
+            <button class="magic-btn">
+                <i class="fa-solid fa-microphone-lines"></i>
+                <span>Ra lệnh Giọng nói</span>
+            </button>
+            <button class="magic-btn">
+                <i class="fa-solid fa-signature"></i>
+                <span>Ký số Thần tốc</span>
+            </button>
+            <button class="magic-btn">
+                <i class="fa-solid fa-scroll"></i>
+                <span>Quét Hồ sơ</span>
+            </button>
+        </div>
+
+        <div class="genie-prompt">
+            <div class="prompt-text">
+                "Xin chào Chủ nhân! Trợ lý Thần đèn đã thức tỉnh. Ngài có mong muốn tự động hóa tác vụ nào hôm nay không?"<span class="typing-indicator"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple JS for interaction effects
+        const buttons = document.querySelectorAll('.magic-btn');
+        const promptText = document.querySelector('.prompt-text');
+        const defaultPrompt = "\"Xin chào Chủ nhân! Trợ lý Thần đèn đã thức tỉnh. Ngài có mong muốn tự động hóa tác vụ nào hôm nay không?\"";
+
+        buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', (e) => {
+                const actionName = e.currentTarget.querySelector('span').innerText;
+                promptText.innerHTML = `"Đang chuẩn bị phép thuật cho <strong>${actionName}</strong>... Xin ngài cứ sai bảo!"<span class="typing-indicator"></span>`;
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                promptText.innerHTML = defaultPrompt + '<span class="typing-indicator"></span>';
+            });
+            
+            btn.addEventListener('click', (e) => {
+                // Ripple effect
+                let ripple = document.createElement('div');
+                ripple.style.position = 'absolute';
+                ripple.style.background = 'rgba(255, 215, 0, 0.4)';
+                ripple.style.borderRadius = '50%';
+                ripple.style.transform = 'translate(-50%, -50%)';
+                ripple.style.pointerEvents = 'none';
+                ripple.style.width = '10px';
+                ripple.style.height = '10px';
+                ripple.style.left = e.offsetX + 'px';
+                ripple.style.top = e.offsetY + 'px';
+                ripple.style.animation = 'ripple-effect 0.6s linear';
+                
+                if (!document.querySelector('#ripple-style')) {
+                    let style = document.createElement('style');
+                    style.id = 'ripple-style';
+                    style.innerHTML = `@keyframes ripple-effect { to { width: 300px; height: 300px; opacity: 0; } }`;
+                    document.head.appendChild(style);
+                }
+                
+                e.currentTarget.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body>
+</html>

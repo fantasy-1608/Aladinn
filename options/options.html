@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cài đặt Aladinn — Trợ lý VNPT HIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0b0f19;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --border: #374151;
+            --border-hover: #4b5563;
+            --text-main: #f8fafc;
+            --text-dim: #9ca3af;
+            --primary: #7c3aed;
+            --primary-hover: #6d28d9;
+            --primary-light: rgba(124, 58, 237, 0.15);
+            --success: #10b981;
+            --error: #ef4444;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 50%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 960px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 40px;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            height: fit-content;
+            border: 1px solid var(--border);
+            position: sticky;
+            top: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14);
+        }
+
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .genie-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: contain;
+            background: var(--primary-light);
+            padding: 4px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            display: inline-block;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-dim);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            border: 1px solid transparent;
+        }
+
+        .nav-item img.genie-inline {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            opacity: 0.6;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+            border-color: var(--border-hover);
+        }
+
+        .nav-item:hover img.genie-inline {
+            opacity: 0.9;
+            transform: scale(1.1);
+        }
+
+        .nav-item.active {
+            background: var(--primary-light);
+            color: #c4b5fd;
+            font-weight: 600;
+            border-color: rgba(124, 58, 237, 0.3);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .section {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            border: 1px solid var(--border);
+            display: none;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin: 0 0 32px 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            color: #fff;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #d1d5db;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .help-text a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toggles */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .toggle-row:hover {
+            border-color: var(--border-hover);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-info strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .toggle-info span {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.4;
+            display: block;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border);
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* PIN Boxes */
+        .pin-boxes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pin-box {
+            width: 48px;
+            height: 56px;
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 24px;
+            text-align: center;
+            color: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .pin-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .pin-box.error {
+            border-color: var(--error);
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Magic Reveal Animation */
+        @keyframes magicAppear {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(10px); box-shadow: 0 0 0 rgba(168, 85, 247, 0); }
+            50% { opacity: 1; transform: scale(1.02) translateY(-2px); filter: blur(0); box-shadow: 0 0 30px rgba(168, 85, 247, 0.8); background: rgba(124,58,237,0.25); }
+            100% { opacity: 1; transform: scale(1) translateY(0); box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); background: rgba(124,58,237,0.1); }
+        }
+
+        .magic-reveal {
+            animation: magicAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+            border: 1px solid var(--primary) !important;
+        }
+
+        /* Sparkles */
+        .sparkle-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .sparkle {
+            position: absolute;
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px #a855f7, 0 0 20px 4px #c084fc;
+            animation: sparkleFly cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes sparkleFly {
+            0% { transform: scale(0) translate(0, 0); opacity: 0; }
+            50% { transform: scale(1) translate(var(--tx), var(--ty)); opacity: 1; }
+            100% { transform: scale(0) translate(calc(var(--tx) * 1.5), calc(var(--ty) * 1.5)); opacity: 0; }
+        }
+
+        /* Status Toast */
+        #status-toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        #status-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        #status-toast.error {
+            background: var(--error);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="app-brand">
+                <img src="../assets/icons/aladinn-logo.png" alt="Aladinn Genie Icon" class="genie-img" style="border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                <div>
+                    <h1>Aladinn</h1>
+                    <span class="version" id="aladinn-version-tag" style="cursor: pointer;" title="Click 5 lần để nhận bất ngờ ✨">Version 1.0.0</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" data-target="sec-voice">
+                    🧠 AI Nhập liệu
+                </div>
+                <div class="nav-item" data-target="sec-scanner">
+                    📸 Smart Scanner
+                </div>
+                <div class="nav-item" data-target="sec-sign">
+                    ✍️ Ký số tự động
+                </div>
+                <div class="nav-item" data-target="sec-cds">
+                    🧠 Cảnh báo C.D.S
+                </div>
+                <div class="nav-item" data-target="sec-security">
+                    🔒 Bảo mật
+                </div>
+                <div class="nav-item" data-target="sec-diagnostic">
+                    🐛 Chẩn đoán & Lỗi
+                </div>
+            </nav>
+            
+            <div style="margin-top: 40px;">
+                <button id="save-all-btn" class="btn" style="width: 100%; justify-content: center;">
+                    💾 Lưu Cấu Hình
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content-area">
+
+            <!-- VOICE SETTINGS -->
+            <section id="sec-voice" class="section active">
+                <h2>🧠 Cấu hình AI Nhập liệu & Giọng nói</h2>
+                
+                <div class="form-group">
+                    <label>Gemini API Key</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="password" id="opt-api-key" placeholder="AIzaSy..." style="flex: 1;">
+                        <button id="fetch-models-btn" class="btn btn-secondary" style="padding: 0 16px; white-space: nowrap;">🔍 Dò tìm mô hình</button>
+                    </div>
+                    <div class="help-text">Lấy key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. Dò tìm để cập nhật danh sách mô hình.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Mô hình AI ưu tiên</label>
+                    <div style="display: flex; gap: 12px;">
+                        <select id="opt-ai-model">
+                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Khuyên dùng - Nhanh nhất)</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Thông minh nhưng chậm hơn)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <strong>Tự động điền PKĐK</strong>
+                        <span>Tự động chọn và điền mẫu "Chuyển viện PKĐK"</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-voice-chuyenvien">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- SCANNER SETTINGS -->
+            <section id="sec-scanner" class="section">
+                <h2>📸 Cấu hình Tiện ích Quét (Scanner)</h2>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <strong>Hiển thị Tooltip Sinh hiệu</strong>
+                        <span>Tự động hiện tooltip sinh hiệu (HA, Mạch...) khi di chuột vào giường</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-scan-tooltip">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <strong>Tự động điền Form Dinh Dưỡng</strong>
+                        <span>Điền mẫu DD-03 tự động dựa trên mã bệnh</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-scan-nutrition">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+
+            </section>
+
+            <!-- SIGN SETTINGS -->
+            <section id="sec-sign" class="section">
+                <h2>✍️ Cấu hình Ký số tự động</h2>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <strong>Chế độ Ký an toàn (Khuyên dùng)</strong>
+                        <span>Bắt buộc xác nhận trước khi hệ thống tự động click nút "Ký số/Xác nhận". Tránh ký nhầm hồ sơ.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-sign-safemode" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- CDS SETTINGS -->
+            <section id="sec-cds" class="section">
+                <h2>🧠 Cấu hình cảnh báo an toàn lâm sàng</h2>
+                
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <strong>Lọc cảnh báo mức độ thấp</strong>
+                        <span>Chỉ hiển thị cảnh báo mức Warning & Critical, ẩn các cảnh báo Info/Low để tránh phiền phức.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="opt-cds-filter-low" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <button id="btn-sync-cds-data" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+                        <span class="icon">🔄</span> Cập nhật/Đồng bộ CSDL Thuốc
+                    </button>
+                    <div class="help-text" style="text-align: center;">Tải lại các file luật JSON vào bộ nhớ đệm ẩn (IndexedDB).</div>
+                </div>
+            </section>
+
+            <!-- SECURITY SETTINGS -->
+            <section id="sec-security" class="section">
+                <h2>🔒 Bảo mật</h2>
+                
+                <div id="pin-setup-container" class="form-group">
+                    <label id="pin-title">Thiết lập mã PIN mới (6 số)</label>
+                    <div class="pin-boxes" id="pin-boxes-container">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="0">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="1">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="2">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="3">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="4">
+                        <input type="password" maxlength="1" class="pin-box" data-idx="5">
+                    </div>
+                    <div class="help-text" id="pin-help-text">Bảo vệ cấu hình và quyền sử dụng Voice AI.</div>
+                    
+                    <div id="pin-actions" style="margin-top: 20px; display: none; gap: 12px;">
+                        <button id="btn-change-pin" class="btn btn-secondary" style="font-size: 13px; padding: 8px 16px;">Đổi mã PIN</button>
+                        <button id="btn-reset-pin" class="btn btn-secondary" style="font-size: 13px; padding: 8px 16px; color: #ef4444; border-color: rgba(239,68,68,0.3);">Xóa mã PIN & Khôi phục</button>
+                    </div>
+                </div>
+                <!-- Hidden input for backward compatibility with options.js generic save logic -->
+                <input type="hidden" id="opt-pin" value="">
+            </section>
+
+            <!-- DIAGNOSTIC SETTINGS -->
+            <section id="sec-diagnostic" class="section">
+                <h2>🐛 Báo lỗi & Chẩn đoán Hệ thống</h2>
+                
+                <div class="toggle-row" style="margin-bottom: 20px;">
+                    <div class="toggle-info">
+                        <strong>Công cụ Diagnostic ngầm</strong>
+                        <span>Tự động phát hiện lỗi thay đổi giao diện (VNPT_UI_CHANGE) để báo cáo. File log ẩn danh lưu an toàn ở định dạng JSON. Chỉ nhận thông số, cấm bắt thông tin Y khoa!</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <button id="btn-load-diagnostic" class="btn btn-secondary" style="font-size: 13px;">🔄 Tải nhật ký</button>
+                        <button id="btn-download-diagnostic" class="btn btn-secondary" style="font-size: 13px;">📥 Tải về (JSON)</button>
+                        <button id="btn-clear-diagnostic" class="btn btn-secondary" style="font-size: 13px; color: #ef4444; border-color: rgba(239,68,68,0.3);">🗑 Xóa trắng Log</button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between;">
+                            <span>Báo cáo gần nhất</span>
+                            <span id="diagnostic-count">0 mục</span>
+                        </div>
+                        <div id="diagnostic-log-container" style="max-height: 300px; overflow-y: auto; padding: 12px 16px; font-size: 13px; color: #fff; font-family: monospace;">
+                            <em style="color: var(--text-dim)">Hệ thống hiện tại không ghi nhận lỗi nào.</em>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Status Toast -->
+    <div id="status-toast">Lưu cấu hình thành công!</div>
+
+    <script type="module" src="options.js"></script>
+</body>
+</html>
