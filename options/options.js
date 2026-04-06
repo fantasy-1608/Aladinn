@@ -246,6 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Crypto: Hash PIN + Encrypt API Key ---
         if (isNewPin) {
+            // Check crypto availability first
+            if (!crypto?.subtle) {
+                showToast('❌ Trình duyệt không hỗ trợ mã hóa (crypto.subtle). Vui lòng cập nhật Chrome.', true);
+                return;
+            }
             try {
                 const salt = _generateSalt();
                 const hash = await _hashPIN(pinVal, salt);
@@ -259,16 +264,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (apiKeyVal) {
                     const encryptedKey = await _encryptAPIKey(apiKeyVal, pinVal, salt);
                     localPatch.geminiApiKey_encrypted = encryptedKey;
-                    // SECURITY: Do NOT save plaintext when PIN is set
-                    // Background script will decrypt geminiApiKey_encrypted on demand
                 }
 
                 // Remove legacy plaintext PIN and plaintext API key
                 chrome.storage.local.remove(['dashboard_password', 'geminiApiKey']);
 
                 initPinUI('••••••');
-            } catch (_cryptoErr) {
-                showToast('❌ Lỗi mã hóa PIN. Vui lòng thử lại.', true);
+            } catch (cryptoErr) {
+                console.error('[Aladinn Options] Lỗi mã hóa PIN:', cryptoErr);
+                showToast(`❌ Lỗi mã hóa PIN: ${cryptoErr.message || 'Unknown error'}. Kiểm tra Console.`, true);
                 return;
             }
         } else {
@@ -315,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnChangePin = document.getElementById('btn-change-pin');
     const btnResetPin = document.getElementById('btn-reset-pin');
     
-    let __hasExistingPin = false;
+    let _hasExistingPin = false;
 
     function initPinUI(existingPin) {
         if (existingPin && existingPin.length >= 6) {
