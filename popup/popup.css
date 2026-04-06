@@ -559,3 +559,120 @@ body {
     font-size: 11px;
     color: var(--aladinn-text-muted);
 }
+
+/* Update Banner */
+.update-banner {
+    margin: 8px 12px;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 215, 0, 0.1));
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    border-radius: var(--aladinn-radius-md);
+    animation: updatePulse 2s ease-in-out infinite alternate;
+    position: relative;
+    overflow: hidden;
+}
+
+.update-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+        transparent, rgba(255, 107, 53, 0.1), transparent, 
+        rgba(255, 215, 0, 0.1), transparent
+    );
+    animation: updateSpin 4s linear infinite;
+    z-index: 0;
+}
+
+@keyframes updateSpin {
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes updatePulse {
+    0% { box-shadow: 0 0 5px rgba(255, 107, 53, 0.2); }
+    100% { box-shadow: 0 0 15px rgba(255, 107, 53, 0.4); }
+}
+
+.update-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.update-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.update-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.update-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #FF6B35;
+}
+
+.update-title span {
+    color: var(--accent-gold);
+    font-weight: 800;
+}
+
+.update-desc {
+    font-size: 11px;
+    color: var(--aladinn-text-muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.update-actions {
+    display: flex;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.update-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: var(--aladinn-radius-sm);
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.update-btn-primary {
+    background: linear-gradient(135deg, #FF6B35, #FF8C42);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.update-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.5);
+}
+
+.update-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--aladinn-text-muted);
+    border: 1px solid var(--aladinn-border);
+}
+
+.update-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--aladinn-text-primary);
+}

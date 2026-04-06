@@ -204,5 +204,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadSignHistory();
     setInterval(updateSignStats, 2000);
 
+    // ========================================
+    // UPDATE CHECKER UI
+    // ========================================
+    const updateBanner = document.getElementById('update-banner');
+    const updateVersion = document.getElementById('update-version');
+    const updateChangelog = document.getElementById('update-changelog');
+    const updateDownloadBtn = document.getElementById('update-download-btn');
+    const updateDismissBtn = document.getElementById('update-dismiss-btn');
+    const versionBadge = document.querySelector('.version-badge');
+
+    // Hiện version hiện tại
+    const manifest = chrome.runtime.getManifest();
+    if (versionBadge) versionBadge.textContent = `v${manifest.version}`;
+
+    async function checkAndShowUpdate() {
+        try {
+            const result = await chrome.storage.local.get(['aladinn_update', 'aladinn_update_dismissed']);
+            const update = result.aladinn_update;
+            const dismissed = result.aladinn_update_dismissed;
+
+            if (update && update.newVersion && dismissed !== update.newVersion) {
+                // Có bản update mới chưa bị dismiss
+                updateVersion.textContent = `v${update.newVersion}`;
+                
+                // Rút gọn changelog (lấy dòng đầu)
+                const changelog = update.changelog || '';
+                const firstLine = changelog.split('\n').find(l => l.trim()) || 'Bản cập nhật mới!';
+                updateChangelog.textContent = firstLine.replace(/^#+\s*/, '').substring(0, 50);
+
+                // Set download link
+                if (update.releaseUrl) {
+                    updateDownloadBtn.href = update.releaseUrl;
+                } else if (update.downloadUrl) {
+                    updateDownloadBtn.href = update.downloadUrl;
+                }
+
+                updateBanner.style.display = 'block';
+            }
+        } catch (_err) {
+            // Ignore
+        }
+    }
+
+    // Dismiss button
+    if (updateDismissBtn) {
+        updateDismissBtn.addEventListener('click', async () => {
+            const result = await chrome.storage.local.get('aladinn_update');
+            const version = result.aladinn_update?.newVersion;
+            if (version) {
+                chrome.runtime.sendMessage({ action: 'dismissUpdate', version }).catch(() => {});
+            }
+            updateBanner.style.display = 'none';
+        });
+    }
+
+    // Check on popup open
+    checkAndShowUpdate();
+
     // Initialization done.
 });

@@ -6,6 +6,7 @@
     "author": "Huỳnh Trung Anh",
     "permissions": [
         "activeTab",
+        "alarms",
         "scripting",
         "storage",
         "tabs",

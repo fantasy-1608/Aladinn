@@ -12,6 +12,8 @@
 
 // Import AI client
 import { requestAI, cancelRequest } from './ai-client.js';
+// Import self-update checker
+import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
 
 // ========================================
 // INSTALLATION & STARTUP
@@ -25,12 +27,21 @@ chrome.runtime.onInstalled.addListener((details) => {
         });
     }
     updateBadge(true);
+    // Lên lịch kiểm tra update
+    scheduleUpdateCheck();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-    chrome.storage.local.get('aladinn_voice_enabled', (result) => {
-        updateBadge(result.aladinn_voice_enabled !== false);
-    });
+    updateBadge(true);
+    // Lên lịch kiểm tra update khi browser khởi động
+    scheduleUpdateCheck();
+});
+
+// Alarm listener cho update checker
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'aladinn-update-check') {
+        checkForUpdate();
+    }
 });
 
 // Initial badge + legacy cleanup
@@ -136,6 +147,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         sendResponse({ ok: true });
         return false;
+    }
+
+    // ---- UPDATE CHECKER ----
+    if (action === 'checkUpdate') {
+        checkForUpdate().then(info => {
+            sendResponse({ update: info, currentVersion: getCurrentVersion() });
+        });
+        return true; // async
+    }
+    if (action === 'dismissUpdate') {
+        dismissUpdate(message.version).then(() => {
+            sendResponse({ ok: true });
+        });
+        return true;
     }
 
     // ---- SESSION PIN RETRIEVAL (for content scripts that cannot access chrome.storage.session) ----
