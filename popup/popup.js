@@ -47,6 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        // Notify background service worker directly (for auto-sign state sync)
+        chrome.runtime.sendMessage({ type: 'FEATURE_TOGGLE', features }).catch(() => {});
+
         // Special handling for legacy voice badge/toggle
         chrome.storage.local.set({ aladinn_voice_enabled: features.voice });
         chrome.runtime.sendMessage({ type: 'TOGGLE_VOICE', enabled: features.voice }).catch(() => {});

@@ -46,28 +46,34 @@ chrome.storage.local.get(['aladinn_voice_enabled', 'geminiBaseUrl'], (result) =>
 // ========================================
 // BADGE HELPER
 // ========================================
-function updateBadge(isEnabled) {
+function updateBadge(_isEnabled) {
     chrome.action.setBadgeText({ text: '' });
 }
 
 // ========================================
-// SIGN MODULE: Auto-Sign State & PDF Close
+// SIGN MODULE: Auto-Sign State & PDF Switch-Back
 // ========================================
 let autoSignEnabled = false;
+let lastActiveTabId = null; // Track the tab user was on before PDF opened
 
-function closePdfPreviewTabs() {
-    chrome.tabs.query({}, (tabs) => {
-        for (const tab of tabs) {
-            if (tab.url && (
-                tab.url.includes('blob:') ||
-                tab.url.includes('.pdf') ||
-                tab.url.includes('pdf-viewer') ||
-                tab.url.includes('PrintPreview')
-            )) {
-                chrome.tabs.remove(tab.id).catch(() => {});
-            }
+// Track active tab changes to remember the "previous" (non-PDF) tab
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (chrome.runtime.lastError || !tab?.url) return;
+        // Only remember non-PDF tabs as "previous"
+        const isPdf = tab.url.includes('blob:') || tab.url.includes('.pdf') ||
+                      tab.url.includes('pdf-viewer') || tab.url.includes('PrintPreview');
+        if (!isPdf) {
+            lastActiveTabId = activeInfo.tabId;
         }
     });
+});
+
+function switchBackFromPdfTab(_pdfTabId) {
+    // Switch focus back to the last non-PDF tab
+    if (lastActiveTabId != null) {
+        chrome.tabs.update(lastActiveTabId, { active: true }).catch(() => {});
+    }
 }
 
 /**
@@ -107,29 +113,15 @@ function autoClickInTab(tabId) {
     }).catch(() => { /* tab may have been closed */ });
 }
 
-// Periodically auto-click when auto-sign is enabled
-let autoClickInterval = null;
-function startAutoClickLoop() {
-    if (autoClickInterval) return;
-    autoClickInterval = setInterval(() => {
-        if (!autoSignEnabled) {
-            clearInterval(autoClickInterval);
-            autoClickInterval = null;
-            return;
-        }
-        // Find the active vncare.vn tab and inject
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            const tab = tabs?.[0];
-            if (tab?.url?.includes('vncare.vn')) {
-                autoClickInTab(tab.id);
-            }
-        });
-    }, 500);
-}
+// NOTE: Auto-click polling đã được xóa khỏi background.
+// auto-click-helper.js (content script) xử lý auto-click trực tiếp trong page.
+// Background chỉ giữ autoClickInTab() cho on-demand use (action: autoClickInAllFrames).
 
-// Always enable auto-click on startup (for manual signing support)
-autoSignEnabled = true;
-setTimeout(() => startAutoClickLoop(), 2000);
+// Read feature flags on startup (for PDF switch-back behavior)
+chrome.storage.local.get('aladinn_features', (result) => {
+    const features = result.aladinn_features || {};
+    autoSignEnabled = features.sign !== false;
+});
 
 // ========================================
 // UNIFIED MESSAGE HANDLER (single listener — fixes race conditions)
@@ -249,10 +241,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    // ---- FEATURE TOGGLE: Sync auto-sign state from popup ----
+    if (type === 'FEATURE_TOGGLE') {
+        const features = message.features || {};
+        const signEnabled = features.sign !== false;
+        if (!signEnabled && autoSignEnabled) {
+            autoSignEnabled = false;
+            console.log('[Aladinn BG] Sign module disabled → auto-sign OFF');
+        } else if (signEnabled && !autoSignEnabled) {
+            autoSignEnabled = true;
+            console.log('[Aladinn BG] Sign module enabled → auto-sign ON');
+        }
+        // Don't sendResponse here — let content.js handler respond
+        return false;
+    }
+
     // ---- SIGN MODULE: Auto-Sign Control ----
     if (action === 'enableAutoSign') {
         autoSignEnabled = true;
-        startAutoClickLoop();
         sendResponse({ ok: true });
         return false;
     }
@@ -264,7 +270,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (action === 'closePdfTab') {
-        closePdfPreviewTabs();
+        // Instead of closing PDF tabs, switch back to previous tab
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const tab = tabs?.[0];
+            if (tab) switchBackFromPdfTab(tab.id);
+        });
         sendResponse({ ok: true });
         return false;
     }
@@ -301,13 +311,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
 });
 
-// Auto-close PDF preview tabs when auto-sign is active
+// Auto switch-back from PDF preview tabs when auto-sign is active
+// (Instead of closing PDF tabs, just switch focus back to the HIS tab)
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (!autoSignEnabled) return;
     if (changeInfo.status === 'complete' && tab.url) {
         if (tab.url.includes('blob:') || tab.url.includes('.pdf') ||
             tab.url.includes('PrintPreview') || tab.url.includes('pdf-viewer')) {
-            setTimeout(() => chrome.tabs.remove(tabId).catch(() => {}), 500);
+            setTimeout(() => switchBackFromPdfTab(tabId), 500);
         }
     }
 });

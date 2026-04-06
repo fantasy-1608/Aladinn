@@ -8,8 +8,25 @@
 
     let lastConfirmClick = 0;
     let lastOkClick = 0;
+    let isSignModuleEnabled = true; // Default to true, updated via storage
 
     console.log('[Aladinn/AutoClick] 🔄 Helper loaded in frame:', window.location.href.substring(0, 80));
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        // Load initial state
+        chrome.storage.local.get('aladinn_features', (result) => {
+            const features = result.aladinn_features || {};
+            isSignModuleEnabled = features.sign !== false;
+        });
+
+        // Listen for changes from popup
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local' && changes.aladinn_features) {
+                const features = changes.aladinn_features.newValue || {};
+                isSignModuleEnabled = features.sign !== false;
+            }
+        });
+    }
 
     function findInShadowRoots(selector) {
         // Search main document first
@@ -28,13 +45,17 @@
     }
 
     setInterval(() => {
+        if (!isSignModuleEnabled) return;
+        // Khi signing session đang chạy, signing.js quản lý auto-click riêng
+        if (window.__aladinnSigningActive) return;
+
         const now = Date.now();
 
         // Auto-click #btnConfirm (e-Seal Smart CA "Xác nhận")
-        if (now - lastConfirmClick > 800) {
+        if (now - lastConfirmClick > 2000) {
             const confirmBtn = findInShadowRoots('#btnConfirm');
-            if (confirmBtn) {
-                console.log('[Aladinn/AutoClick] 🖊️ Clicking #btnConfirm');
+            if (confirmBtn && !confirmBtn.dataset.aladinnClicked) {
+                confirmBtn.dataset.aladinnClicked = '1';
                 confirmBtn.click();
                 lastConfirmClick = now;
                 return;
@@ -42,14 +63,14 @@
         }
 
         // Auto-click #alertify-ok (HIS "Đồng ý" success dialog)
-        if (now - lastOkClick > 1000) {
+        if (now - lastOkClick > 3000) {
             const okBtn = findInShadowRoots('#alertify-ok') ||
                           findInShadowRoots('.alertify-button-ok');
-            if (okBtn) {
-                console.log('[Aladinn/AutoClick] ✅ Clicking alertify-ok');
+            if (okBtn && !okBtn.dataset.aladinnClicked) {
+                okBtn.dataset.aladinnClicked = '1';
                 okBtn.click();
                 lastOkClick = now;
             }
         }
-    }, 300);
+    }, 1000);
 })();

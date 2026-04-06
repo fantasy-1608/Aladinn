@@ -221,17 +221,44 @@
             // Feature toggle update
             if (type === 'FEATURE_TOGGLE') {
                 window.Aladinn.features = message.features;
+
+                // Voice toggle
                 if (window.Aladinn?.Voice?.toggle) {
                     window.Aladinn.Voice.toggle(message.features.voice === true);
                 }
+
+                // Scanner toggle
+                if (message.features.scanner === false) {
+                    // Dừng scan đang chạy
+                    if (window.VNPTScanFlow?.stop) window.VNPTScanFlow.stop();
+                    // Ẩn native menu
+                    const nativeMenu = document.querySelector('.vnpt-native-menu-item');
+                    if (nativeMenu) nativeMenu.style.display = 'none';
+                    // Ẩn settings panel
+                    if (window.VNPTSettings?.hide) window.VNPTSettings.hide();
+                    if (Logger) Logger.info('Main', '📊 Scanner module TẮT');
+                } else {
+                    // Hiện lại native menu nếu đã bị ẩn
+                    const nativeMenu = document.querySelector('.vnpt-native-menu-item');
+                    if (nativeMenu) nativeMenu.style.display = '';
+                    if (Logger) Logger.info('Main', '📊 Scanner module BẬT');
+                }
+
+                // Sign toggle — forward to background để sync auto-sign state
+                chrome.runtime.sendMessage({
+                    type: 'FEATURE_TOGGLE',
+                    features: message.features
+                }).catch(() => {});
+
+                // CDS toggle
                 if (window.Aladinn?.CDS?.init) {
-                    const isEnabled = message.features.cds === true;
-                    // Lấy lại config filter để gởi vào cho đúng
+                    const cdsEnabled = message.features.cds === true;
                     chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                         const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
-                        window.Aladinn.CDS.init(isEnabled, filterLow);
+                        window.Aladinn.CDS.init(cdsEnabled, filterLow);
                     });
                 }
+
                 sendResponse({ success: true });
             }
 

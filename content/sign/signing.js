@@ -57,6 +57,7 @@ window.Aladinn.Sign.Signing = (function () {
         if (WORKFLOW.queue.length === 0) return;
 
         WORKFLOW.isActive = true;
+        window.__aladinnSigningActive = true;
         WORKFLOW.currentIndex = -1;
         WORKFLOW.stats.completed = 0;
         WORKFLOW.stats.skipped = 0;
@@ -83,6 +84,7 @@ window.Aladinn.Sign.Signing = (function () {
     function stopSession() {
         const UI = _ui();
         WORKFLOW.isActive = false;
+        window.__aladinnSigningActive = false;
         WORKFLOW.queue = [];
 
         // Close any open modal/dialog before stopping
@@ -693,6 +695,8 @@ window.Aladinn.Sign.Signing = (function () {
     // Polling loop — runs every 400ms, completely independent
     setInterval(() => {
         if (!AUTO_SIGN.isEnabled) return;
+        // Chỉ auto-click khi đang trong phiên ký số
+        if (!WORKFLOW.isActive) return;
         const now = Date.now();
         const UI = _ui();
 
