@@ -7,7 +7,7 @@
 // ⚠️ CẤU HÌNH: Thay bằng repo GitHub của bạn
 const UPDATE_CONFIG = {
     // GitHub repo format: owner/repo
-    githubRepo: 'AladinnHIS/Aladinn',
+    githubRepo: 'fantasy-1608/Aladinn',
     
     // Kiểm tra mỗi 4 giờ (ms)
     checkInterval: 4 * 60 * 60 * 1000,

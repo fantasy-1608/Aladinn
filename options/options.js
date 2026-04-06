@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     pinBoxes.forEach((box, idx) => {
-        box.addEventListener('input', (e) => {
+        box.addEventListener('input', (_e) => {
             if (box.value.length > 0) {
                 if (idx < 5) pinBoxes[idx + 1].focus();
             }
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSyncCds.disabled = true;
             
             // Send message to background or content to trigger re-seed
-            chrome.runtime.sendMessage({ type: 'FORCE_CDS_SYNC' }, (response) => {
+            chrome.runtime.sendMessage({ type: 'FORCE_CDS_SYNC' }, (_response) => {
                 showToast('✅ Đã nạp lại Cấu trúc Cảnh báo Lâm sàng!');
                 setTimeout(() => {
                     btnSyncCds.innerHTML = origText;
