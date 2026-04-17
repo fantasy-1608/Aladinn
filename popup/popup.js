@@ -2,7 +2,21 @@
  * 🧞 Aladinn — Unified Popup Logic
  */
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initPopup() {
+    // Helper to show errors inside Popup safely (No alert!)
+    function showError(msg) {
+        let container = document.querySelector('.action-grid') || document.body;
+        let err = document.getElementById('aladinn-popup-err');
+        if (!err) {
+            err = document.createElement('div');
+            err.id = 'aladinn-popup-err';
+            err.style.cssText = 'grid-column: 1 / -1; color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; font-size: 13px; text-align: center; margin-top: 8px; font-weight: 500; animation: fadeSlideUp 0.3s;';
+            container.parentNode.insertBefore(err, container.nextSibling);
+        }
+        err.textContent = msg;
+        setTimeout(() => { if (err) err.remove(); }, 3500);
+    }
+
     // 1. Tab Navigation
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -24,19 +38,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toggleCds = document.getElementById('toggle-cds');
     chrome.storage.local.get('aladinn_features', (result) => {
         const features = { voice: true, scanner: true, sign: true, cds: true, ...result.aladinn_features };
-        toggleVoice.checked = features.voice;
-        toggleScanner.checked = features.scanner;
-        toggleSign.checked = features.sign;
-        toggleCds.checked = features.cds;
+        if(toggleVoice) toggleVoice.checked = features.voice;
+        if(toggleScanner) toggleScanner.checked = features.scanner;
+        if(toggleSign) toggleSign.checked = features.sign;
+        if(toggleCds) toggleCds.checked = features.cds;
         updateVoiceStatusUI(features.voice);
     });
 
     function saveFeatures() {
         const features = {
-            voice: toggleVoice.checked,
-            scanner: toggleScanner.checked,
-            sign: toggleSign.checked,
-            cds: toggleCds.checked
+            voice: toggleVoice ? toggleVoice.checked : true,
+            scanner: toggleScanner ? toggleScanner.checked : true,
+            sign: toggleSign ? toggleSign.checked : true,
+            cds: toggleCds ? toggleCds.checked : true
         };
         chrome.storage.local.set({ aladinn_features: features });
         
@@ -47,25 +61,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Notify background service worker directly (for auto-sign state sync)
+        // Notify background service worker directly
         chrome.runtime.sendMessage({ type: 'FEATURE_TOGGLE', features }).catch(() => {});
 
-        // Special handling for legacy voice badge/toggle
+        // Special handling
         chrome.storage.local.set({ aladinn_voice_enabled: features.voice });
         chrome.runtime.sendMessage({ type: 'TOGGLE_VOICE', enabled: features.voice }).catch(() => {});
         updateVoiceStatusUI(features.voice);
     }
 
-    toggleVoice.addEventListener('change', saveFeatures);
-    toggleScanner.addEventListener('change', saveFeatures);
-    toggleSign.addEventListener('change', saveFeatures);
-    toggleCds.addEventListener('change', saveFeatures);
+    if(toggleVoice) toggleVoice.addEventListener('change', saveFeatures);
+    if(toggleScanner) toggleScanner.addEventListener('change', saveFeatures);
+    if(toggleSign) toggleSign.addEventListener('change', saveFeatures);
+    if(toggleCds) toggleCds.addEventListener('change', saveFeatures);
 
     function updateVoiceStatusUI(enabled) {
         const indicator = document.getElementById('voice-indicator');
         const title = document.getElementById('voice-status-title');
         const desc = document.getElementById('voice-status-desc');
         
+        if(!indicator || !title || !desc) return;
+
         if (enabled) {
             indicator.classList.add('active');
             title.textContent = 'Trợ lý AI Đang Sẵn sàng';
@@ -80,86 +96,120 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Scanner Actions
     function sendScannerAction(action) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url.includes('vncare.vn')) {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    world: 'MAIN',
-                    func: (cmd) => {
-                        window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.startScanning && window.Aladinn.Scanner.startScanning(cmd);
-                    },
-                    args: [action === 'scanRoom' ? 'room' : 'vitals']
-                });
-            } else {
-                alert('Vui lòng mở trang VNPT HIS nội trú');
-            }
+            chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                world: 'MAIN',
+                func: (cmd) => {
+                    if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.startScanning) {
+                        window.Aladinn.Scanner.startScanning(cmd);
+                        return true;
+                    }
+                    return false;
+                },
+                args: [action === 'scanRoom' ? 'room' : 'vitals']
+            }).then((results) => {
+                if (results && results[0] && results[0].result === false) {
+                    showError('⚠️ Module chưa khởi tạo. Vui lòng thử lại trên trang Nội trú.');
+                }
+            }).catch((err) => {
+                showError('⚠️ Vui lòng mở trang VNPT HIS nội trú (hoặc tải lại trang)');
+            });
         });
     }
 
-    document.getElementById('scan-room-btn').addEventListener('click', () => sendScannerAction('scanRoom'));
-    document.getElementById('scan-vitals-btn').addEventListener('click', () => sendScannerAction('scanVitals'));
+    const scanRoomBtn = document.getElementById('scan-room-btn');
+    const scanVitalsBtn = document.getElementById('scan-vitals-btn');
+    if(scanRoomBtn) scanRoomBtn.addEventListener('click', () => sendScannerAction('scanRoom'));
+    if(scanVitalsBtn) scanVitalsBtn.addEventListener('click', () => sendScannerAction('scanVitals'));
     
-    document.getElementById('show-dashboard-btn').addEventListener('click', () => {
+    const showDashBtn = document.getElementById('show-dashboard-btn');
+    if(showDashBtn) showDashBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
                     world: 'MAIN',
-                    func: () => { window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard && window.Aladinn.Scanner.UI.Dashboard.show(); }
+                    func: () => { 
+                        if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard) {
+                            window.Aladinn.Scanner.UI.Dashboard.show(); 
+                            return true;
+                        }
+                        return false;
+                    }
+                }).then((results) => {
+                    if (results && results[0] && results[0].result === false) {
+                        showError('⚠️ Không tìm thấy Module Dashboard.');
+                    }
+                }).catch(() => {
+                    showError('⚠️ Vui lòng mở trang VNPT HIS');
                 });
             }
         });
     });
 
-    document.getElementById('toggle-ui-btn').addEventListener('click', () => {
+    const toggleUiBtn = document.getElementById('toggle-ui-btn');
+    if(toggleUiBtn) toggleUiBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: 'TOGGLE_SCANNER_UI' }).catch(() => {});
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'TOGGLE_SCANNER_UI' }).catch(() => {
+                    showError('⚠️ Không thể kết nối Giao diện Scanner.');
+                });
+            }
         });
     });
 
     // 4. Options Link
-    document.getElementById('open-options-btn').addEventListener('click', () => {
+    const optBtn = document.getElementById('open-options-btn');
+    if(optBtn) optBtn.addEventListener('click', () => {
         chrome.runtime.openOptionsPage();
     });
 
     // 5. Sign Tab Logic
     const signAutoToggle = document.getElementById('sign-auto-toggle');
-    chrome.storage.sync.get(['autoSignEnabled'], (result) => {
-        signAutoToggle.checked = result.autoSignEnabled !== false;
-    });
+    if (signAutoToggle) {
+        chrome.storage.sync.get(['autoSignEnabled'], (result) => {
+            signAutoToggle.checked = result.autoSignEnabled !== false;
+        });
 
-    signAutoToggle.addEventListener('change', () => {
-        const enabled = signAutoToggle.checked;
-        chrome.storage.sync.set({ autoSignEnabled: enabled });
+        signAutoToggle.addEventListener('change', () => {
+            const enabled = signAutoToggle.checked;
+            chrome.storage.sync.set({ autoSignEnabled: enabled });
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        action: enabled ? 'enableAutoSign' : 'disableAutoSign'
+                    }).catch(() => {});
+                }
+            });
+        });
+    }
+
+    const selectAllBtn = document.getElementById('sign-select-all-btn');
+    if(selectAllBtn) selectAllBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: enabled ? 'enableAutoSign' : 'disableAutoSign'
-                }).catch(() => {});
-            }
-        });
-    });
-
-    document.getElementById('sign-select-all-btn').addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url.includes('vncare.vn')) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'selectAll' }, (res) => {
+                    if (chrome.runtime.lastError) {
+                        showError('⚠️ Vui lòng tải lại trang VNPT HIS');
+                        return;
+                    }
                     if (res && res.count) {
                         document.getElementById('sign-stat-selected').textContent = res.count;
                     }
                 });
-            } else {
-                alert('Vui lòng mở trang VNPT HIS');
             }
         });
     });
 
-    document.getElementById('sign-start-btn').addEventListener('click', () => {
+    const startBtn = document.getElementById('sign-start-btn');
+    if(startBtn) startBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url.includes('vncare.vn')) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'startSigning' }).catch(() => {});
-                window.close();
-            } else {
-                alert('Vui lòng mở trang VNPT HIS');
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { action: 'startSigning' }).then(() => {
+                    window.close();
+                }).catch(() => {
+                    showError('⚠️ Không tìm thấy module Ký số.');
+                });
             }
         });
     });
@@ -167,12 +217,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Poll sign stats when sign tab is active
     function updateSignStats() {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url && tabs[0].url.includes('vncare.vn')) {
+            if (tabs[0] && tabs[0].url) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'getSignStats' }, (res) => {
                     if (chrome.runtime.lastError || !res) return;
-                    document.getElementById('sign-stat-selected').textContent = res.selected || 0;
-                    document.getElementById('sign-stat-signed').textContent = res.signed || 0;
-                    document.getElementById('sign-stat-skipped').textContent = res.skipped || 0;
+                    const elSel = document.getElementById('sign-stat-selected');
+                    const elSig = document.getElementById('sign-stat-signed');
+                    const elSkip = document.getElementById('sign-stat-skipped');
+                    if(elSel) elSel.textContent = res.selected || 0;
+                    if(elSig) elSig.textContent = res.signed || 0;
+                    if(elSkip) elSkip.textContent = res.skipped || 0;
                 });
             }
         });
@@ -214,7 +267,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updateDismissBtn = document.getElementById('update-dismiss-btn');
     const versionBadge = document.querySelector('.version-badge');
 
-    // Hiện version hiện tại
     const manifest = chrome.runtime.getManifest();
     if (versionBadge) versionBadge.textContent = `v${manifest.version}`;
 
@@ -225,29 +277,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dismissed = result.aladinn_update_dismissed;
 
             if (update && update.newVersion && dismissed !== update.newVersion) {
-                // Có bản update mới chưa bị dismiss
-                updateVersion.textContent = `v${update.newVersion}`;
+                if(updateVersion) updateVersion.textContent = `v${update.newVersion}`;
                 
-                // Rút gọn changelog (lấy dòng đầu)
                 const changelog = update.changelog || '';
                 const firstLine = changelog.split('\n').find(l => l.trim()) || 'Bản cập nhật mới!';
-                updateChangelog.textContent = firstLine.replace(/^#+\s*/, '').substring(0, 50);
+                if(updateChangelog) updateChangelog.textContent = firstLine.replace(/^#+\s*/, '').substring(0, 50);
 
-                // Set download link
-                if (update.releaseUrl) {
-                    updateDownloadBtn.href = update.releaseUrl;
-                } else if (update.downloadUrl) {
-                    updateDownloadBtn.href = update.downloadUrl;
+                if(updateDownloadBtn) {
+                    if (update.releaseUrl) {
+                        updateDownloadBtn.href = update.releaseUrl;
+                    } else if (update.downloadUrl) {
+                        updateDownloadBtn.href = update.downloadUrl;
+                    }
                 }
-
-                updateBanner.style.display = 'block';
+                if(updateBanner) updateBanner.style.display = 'block';
             }
         } catch (_err) {
             // Ignore
         }
     }
 
-    // Dismiss button
     if (updateDismissBtn) {
         updateDismissBtn.addEventListener('click', async () => {
             const result = await chrome.storage.local.get('aladinn_update');
@@ -255,12 +304,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (version) {
                 chrome.runtime.sendMessage({ action: 'dismissUpdate', version }).catch(() => {});
             }
-            updateBanner.style.display = 'none';
+            if(updateBanner) updateBanner.style.display = 'none';
         });
     }
 
-    // Check on popup open
     checkAndShowUpdate();
+}
 
-    // Initialization done.
-});
+// Ensure execution happens correctly even if deferred module
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPopup);
+} else {
+    initPopup();
+}
