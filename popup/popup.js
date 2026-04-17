@@ -130,7 +130,10 @@ async function initPopup() {
                     target: { tabId: tabs[0].id },
                     world: 'ISOLATED',
                     func: () => { 
-                        if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard) {
+                        if (window.VNPTDashboard) {
+                            window.VNPTDashboard.show();
+                            return true;
+                        } else if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard) {
                             window.Aladinn.Scanner.UI.Dashboard.show(); 
                             return true;
                         }
