@@ -51,7 +51,7 @@ window.Aladinn.Sign.UI = (function () {
     }
 
     /**
-     * Hiển thị HUD khi đang ký tự động
+     * Hiển thị HUD khi đang dò tìm kho báu
      */
     function showSigningHUD() {
         try {
@@ -61,8 +61,14 @@ window.Aladinn.Sign.UI = (function () {
             hudElement.innerHTML = `
                 <div class="his-hud-scanner"></div>
                 <div class="his-hud-label">
+                    <div class="his-hud-lamp">🪔</div>
                     <div class="his-hud-dot"></div>
-                    <span>Aladinn đang ký tự động...</span>
+                    <span>Aladinn đang dò tìm kho báu...</span>
+                    <div class="his-hud-sparkles">
+                        <div class="his-sparkle"></div>
+                        <div class="his-sparkle"></div>
+                        <div class="his-sparkle"></div>
+                    </div>
                     <div class="his-hud-scanline"></div>
                 </div>
             `;
@@ -83,14 +89,22 @@ window.Aladinn.Sign.UI = (function () {
     }
 
     /**
-     * Show a modern toast notification
+     * Show a modern toast notification - appears above panel like smoke
      */
     function showToast(message, duration = 3000) {
+        // Attach toast container inside the panel so it positions above it
         if (!toastContainer) {
             toastContainer = document.createElement('div');
             toastContainer.id = 'his-toast-container';
             toastContainer.className = 'his-toast-container';
-            document.body.appendChild(toastContainer);
+
+            const panel = document.getElementById('his-workflow-panel');
+            if (panel) {
+                panel.appendChild(toastContainer);
+            } else {
+                // Fallback: attach to body if panel not available yet
+                document.body.appendChild(toastContainer);
+            }
         }
 
         let type = 'info';
@@ -135,16 +149,17 @@ window.Aladinn.Sign.UI = (function () {
 
         toastContainer.insertBefore(toast, toastContainer.firstChild);
 
+        // Keep max 2 toasts visible to avoid clutter above panel
         const allToasts = toastContainer.querySelectorAll('.his-toast:not(.toast-exit)');
-        if (allToasts.length > 3) {
+        if (allToasts.length > 2) {
             const oldest = allToasts[allToasts.length - 1];
             oldest.classList.add('toast-exit');
-            setTimeout(() => oldest.remove(), 300);
+            setTimeout(() => oldest.remove(), 800);
         }
 
         setTimeout(() => {
             toast.classList.add('toast-exit');
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(() => toast.remove(), 800);
         }, duration);
     }
 

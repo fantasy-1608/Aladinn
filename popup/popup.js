@@ -68,12 +68,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (enabled) {
             indicator.classList.add('active');
-            title.textContent = 'Voice AI Đang Bật';
-            desc.textContent = 'Hoạt động trên trang khám bệnh, hội chẩn';
+            title.textContent = 'Trợ lý AI Đang Sẵn sàng';
+            desc.textContent = 'Bấm vào biểu tượng Micro trên trang bệnh án để bắt đầu ra lệnh bằng giọng nói.';
         } else {
             indicator.classList.remove('active');
-            title.textContent = 'Voice AI Đã Tắt';
-            desc.textContent = 'Bật lại phía trên để sử dụng AI';
+            title.textContent = 'Trợ lý AI Đã Tắt';
+            desc.textContent = 'Bật lại phía trên phần điều khiển để dùng AI.';
         }
     }
 

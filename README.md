@@ -17,22 +17,26 @@
 ## Tính năng chính
 
 ### 🎤 Voice AI
+
 Nhận diện giọng nói tiếng Việt, xử lý ngữ nghĩa y khoa bằng **Gemini Flash**, tự động điền vào form HIS.
 
 ### 📊 Smart Scanner
+
 Quét đồng loạt dữ liệu bệnh nhân (sinh hiệu, tiền sử, dinh dưỡng) qua hidden IFrame — không làm gián đoạn workflow.
 
 ### ✍️ Auto-Sign
+
 Ký số hàng loạt thông qua API Bridge. Tự động phát hiện form cần ký, lọc hồ sơ thông minh.
 
-### 🧠 CDS Engine *(đang phát triển)*
+### 🧠 CDS Engine (đang phát triển)
+
 Cảnh báo tương tác thuốc, phát hiện thiếu mã ICD. Rule Engine local với latency < 300ms.
 
 ---
 
 ## Cài đặt
 
-**Yêu cầu:** Chrome 88+ · Quyền truy cập vncare.vn
+Yêu cầu: Chrome 88+ · Quyền truy cập vncare.vn
 
 ### Từ Release
 
@@ -58,7 +62,7 @@ npm run build
 ## Phím tắt
 
 | Phím tắt | Chức năng |
-|----------|-----------|
+| --- | --- |
 | `Ctrl+Shift+F` / `⌘⇧F` | Lọc hồ sơ của tôi |
 | `Ctrl+Shift+S` / `⌘⇧S` | Bắt đầu ký số |
 | `Ctrl+Shift+N` / `⌘⇧N` | Bệnh nhân tiếp theo |
@@ -67,7 +71,7 @@ npm run build
 
 ## Kiến trúc
 
-```
+```text
 aladinn/
 ├── background/            # Service Worker
 │   ├── service-worker.js  # Điều phối chính
@@ -99,7 +103,7 @@ aladinn/
 ## Roadmap
 
 | Version | Nội dung | Trạng thái |
-|---------|---------|------------|
+| --- | --- | --- |
 | v1.0 | Scanner, Voice AI, Auto-Sign | ✅ Done |
 | v1.1 | Clinical Dashboard, CDS Rule Engine | ⏳ In progress |
 | v1.2 | Cảnh báo tương tác thuốc, sai liều | 📋 Planned |
@@ -109,14 +113,14 @@ aladinn/
 
 ## Tech Stack
 
-| | |
-|---|---|
-| **Runtime** | Vanilla JS (no framework) |
-| **Build** | Vite |
-| **AI** | Google Gemini Flash |
-| **Storage** | IndexedDB, Chrome Storage |
-| **Security** | AES-GCM encryption |
+| Thành phần | Công nghệ |
+| --- | --- |
+| Runtime | Vanilla JS (no framework) |
+| Build | Vite |
+| AI | Google Gemini Flash |
+| Storage | IndexedDB, Chrome Storage |
+| Security | AES-GCM encryption |
 
 ---
 
-**Tác giả:** Huỳnh Trung Anh
+Tác giả: Huỳnh Trung Anh
