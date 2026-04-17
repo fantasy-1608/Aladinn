@@ -98,7 +98,7 @@ async function initPopup() {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
                 target: { tabId: tabs[0].id },
-                world: 'MAIN',
+                world: 'ISOLATED',
                 func: (cmd) => {
                     if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.startScanning) {
                         window.Aladinn.Scanner.startScanning(cmd);
@@ -128,7 +128,7 @@ async function initPopup() {
             if (tabs[0]) {
                 chrome.scripting.executeScript({
                     target: { tabId: tabs[0].id },
-                    world: 'MAIN',
+                    world: 'ISOLATED',
                     func: () => { 
                         if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard) {
                             window.Aladinn.Scanner.UI.Dashboard.show(); 
