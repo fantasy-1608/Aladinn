@@ -35,8 +35,11 @@ execSync(
 console.log(`\n🚀 [3/3] Đẩy lên Github Release...`);
 try {
     const latestCommitMsg = execSync('git log -1 --pretty=%B').toString().trim();
-    const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "Aladinn v${version}" --notes "${latestCommitMsg}"`;
+    const tempNotesPath = path.join(__dirname, '..', '.commit-notes.tmp');
+    fs.writeFileSync(tempNotesPath, latestCommitMsg);
+    const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "Aladinn v${version}" --notes-file ".commit-notes.tmp"`;
     execSync(ghCommand, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+    fs.unlinkSync(tempNotesPath);
     console.log(`\n✅ Hoàn tất! Đã release v${version} thành công lên GitHub!`);
 } catch (e) {
     console.log(`\n⚠️ Lỗi khi đẩy lên GitHub Release. Vui lòng kiểm tra lại quá trình xác thực 'gh' CLI.`);
