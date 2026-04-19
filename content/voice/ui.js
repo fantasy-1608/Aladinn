@@ -439,14 +439,16 @@ function createFloatingPanel() {
             <div class="his-section aladinn-hidden" id="his-results-section">
                 <div class="his-results-compact" id="his-results-container"></div>
             </div>
-            <div class="his-section">
+        </div>
+        <div class="his-panel-footer">
+            <div class="his-section" style="padding-top: 0; border-top: none;">
                 <textarea class="his-textarea" id="his-transcript" placeholder="Phát biểu hoặc nhập nội dung..." rows="2"></textarea>
                 <div class="his-btn-group" style="display: flex; gap: 8px;">
                     <button class="his-btn his-btn-primary" id="his-record-btn" title="Ghi âm" style="flex: 0 0 44px; height: 44px; border-radius: 12px; padding: 0;"><span id="his-record-icon">${ICONS_SAFE.mic}</span></button>
                     <button class="his-btn his-btn-ai" id="his-process-btn" style="flex: 1; height: 44px; border-radius: 12px;">${ICONS_SAFE.ai} <span style="margin-left: 8px;">Xử lý AI</span></button>
                 </div>
             </div>
-            <div class="his-loading aladinn-hidden" id="his-loading"><div class="his-spinner"></div><div style="color: var(--his-text-secondary); font-size: 12px;">Đang xử lý...</div></div>
+            <div class="his-loading aladinn-hidden" id="his-loading" style="padding-bottom: 10px;"><div class="his-spinner"></div><div style="color: var(--his-text-secondary); font-size: 12px;">Đang xử lý...</div></div>
         </div>
     `;
     document.body.appendChild(panel);

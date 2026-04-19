@@ -34,7 +34,7 @@
   top: 80px;
   right: 20px;
   width: 320px;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 120px);
   background: var(--his-bg-glass);
   backdrop-filter: blur(8px) saturate(180%);
   -webkit-backdrop-filter: blur(8px) saturate(180%);
@@ -164,6 +164,16 @@
 
 .his-panel-body::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 168, 83, 0.8);
+}
+
+/* ========================================
+   Panel Footer (Sticky Input)
+   ======================================== */
+.his-panel-footer {
+  padding: 12px;
+  background: var(--his-bg-glass);
+  border-top: 1px solid var(--his-border);
+  flex-shrink: 0;
 }
 
 /* ========================================
