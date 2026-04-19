@@ -44,8 +44,8 @@
   z-index: 999998;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   transition: opacity 0.3s ease, transform 0.3s ease;
   will-change: opacity, transform;
 }
@@ -143,10 +143,6 @@
 .his-panel-body {
   padding: 12px;
   overflow-y: auto;
-  flex: 1 1 auto;
-  height: 300px; /* fallback */
-  max-height: 50vh; /* fallback */
-  max-height: calc(100vh - 260px);
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 168, 83, 0.4) transparent;
@@ -176,7 +172,6 @@
   padding: 12px;
   background: var(--his-bg-glass);
   border-top: 1px solid var(--his-border);
-  flex-shrink: 0;
 }
 
 /* ========================================
@@ -403,6 +398,33 @@
    ======================================== */
 .his-section {
   margin-bottom: 10px;
+}
+
+#his-results-section {
+  max-height: calc(100vh - 290px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 83, 0.4) transparent;
+  padding-right: 4px;
+  /* Fix layout bugs with flex child constraints */
+  display: block;
+}
+
+#his-results-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+#his-results-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#his-results-section::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 83, 0.4);
+  border-radius: 10px;
+}
+
+#his-results-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 168, 83, 0.8);
 }
 
 .his-section-header {
