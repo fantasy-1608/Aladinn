@@ -92,14 +92,18 @@ export const CDSExtractor = {
     },
 
     getDiagnoses() {
-        // Nâng cấp: Đọc từ Data Snooping Cache trước!
-        const cache = CDSCache.get();
-        if (cache.diagnoses && cache.diagnoses.length > 0) {
-            return cache.diagnoses;
-        }
-
         const diagnoses = [];
         const seenCodes = new Set();
+        
+        // Nâng cấp: Đọc từ Data Snooping Cache trước, sau đó GỘP (Merge) với DOM
+        const cache = CDSCache.get();
+        if (cache.diagnoses && cache.diagnoses.length > 0) {
+            cache.diagnoses.forEach(diag => {
+                diagnoses.push(diag);
+                seenCodes.add(diag.code.toUpperCase());
+            });
+        }
+
         const icdPattern = /\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/gi;
 
         // 1. Quét ưu tiên các ô nhập liệu (Input/Textarea) thường chứa mã bệnh
@@ -135,6 +139,15 @@ export const CDSExtractor = {
         docTexts.forEach(el => {
             // Chỉ quét các thẻ container nhỏ gọn, không quét thẻ TO quá tránh trùng lặp tốn CPU
             if (el.children.length > 5) return; 
+
+            // Loại trừ container chứa bảng lưới dữ liệu bên trong để tránh thu thập chuỗi văn bản khổng lồ
+            if (el.querySelector && el.querySelector('table')) return;
+
+            // Loại trừ các text nằm trong dòng (TR) của một bảng dữ liệu lớn (như Danh sách bệnh nhân, thường > 5 cột)
+            // Form nhập liệu nếu dùng bảng thường chỉ có 2-4 cột.
+            const parentTr = el.closest ? el.closest('tr') : null;
+            if (parentTr && parentTr.children.length > 5) return;
+
             const text = el.innerText || '';
             if (text.length > 5) {
                 let match;
@@ -152,13 +165,14 @@ export const CDSExtractor = {
     },
 
     getMedications() {
-        // Nâng cấp: Đọc từ Data Snooping Cache trước
+        const meds = [];
+        
+        // Nâng cấp: Đọc từ Data Snooping Cache trước, sau đó GỘP với dữ liệu trên DOM
         const cache = CDSCache.get();
         if (cache.medications && cache.medications.length > 0) {
-            return cache.medications;
+            meds.push(...cache.medications);
         }
 
-        const meds = [];
         
         // Từ khóa loại trừ (không phải thuốc)
         const NOISE_WORDS = ['page', 'trang', 'total', 'tổng', 'chọn', 'đóng', 'lưu', 'hủy', 'xóa', 'sửa', 'in ', 'print'];
@@ -205,13 +219,15 @@ export const CDSExtractor = {
 
             // SMART COLUMN SCANNER:
             // B\u1ecf qua to\u00e0n b\u1ed9 c\u1ed9t s\u1ed1 \u1ea9n (m\u00e3 n\u1ed9i b\u1ed9 VNPT HIS nh\u01b0 667024, 666862...)
-            // T\u00ecm C\u1ed8T V\u0102N B\u1ea2N \u0110\u1ea6U TI\u00caN c\u00f3 \u0111\u1ed9 d\u00e0i > 2, kh\u00f4ng ph\u1ea3i s\u1ed1, kh\u00f4ng ph\u1ea3i \u0111\u01a1n v\u1ecb d\u01b0\u1ee3c
+            // Bỏ qua toàn bộ cột số ẩn (mã nội bộ VNPT HIS như 667024, 666862...)
+            // Tìm CỘT VĂN BẢN ĐẦU TIÊN có độ dài > 2, không phải số, không phải đơn vị dược
             const textCols = [];
             for (let i = 0; i < cols.length; i++) {
                 const val = cols[i];
                 if (!val || val === '-' || val.length < 2) continue;
-                if (/^\d[\d.,]*$/.test(val)) continue; // S\u1ed1 thu\u1ea7n / gi\u00e1 ti\u1ec1n
-                if (/^\d{2}\/\d{2}\/\d{4}/.test(val)) continue; // Ng\u00e0y th\u00e1ng
+                if (/^\d[\d.,]*$/.test(val)) continue; // Số thuần / giá tiền
+                if (/^\d{2}\/\d{2}\/\d{4}/.test(val)) continue; // Ngày tháng
+                if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(val)) continue; // Giờ giấc (VD: 13:00, 08:30:15)
                 const valLower = val.toLowerCase();
                 if (DRUG_UNITS.some(u => valLower === u)) continue; // Đơn vị
                 if (['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'thu phí', 'viện phí', 'bhyt', 'kho nội trú', 'kho ngoại trú', 'nam', 'nữ', 'không có'].some(k => valLower === k || valLower.startsWith(k))) continue; // Đường dùng / thanh toán / demographic

@@ -20,6 +20,13 @@
 }
 
 /* ========================================
+   Global Utility
+   ======================================== */
+.aladinn-hidden {
+  display: none !important;
+}
+
+/* ========================================
    Floating Panel
    ======================================== */
 #his-floating-panel {
@@ -51,10 +58,6 @@
 
 .aladinn-panel-appear {
   animation: aladinn-fade-in-up 0.3s ease forwards;
-}
-
-#his-floating-panel.aladinn-hidden {
-  display: none !important;
 }
 
 /* Simplified Idle State - Zero geometry changes to prevent flickering */
@@ -141,9 +144,9 @@
   padding: 12px;
   overflow-y: auto;
   flex: 1;
-  max-height: calc(100vh - 200px);
+  min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--his-bg-tertiary) transparent;
+  scrollbar-color: rgba(212, 168, 83, 0.4) transparent;
 }
 
 .his-panel-body::-webkit-scrollbar {
@@ -155,12 +158,12 @@
 }
 
 .his-panel-body::-webkit-scrollbar-thumb {
-  background: var(--his-bg-tertiary);
+  background: rgba(212, 168, 83, 0.4);
   border-radius: 10px;
 }
 
 .his-panel-body::-webkit-scrollbar-thumb:hover {
-  background: var(--his-text-secondary);
+  background: rgba(212, 168, 83, 0.8);
 }
 
 /* ========================================
@@ -804,10 +807,6 @@
   animation: pulse-record 1.5s infinite;
 }
 
-#his-mini-btn.aladinn-hidden {
-  display: none !important;
-}
-
 #his-mini-lock-btn {
   position: fixed;
   width: 44px;
@@ -833,10 +832,6 @@
   transform: scale(1.1);
   background: rgba(30, 41, 59, 0.9);
   border-color: rgba(255, 255, 255, 0.3);
-}
-
-#his-mini-lock-btn.aladinn-hidden {
-  display: none !important;
 }
 
 /* ========================================
@@ -944,12 +939,6 @@
   padding: 30px;
 }
 
-.his-lock-overlay.aladinn-hidden {
-  display: none !important;
-}
-
-/* Removed old genie-smoke keyframes */
-
 /* Minimize button inside lock panel */
 .his-lock-close-btn {
   position: absolute;
@@ -977,7 +966,7 @@
 .his-lock-icon {
   font-size: 48px;
   margin-bottom: 20px;
-  filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.5));
+  filter: drop-shadow(0 0 15px rgba(212, 168, 83, 0.5));
   animation: float 3s ease-in-out infinite;
 }
 
@@ -1026,10 +1015,11 @@
 }
 
 .his-pin-digit.filled {
-  border-color: #818cf8;
-  background: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border-color: var(--his-primary);
+  background: var(--his-bg-tertiary);
+  box-shadow: 0 0 15px var(--his-border), inset 0 1px 1px rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+  color: var(--his-primary);
 }
 
 .his-hidden-pin-input {

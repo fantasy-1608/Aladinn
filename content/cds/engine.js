@@ -528,7 +528,8 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
                     title: 'Rủi ro xuất toán BHYT',
                     effect: rule.message || 'Thiếu chẩn đoán ICD phù hợp.',
                     recommendation: rule.recommendation || 'Kiểm tra lại chẩn đoán.',
-                    matched_items: { drug: [rule.generic_name], icd: normalized.icd_codes }
+                    matched_items: { drug: [rule.generic_name], icd: normalized.icd_codes },
+                    missing_icd: allowed.join(', ')
                 });
             }
         }

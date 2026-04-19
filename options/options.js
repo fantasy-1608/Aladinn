@@ -231,6 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentHisSettings.aiEnabled = aiVipToggle.checked;
         }
 
+        // --- SECURITY PURGE ---
+        // Ensure we purge any legacy plaintext key inside his_settings
+        currentHisSettings.geminiApiKey = '';
+
         const localPatch = {
             selectedModel: elements.aiModel.value,
             aladinn_voice_appSettings: { autoChuyenVien: elements.chuyenVien.checked },
@@ -288,6 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Lỗi mã hóa API Key.', true);
                     return;
                 }
+            } else if (_hasPinHash && apiKeyVal && !_currentPinForEncrypt) {
+                showToast('❌ Để cập nhật API Key mới, vui lòng nhấn "Xóa mã PIN" bên dưới và thiết lập lại từ đầu.', true);
+                return;
             } else if (apiKeyVal && !_hasPinHash) {
                  // Should be blocked by the early return, but just in case
                  showToast('Không lưu được: Yêu cầu mã PIN!', true);

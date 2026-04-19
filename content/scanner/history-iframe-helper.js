@@ -22,7 +22,7 @@
     });
 
     window._vnptHistoryHandler = function (event) {
-        if (event.source !== window.parent) return;
+        if (event.source !== window.top) return;
         if (event.origin !== PARENT_ORIGIN) return;
         if (!event.data) return;
 
@@ -144,11 +144,13 @@
     }
 
     function sendResponse(success, error) {
-        window.parent.postMessage({
-            type: 'HISTORY_FILL_RESULT',
-            success: success,
-            error: error
-        }, PARENT_ORIGIN);
+        if (window.top) {
+            window.top.postMessage({
+                type: 'HISTORY_FILL_RESULT',
+                success: success,
+                error: error
+            }, PARENT_ORIGIN);
+        }
     }
 
     // Utility to log all form fields (for user to help mapping)

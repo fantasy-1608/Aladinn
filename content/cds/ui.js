@@ -391,6 +391,9 @@ export const CDSUI = {
                     if (alert.domain === 'interaction' && alert.matched_items.drug && alert.matched_items.drug.length >= 2) {
                         const VN_QUERY = `tương tác thuốc giữa ${alert.matched_items.drug.join(' và ')}`;
                         linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:10px; font-size:12px; color:#2563eb; font-weight:600; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu Web</a>`;
+                    } else if (alert.domain === 'insurance' && alert.missing_icd) {
+                        const VN_QUERY = `mã icd ${alert.missing_icd.replace(/,/g, ' ')}`;
+                        linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:10px; font-size:12px; color:#2563eb; font-weight:600; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu mã ICD phác đồ</a>`;
                     }
                 }
 

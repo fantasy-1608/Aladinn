@@ -45,6 +45,9 @@ const VNPTHistory = (function () {
 
         const observer = new MutationObserver(debouncedCheck);
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        
+        // Bổ sung setInterval để bypass giới hạn MutationObserver không xuyên qua iframe
+        setInterval(checkForBMForm, 1500);
         checkForBMForm();
 
         // Shortcut to log fields for mapping (Support Mac Meta key)
@@ -93,14 +96,29 @@ const VNPTHistory = (function () {
     /** @type {string} */
     let _lastLabel = '';
 
+    function getNestedIframes(doc) {
+        let allIframes = [];
+        const iframes = doc.querySelectorAll('iframe');
+        for (const iframe of Array.from(iframes)) {
+            if (!(iframe instanceof HTMLIFrameElement)) continue;
+            allIframes.push(iframe);
+            try {
+                if (iframe.contentDocument) {
+                    allIframes = allIframes.concat(getNestedIframes(iframe.contentDocument));
+                }
+            } catch (e) { }
+        }
+        return allIframes;
+    }
+
     /**
      * Kiểm tra có iframe nào chứa form Bệnh án không
      */
     function checkForBMForm() {
-        const iframes = document.querySelectorAll('iframe');
+        const allIframes = getNestedIframes(document);
         let found = false;
 
-        for (const iframe of Array.from(iframes)) {
+        for (const iframe of allIframes) {
             if (!(iframe instanceof HTMLIFrameElement)) continue;
             try {
                 const doc = iframe.contentDocument;

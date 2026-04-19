@@ -55,6 +55,25 @@
         if (now - lastConfirmClick > 2000) {
             const confirmBtn = findInShadowRoots('#btnConfirm');
             if (confirmBtn && !confirmBtn.dataset.aladinnClicked) {
+                // Kiểm tra điều kiện: Nếu có nhiều hộp chọn (nhiều mức ký) hoặc chưa chọn -> Dừng lại chờ user
+                const doc = confirmBtn.ownerDocument || document;
+                const selects = doc.querySelectorAll('select');
+                let visibleCount = 0;
+                let hasUnselected = false;
+                for (const el of selects) {
+                    if (el.offsetWidth > 0 && el.offsetHeight > 0 && !el.disabled) {
+                        visibleCount++;
+                        const text = el.options[el.selectedIndex]?.text || '';
+                        if (!el.value || el.value === '0' || text.toLowerCase().includes('lựa chọn') || text.includes('--')) {
+                            hasUnselected = true;
+                        }
+                    }
+                }
+                
+                if (visibleCount > 1 || hasUnselected) {
+                    return; // Bỏ qua tự động click, chờ user tự click
+                }
+
                 confirmBtn.dataset.aladinnClicked = '1';
                 confirmBtn.click();
                 lastConfirmClick = now;

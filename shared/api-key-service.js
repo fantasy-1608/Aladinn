@@ -56,7 +56,13 @@ HIS.ApiKeyService = (function () {
                 }
             }
 
-
+            // 3. Plaintext fallback (legacy or no PIN configured)
+            if (stored.geminiApiKey) {
+                return sanitize(stored.geminiApiKey);
+            }
+            if (stored.his_settings?.geminiApiKey) {
+                return sanitize(stored.his_settings.geminiApiKey);
+            }
 
         } catch (err) {
             console.warn('[ApiKeyService] Error resolving API key:', err);
@@ -306,6 +312,7 @@ HIS.ApiKeyService = (function () {
 
     function sanitize(key) {
         if (!key) return '';
+        // eslint-disable-next-line no-control-regex
         return key.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
     }
 

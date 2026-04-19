@@ -704,6 +704,29 @@ window.Aladinn.Sign.Signing = (function () {
         if (!AUTO_SIGN.hasClickedConfirm && (now - AUTO_SIGN.lastConfirmTime > 800)) {
             const btn = _findBtnById('#btnConfirm') || _findBtnByText(['Xác nhận', 'Chấp nhận']);
             if (btn) {
+                // --- Kiểm tra bảng có nhiều lựa chọn (Nhiều mức ký) ---
+                const doc = btn.ownerDocument || document;
+                const selects = doc.querySelectorAll('select');
+                let visibleCount = 0;
+                let hasUnselected = false;
+                for (const el of selects) {
+                    if (el.offsetWidth > 0 && el.offsetHeight > 0 && !el.disabled) {
+                        visibleCount++;
+                        const text = el.options[el.selectedIndex]?.text || '';
+                        if (!el.value || el.value === '0' || text.toLowerCase().includes('lựa chọn') || text.includes('--')) {
+                            hasUnselected = true;
+                        }
+                    }
+                }
+                if (visibleCount > 1 || hasUnselected) {
+                    if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
+                        UI.showToast('⚠️ Vui lòng CẤU HÌNH người ký và tự bấm Xác nhận', 'warning');
+                        AUTO_SIGN.lastConfirmTime = now; // Giãn tần suất hiện Toast
+                    }
+                    return; // Dừng auto-click
+                }
+                // --------------------------------------------------------
+
                 console.log('[Aladinn] 🖊️ Auto-click: Xác nhận');
                 if (UI) UI.createClickRipple(btn);
                 btn.click();

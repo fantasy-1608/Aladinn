@@ -52,7 +52,6 @@
                 }
 
                 if (items.length > 0) {
-                    // Cân nhắc từng item để phán đoán loại dữ liệu
                     items.forEach(item => {
                         if (!item) return;
                         
@@ -60,8 +59,17 @@
                         if (!payload.patientId && item.BENHNHANID) payload.patientId = String(item.BENHNHANID);
                         if (!payload.patientId && item.KHAMBENHID) payload.patientId = String(item.KHAMBENHID);
                         if (!payload.patientId && item.HOSOBENHANID) payload.patientId = String(item.HOSOBENHANID);
+                    });
+                    
+                    // NẾU KHÔNG TÌM THẤY PATIENT ID TRONG DỮ LIỆU TRẢ VỀ, RẤT CÓ THỂ ĐÂY LÀ KẾT QUẢ TỪ AUTOCOMPLETE / TỪ ĐIỂN TÌM KIẾM
+                    // BỎ QUA GHI NHẬN THUỐC VÀ CHẨN ĐOÁN (tránh lỗi ghost item khi chưa thêm thuốc).
+                    const isPatientSpecific = payload.patientId !== null;
 
-                        // 1. Labs (Cận Lâm Sàng)
+                    items.forEach(item => {
+                        if (!item) return;
+
+                        // 1. Labs (Cận Lâm Sàng) - Labs luôn đi kèm bệnh nhân, quét nếu có
+
                         // Heuristic: có TENXETNGHIEM hoặc TENDICHVU và có GIATRI_KETQUA, DONVI
                         if ((item.TENXETNGHIEM || item.TENDICHVU || item.TENCHIDINH) && (item.GIATRI_KETQUA || item.KETQUACLS)) {
                             const name = (item.TENXETNGHIEM || item.TENDICHVU || item.TENCHIDINH).toLowerCase().trim();
@@ -107,8 +115,8 @@
                         }
 
                         // 2. Thuốc (Medications)
-                        // Heuristic: Có TENDICHVU / TENTHUOC nhưng không phải Xét nghiệm
-                        if ((item.TENDICHVU || item.TENTHUOC) && (item.DUONGDUNG || item.TENDUONGDUNG || item.SUDUNG || item.LIEUDUNG) && !item.GIATRI_KETQUA) {
+                        // Heuristic: Có TENDICHVU / TENTHUOC nhưng không phải Xét nghiệm và phải là dữ liệu của Bệnh nhân (không phải từ điển)
+                        if (isPatientSpecific && (item.TENDICHVU || item.TENTHUOC) && (item.DUONGDUNG || item.TENDUONGDUNG || item.SUDUNG || item.LIEUDUNG) && !item.GIATRI_KETQUA) {
                             let nameAttr = item.TENDICHVU || item.TENTHUOC;
                             let generic = '';
                             if (nameAttr.includes('(') && nameAttr.includes(')')) {
@@ -131,7 +139,7 @@
                         // 3. Chẩn đoán (Diagnoses & ICD)
                         // Heuristic: có MAICD hoặc CHUANDOAN (sai chính tả phổ biến trên HIS) hoặc CHANDOAN
                         const icd = item.MAICD || item.ICD || item.MA_ICD;
-                        if (icd && typeof icd === 'string' && /^[A-Z]\d{2,3}(?:\.\d{1,2})?$/.test(icd.trim().toUpperCase())) {
+                        if (isPatientSpecific && icd && typeof icd === 'string' && /^[A-Z]\d{2,3}(?:\.\d{1,2})?$/.test(icd.trim().toUpperCase())) {
                             payload.diagnoses.push({
                                 code: icd.trim().toUpperCase(),
                                 is_primary: payload.diagnoses.length === 0
