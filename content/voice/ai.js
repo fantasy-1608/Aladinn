@@ -3,6 +3,7 @@
  * AI result processing and display.
  * API calls are routed through bridge.js → background/ai-client.js
  */
+/* global chrome, requestAIViaBridge, MEDICAL_FIELDS, ICONS, copyToClipboard, VITAL_SIGNS */
 
 // ========================================
 // Process with AI
