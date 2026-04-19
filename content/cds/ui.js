@@ -27,9 +27,14 @@ export const CDSUI = {
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
                     An Toàn Kê Đơn
                 </h3>
-                <span id="cds-close-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </span>
+                <div style="display:flex; gap: 8px;">
+                    <span id="cds-refresh-btn" class="header-action-btn" title="Làm mới & Xóa Bộ nhớ (Reset Cache)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </span>
+                    <span id="cds-close-btn" class="header-action-btn" title="Đóng">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </span>
+                </div>
             </div>
             <div id="cds-crawl-info" style="display:none"></div>
             <div class="cds-body">
@@ -88,7 +93,17 @@ export const CDSUI = {
             }, 300); // 300ms grace period
         });
 
-        // Nút X vẫn đóng ngay
+        // Nút X và Làm mới
+        document.getElementById('cds-refresh-btn').addEventListener('click', () => {
+            window.dispatchEvent(new CustomEvent('ALADINN_FORCE_RESET_CACHE'));
+            window.dispatchEvent(new CustomEvent('ALADINN_MANUAL_SCAN'));
+            
+            // Xoay icon mượt mà
+            const icon = document.querySelector('#cds-refresh-btn svg');
+            icon.style.transition = 'transform 0.5s';
+            icon.style.transform = `rotate(${(icon._rot || 0) + 360}deg)`;
+            icon._rot = (icon._rot || 0) + 360;
+        });
         document.getElementById('cds-close-btn').addEventListener('click', () => this.hide());
 
         // Kéo thả dọc (Vertical drag)
@@ -151,7 +166,7 @@ export const CDSUI = {
                 pointer-events: auto !important;
                 width: 48px !important;
                 height: 48px !important;
-                background: rgba(30, 41, 59, 0.92) !important;
+                background: rgba(20, 27, 45, 0.92) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
                 border: 1px solid rgba(255,255,255,0.1) !important;
@@ -165,13 +180,13 @@ export const CDSUI = {
                 transition: transform 0.2s ease, box-shadow 0.2s !important;
             }
             #aladinn-cds-shield:hover { transform: scale(1.05) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.4) !important; }
-            #aladinn-cds-shield.warning { border-color: #f59e0b !important; animation: pulse-warning 2s infinite !important; }
-            #aladinn-cds-shield.critical { border-color: #ef4444 !important; animation: pulse-critical 1.5s infinite !important; }
+            #aladinn-cds-shield.warning { border-color: #E8A838 !important; animation: pulse-warning 2s infinite !important; }
+            #aladinn-cds-shield.critical { border-color: #E85454 !important; animation: pulse-critical 1.5s infinite !important; }
 
             #aladinn-cds-panel {
                 pointer-events: auto !important;
                 width: 340px !important;
-                background: rgba(15, 23, 42, 0.94) !important;
+                background: rgba(12, 18, 34, 0.94) !important;
                 backdrop-filter: blur(24px) saturate(180%) !important;
                 -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
                 border-radius: 20px !important;
@@ -203,14 +218,14 @@ export const CDSUI = {
                 background: transparent !important;
                 min-height: 50px !important;
             }
-            .cds-header h3 { margin: 0 !important; font-size: 15px !important; color: #f1f5f9 !important; font-weight: 600 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important;}
+            .cds-header h3 { margin: 0 !important; font-size: 15px !important; color: #E8E0D4 !important; font-weight: 600 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important;}
             .cds-header h3 svg { stroke: #60a5fa !important; }
-            #cds-close-btn { 
+            .header-action-btn { 
                 cursor: pointer; color: #64748b;
                 width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
                 background: rgba(255,255,255,0.05); transition: background 0.2s, color 0.2s;
             }
-            #cds-close-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+            .header-action-btn:hover { background: rgba(255,255,255,0.1); color: #E8E0D4; }
             
             .cds-body {
                 flex: 1 !important;
@@ -231,9 +246,9 @@ export const CDSUI = {
                 background: rgba(0,0,0,0.2) !important;
             }
             #cds-status-text { color: #64748b !important; font-size: 12px !important; }
-            #cds-crawl-info { color: #94a3b8 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(30,41,59,0.5) !important; }
+            #cds-crawl-info { color: #8B8579 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(20,27,45,0.5) !important; }
             #cds-crawl-info.success { color: #34d399 !important; }
-            .cds-empty-state { text-align: center; color: #94a3b8 !important; font-size: 13px !important; margin-top: 40px !important; }
+            .cds-empty-state { text-align: center; color: #8B8579 !important; font-size: 13px !important; margin-top: 40px !important; }
             
             /* Alert Cards — Dark */
             .cds-alert-card {
@@ -246,26 +261,26 @@ export const CDSUI = {
                 border-left: 4px solid #475569 !important;
                 text-align: left !important;
             }
-            .cds-alert-card.high { border-left-color: #ef4444 !important; background: rgba(239, 68, 68, 0.06) !important; }
-            .cds-alert-card.medium { border-left-color: #f59e0b !important; background: rgba(245, 158, 11, 0.06) !important; }
+            .cds-alert-card.high { border-left-color: #E85454 !important; background: rgba(232, 84, 84, 0.06) !important; }
+            .cds-alert-card.medium { border-left-color: #E8A838 !important; background: rgba(232, 168, 56, 0.06) !important; }
             .cds-alert-card.low, .cds-alert-card.info { border-left-color: #3b82f6 !important; }
             
-            .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #f1f5f9 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
-            .cds-alert-effect { font-size: 13px !important; color: #94a3b8 !important; margin-bottom: 10px !important; line-height: 1.4 !important; }
+            .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #E8E0D4 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
+            .cds-alert-effect { font-size: 13px !important; color: #8B8579 !important; margin-bottom: 10px !important; line-height: 1.4 !important; }
             .cds-alert-rec { font-size: 12px !important; color: #34d399 !important; font-weight: 600 !important; background: rgba(52, 211, 153, 0.1) !important; padding: 6px 10px !important; border-radius: 6px !important; display: inline-block !important; }
             
             .alert-match-list { margin-top: 12px; font-size: 11px; }
-            .alert-match-list span { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-family: -apple-system, monospace; color: #cbd5e1; margin-right: 6px; display: inline-block; margin-bottom: 4px;}
+            .alert-match-list span { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-family: -apple-system, monospace; color: #E8E0D4; margin-right: 6px; display: inline-block; margin-bottom: 4px;}
             
             @keyframes pulse-warning {
-                0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-                70% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                0% { box-shadow: 0 0 0 0 rgba(232, 168, 56, 0.4); }
+                70% { box-shadow: 0 0 0 12px rgba(232, 168, 56, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(232, 168, 56, 0); }
             }
             @keyframes pulse-critical {
-                0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-                70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                0% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0.4); }
+                70% { box-shadow: 0 0 0 12px rgba(232, 84, 84, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0); }
             }
             
             /* Drug Coverage Summary — Dark */
@@ -274,7 +289,7 @@ export const CDSUI = {
                 padding: 12px !important; border-radius: 10px !important; margin-bottom: 10px !important;
             }
             .cds-checked { background: rgba(16, 185, 129, 0.08) !important; border: 1px solid rgba(16, 185, 129, 0.2) !important; }
-            .cds-unchecked { background: rgba(245, 158, 11, 0.08) !important; border: 1px solid rgba(245, 158, 11, 0.2) !important; }
+            .cds-unchecked { background: rgba(232, 168, 56, 0.08) !important; border: 1px solid rgba(232, 168, 56, 0.2) !important; }
             .cds-coverage-label { 
                 font-size: 12px !important; font-weight: 600 !important; color: #e2e8f0 !important; 
                 margin-bottom: 8px !important; display: flex !important; align-items: center !important; gap: 4px !important;
@@ -291,14 +306,14 @@ export const CDSUI = {
                 border: 1px solid rgba(16, 185, 129, 0.25) !important;
             }
             .cds-pill.unchecked { 
-                background: rgba(245, 158, 11, 0.12) !important; color: #fcd34d !important;
-                border: 1px solid rgba(245, 158, 11, 0.25) !important;
+                background: rgba(232, 168, 56, 0.12) !important; color: #fcd34d !important;
+                border: 1px solid rgba(232, 168, 56, 0.25) !important;
                 text-decoration: none !important; cursor: pointer !important;
                 transition: background 0.15s, border-color 0.15s !important;
             }
             .cds-pill.unchecked:hover { 
-                background: rgba(245, 158, 11, 0.22) !important; 
-                border-color: rgba(245, 158, 11, 0.4) !important; 
+                background: rgba(232, 168, 56, 0.22) !important; 
+                border-color: rgba(232, 168, 56, 0.4) !important; 
             }
             .cds-coverage-hint {
                 margin-top: 6px !important; font-size: 10px !important; color: #64748b !important;
@@ -343,11 +358,11 @@ export const CDSUI = {
         if (summary.critical_count > 0) {
             this.iconToggle.classList.add('critical');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#ef4444';
+            this.iconToggle.style.color = '#E85454';
         } else if (summary.warning_count > 0 || hasUnmapped) {
             this.iconToggle.classList.add('warning');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#f59e0b';
+            this.iconToggle.style.color = '#E8A838';
         } else {
             this.iconToggle.innerHTML = shieldCheckSVG;
         }
@@ -433,10 +448,10 @@ export const CDSUI = {
     getSeverityEmoji(severity) {
         // Trả về dấu chấm tròn màu sắc chỉ báo mức độ chuyên nghiệp hơn emoji
         const bullet = (color) => `<svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="${color}"/></svg>`;
-        if (severity === 'high') return bullet('#ef4444');
-        if (severity === 'medium') return bullet('#f59e0b');
+        if (severity === 'high') return bullet('#E85454');
+        if (severity === 'medium') return bullet('#E8A838');
         if (severity === 'low') return bullet('#3b82f6');
-        return bullet('#cbd5e1');
+        return bullet('#E8E0D4');
     },
 
     /**

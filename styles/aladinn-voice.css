@@ -1,22 +1,22 @@
 /**
- * HIS Voice Assistant - Panel Styles
- * Extracted from content.js for better maintainability
+ * Aladinn Voice Assistant v1.1.0 - Desert Mystic UI
+ * Midnight Navy + Royal Gold Design System
  */
 
 :root {
-  --his-primary: #00f0ff; /* Teal */
-  --his-primary-hover: #ffd700; /* Gold */
-  --his-success: #10b981;
-  --his-danger: #f43f5e;
-  --his-bg-glass: rgba(26, 11, 46, 0.85); /* Primary Dark */
-  --his-bg-secondary: rgba(45, 27, 78, 0.8);
-  --his-bg-tertiary: rgba(0, 240, 255, 0.1);
-  --his-text-primary: #f0f0f0;
-  --his-text-secondary: #d0e0ff;
-  --his-border: rgba(255, 215, 0, 0.3);
+  --his-primary: #D4A853; /* Royal Gold */
+  --his-primary-hover: #E8BC6A; /* Gold Light */
+  --his-success: #3ECDA0;
+  --his-danger: #E85454;
+  --his-bg-glass: rgba(20, 27, 45, 0.92); /* Midnight Navy */
+  --his-bg-secondary: rgba(28, 37, 65, 0.9);
+  --his-bg-tertiary: rgba(212, 168, 83, 0.08);
+  --his-text-primary: #E8E0D4;
+  --his-text-secondary: #8B8579;
+  --his-border: rgba(212, 168, 83, 0.20);
   --his-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --his-glass-shadow: 0 0 15px rgba(0, 240, 255, 0.3) inset, 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  --his-lit-edge: 0 1px 0 0 rgba(255, 215, 0, 0.3) inset;
+  --his-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --his-lit-edge: 0 1px 0 0 rgba(212, 168, 83, 0.2) inset;
 }
 
 /* ========================================
@@ -29,8 +29,8 @@
   width: 320px;
   max-height: calc(100vh - 100px);
   background: var(--his-bg-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
   border: 1px solid var(--his-border);
   border-radius: 20px;
   box-shadow: var(--his-shadow), var(--his-glass-shadow);
@@ -932,7 +932,7 @@
   width: 380px;
   height: 380px;
   background: var(--his-bg-secondary);
-  backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
   z-index: 999998;
   display: flex;
   flex-direction: column;

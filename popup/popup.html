@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <title>Aladinn — Trợ lý VNPT HIS</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="popup.css">
 </head>
 
@@ -14,16 +13,18 @@
         <!-- Header -->
         <header class="app-header">
             <div class="logo">
-                <img src="../assets/icons/icon128.png" class="genie-img" alt="Aladinn Lamp">
+                <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn Lamp">
                 <span class="app-title">Aladinn</span>
             </div>
-            <div class="version-badge">v1.0.0</div>
+            <div class="version-badge">v1.1.0</div>
         </header>
 
         <!-- Update Banner (hidden by default) -->
         <div id="update-banner" class="update-banner" style="display: none;">
             <div class="update-content">
-                <div class="update-icon">✨</div>
+                <div class="update-icon">
+                    <svg class="al-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813h6.112l-4.968 3.602 1.912 5.813L12 14.624l-4.968 3.604 1.912-5.813-4.968-3.602h6.112z"/></svg>
+                </div>
                 <div class="update-info">
                     <div class="update-title">Bản cập nhật <span id="update-version"></span></div>
                     <div class="update-desc" id="update-changelog">Tính năng mới & Sửa đổi</div>
@@ -43,15 +44,15 @@
         <div class="feature-toggles">
             <label class="toggle-item">
                 <div class="toggle-info">
-                    <span class="toggle-icon">📸</span>
-                    <span class="toggle-label">Smart Scanner</span>
+                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    <span class="toggle-label">Scanner</span>
                 </div>
                 <input type="checkbox" id="toggle-scanner" checked>
                 <div class="toggle-slider"></div>
             </label>
             <label class="toggle-item">
                 <div class="toggle-info">
-                    <span class="toggle-icon">🧠</span>
+                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
                     <span class="toggle-label">Trợ lý AI</span>
                 </div>
                 <input type="checkbox" id="toggle-voice" checked>
@@ -59,16 +60,16 @@
             </label>
             <label class="toggle-item">
                 <div class="toggle-info">
-                    <span class="toggle-icon">✍️</span>
-                    <span class="toggle-label">Ký số Tự động</span>
+                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    <span class="toggle-label">Ký số</span>
                 </div>
                 <input type="checkbox" id="toggle-sign" checked>
                 <div class="toggle-slider"></div>
             </label>
             <label class="toggle-item">
                 <div class="toggle-info">
-                    <span class="toggle-icon">🛡️</span>
-                    <span class="toggle-label">An toàn L.Sàng</span>
+                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                    <span class="toggle-label">An toàn L.S</span>
                 </div>
                 <input type="checkbox" id="toggle-cds" checked>
                 <div class="toggle-slider"></div>
@@ -77,25 +78,38 @@
 
         <!-- Tabs Navigation -->
         <nav class="tabs-nav">
-            <button class="tab-btn active" data-target="tab-scanner">Quét & Nhập</button>
-            <button class="tab-btn" data-target="tab-voice">Gọi AI</button>
-            <button class="tab-btn" data-target="tab-sign">Lịch sử Ký số</button>
+            <button class="tab-btn active" data-target="tab-scanner">
+                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                Quét & Nhập
+            </button>
+            <button class="tab-btn" data-target="tab-voice">
+                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                Gọi AI
+            </button>
+            <button class="tab-btn" data-target="tab-sign">
+                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                Ký số
+            </button>
         </nav>
 
         <!-- Tab Content: Scanner Actions -->
         <div id="tab-scanner" class="tab-content active">
             <div class="action-grid">
                 <div id="scan-room-btn" class="action-btn primary">
-                    <span class="icon">🏥</span> Quét Phòng / Giường
+                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+                    Quét Phòng / Giường
                 </div>
                 <div id="scan-vitals-btn" class="action-btn">
-                    <span class="icon">❤️</span> Quét Sinh hiệu
+                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                    Quét Sinh hiệu
                 </div>
                 <div id="show-dashboard-btn" class="action-btn">
-                    <span class="icon">📊</span> Mở Dashboard
+                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                    Mở Dashboard
                 </div>
                 <div id="toggle-ui-btn" class="action-btn">
-                    <span class="icon">⚙️</span> Giao diện Scanner
+                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Cài đặt Scanner
                 </div>
             </div>
         </div>
@@ -126,10 +140,12 @@
                 
                 <div class="action-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
                     <button id="sign-select-all-btn" class="action-btn" style="padding: 12px; border-radius: 12px;">
-                        <span class="icon" style="font-size: 16px;">☑️</span> Chọn tất cả
+                        <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        Chọn tất cả
                     </button>
                     <button id="sign-start-btn" class="action-btn primary" style="padding: 12px; border-radius: 12px;">
-                        <span class="icon" style="font-size: 16px;">✍️</span> Ký hồ sơ đang chọn
+                        <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        Ký hồ sơ đang chọn
                     </button>
                 </div>
 
@@ -162,6 +178,7 @@
     <!-- Footer -->
     <footer class="app-footer">
         <button id="open-options-btn" class="footer-btn">
+            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             Cài đặt
         </button>
         <div class="author-info">Thiết kế bởi Huỳnh Trung Anh</div>

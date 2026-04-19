@@ -1,93 +1,217 @@
-/**
- * 🧞 Aladinn — Core CSS
- * Shared styles, z-index scale, CSS variables, animations
- */
+/* ============================================================
+   🧞 ALADINN DESIGN SYSTEM v2 — "Desert Mystic"
+   Source of Truth — All CSS Custom Properties & Shared Utilities
+   ============================================================ */
 
-/* ========================================
-   CSS VARIABLES
-   ======================================== */
+/* ── Design Tokens ── */
 :root {
-    /* Colors - Aladdin Theme */
-    --aladinn-primary: #a855f7;
-    --aladinn-primary-hover: #9333ea;
-    --primary-dark: #1a0b2e;
-    --primary-light: #2d1b4e;
-    --accent-gold: #ffd700;
-    --accent-gold-glow: rgba(255, 215, 0, 0.6);
-    --magic-teal: #00f0ff;
-    --magic-teal-glow: rgba(0, 240, 255, 0.5);
-    
-    --aladinn-success: #10b981;
-    --aladinn-warning: #f59e0b;
-    --aladinn-error: #ef4444;
-    --aladinn-info: #00f0ff;
+    /* Backgrounds */
+    --al-bg-deep:      #0C1222;
+    --al-bg-surface:   #141B2D;
+    --al-bg-elevated:  #1C2541;
+    --al-bg-glass:     rgba(20, 27, 45, 0.88);
+    --al-bg-hover:     rgba(212, 168, 83, 0.06);
+
+    /* Gold Accent */
+    --al-gold:         #D4A853;
+    --al-gold-light:   #F0D68A;
+    --al-gold-glow:    rgba(212, 168, 83, 0.25);
+    --al-gold-dim:     rgba(212, 168, 83, 0.08);
+    --al-gold-border:  rgba(212, 168, 83, 0.20);
 
     /* Text */
-    --aladinn-text-primary: #f0f0f0;
-    --aladinn-text-secondary: #00f0ff;
-    --aladinn-text-muted: #d0e0ff;
+    --al-text:         #E8E0D4;
+    --al-text-muted:   #8B8579;
+    --al-text-dim:     #5C564F;
 
-    /* Backgrounds */
-    --aladinn-bg-primary: #1a0b2e;
-    --aladinn-bg-secondary: #2d1b4e;
-    --aladinn-bg-hover: rgba(255, 215, 0, 0.1);
-    --aladinn-bg-glass: rgba(45, 27, 78, 0.6);
+    /* Functional */
+    --al-success:      #3ECDA0;
+    --al-warning:      #E8A838;
+    --al-error:        #E85454;
+    --al-info:         #5BA8D4;
 
-    /* Borders */
-    --aladinn-border: rgba(255, 215, 0, 0.3);
-    --aladinn-border-hover: var(--accent-gold);
+    /* Functional BG */
+    --al-success-bg:   rgba(62, 205, 160, 0.10);
+    --al-warning-bg:   rgba(232, 168, 56, 0.10);
+    --al-error-bg:     rgba(232, 84, 84, 0.10);
+    --al-info-bg:      rgba(91, 168, 212, 0.10);
 
-    /* Shadows */
-    --aladinn-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --aladinn-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    --aladinn-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-    --aladinn-shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.1), 0 0 30px var(--magic-teal-glow);
+    /* Typography */
+    --al-font:         'Inter', system-ui, -apple-system, sans-serif;
+    --al-font-title:   'Outfit', system-ui, sans-serif;
 
     /* Radius */
-    --aladinn-radius-sm: 6px;
-    --aladinn-radius-md: 12px;
-    --aladinn-radius-lg: 16px;
-    --aladinn-radius-xl: 24px;
+    --al-radius-sm:    6px;
+    --al-radius-md:    12px;
+    --al-radius-lg:    16px;
+    --al-radius-xl:    24px;
+    --al-radius-pill:  50px;
 
-    /* Font */
-    --aladinn-font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --aladinn-font-title: 'Cinzel', serif;
+    /* Shadows */
+    --al-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.3);
+    --al-shadow-md:    0 4px 12px rgba(0, 0, 0, 0.35);
+    --al-shadow-lg:    0 10px 30px rgba(0, 0, 0, 0.4);
+    --al-shadow-gold:  0 4px 20px rgba(212, 168, 83, 0.15);
+
+    /* Blur (lightweight for performance) */
+    --al-blur:         blur(8px);
+
+    /* Motion */
+    --al-ease:         cubic-bezier(0.4, 0, 0.2, 1);
+    --al-duration:     200ms;
+
+    /* Border */
+    --al-border:       rgba(212, 168, 83, 0.12);
+    --al-border-hover: rgba(212, 168, 83, 0.30);
+
+    /* Z-Index Scale (Content scripts) */
+    --al-z-base:       9000;
+    --al-z-tooltip:    9100;
+    --al-z-dashboard:  9200;
+    --al-z-menu:       9300;
+    --al-z-panel:      9400;
+    --al-z-toast:      9600;
+    --al-z-modal:      9700;
+    --al-z-overlay:    9800;
+    --al-z-top:        9999;
+
+    /* ── Backward Compatibility Aliases ── */
+    --his-primary:     var(--al-gold);
+    --his-success:     var(--al-success);
+    --his-danger:      var(--al-error);
+    --his-warning:     var(--al-warning);
+    --his-bg-primary:  var(--al-bg-deep);
+    --his-bg-secondary: var(--al-bg-surface);
+    --his-bg-tertiary: var(--al-bg-elevated);
+    --his-text-primary: var(--al-text);
+    --his-text-secondary: var(--al-text-muted);
+    --his-border:      var(--al-border);
+    --his-glass-bg:    var(--al-bg-glass);
+    --his-shadow:      var(--al-shadow-md);
+    --his-glass-shadow: var(--al-shadow-lg);
 }
 
-/* ========================================
-   TOAST ANIMATIONS
-   ======================================== */
-@keyframes aladinnToastIn {
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ── Lucide Icon Base ── */
+.al-icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.al-icon-sm {
+    width: 16px;
+    height: 16px;
+}
+
+.al-icon-lg {
+    width: 24px;
+    height: 24px;
+}
+
+/* ── Toast Container (shared across modules) ── */
+.al-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: var(--al-z-toast);
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.al-toast {
+    padding: 10px 18px;
+    border-radius: var(--al-radius-md);
+    font-family: var(--al-font);
+    font-size: 13px;
+    font-weight: 500;
+    color: white;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s var(--al-ease);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 380px;
+    box-shadow: var(--al-shadow-md);
+    backdrop-filter: var(--al-blur);
+    background: var(--al-bg-glass);
+    border: 1px solid var(--al-border);
+}
+
+.al-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.al-toast.success {
+    border-left: 3px solid var(--al-success);
+}
+
+.al-toast.warning {
+    border-left: 3px solid var(--al-warning);
+}
+
+.al-toast.error {
+    border-left: 3px solid var(--al-error);
+}
+
+.al-toast.info {
+    border-left: 3px solid var(--al-info);
+}
+
+/* ── Glass Panel (shared utility) ── */
+.al-glass {
+    background: var(--al-bg-glass);
+    backdrop-filter: var(--al-blur);
+    -webkit-backdrop-filter: var(--al-blur);
+    border: 1px solid var(--al-border);
+    border-radius: var(--al-radius-lg);
+    box-shadow: var(--al-shadow-lg);
+}
+
+/* ── Utility: Scrollbar ── */
+.al-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.al-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.al-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 83, 0.2);
+    border-radius: 4px;
+}
+
+.al-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 168, 83, 0.4);
+}
+
+/* ── Keyframes (shared, lightweight) ── */
+@keyframes al-fadeIn {
     from {
         opacity: 0;
-        transform: translateX(40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes aladinnToastOut {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(40px);
-    }
-}
-
-@keyframes aladinnFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes aladinnSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(6px);
     }
     to {
         opacity: 1;
@@ -95,86 +219,38 @@
     }
 }
 
-@keyframes aladinnPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+@keyframes al-slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
-@keyframes aladinnSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@keyframes al-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-@keyframes aladinnShake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+@keyframes al-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
-/* ========================================
-   TOAST CONTAINER
-   ======================================== */
-#aladinn-toast-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 9600;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: none;
-}
-
-.aladinn-toast {
-    padding: 10px 16px;
-    border-radius: var(--aladinn-radius-md);
-    font-size: 13px;
-    font-weight: 500;
-    color: white;
-    pointer-events: auto;
-    box-shadow: var(--aladinn-shadow-lg);
-    animation: aladinnToastIn 0.3s ease;
-    font-family: var(--aladinn-font);
-}
-
-.aladinn-toast-success { background: var(--aladinn-success); }
-.aladinn-toast-error { background: var(--aladinn-error); }
-.aladinn-toast-warning { background: var(--aladinn-warning); }
-.aladinn-toast-info { background: var(--aladinn-info); }
-
-/* ========================================
-   SHARED UTILITY CLASSES
-   ======================================== */
-.aladinn-hidden { display: none !important; }
-.aladinn-glass {
-    background: var(--aladinn-bg-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--aladinn-border);
-}
-
-.glass-panel {
-    background: var(--aladinn-bg-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--aladinn-border);
-    border-radius: var(--aladinn-radius-xl);
-    box-shadow: var(--aladinn-shadow-xl);
-}
-
-.glow-gold {
-    box-shadow: 0 0 15px var(--accent-gold-glow);
-}
-
-.glow-teal {
-    box-shadow: 0 0 15px var(--magic-teal-glow);
-}
-
-.aladinn-spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255, 215, 0, 0.3);
-    border-top: 2px solid var(--accent-gold);
+/* ── Spinner (shared) ── */
+.al-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--al-border);
+    border-top-color: var(--al-gold);
     border-radius: 50%;
-    animation: aladinnSpin 0.8s linear infinite;
+    animation: al-spin 0.8s linear infinite;
 }

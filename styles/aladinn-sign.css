@@ -6,7 +6,7 @@
     gap: 6px;
     padding: 6px 12px;
     margin-left: 8px;
-    background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+    background: linear-gradient(135deg, #D4A853 0%, #B8912E 100%);
     color: white;
     border: none;
     border-radius: 4px;
@@ -19,7 +19,7 @@
 
 .his-helper-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 180, 216, 0.4);
+    box-shadow: 0 2px 8px rgba(212, 168, 83, 0.4);
 }
 
 .his-helper-btn:active {
@@ -32,7 +32,7 @@
 
 /* Highlight hàng được filter */
 .his-helper-highlight {
-    background-color: rgba(0, 180, 216, 0.15) !important;
+    background-color: rgba(212, 168, 83, 0.15) !important;
 }
 
 /* Toast container - positioned ABOVE the panel */
@@ -136,7 +136,7 @@
 
 .his-toast-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #ffd700, #a855f7);
+    background: linear-gradient(90deg, #F0D68A, #D4A853);
     animation: progressShrink var(--toast-duration, 3s) linear forwards;
 }
 
@@ -217,7 +217,7 @@
     cursor: pointer;
     vertical-align: middle;
     margin-right: 5px;
-    accent-color: #00b4d8;
+    accent-color: #D4A853;
 }
 
 .his-checkbox:hover {
@@ -326,7 +326,7 @@
 
 /* Header with Gradient */
 .his-panel-header {
-    background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #00f0ff 100%);
+    background: linear-gradient(135deg, #0C1222 0%, #1C2541 50%, #D4A853 100%);
     padding: 14px 16px;
     color: white;
     display: flex;
@@ -510,8 +510,8 @@
 }
 
 .his-btn-primary {
-    background: linear-gradient(135deg, #00f0ff 0%, #00b4d8 100%);
-    color: #1a0b2e;
+    background: linear-gradient(135deg, #D4A853 0%, #D4A853 100%);
+    color: #0C1222;
     box-shadow: 0 4px 15px rgba(0, 240, 255, 0.35);
 }
 
@@ -556,7 +556,7 @@
 /* Patient Card - Dark Gradient */
 .his-patient-card {
     position: relative;
-    background: linear-gradient(135deg, #2d1b4e 0%, #00f0ff 100%);
+    background: linear-gradient(135deg, #1C2541 0%, #D4A853 100%);
     border-radius: 12px;
     padding: 14px 16px;
     margin-bottom: 14px;
@@ -636,7 +636,7 @@
 
 .his-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #00f0ff, #ffd700, #00f0ff);
+    background: linear-gradient(90deg, #D4A853, #F0D68A, #D4A853);
     background-size: 200% 100%;
     width: 0%;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -817,11 +817,11 @@
 
 /* Pulse animation for active patient */
 .his-processing-row td {
-    background: rgba(0, 180, 216, 0.1) !important;
+    background: rgba(212, 168, 83, 0.1) !important;
 }
 
 .his-processing-row {
-    box-shadow: inset 5px 0 0 #00b4d8;
+    box-shadow: inset 5px 0 0 #D4A853;
 }
 
 /* Network Status Indicator Overlay */
@@ -854,7 +854,7 @@
 .his-history-section {
     margin-top: 10px;
     margin-bottom: 10px;
-    border-top: 1px solid rgba(0, 180, 216, 0.1);
+    border-top: 1px solid rgba(212, 168, 83, 0.1);
     padding-top: 8px;
 }
 
@@ -889,7 +889,7 @@
 }
 
 .his-history-list::-webkit-scrollbar-thumb {
-    background: rgba(0, 180, 216, 0.3);
+    background: rgba(212, 168, 83, 0.3);
     border-radius: 4px;
 }
 
@@ -992,8 +992,8 @@
     position: fixed;
     width: 60px;
     height: 60px;
-    background: rgba(0, 180, 216, 0.4);
-    border: 2px solid #00b4d8;
+    background: rgba(212, 168, 83, 0.4);
+    border: 2px solid #D4A853;
     border-radius: 50%;
     pointer-events: none;
     z-index: 2147483647;
@@ -1038,7 +1038,7 @@
 /* Main HUD Label - Magic Lamp Pill Design */
 .his-hud-label {
     position: relative;
-    background: linear-gradient(135deg, rgba(26, 11, 46, 0.95), rgba(45, 27, 78, 0.92));
+    background: linear-gradient(135deg, rgba(20, 27, 45, 0.95), rgba(28, 37, 65, 0.92));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding: 12px 28px 12px 20px;
@@ -1067,7 +1067,7 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(90deg, #ffd700, #a855f7, #00f0ff, #ffd700, #ec4899, #a855f7, #ffd700);
+    background: linear-gradient(90deg, #F0D68A, #D4A853, #D4A853, #F0D68A, #E8BC6A, #D4A853, #F0D68A);
     background-size: 400% 100%;
     border-radius: 52px;
     z-index: -1;
@@ -1078,7 +1078,7 @@
     content: '';
     position: absolute;
     inset: 2px;
-    background: linear-gradient(135deg, rgba(26, 11, 46, 0.98), rgba(45, 27, 78, 0.95));
+    background: linear-gradient(135deg, rgba(20, 27, 45, 0.98), rgba(28, 37, 65, 0.95));
     border-radius: 48px;
     z-index: -1;
 }
@@ -1113,7 +1113,7 @@
 .his-hud-dot {
     width: 10px;
     height: 10px;
-    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    background: linear-gradient(135deg, #F0D68A, #ffaa00);
     border-radius: 50%;
     box-shadow:
         0 0 8px rgba(255, 215, 0, 0.9),
@@ -1134,7 +1134,7 @@
 
 /* Text with gold gradient */
 .his-hud-label span {
-    background: linear-gradient(90deg, #ffd700, #fffacd, #ffd700);
+    background: linear-gradient(90deg, #F0D68A, #fffacd, #F0D68A);
     background-size: 200% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1163,8 +1163,8 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #ffd700;
-    box-shadow: 0 0 6px #ffd700, 0 0 12px rgba(255, 215, 0, 0.5);
+    background: #F0D68A;
+    box-shadow: 0 0 6px #F0D68A, 0 0 12px rgba(255, 215, 0, 0.5);
     animation: sparkleFloat 2s ease-in-out infinite;
 }
 

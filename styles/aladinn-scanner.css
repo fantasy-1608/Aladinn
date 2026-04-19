@@ -1,46 +1,33 @@
 /**
- * VNPT HIS Extension v3.5.1 - Premium UI
- * Modern Glassmorphism Design System
+ * Aladinn Scanner v1.1.0 - Desert Mystic UI
+ * Midnight Navy + Royal Gold Design System
  */
 
 /* ========================================
    Design Tokens & Variables
 ======================================== */
 :root {
-    /* Core Palette: Indigo & Violet - Mental comfort & Professionalism */
-    --vnpt-primary: #6366f1;
-    /* Indigo 500 */
-    --vnpt-primary-hover: #4f46e5;
-    /* Indigo 600 */
-    --vnpt-secondary: #8b5cf6;
-    /* Violet 500 */
+    /* Core Palette: Desert Mystic */
+    --vnpt-primary: #D4A853;
+    --vnpt-primary-hover: #E8BC6A;
+    --vnpt-secondary: #B8912E;
 
     /* Functional Colors */
-    --vnpt-success: #10b981;
-    /* Emerald 500 */
-    --vnpt-warning: #f59e0b;
-    /* Amber 500 */
-    --vnpt-danger: #ef4444;
-    /* Red 500 */
-    --vnpt-info: #06b6d4;
-    /* Cyan 500 */
+    --vnpt-success: #3ECDA0;
+    --vnpt-warning: #E8A838;
+    --vnpt-danger: #E85454;
+    --vnpt-info: #5BA8D4;
 
-    /* Glass Effect (Light Mode) */
-    --vnpt-glass-bg: rgba(255, 255, 255, 0.85);
-    /* Increased opacity for less repaint cost */
-    --vnpt-glass-border: rgba(255, 255, 255, 0.6);
-    --vnpt-glass-shadow: 0 4px 16px rgba(31, 38, 135, 0.1);
-    /* Reduced shadow spread */
-    --vnpt-glass-blur: blur(6px);
-    /* Reduced blur 12px -> 6px */
+    /* Glass Effect - Desert Mystic */
+    --vnpt-glass-bg: rgba(20, 27, 45, 0.92);
+    --vnpt-glass-border: rgba(212, 168, 83, 0.15);
+    --vnpt-glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    --vnpt-glass-blur: blur(8px);
 
     /* Text */
-    --vnpt-text-main: #1e293b;
-    /* Slate 800 */
-    --vnpt-text-muted: #64748b;
-    /* Slate 500 */
-    --vnpt-text-light: #f8fafc;
-    /* Slate 50 */
+    --vnpt-text-main: #E8E0D4;
+    --vnpt-text-muted: #8B8579;
+    --vnpt-text-light: #E8E0D4;
 
     /* Layout */
     --vnpt-radius: 16px;
@@ -49,21 +36,15 @@
 
     /* Transitions */
     --vnpt-ease: cubic-bezier(0.2, 0, 0, 1);
-    /* Sharper curve */
 }
 
-/* Dark Mode Tokens */
+/* Dark Mode — same as default (already dark) */
 body.vnpt-dark-mode {
-    --vnpt-glass-bg: rgba(15, 23, 42, 0.75);
-    /* Slate 900 */
-    --vnpt-glass-border: rgba(255, 255, 255, 0.1);
+    --vnpt-glass-bg: rgba(12, 18, 34, 0.92);
+    --vnpt-glass-border: rgba(212, 168, 83, 0.12);
     --vnpt-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-
-    --vnpt-text-main: #f1f5f9;
-    --vnpt-text-muted: #94a3b8;
-
-    --vnpt-primary: #818cf8;
-    --vnpt-primary-hover: #6366f1;
+    --vnpt-text-main: #E8E0D4;
+    --vnpt-text-muted: #8B8579;
 }
 
 /* ========================================

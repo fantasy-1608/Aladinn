@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aladinn — Desert Mystic Design Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           🧞 ALADINN DESIGN SYSTEM — "Desert Mystic"
+           Source of Truth — All CSS Custom Properties
+           ============================================================ */
+        :root {
+            /* ── Backgrounds ── */
+            --al-bg-deep:     #0C1222;
+            --al-bg-surface:  #141B2D;
+            --al-bg-elevated: #1C2541;
+            --al-bg-glass:    rgba(20, 27, 45, 0.88);
+            --al-bg-hover:    rgba(212, 168, 83, 0.06);
+
+            /* ── Gold Accent (Đèn Thần) ── */
+            --al-gold:        #D4A853;
+            --al-gold-light:  #F0D68A;
+            --al-gold-glow:   rgba(212, 168, 83, 0.25);
+            --al-gold-dim:    rgba(212, 168, 83, 0.08);
+            --al-gold-border: rgba(212, 168, 83, 0.20);
+
+            /* ── Text ── */
+            --al-text:        #E8E0D4;
+            --al-text-muted:  #8B8579;
+            --al-text-dim:    #5C564F;
+
+            /* ── Functional Colors ── */
+            --al-success:     #3ECDA0;
+            --al-warning:     #E8A838;
+            --al-error:       #E85454;
+            --al-info:        #5BA8D4;
+
+            /* ── Functional Bg ── */
+            --al-success-bg:  rgba(62, 205, 160, 0.10);
+            --al-warning-bg:  rgba(232, 168, 56, 0.10);
+            --al-error-bg:    rgba(232, 84, 84, 0.10);
+            --al-info-bg:     rgba(91, 168, 212, 0.10);
+
+            /* ── Typography ── */
+            --al-font:        'Inter', system-ui, -apple-system, sans-serif;
+            --al-font-title:  'Outfit', system-ui, sans-serif;
+
+            /* ── Radius ── */
+            --al-radius-sm:   6px;
+            --al-radius-md:   12px;
+            --al-radius-lg:   16px;
+            --al-radius-xl:   24px;
+            --al-radius-pill: 50px;
+
+            /* ── Shadows ── */
+            --al-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.3);
+            --al-shadow-md:   0 4px 12px rgba(0, 0, 0, 0.35);
+            --al-shadow-lg:   0 10px 30px rgba(0, 0, 0, 0.4);
+            --al-shadow-gold: 0 4px 20px rgba(212, 168, 83, 0.15);
+
+            /* ── Blur (reduced for performance) ── */
+            --al-blur:        blur(8px);
+
+            /* ── Motion ── */
+            --al-ease:        cubic-bezier(0.4, 0, 0.2, 1);
+            --al-duration:    200ms;
+
+            /* ── Border ── */
+            --al-border:      rgba(212, 168, 83, 0.12);
+            --al-border-hover: rgba(212, 168, 83, 0.30);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ── Lucide Icon Base ── */
+        .al-icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            flex-shrink: 0;
+        }
+        .al-icon-sm { width: 16px; height: 16px; }
+        .al-icon-lg { width: 24px; height: 24px; }
+
+        /* ============================================================
+           PREVIEW PAGE LAYOUT
+           ============================================================ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--al-font);
+            background: var(--al-bg-deep);
+            color: var(--al-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle ambient glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(212, 168, 83, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(212, 168, 83, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .preview-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Page header */
+        .preview-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 40px;
+        }
+
+        .preview-header h1 {
+            font-family: var(--al-font-title);
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--al-gold-light) 0%, var(--al-gold) 50%, var(--al-gold-light) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .preview-header p {
+            color: var(--al-text-muted);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .preview-header .design-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 6px 16px;
+            background: var(--al-gold-dim);
+            border: 1px solid var(--al-gold-border);
+            border-radius: var(--al-radius-pill);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--al-gold);
+        }
+
+        /* Section titles */
+        .section-label {
+            font-family: var(--al-font-title);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--al-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--al-gold-border), transparent);
+        }
+
+        /* Component grid */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 32px;
+            margin-bottom: 60px;
+        }
+
+        .component-card {
+            background: var(--al-bg-surface);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-lg);
+            overflow: hidden;
+        }
+
+        .component-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--al-border);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--al-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .component-card-body {
+            padding: 20px;
+        }
+
+        /* ============================================================
+           COMPONENT: POPUP PREVIEW
+           ============================================================ */
+        .popup-frame {
+            width: 380px;
+            margin: 0 auto;
+            background: var(--al-bg-deep);
+            border-radius: var(--al-radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--al-border);
+            box-shadow: var(--al-shadow-lg);
+            position: relative;
+        }
+
+        /* Popup ambient */
+        .popup-frame::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(212, 168, 83, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(212, 168, 83, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .popup-frame > * { position: relative; z-index: 1; }
+
+        /* Popup Header */
+        .popup-header {
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--al-border);
+            background: rgba(20, 27, 45, 0.5);
+        }
+
+        .popup-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .popup-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(212, 168, 83, 0.3);
+            transition: transform var(--al-duration) var(--al-ease);
+        }
+
+        .popup-logo:hover .popup-logo-icon {
+            transform: scale(1.05) rotate(-3deg);
+        }
+
+        .popup-logo-icon svg {
+            width: 18px;
+            height: 18px;
+            color: var(--al-bg-deep);
+        }
+
+        .popup-title {
+            font-family: var(--al-font-title);
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--al-text) 0%, var(--al-text-muted) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .popup-version {
+            padding: 4px 10px;
+            background: var(--al-gold-dim);
+            border: 1px solid var(--al-gold-border);
+            border-radius: var(--al-radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--al-gold);
+            letter-spacing: 0.5px;
+        }
+
+        /* Feature Toggles */
+        .popup-toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 16px 20px;
+        }
+
+        .toggle-card {
+            background: rgba(212, 168, 83, 0.03);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-md);
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all var(--al-duration) var(--al-ease);
+        }
+
+        .toggle-card:hover {
+            background: var(--al-bg-hover);
+            border-color: var(--al-border-hover);
+        }
+
+        .toggle-card-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-card-icon {
+            color: var(--al-gold);
+            opacity: 0.7;
+        }
+
+        .toggle-card-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--al-text);
+        }
+
+        /* iOS Switch */
+        .switch-track {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            transition: background var(--al-duration) var(--al-ease);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .switch-track.active {
+            background: var(--al-gold);
+        }
+
+        .switch-thumb {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: transform var(--al-duration) var(--al-ease);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .switch-track.active .switch-thumb {
+            transform: translateX(16px);
+        }
+
+        /* Tabs */
+        .popup-tabs {
+            display: flex;
+            padding: 0 20px;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .popup-tab {
+            flex: 1;
+            padding: 10px 0;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--al-text-muted);
+            cursor: pointer;
+            transition: all var(--al-duration) var(--al-ease);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: var(--al-font);
+        }
+
+        .popup-tab:hover {
+            color: var(--al-text);
+        }
+
+        .popup-tab.active {
+            color: var(--al-gold);
+            border-bottom-color: var(--al-gold);
+        }
+
+        /* Action Grid */
+        .popup-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .action-card {
+            background: var(--al-bg-surface);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-md);
+            padding: 20px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all var(--al-duration) var(--al-ease);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--al-text-muted);
+        }
+
+        .action-card:hover {
+            background: var(--al-bg-elevated);
+            border-color: var(--al-border-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--al-shadow-gold);
+            color: var(--al-text);
+        }
+
+        .action-card.primary {
+            background: var(--al-gold-dim);
+            border-color: var(--al-gold-border);
+            color: var(--al-gold-light);
+        }
+
+        .action-card.primary:hover {
+            border-color: var(--al-gold);
+            box-shadow: 0 8px 25px rgba(212, 168, 83, 0.2);
+            color: var(--al-gold-light);
+        }
+
+        .action-card-icon {
+            color: var(--al-gold);
+            opacity: 0.8;
+            transition: transform var(--al-duration);
+        }
+
+        .action-card:hover .action-card-icon {
+            transform: scale(1.1);
+        }
+
+        /* Popup Footer */
+        .popup-footer {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--al-border);
+            background: rgba(20, 27, 45, 0.4);
+        }
+
+        .footer-btn {
+            background: rgba(212, 168, 83, 0.06);
+            border: 1px solid var(--al-gold-border);
+            color: var(--al-text);
+            padding: 6px 14px;
+            border-radius: var(--al-radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--al-duration);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--al-font);
+        }
+
+        .footer-btn:hover {
+            background: rgba(212, 168, 83, 0.12);
+            border-color: var(--al-gold);
+        }
+
+        .footer-author {
+            font-size: 11px;
+            color: var(--al-text-dim);
+        }
+
+        /* ============================================================
+           COMPONENT: OPTIONS SIDEBAR
+           ============================================================ */
+        .options-preview {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 20px;
+            min-height: 400px;
+        }
+
+        .options-sidebar {
+            background: var(--al-bg-glass);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-lg);
+            padding: 20px;
+        }
+
+        .options-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--al-border);
+            margin-bottom: 20px;
+        }
+
+        .options-brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(212, 168, 83, 0.3);
+        }
+
+        .options-brand-icon svg { width: 20px; height: 20px; color: var(--al-bg-deep); }
+
+        .options-brand h2 {
+            font-family: var(--al-font-title);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--al-text);
+        }
+
+        .options-brand .ver {
+            font-size: 10px;
+            color: var(--al-gold);
+            background: var(--al-gold-dim);
+            border: 1px solid var(--al-gold-border);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            padding: 10px 14px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--al-text-muted);
+            cursor: pointer;
+            transition: all var(--al-duration);
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--al-bg-hover);
+            color: var(--al-text);
+        }
+
+        .nav-item.active {
+            background: var(--al-gold-dim);
+            color: var(--al-gold-light);
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: var(--al-gold);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .nav-item svg { color: var(--al-gold); opacity: 0.6; }
+        .nav-item.active svg { opacity: 1; }
+
+        /* Options Content */
+        .options-content {
+            background: var(--al-bg-glass);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-lg);
+            padding: 28px 32px;
+        }
+
+        .options-content h3 {
+            font-family: var(--al-font-title);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--al-text);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--al-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .options-content h3 svg { color: var(--al-gold); }
+
+        /* Form elements */
+        .form-group { margin-bottom: 24px; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--al-text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(212, 168, 83, 0.03);
+            border: 1px solid var(--al-border);
+            border-radius: 10px;
+            color: var(--al-text);
+            font-size: 13px;
+            font-family: var(--al-font);
+            outline: none;
+            transition: all var(--al-duration);
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            border-color: var(--al-gold);
+            box-shadow: 0 0 0 3px var(--al-gold-dim);
+            background: rgba(212, 168, 83, 0.06);
+        }
+
+        .form-input::placeholder { color: var(--al-text-dim); }
+
+        .form-hint {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--al-text-dim);
+            line-height: 1.5;
+        }
+
+        .form-hint a { color: var(--al-gold); text-decoration: none; }
+        .form-hint a:hover { text-decoration: underline; }
+
+        /* Toggle Row */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: rgba(212, 168, 83, 0.03);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-md);
+            margin-bottom: 12px;
+            transition: all var(--al-duration);
+        }
+
+        .toggle-row:hover {
+            border-color: var(--al-border-hover);
+            background: var(--al-bg-hover);
+        }
+
+        .toggle-row-info strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--al-text);
+            margin-bottom: 4px;
+        }
+
+        .toggle-row-info span {
+            font-size: 12px;
+            color: var(--al-text-muted);
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn-gold {
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            color: var(--al-bg-deep);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--al-font);
+            cursor: pointer;
+            transition: all var(--al-duration);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--al-shadow-gold);
+            filter: brightness(1.1);
+        }
+
+        .btn-ghost {
+            background: rgba(212, 168, 83, 0.06);
+            border: 1px solid var(--al-gold-border);
+            color: var(--al-text);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--al-font);
+            cursor: pointer;
+            transition: all var(--al-duration);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(212, 168, 83, 0.12);
+            border-color: var(--al-gold);
+        }
+
+        /* ============================================================
+           COMPONENT: SCANNER PANEL
+           ============================================================ */
+        .scanner-panel {
+            width: 260px;
+            margin: 0 auto;
+            background: var(--al-bg-glass);
+            backdrop-filter: var(--al-blur);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-lg);
+            padding: 12px;
+            box-shadow: var(--al-shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--al-border);
+        }
+
+        .scanner-title {
+            font-size: 13px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--al-gold), var(--al-gold-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .scanner-ver {
+            font-size: 9px;
+            padding: 2px 6px;
+            background: var(--al-gold-dim);
+            border-radius: 10px;
+            color: var(--al-text-muted);
+            font-weight: 600;
+            -webkit-text-fill-color: var(--al-text-muted);
+        }
+
+        .scanner-btn {
+            position: relative;
+            border: none;
+            padding: 11px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 12px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 150ms var(--al-ease);
+            overflow: hidden;
+            font-family: var(--al-font);
+        }
+
+        .scanner-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .scanner-btn.btn-scan-room {
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            box-shadow: 0 3px 10px rgba(212, 168, 83, 0.25);
+        }
+
+        .scanner-btn.btn-scan-vitals {
+            background: linear-gradient(135deg, var(--al-info), #4A93B8);
+            box-shadow: 0 3px 10px rgba(91, 168, 212, 0.25);
+        }
+
+        .scanner-btn.btn-stop {
+            background: linear-gradient(135deg, #64748B, #475569);
+        }
+
+        .scanner-status {
+            text-align: center;
+            font-size: 11px;
+            background: var(--al-success-bg);
+            color: var(--al-success);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(62, 205, 160, 0.15);
+            font-weight: 500;
+        }
+
+        .scanner-shortcuts {
+            font-size: 10px;
+            color: var(--al-text-dim);
+            text-align: center;
+            padding: 6px;
+            background: var(--al-gold-dim);
+            border-radius: 8px;
+            border: 1px dashed var(--al-border);
+        }
+
+        .scanner-shortcuts kbd {
+            background: var(--al-bg-elevated);
+            color: var(--al-text-muted);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-family: var(--al-font);
+            margin: 0 1px;
+        }
+
+        /* Scanner icon buttons */
+        .scanner-icon-btn {
+            background: transparent;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            color: var(--al-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 100ms;
+        }
+
+        .scanner-icon-btn:hover {
+            background: var(--al-bg-hover);
+            color: var(--al-gold);
+        }
+
+        /* ============================================================
+           COMPONENT: VOICE PANEL
+           ============================================================ */
+        .voice-panel {
+            width: 320px;
+            margin: 0 auto;
+            background: var(--al-bg-glass);
+            backdrop-filter: var(--al-blur);
+            border: 1px solid var(--al-border);
+            border-radius: 20px;
+            box-shadow: var(--al-shadow-lg), 0 0 30px var(--al-gold-glow);
+            overflow: hidden;
+        }
+
+        .voice-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--al-border);
+        }
+
+        .voice-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--al-text);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .voice-logo-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-logo-icon svg { width: 14px; height: 14px; color: var(--al-bg-deep); }
+
+        .voice-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .voice-ctrl-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: var(--al-gold-dim);
+            color: var(--al-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 150ms;
+        }
+
+        .voice-ctrl-btn:hover {
+            background: var(--al-gold);
+            color: var(--al-bg-deep);
+        }
+
+        .voice-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Quick Actions */
+        .voice-quick-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 10px;
+        }
+
+        .voice-quick-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            transition: all var(--al-duration);
+            font-family: var(--al-font);
+        }
+
+        .voice-quick-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .voice-quick-primary {
+            background: linear-gradient(135deg, var(--al-gold), #B8922E);
+            flex: 1.5;
+        }
+
+        .voice-quick-secondary {
+            background: rgba(212, 168, 83, 0.08);
+            border: 1px solid var(--al-gold-border);
+            color: var(--al-text-muted);
+        }
+
+        /* Record Area */
+        .voice-record {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 12px;
+        }
+
+        .voice-record-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--al-gold-dim), var(--al-bg-elevated));
+            color: var(--al-gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--al-duration);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .voice-record-btn:hover { transform: scale(1.05); }
+
+        .voice-record-status {
+            font-size: 11px;
+            color: var(--al-text-muted);
+        }
+
+        /* Result Items */
+        .voice-result {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--al-bg-elevated);
+            border: 1px solid var(--al-border);
+            border-radius: 10px;
+            transition: all var(--al-duration);
+        }
+
+        .voice-result:hover {
+            border-color: var(--al-gold-border);
+            transform: translateX(3px);
+        }
+
+        .voice-result-icon {
+            width: 26px;
+            height: 26px;
+            background: var(--al-gold-dim);
+            color: var(--al-gold);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .voice-result-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--al-text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .voice-result-value {
+            font-size: 12px;
+            color: var(--al-text);
+            font-weight: 500;
+        }
+
+        .voice-result-copy {
+            width: 26px;
+            height: 26px;
+            background: rgba(212, 168, 83, 0.06);
+            color: var(--al-text-dim);
+            border: 1px solid var(--al-border);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--al-duration);
+            margin-left: auto;
+            opacity: 0.5;
+        }
+
+        .voice-result:hover .voice-result-copy { opacity: 1; }
+        .voice-result-copy:hover { background: var(--al-gold); color: var(--al-bg-deep); border-color: var(--al-gold); }
+
+        /* ============================================================
+           COMPONENT: SIGN WORKFLOW PANEL
+           ============================================================ */
+        .sign-panel {
+            width: 280px;
+            margin: 0 auto;
+            background: var(--al-bg-deep);
+            border-radius: var(--al-radius-lg);
+            border: 1px solid var(--al-gold-border);
+            box-shadow: var(--al-shadow-lg), 0 0 30px rgba(212, 168, 83, 0.1);
+            overflow: hidden;
+        }
+
+        .sign-header {
+            background: linear-gradient(135deg, var(--al-bg-deep) 0%, var(--al-bg-elevated) 50%, rgba(212, 168, 83, 0.15) 100%);
+            padding: 14px 16px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Gold shimmer on header */
+        .sign-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.1), transparent);
+            animation: headerShimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes headerShimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+        }
+
+        .sign-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sign-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .sign-queue-badge {
+            background: rgba(212, 168, 83, 0.25);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            color: var(--al-gold-light);
+        }
+
+        .sign-body {
+            padding: 16px;
+            color: var(--al-text);
+        }
+
+        /* Patient Card */
+        .patient-card {
+            position: relative;
+            background: linear-gradient(135deg, var(--al-bg-elevated) 0%, rgba(212, 168, 83, 0.12) 100%);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            border: 1px solid var(--al-gold-border);
+        }
+
+        .patient-label {
+            font-size: 10px;
+            color: var(--al-gold);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .patient-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--al-text);
+        }
+
+        /* Progress */
+        .sign-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .sign-progress-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--al-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sign-percent {
+            background: var(--al-gold-dim);
+            color: var(--al-gold);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .sign-progress-track {
+            height: 5px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .sign-progress-fill {
+            height: 100%;
+            width: 65%;
+            background: linear-gradient(90deg, var(--al-gold), var(--al-gold-light));
+            border-radius: 10px;
+            transition: width 0.6s var(--al-ease);
+        }
+
+        /* Stats Grid */
+        .sign-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .sign-stat {
+            background: var(--al-bg-surface);
+            padding: 10px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--al-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sign-stat-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sign-stat-icon.success { background: var(--al-success-bg); color: var(--al-success); }
+        .sign-stat-icon.skip { background: rgba(139, 133, 121, 0.15); color: var(--al-text-muted); }
+        .sign-stat-icon.remain { background: var(--al-warning-bg); color: var(--al-warning); }
+
+        .sign-stat-label { font-size: 9px; color: var(--al-text-dim); font-weight: 500; }
+        .sign-stat-count { font-size: 18px; font-weight: 700; color: var(--al-text); }
+
+        /* ============================================================
+           COMPONENT: CDS ALERT
+           ============================================================ */
+        .cds-alert {
+            border-radius: var(--al-radius-md);
+            padding: 14px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+            border: 1px solid;
+        }
+
+        .cds-alert.critical {
+            background: var(--al-error-bg);
+            border-color: rgba(232, 84, 84, 0.25);
+        }
+
+        .cds-alert.warning {
+            background: var(--al-warning-bg);
+            border-color: rgba(232, 168, 56, 0.25);
+        }
+
+        .cds-alert.info {
+            background: var(--al-info-bg);
+            border-color: rgba(91, 168, 212, 0.25);
+        }
+
+        .cds-alert-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cds-alert.critical .cds-alert-icon { background: rgba(232, 84, 84, 0.2); color: var(--al-error); }
+        .cds-alert.warning .cds-alert-icon { background: rgba(232, 168, 56, 0.2); color: var(--al-warning); }
+        .cds-alert.info .cds-alert-icon { background: rgba(91, 168, 212, 0.2); color: var(--al-info); }
+
+        .cds-alert-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .cds-alert.critical .cds-alert-title { color: var(--al-error); }
+        .cds-alert.warning .cds-alert-title { color: var(--al-warning); }
+        .cds-alert.info .cds-alert-title { color: var(--al-info); }
+
+        .cds-alert-desc {
+            font-size: 12px;
+            color: var(--al-text-muted);
+            line-height: 1.5;
+        }
+
+        /* ============================================================
+           COLOR PALETTE PREVIEW
+           ============================================================ */
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .palette-swatch {
+            border-radius: var(--al-radius-md);
+            overflow: hidden;
+            border: 1px solid var(--al-border);
+        }
+
+        .palette-color {
+            height: 60px;
+        }
+
+        .palette-info {
+            padding: 8px 10px;
+            background: var(--al-bg-surface);
+        }
+
+        .palette-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--al-text);
+            margin-bottom: 2px;
+        }
+
+        .palette-hex {
+            font-size: 10px;
+            color: var(--al-text-dim);
+            font-family: monospace;
+        }
+
+        /* ============================================================
+           TOAST PREVIEW
+           ============================================================ */
+        .toast-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--al-bg-glass);
+            border: 1px solid var(--al-border);
+            border-radius: var(--al-radius-md);
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60%;
+            height: 3px;
+            border-radius: 0 0 0 var(--al-radius-md);
+        }
+
+        .toast-item.success { border-left: 3px solid var(--al-success); }
+        .toast-item.success::after { background: linear-gradient(90deg, var(--al-success), transparent); }
+        .toast-item.warning { border-left: 3px solid var(--al-warning); }
+        .toast-item.warning::after { background: linear-gradient(90deg, var(--al-warning), transparent); }
+        .toast-item.error { border-left: 3px solid var(--al-error); }
+        .toast-item.error::after { background: linear-gradient(90deg, var(--al-error), transparent); }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-item.success .toast-icon { background: var(--al-success); }
+        .toast-item.warning .toast-icon { background: var(--al-warning); }
+        .toast-item.error .toast-icon { background: var(--al-error); }
+
+        /* ============================================================
+           HUD PREVIEW
+           ============================================================ */
+        .hud-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            background: var(--al-bg-glass);
+            border: 1px solid var(--al-gold-border);
+            border-radius: var(--al-radius-pill);
+            box-shadow: var(--al-shadow-lg), 0 0 30px var(--al-gold-glow);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--al-gold-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hud-pill::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: -1px; right: -1px; bottom: -1px;
+            background: linear-gradient(90deg, var(--al-gold), rgba(212, 168, 83, 0.3), var(--al-gold));
+            background-size: 300% 100%;
+            border-radius: inherit;
+            z-index: -1;
+            animation: hudBorder 4s linear infinite;
+        }
+
+        .hud-pill::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            background: var(--al-bg-glass);
+            border-radius: inherit;
+            z-index: -1;
+        }
+
+        @keyframes hudBorder {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        .hud-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--al-gold);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--al-gold-glow);
+        }
+
+        /* ============================================================
+           PIN BOXES PREVIEW
+           ============================================================ */
+        .pin-preview {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .pin-box {
+            width: 44px;
+            height: 54px;
+            background: rgba(212, 168, 83, 0.03);
+            border: 1px solid var(--al-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--al-text);
+            transition: all var(--al-duration);
+        }
+
+        .pin-box.filled {
+            border-color: var(--al-gold);
+            background: var(--al-gold-dim);
+            box-shadow: 0 0 12px var(--al-gold-glow);
+        }
+
+        /* ============================================================
+           UPDATE BANNER
+           ============================================================ */
+        .update-banner {
+            padding: 12px 14px;
+            background: var(--al-gold-dim);
+            border: 1px solid var(--al-gold-border);
+            border-radius: var(--al-radius-md);
+            margin: 0 20px 0;
+        }
+
+        .update-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .update-banner-icon { color: var(--al-gold); }
+
+        .update-banner-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--al-gold-light);
+        }
+
+        .update-banner-desc {
+            font-size: 11px;
+            color: var(--al-text-muted);
+        }
+
+        .update-banner-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .update-btn {
+            flex: 1;
+            padding: 7px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--al-duration);
+            font-family: var(--al-font);
+        }
+
+        .update-btn-primary {
+            background: var(--al-gold);
+            color: var(--al-bg-deep);
+        }
+
+        .update-btn-primary:hover { filter: brightness(1.1); }
+
+        .update-btn-secondary {
+            background: rgba(212, 168, 83, 0.08);
+            color: var(--al-text);
+            border: 1px solid var(--al-gold-border);
+        }
+
+        .update-btn-secondary:hover { background: rgba(212, 168, 83, 0.15); }
+
+        /* ============================================================
+           INTERACTIVE: Tab switching for popup
+           ============================================================ */
+        .popup-tab-content { display: none; }
+        .popup-tab-content.active { display: block; }
+
+        /* Voice status card inside popup */
+        .voice-status-card {
+            background: var(--al-bg-surface);
+            border-radius: 14px;
+            padding: 28px 18px;
+            text-align: center;
+            border: 1px solid var(--al-border);
+        }
+
+        .voice-status-indicator {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--al-gold-dim);
+            border: 1px solid var(--al-gold-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: var(--al-gold);
+        }
+
+        .voice-status-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--al-text);
+            margin-bottom: 6px;
+        }
+
+        .voice-status-desc {
+            font-size: 12px;
+            color: var(--al-text-muted);
+            line-height: 1.5;
+        }
+
+        /* Sign tab content in popup */
+        .popup-sign-toggle {
+            background: rgba(212, 168, 83, 0.03);
+            padding: 12px 14px;
+            border-radius: var(--al-radius-md);
+            border: 1px solid var(--al-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .popup-sign-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .popup-sign-stat {
+            background: rgba(212, 168, 83, 0.03);
+            padding: 12px 8px;
+            border-radius: var(--al-radius-md);
+            border: 1px solid var(--al-border);
+            text-align: center;
+        }
+
+        .popup-sign-stat .label { font-size: 10px; color: var(--al-text-dim); font-weight: 500; margin-bottom: 4px; }
+        .popup-sign-stat .value { font-family: var(--al-font-title); font-size: 20px; font-weight: 700; color: var(--al-text); }
+    </style>
+</head>
+<body>
+    <div class="preview-page">
+
+        <!-- Page Header -->
+        <header class="preview-header">
+            <h1>🧞 Aladinn — Desert Mystic</h1>
+            <p>Bản xem trước hệ thống thiết kế mới. Tất cả component được render với CSS thuần, không dùng framework ngoài.</p>
+            <div class="design-badge">
+                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/></svg>
+                Design System v2.0 — Desert Mystic
+            </div>
+        </header>
+
+        <!-- ============== SECTION: COLOR PALETTE ============== -->
+        <div class="section-label">Bảng Màu</div>
+        <div class="palette-grid" style="margin-bottom: 60px;">
+            <div class="palette-swatch"><div class="palette-color" style="background: #0C1222;"></div><div class="palette-info"><div class="palette-name">BG Deep</div><div class="palette-hex">#0C1222</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #141B2D;"></div><div class="palette-info"><div class="palette-name">BG Surface</div><div class="palette-hex">#141B2D</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #1C2541;"></div><div class="palette-info"><div class="palette-name">BG Elevated</div><div class="palette-hex">#1C2541</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #D4A853;"></div><div class="palette-info"><div class="palette-name">Royal Gold</div><div class="palette-hex">#D4A853</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #F0D68A;"></div><div class="palette-info"><div class="palette-name">Gold Light</div><div class="palette-hex">#F0D68A</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #E8E0D4;"></div><div class="palette-info"><div class="palette-name">Desert Sand</div><div class="palette-hex">#E8E0D4</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #8B8579;"></div><div class="palette-info"><div class="palette-name">Text Muted</div><div class="palette-hex">#8B8579</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #3ECDA0;"></div><div class="palette-info"><div class="palette-name">Success</div><div class="palette-hex">#3ECDA0</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #E8A838;"></div><div class="palette-info"><div class="palette-name">Warning</div><div class="palette-hex">#E8A838</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #E85454;"></div><div class="palette-info"><div class="palette-name">Error</div><div class="palette-hex">#E85454</div></div></div>
+            <div class="palette-swatch"><div class="palette-color" style="background: #5BA8D4;"></div><div class="palette-info"><div class="palette-name">Info</div><div class="palette-hex">#5BA8D4</div></div></div>
+        </div>
+
+        <!-- ============== SECTION: POPUP ============== -->
+        <div class="section-label">Popup Extension (380px)</div>
+        <div class="component-grid" style="grid-template-columns: 380px 1fr; align-items: start;">
+            <div class="popup-frame">
+                <!-- Header -->
+                <div class="popup-header">
+                    <div class="popup-logo">
+                        <div class="popup-logo-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l4 10H4L8 2z"/><path d="M12 12v6"/><path d="M8 22h8"/><path d="M7 12c-1 3-1 6 1 10"/><path d="M17 12c1 3 1 6-1 10"/></svg>
+                        </div>
+                        <span class="popup-title">Aladinn</span>
+                    </div>
+                    <span class="popup-version">v2.0.0</span>
+                </div>
+
+                <!-- Update Banner -->
+                <div class="update-banner" style="margin-top: 12px;">
+                    <div class="update-banner-content">
+                        <svg class="al-icon update-banner-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813h6.112l-4.968 3.602 1.912 5.813L12 14.624l-4.968 3.604 1.912-5.813-4.968-3.602h6.112z"/></svg>
+                        <div>
+                            <div class="update-banner-title">Bản cập nhật v2.1.0</div>
+                            <div class="update-banner-desc">Tính năng mới & Sửa đổi</div>
+                        </div>
+                    </div>
+                    <div class="update-banner-actions">
+                        <button class="update-btn update-btn-primary">Cập nhật ngay</button>
+                        <button class="update-btn update-btn-secondary">Bỏ qua</button>
+                    </div>
+                </div>
+
+                <!-- Feature Toggles -->
+                <div class="popup-toggles">
+                    <div class="toggle-card">
+                        <div class="toggle-card-info">
+                            <svg class="al-icon al-icon-sm toggle-card-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            <span class="toggle-card-label">Scanner</span>
+                        </div>
+                        <div class="switch-track active"><div class="switch-thumb"></div></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-card-info">
+                            <svg class="al-icon al-icon-sm toggle-card-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                            <span class="toggle-card-label">Trợ lý AI</span>
+                        </div>
+                        <div class="switch-track active"><div class="switch-thumb"></div></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-card-info">
+                            <svg class="al-icon al-icon-sm toggle-card-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            <span class="toggle-card-label">Ký số</span>
+                        </div>
+                        <div class="switch-track active"><div class="switch-thumb"></div></div>
+                    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-card-info">
+                            <svg class="al-icon al-icon-sm toggle-card-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                            <span class="toggle-card-label">An toàn L.S</span>
+                        </div>
+                        <div class="switch-track"><div class="switch-thumb"></div></div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <nav class="popup-tabs">
+                    <button class="popup-tab active" onclick="switchTab(this, 'popup-tab-scanner')">
+                        <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        Quét & Nhập
+                    </button>
+                    <button class="popup-tab" onclick="switchTab(this, 'popup-tab-voice')">
+                        <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                        Gọi AI
+                    </button>
+                    <button class="popup-tab" onclick="switchTab(this, 'popup-tab-sign')">
+                        <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        Ký số
+                    </button>
+                </nav>
+
+                <!-- Tab: Scanner Actions -->
+                <div id="popup-tab-scanner" class="popup-tab-content active">
+                    <div class="popup-actions">
+                        <div class="action-card primary">
+                            <svg class="al-icon al-icon-lg action-card-icon" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+                            Quét Phòng / Giường
+                        </div>
+                        <div class="action-card">
+                            <svg class="al-icon al-icon-lg action-card-icon" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                            Quét Sinh hiệu
+                        </div>
+                        <div class="action-card">
+                            <svg class="al-icon al-icon-lg action-card-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                            Mở Dashboard
+                        </div>
+                        <div class="action-card">
+                            <svg class="al-icon al-icon-lg action-card-icon" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Cài đặt Scanner
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Voice -->
+                <div id="popup-tab-voice" class="popup-tab-content">
+                    <div style="padding: 20px;">
+                        <div class="voice-status-card">
+                            <div class="voice-status-indicator">
+                                <svg class="al-icon al-icon-lg" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                            </div>
+                            <div class="voice-status-title">Trợ lý AI Đang Sẵn sàng</div>
+                            <div class="voice-status-desc">Bấm vào biểu tượng Micro trên trang bệnh án để bắt đầu ra lệnh bằng giọng nói.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Sign -->
+                <div id="popup-tab-sign" class="popup-tab-content">
+                    <div style="padding: 20px;">
+                        <div class="popup-sign-toggle">
+                            <span style="font-size: 12px; color: var(--al-text-muted); font-weight: 500;">Chế độ ký tự tin</span>
+                            <div class="switch-track active"><div class="switch-thumb"></div></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                            <button class="btn-ghost" style="padding: 10px; font-size: 11px; justify-content: center;">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                Chọn tất cả
+                            </button>
+                            <button class="btn-gold" style="padding: 10px; font-size: 11px; justify-content: center;">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-bg-deep);"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                Ký hồ sơ
+                            </button>
+                        </div>
+                        <div class="popup-sign-stats">
+                            <div class="popup-sign-stat"><div class="label">ĐÃ CHỌN</div><div class="value">12</div></div>
+                            <div class="popup-sign-stat"><div class="label">ĐÃ KÝ</div><div class="value">8</div></div>
+                            <div class="popup-sign-stat"><div class="label">BỎ QUA</div><div class="value">1</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="popup-footer">
+                    <button class="footer-btn">
+                        <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Cài đặt
+                    </button>
+                    <span class="footer-author">Thiết kế bởi Huỳnh Trung Anh</span>
+                </div>
+            </div>
+
+            <!-- Right side: Component variants -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Buttons -->
+                <div class="component-card">
+                    <div class="component-card-header">Buttons & Controls</div>
+                    <div class="component-card-body" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                        <button class="btn-gold">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-bg-deep);"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Lưu Cấu Hình
+                        </button>
+                        <button class="btn-ghost">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                            Đồng bộ CSDL
+                        </button>
+                        <div class="switch-track active" style="cursor: pointer;" onclick="this.classList.toggle('active')"><div class="switch-thumb"></div></div>
+                        <div class="switch-track" style="cursor: pointer;" onclick="this.classList.toggle('active')"><div class="switch-thumb"></div></div>
+                    </div>
+                </div>
+
+                <!-- Toast Notifications -->
+                <div class="component-card">
+                    <div class="component-card-header">Toast Notifications</div>
+                    <div class="component-card-body">
+                        <div class="toast-preview">
+                            <div class="toast-item success">
+                                <div class="toast-icon"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: white;"><polyline points="20 6 9 17 4 12"/></svg></div>
+                                Đã ký thành công 12 hồ sơ
+                            </div>
+                            <div class="toast-item warning">
+                                <div class="toast-icon"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: white;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                                Phát hiện tương tác thuốc!
+                            </div>
+                            <div class="toast-item error">
+                                <div class="toast-icon"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: white;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+                                Lỗi kết nối VNPT HIS
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HUD Pill -->
+                <div class="component-card">
+                    <div class="component-card-header">Signing HUD</div>
+                    <div class="component-card-body" style="text-align: center;">
+                        <div class="hud-pill">
+                            <div class="hud-dot"></div>
+                            <span>Đang ký hồ sơ...</span>
+                            <span style="font-weight: 700; color: var(--al-gold);">3/12</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PIN Boxes -->
+                <div class="component-card">
+                    <div class="component-card-header">PIN Security</div>
+                    <div class="component-card-body">
+                        <div class="pin-preview">
+                            <div class="pin-box filled">●</div>
+                            <div class="pin-box filled">●</div>
+                            <div class="pin-box filled">●</div>
+                            <div class="pin-box">_</div>
+                            <div class="pin-box">_</div>
+                            <div class="pin-box">_</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== SECTION: OPTIONS PAGE ============== -->
+        <div class="section-label">Trang Cài Đặt (Options)</div>
+        <div class="component-grid" style="grid-template-columns: 1fr;">
+            <div class="options-preview">
+                <aside class="options-sidebar">
+                    <div class="options-brand">
+                        <div class="options-brand-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l4 10H4L8 2z"/><path d="M12 12v6"/><path d="M8 22h8"/></svg>
+                        </div>
+                        <div>
+                            <h2>Aladinn</h2>
+                            <span class="ver">v2.0.0</span>
+                        </div>
+                    </div>
+                    <nav class="nav-list">
+                        <div class="nav-item active">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                            Trợ lý AI
+                        </div>
+                        <div class="nav-item">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            Smart Scanner
+                        </div>
+                        <div class="nav-item">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            Ký số tự động
+                        </div>
+                        <div class="nav-item">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                            An toàn L.Sàng
+                        </div>
+                        <div class="nav-item">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Bảo mật
+                        </div>
+                        <div class="nav-item">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                            Chẩn đoán
+                        </div>
+                    </nav>
+                    <div style="margin-top: 24px;">
+                        <button class="btn-gold" style="width: 100%; justify-content: center;">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-bg-deep);"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Lưu Cấu Hình
+                        </button>
+                    </div>
+                </aside>
+                <div class="options-content">
+                    <h3>
+                        <svg class="al-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                        Cấu hình Trợ lý AI Nhập liệu
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label">Gemini API Key</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="password" class="form-input" placeholder="Nhập API Key ở đây..." value="AIzaSy●●●●●●●●●●●●●●●●">
+                            <button class="btn-ghost" style="white-space: nowrap;">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                Dò tìm
+                            </button>
+                        </div>
+                        <div class="form-hint">Nhận miễn phí API key tại <a href="#">Google AI Studio</a>.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mô hình AI ưu tiên</label>
+                        <select class="form-input" style="appearance: auto;">
+                            <option>Gemini 2.5 Flash (Khuyên dùng)</option>
+                            <option>Gemini 2.0 Flash</option>
+                            <option>Gemini 2.5 Pro</option>
+                        </select>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-row-info">
+                            <strong>Tự động điền Phiếu Khám Đa Khoa</strong>
+                            <span>Tự động kích hoạt AI để phân tích và điền mẫu "Chuyển viện PKĐK"</span>
+                        </div>
+                        <div class="switch-track active" style="cursor: pointer;" onclick="this.classList.toggle('active')"><div class="switch-thumb"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== SECTION: CONTENT PANELS ============== -->
+        <div class="section-label">Content Panels (Inject vào trang HIS)</div>
+        <div class="component-grid" style="grid-template-columns: repeat(3, 1fr); align-items: start;">
+
+            <!-- Scanner Panel -->
+            <div class="component-card">
+                <div class="component-card-header">Scanner Panel</div>
+                <div class="component-card-body" style="display: flex; justify-content: center;">
+                    <div class="scanner-panel">
+                        <div class="scanner-header">
+                            <span class="scanner-title">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-gold);"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                                Aladinn Scanner
+                                <span class="scanner-ver">v2.0</span>
+                            </span>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="scanner-icon-btn" title="Dark mode">
+                                    <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                </button>
+                                <button class="scanner-icon-btn" title="Thu nhỏ">
+                                    <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button class="scanner-btn btn-scan-room">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-bg-deep);"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+                            Quét Phòng / Giường
+                        </button>
+                        <button class="scanner-btn btn-scan-vitals">
+                            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                            Quét Sinh hiệu
+                        </button>
+                        <div class="scanner-status">✓ Sẵn sàng quét — 24 bệnh nhân</div>
+                        <div class="scanner-shortcuts">
+                            <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> Lọc nhanh &nbsp;|&nbsp;
+                            <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> BN tiếp
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Panel -->
+            <div class="component-card">
+                <div class="component-card-header">Voice AI Panel</div>
+                <div class="component-card-body" style="display: flex; justify-content: center;">
+                    <div class="voice-panel">
+                        <div class="voice-header">
+                            <div class="voice-header-title">
+                                <div class="voice-logo-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l4 10H4L8 2z"/></svg>
+                                </div>
+                                Aladinn AI
+                            </div>
+                            <div class="voice-controls">
+                                <button class="voice-ctrl-btn"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg></button>
+                                <button class="voice-ctrl-btn"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="voice-body">
+                            <div class="voice-quick-bar">
+                                <button class="voice-quick-btn voice-quick-primary">Nhập Y lệnh</button>
+                                <button class="voice-quick-btn voice-quick-secondary">Hội chẩn</button>
+                                <button class="voice-quick-btn voice-quick-secondary">C.Viện</button>
+                            </div>
+                            <div class="voice-record">
+                                <button class="voice-record-btn">
+                                    <svg class="al-icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                                </button>
+                                <span class="voice-record-status">Nhấn để ghi âm lệnh</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div class="voice-result">
+                                    <div class="voice-result-icon"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="voice-result-label">Lý do vào viện</div>
+                                        <div class="voice-result-value">Đau bụng vùng thượng vị 2 ngày</div>
+                                    </div>
+                                    <button class="voice-result-copy"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                                </div>
+                                <div class="voice-result">
+                                    <div class="voice-result-icon"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div class="voice-result-label">Chẩn đoán</div>
+                                        <div class="voice-result-value">K21.0 – Trào ngược dạ dày thực quản</div>
+                                    </div>
+                                    <button class="voice-result-copy"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign Panel -->
+            <div class="component-card">
+                <div class="component-card-header">Sign Workflow Panel</div>
+                <div class="component-card-body" style="display: flex; justify-content: center;">
+                    <div class="sign-panel">
+                        <div class="sign-header">
+                            <div class="sign-header-left">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-gold);"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                <span class="sign-title">Ký số Tự động</span>
+                            </div>
+                            <span class="sign-queue-badge">12</span>
+                        </div>
+                        <div class="sign-body">
+                            <div class="patient-card">
+                                <div class="patient-label">Bệnh nhân đang ký</div>
+                                <div class="patient-name">Nguyễn Văn An</div>
+                            </div>
+                            <div style="margin-bottom: 14px;">
+                                <div class="sign-progress-header">
+                                    <span class="sign-progress-label">Tiến trình</span>
+                                    <span class="sign-percent">65%</span>
+                                </div>
+                                <div class="sign-progress-track">
+                                    <div class="sign-progress-fill"></div>
+                                </div>
+                            </div>
+                            <div class="sign-stats">
+                                <div class="sign-stat">
+                                    <div class="sign-stat-icon success"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+                                    <span class="sign-stat-label">Đã ký</span>
+                                    <span class="sign-stat-count">8</span>
+                                </div>
+                                <div class="sign-stat">
+                                    <div class="sign-stat-icon skip"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></div>
+                                    <span class="sign-stat-label">Bỏ qua</span>
+                                    <span class="sign-stat-count">1</span>
+                                </div>
+                                <div class="sign-stat">
+                                    <div class="sign-stat-icon remain"><svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                                    <span class="sign-stat-label">Còn lại</span>
+                                    <span class="sign-stat-count">3</span>
+                                </div>
+                            </div>
+                            <button class="btn-gold" style="width: 100%; justify-content: center; padding: 11px;">
+                                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" style="color: var(--al-bg-deep);"><polyline points="20 6 9 17 4 12"/></svg>
+                                Tiếp tục Ký
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== SECTION: CDS ALERTS ============== -->
+        <div class="section-label">CDS Alerts (An toàn Lâm sàng)</div>
+        <div class="component-grid" style="grid-template-columns: 1fr;">
+            <div class="component-card">
+                <div class="component-card-header">Clinical Decision Support</div>
+                <div class="component-card-body" style="max-width: 600px;">
+                    <div class="cds-alert critical">
+                        <div class="cds-alert-icon">
+                            <svg class="al-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <div>
+                            <div class="cds-alert-title">Chống chỉ định tuyệt đối</div>
+                            <div class="cds-alert-desc">Metformin + Iodinated contrast: Nguy cơ nhiễm toan lactic. Ngừng Metformin 48h trước khi dùng thuốc cản quang.</div>
+                        </div>
+                    </div>
+                    <div class="cds-alert warning">
+                        <div class="cds-alert-icon">
+                            <svg class="al-icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <div>
+                            <div class="cds-alert-title">Tương tác thuốc nghiêm trọng</div>
+                            <div class="cds-alert-desc">Warfarin + Aspirin: Tăng nguy cơ chảy máu. Cần theo dõi INR chặt chẽ.</div>
+                        </div>
+                    </div>
+                    <div class="cds-alert info">
+                        <div class="cds-alert-icon">
+                            <svg class="al-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </div>
+                        <div>
+                            <div class="cds-alert-title">Hiệu chỉnh liều theo chức năng thận</div>
+                            <div class="cds-alert-desc">eGFR 35 mL/min — Cân nhắc giảm liều Enoxaparin 50%. Theo dõi anti-Xa.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Tab switching for popup preview
+        function switchTab(btn, targetId) {
+            document.querySelectorAll('.popup-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.popup-tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(targetId).classList.add('active');
+        }
+
+        // Interactive switches
+        document.querySelectorAll('.toggle-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const track = card.querySelector('.switch-track');
+                if (track) track.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>

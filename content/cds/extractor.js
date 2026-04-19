@@ -1,7 +1,16 @@
+import { CDSCache } from './cds-cache.js';
+
 /**
  * 🧞 Aladinn CDS — Extractor Module
  * Chịu trách nhiệm trích xuất thông tin Tên Thuốc, Mã ICD, Sinh hiệu/Cận lâm sàng từ lưới VNPT HIS.
+ * Hỗ trợ Data Snooping thông qua CDSCache để lấy dữ liệu 100% chính xác từ API.
  */
+
+export const CDSCacheManager = CDSCache; // Re-export for init
+
+export const CDSCacheExtractor = {
+    // Để giữ tương thích với hàm cũ bên engine.js
+};
 
 export const CDSExtractor = {
     /**
@@ -9,9 +18,12 @@ export const CDSExtractor = {
      * @returns {Object} PatientContext
      */
     extractContext() {
+        const currentDomPatientId = this.getPatientId();
+        CDSCache.checkPatientContext(currentDomPatientId); // Đảm bảo Cache đúng BN đang thao tác
+
         return {
             patient: {
-                id: this.getPatientId(),
+                id: currentDomPatientId,
                 weight: this.getWeight()
             },
             encounter: {
@@ -28,16 +40,20 @@ export const CDSExtractor = {
     },
 
     getElementsAcrossIframes(selector) {
-        let elements = Array.from(document.querySelectorAll(selector))
-            .filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+        const isVisible = (el) => {
+            const rect = el.getBoundingClientRect();
+            // Loại bỏ các element bị jQuery UI ẩn đi bằng cách left: -10000px
+            return rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
+        };
+
+        let elements = Array.from(document.querySelectorAll(selector)).filter(isVisible);
             
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
-                // Chỉ duyệt qua iframe đang hiển thị
-                if (iframe.contentDocument && (iframe.offsetWidth > 0 || iframe.offsetHeight > 0)) {
-                    const iframeElements = Array.from(iframe.contentDocument.querySelectorAll(selector))
-                        .filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+                // Chỉ duyệt qua iframe thực sự đang hiển thị
+                if (iframe.contentDocument && isVisible(iframe)) {
+                    const iframeElements = Array.from(iframe.contentDocument.querySelectorAll(selector)).filter(isVisible);
                     elements = elements.concat(iframeElements);
                 }
             } catch (_e) {
@@ -48,19 +64,25 @@ export const CDSExtractor = {
     },
 
     getPatientId() {
-        // ID Bệnh nhân thường nằm ở góc hoặc trong input ẩn
+        // Luôn xác thực Bệnh Nhân dựa trên DOM vì đó là thứ người dùng thực tế đang nhìn thấy
         const els = this.getElementsAcrossIframes('#txtMaBenhNhan, [name="MaBn"], #txtMaBA');
         for (const el of els) if (el.value) return el.value;
         return 'anonymous_patient';
     },
 
     getEncounterId() {
+        const cache = CDSCache.get();
+        if (cache.encounterId) return cache.encounterId;
+
         const els = this.getElementsAcrossIframes('#txtMaKhamBenh, [name="MaKhamBenh"]');
         for (const el of els) if (el.value) return el.value;
         return `encounter_${Date.now()}`;
     },
 
     getWeight() {
+        const cache = CDSCache.get();
+        if (cache.weight && cache.weight > 0) return cache.weight;
+
         const els = this.getElementsAcrossIframes('#txtCanNang, [title*="Cân nặng"]');
         for (const el of els) {
             const val = parseFloat(el.value || el.innerText);
@@ -70,6 +92,12 @@ export const CDSExtractor = {
     },
 
     getDiagnoses() {
+        // Nâng cấp: Đọc từ Data Snooping Cache trước!
+        const cache = CDSCache.get();
+        if (cache.diagnoses && cache.diagnoses.length > 0) {
+            return cache.diagnoses;
+        }
+
         const diagnoses = [];
         const seenCodes = new Set();
         const icdPattern = /\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/gi;
@@ -124,6 +152,12 @@ export const CDSExtractor = {
     },
 
     getMedications() {
+        // Nâng cấp: Đọc từ Data Snooping Cache trước
+        const cache = CDSCache.get();
+        if (cache.medications && cache.medications.length > 0) {
+            return cache.medications;
+        }
+
         const meds = [];
         
         // Từ khóa loại trừ (không phải thuốc)
@@ -243,6 +277,18 @@ export const CDSExtractor = {
     getLabs() {
         const labs = [];
         const seenKeys = new Set();
+
+        // 1. Snoop Data (API Cache Mới Nhất)
+        const cache = CDSCache.get();
+        if (cache.labs && cache.labs.length > 0) {
+            for (const lab of cache.labs) {
+                if (!seenKeys.has(lab.code)) {
+                    seenKeys.add(lab.code);
+                    labs.push(lab);
+                }
+            }
+            return labs; // Return immediately
+        }
 
         // ===== SOURCE 1: Cached API data from Scanner (fastest) =====
         // When user runs "Quét Xét Nghiệm", results are stored in window._aladinn_cds_labs

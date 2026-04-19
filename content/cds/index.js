@@ -107,18 +107,29 @@ function stopScanning() {
 
 // Kiểm tra xem có đang ở ngữ cảnh cần quét (đang kê đơn hoặc đang xem danh sách thuốc)
 function shouldEnableScanning() {
+    const isVisible = (el) => {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
+    };
+
     // 1. Tìm iframe có id chứa "TaoPhieuThuoc" (Form kê đơn)
     const iframes = document.querySelectorAll('iframe');
     for (const iframe of iframes) {
         const id = iframe.id || '';
-        if (id.includes('TaoPhieuThuoc') || id.includes('PhieuThuoc')) {
-            const rect = iframe.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) return true;
-        }
+        if ((id.includes('TaoPhieuThuoc') || id.includes('PhieuThuoc')) && isVisible(iframe)) return true;
     }
-    // 2. Hoặc trang hiện tại có chứa bảng jqgrid (Danh sách chi tiết phiếu thuốc)
-    const grids = document.querySelectorAll('.ui-jqgrid-btable, table.x-grid3-row-table');
-    if (grids.length > 0) return true;
+    
+    // 2. Chứa bảng danh sách chi tiết phiếu thuốc
+    const drugGrids = document.querySelectorAll('#grdPhieuThuoc, #gridChiTietPhieu, #grdChiTietPhieuThuoc, [id*="PhieuThuoc"]');
+    for (const grid of drugGrids) {
+        if (isVisible(grid)) return true;
+    }
+    
+    // 3. Nếu có active tab Thuốc(3) (như trong icon ảnh của HIS)
+    const activeTabs = document.querySelectorAll('.ui-tabs-active .ui-tabs-anchor, li.active a');
+    for (const tab of activeTabs) {
+        if (tab.innerText && tab.innerText.toLowerCase().includes('thuốc')) return true;
+    }
 
     return false;
 }
@@ -203,6 +214,14 @@ window.addEventListener('ALADINN_MANUAL_SCAN', () => {
     console.log('[Aladinn CDS] 🛡️ Manual scan triggered by user click!');
     if (isModalOpen) {
         lastScanHash = ''; // Reset hash để chắc chắn hàm báo cáo UI cập nhật lại
+        runScan();
+    }
+});
+
+// Bắt sự kiện Cache Snooping (Chỉ có khi Bypass DOM thành công báo về dữ liệu mới)
+window.addEventListener('ALADINN_CACHE_UPDATED', () => {
+    if (isModalOpen && isCDSEnabled) {
+        console.log('[Aladinn CDS] ⚡ Fast rescan triggered by Data Snooping Cache!');
         runScan();
     }
 });

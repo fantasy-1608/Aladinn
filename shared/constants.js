@@ -11,13 +11,13 @@ window.HIS = window.HIS || {};
  * Khởi tạo namespace cho extension
  * @param {Object} config
  * @param {string} config.name - Tên extension (VD: 'Aladinn', 'Nurse')
- * @param {string} config.version - Version (VD: '1.0.0')
+ * @param {string} config.version - Version (VD: '1.1.0')
  * @param {string} config.prefix - Prefix cho CSS/ID (VD: 'aladinn', 'quyen')
  * @param {string} [config.emoji] - Emoji đại diện (VD: '🧞', '🌸')
  */
 HIS.init = function (config) {
     HIS.APP_NAME = config.name || 'HIS Extension';
-    HIS.APP_VERSION = config.version || '1.0.0';
+    HIS.APP_VERSION = config.version || '1.1.0';
     HIS.APP_PREFIX = config.prefix || 'his';
     HIS.APP_EMOJI = config.emoji || '🏥';
     HIS._initialized = true;

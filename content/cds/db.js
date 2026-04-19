@@ -4,7 +4,7 @@
  */
 
 export const KB_SCHEMA_VERSION = 4;
-export const KB_SEED_VERSION = '2026-03-29-aladinn-v3'; // Update seed flag
+export const KB_SEED_VERSION = '2026-04-18-aladinn-v4'; // Update seed flag
 
 const DB_NAME = 'AladinnCDS';
 const META_STORE = 'meta';

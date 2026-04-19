@@ -6,19 +6,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.2);
-            --text-main: #f8fafc;
-            --text-dim: #9ca3af;
-            --primary: #7c3aed;
-            --primary-hover: #6d28d9;
-            --primary-light: rgba(124, 58, 237, 0.15);
-            --accent: #06b6d4;
-            --success: #10b981;
-            --error: #ef4444;
+            --bg-body: #0C1222;
+            --bg-card: #141B2D;
+            --bg-input: rgba(212, 168, 83, 0.03);
+            --border: rgba(212, 168, 83, 0.12);
+            --border-hover: rgba(212, 168, 83, 0.30);
+            --text-main: #E8E0D4;
+            --text-dim: #8B8579;
+            --primary: #D4A853;
+            --primary-hover: #E8BC6A;
+            --primary-light: rgba(212, 168, 83, 0.10);
+            --accent: #D4A853;
+            --success: #3ECDA0;
+            --error: #E85454;
+            --warning: #E8A838;
             --radius-md: 12px;
             --radius-lg: 16px;
             --font-main: 'Inter', sans-serif;
@@ -35,15 +36,15 @@
             justify-content: center;
             min-height: 100vh;
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05) 0%, transparent 40%);
+                radial-gradient(ellipse at 10% 0%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 100%, rgba(212, 168, 83, 0.03) 0%, transparent 40%);
         }
 
         .container {
             width: 100%;
             max-width: 960px;
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 260px 1fr;
             gap: 40px;
             animation: appFadeIn 0.5s ease;
         }
@@ -55,16 +56,16 @@
 
         /* Sidebar Navigation */
         .sidebar {
-            background: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(20, 27, 45, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-radius: var(--radius-lg);
             padding: 24px;
             height: fit-content;
             border: 1px solid var(--border);
             position: sticky;
             top: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .app-brand {
@@ -80,10 +81,9 @@
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            object-fit: contain;
-            background: var(--primary-light);
-            padding: 4px;
-            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.2);
+            object-fit: cover;
+            background: var(--bg-body);
+            box-shadow: 0 4px 10px rgba(212, 168, 83, 0.15);
         }
 
         h1 {
@@ -91,7 +91,7 @@
             font-size: 22px;
             font-family: var(--font-title);
             font-weight: 700;
-            background: linear-gradient(135deg, #f8fafc, #cbd5e1);
+            background: linear-gradient(135deg, #E8E0D4, #8B8579);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -103,8 +103,8 @@
             color: var(--accent);
             margin-top: 4px;
             display: inline-block;
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.2);
+            background: var(--primary-light);
+            border: 1px solid rgba(212, 168, 83, 0.20);
             padding: 2px 10px;
             border-radius: 12px;
         }
@@ -112,7 +112,7 @@
         .nav-menu {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .nav-item {
@@ -130,15 +130,37 @@
             overflow: hidden;
         }
 
+        .nav-item .nav-icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(212, 168, 83, 0.05);
             color: var(--text-main);
         }
 
+        .nav-item:hover .nav-icon {
+            opacity: 0.9;
+        }
+
         .nav-item.active {
-            color: #fff;
+            color: var(--accent);
             background: var(--primary-light);
             font-weight: 600;
+        }
+
+        .nav-item.active .nav-icon {
+            opacity: 1;
+            stroke: var(--accent);
         }
 
         .nav-item.active::before {
@@ -161,14 +183,14 @@
         }
 
         .section {
-            background: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(20, 27, 45, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-radius: var(--radius-lg);
             padding: 32px 40px;
             border: 1px solid var(--border);
             display: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .section.active {
@@ -191,7 +213,18 @@
             gap: 12px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
-            color: #fff;
+            color: var(--text-main);
+        }
+
+        h2 .section-icon {
+            width: 22px;
+            height: 22px;
+            stroke: var(--accent);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            flex-shrink: 0;
         }
 
         /* Form Elements */
@@ -213,7 +246,7 @@
             width: 100%;
             background: var(--bg-input);
             border: 1px solid var(--border);
-            color: white;
+            color: var(--text-main);
             padding: 12px 16px;
             border-radius: 10px;
             font-size: 14px;
@@ -225,8 +258,8 @@
 
         input:focus, select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
-            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
+            background: rgba(212, 168, 83, 0.05);
         }
 
         .help-text {
@@ -243,7 +276,7 @@
         }
 
         .help-text a:hover {
-            color: #fff;
+            color: #F0D68A;
             text-decoration: underline;
         }
 
@@ -262,7 +295,7 @@
 
         .toggle-row:hover {
             border-color: var(--border-hover);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(212, 168, 83, 0.06);
         }
 
         .toggle-info {
@@ -274,7 +307,7 @@
             margin-bottom: 4px;
             font-size: 15px;
             font-weight: 500;
-            color: #fff;
+            color: var(--text-main);
         }
 
         .toggle-info span {
@@ -303,7 +336,7 @@
             position: absolute;
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.08);
             transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 24px;
             border: 1px solid transparent;
@@ -333,7 +366,7 @@
         /* Buttons */
         .btn {
             background: var(--primary);
-            color: white;
+            color: var(--bg-body);
             border: none;
             padding: 12px 24px;
             border-radius: 10px;
@@ -350,7 +383,7 @@
         .btn:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 4px 12px rgba(212, 168, 83, 0.25);
         }
 
         .btn-secondary {
@@ -360,9 +393,19 @@
         }
 
         .btn-secondary:hover {
-            background: rgba(255,255,255,0.08);
+            background: rgba(212, 168, 83, 0.08);
             border-color: var(--border-hover);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn .btn-icon {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
         }
 
         /* PIN Boxes */
@@ -380,20 +423,20 @@
             border-radius: 12px;
             font-size: 24px;
             text-align: center;
-            color: white;
+            color: var(--text-main);
             outline: none;
             transition: all 0.2s;
         }
 
         .pin-box:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
-            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
+            background: rgba(212, 168, 83, 0.05);
         }
 
         .pin-box.error {
             border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+            box-shadow: 0 0 0 3px rgba(232, 84, 84, 0.15);
             animation: shake 0.4s;
         }
 
@@ -412,7 +455,7 @@
         .magic-reveal {
             animation: magicAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
             border: 1px solid var(--primary) !important;
-            background: rgba(124, 58, 237, 0.05) !important;
+            background: rgba(212, 168, 83, 0.05) !important;
         }
 
         /* Status Toast */
@@ -460,6 +503,12 @@
         #status-toast.error::before {
             content: '!';
         }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(212, 168, 83, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 168, 83, 0.4); }
     </style>
 </head>
 <body>
@@ -468,37 +517,44 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="app-brand">
-                <img src="../assets/icons/icon128.png" alt="Aladinn Genie Icon" class="genie-img">
+                <img src="../assets/icons/aladinn-vector.svg" alt="Aladinn Genie Icon" class="genie-img">
                 <div>
                     <h1>Aladinn</h1>
-                    <span class="version" id="aladinn-version-tag" title="Phiên bản hiện tại">Version 1.0.0</span>
+                    <span class="version" id="aladinn-version-tag" title="Phiên bản hiện tại">Version 1.1.0</span>
                 </div>
             </div>
 
             <nav class="nav-menu">
                 <div class="nav-item active" data-target="sec-voice">
-                    <span style="font-size: 16px;">🧠</span> Trợ lý AI
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                    Trợ lý AI
                 </div>
                 <div class="nav-item" data-target="sec-scanner">
-                    <span style="font-size: 16px;">📸</span> Smart Scanner
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    Smart Scanner
                 </div>
                 <div class="nav-item" data-target="sec-sign">
-                    <span style="font-size: 16px;">✍️</span> Ký số tự động
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    Ký số tự động
                 </div>
                 <div class="nav-item" data-target="sec-cds">
-                    <span style="font-size: 16px;">🛡️</span> An toàn L.Sàng
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                    An toàn L.Sàng
                 </div>
                 <div class="nav-item" data-target="sec-security">
-                    <span style="font-size: 16px;">🔒</span> Bảo mật
+                    <svg class="nav-icon" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Bảo mật
                 </div>
                 <div class="nav-item" data-target="sec-diagnostic">
-                    <span style="font-size: 16px;">🐛</span> Chẩn đoán & Lỗi
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                    Chẩn đoán & Lỗi
                 </div>
             </nav>
             
             <div style="margin-top: 40px;">
                 <button id="save-all-btn" class="btn" style="width: 100%; justify-content: center;">
-                    💾 Lưu Cấu Hình
+                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                    Lưu Cấu Hình
                 </button>
             </div>
         </aside>
@@ -508,13 +564,19 @@
 
             <!-- VOICE SETTINGS -->
             <section id="sec-voice" class="section active">
-                <h2>🧠 Cấu hình Trợ lý AI Nhập liệu</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                    Cấu hình Trợ lý AI Nhập liệu
+                </h2>
                 
                 <div class="form-group">
                     <label>Gemini API Key</label>
                     <div style="display: flex; gap: 12px;">
                         <input type="password" id="opt-api-key" placeholder="Nhập API Key ở đây..." style="flex: 1;">
-                        <button id="fetch-models-btn" class="btn btn-secondary" style="padding: 0 20px; white-space: nowrap;">🔍 Dò tìm mô hình</button>
+                        <button id="fetch-models-btn" class="btn btn-secondary" style="padding: 0 20px; white-space: nowrap;">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            Dò tìm mô hình
+                        </button>
                     </div>
                     <div class="help-text">Nhận miễn phí API key tại <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. Dò tìm để cập nhật danh sách mô hình phù hợp.</div>
                 </div>
@@ -542,7 +604,10 @@
 
             <!-- SCANNER SETTINGS -->
             <section id="sec-scanner" class="section">
-                <h2>📸 Cấu hình Tiện ích Smart Scanner</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    Cấu hình Tiện ích Smart Scanner
+                </h2>
                 
                 <div class="toggle-row">
                     <div class="toggle-info">
@@ -569,7 +634,10 @@
 
             <!-- SIGN SETTINGS -->
             <section id="sec-sign" class="section">
-                <h2>✍️ Cấu hình Ký số Tự động</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    Cấu hình Ký số Tự động
+                </h2>
                 
                 <div class="toggle-row">
                     <div class="toggle-info">
@@ -585,7 +653,10 @@
 
             <!-- CDS SETTINGS -->
             <section id="sec-cds" class="section">
-                <h2>🛡️ Cấu hình An toàn Lâm sàng (C.D.S)</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                    Cấu hình An toàn Lâm sàng (C.D.S)
+                </h2>
                 
                 <div class="toggle-row">
                     <div class="toggle-info">
@@ -601,7 +672,8 @@
                 <div class="form-group" style="margin-top: 32px;">
                     <label>Quản trị cơ sở dữ liệu Luật C.D.S</label>
                     <button id="btn-sync-cds-data" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 14px;">
-                        <span style="font-size: 16px;">🔄</span> Đồng bộ / Nạp lại CSDL Thuốc
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                        Đồng bộ / Nạp lại CSDL Thuốc
                     </button>
                     <div class="help-text" style="text-align: center; margin-top: 12px;">Ép tải lại toàn bộ các bộ luật JSON từ máy chủ vào bộ nhớ đệm (IndexedDB) của Extension.</div>
                 </div>
@@ -609,7 +681,10 @@
 
             <!-- SECURITY SETTINGS -->
             <section id="sec-security" class="section">
-                <h2>🔒 Bảo mật Thiết bị</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Bảo mật Thiết bị
+                </h2>
                 
                 <div id="pin-setup-container" class="form-group">
                     <label id="pin-title">Tạo mã bảo vệ PIN (6 chữ số)</label>
@@ -625,7 +700,7 @@
                     
                     <div id="pin-actions" style="margin-top: 24px; display: none; gap: 12px;">
                         <button id="btn-change-pin" class="btn btn-secondary">Đổi mã PIN</button>
-                        <button id="btn-reset-pin" class="btn btn-secondary" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">Xóa mã PIN & Khôi phục</button>
+                        <button id="btn-reset-pin" class="btn btn-secondary" style="color: var(--error); border-color: rgba(232, 84, 84, 0.3);">Xóa mã PIN & Khôi phục</button>
                     </div>
                 </div>
                 <!-- Hidden input for generic save logic -->
@@ -634,9 +709,12 @@
 
             <!-- DIAGNOSTIC SETTINGS -->
             <section id="sec-diagnostic" class="section">
-                <h2>🐛 Chẩn đoán & Báo lỗi</h2>
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                    Chẩn đoán & Báo lỗi
+                </h2>
                 
-                <div class="toggle-row" style="margin-bottom: 24px; background: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.2);">
+                <div class="toggle-row" style="margin-bottom: 24px; background: rgba(212, 168, 83, 0.04); border-color: rgba(212, 168, 83, 0.18);">
                     <div class="toggle-info">
                         <strong>Trình dò lỗi VNPT UI ẩn danh</strong>
                         <span>Hệ thống liên tục kiểm tra sự sai lệch thay đổi cấu trúc bảng HTML của phần mềm VNPT_HIS. Log lỗi chỉ lưu định dạng cấu trúc, KHÔNG lưu ẩn danh bệnh lý lâm sàng bệnh nhân.</span>
@@ -645,15 +723,24 @@
 
                 <div class="form-group">
                     <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                        <button id="btn-load-diagnostic" class="btn btn-secondary">🔄 Tải xem Log</button>
-                        <button id="btn-download-diagnostic" class="btn btn-secondary">📥 Xuất file JSON</button>
-                        <button id="btn-clear-diagnostic" class="btn btn-secondary" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">🗑 Làm sạch dữ liệu Log</button>
+                        <button id="btn-load-diagnostic" class="btn btn-secondary">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                            Tải xem Log
+                        </button>
+                        <button id="btn-download-diagnostic" class="btn btn-secondary">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Xuất file JSON
+                        </button>
+                        <button id="btn-clear-diagnostic" class="btn btn-secondary" style="color: var(--error); border-color: rgba(232, 84, 84, 0.3);">
+                            <svg class="btn-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Làm sạch Log
+                        </button>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
-                        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02); font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between;">
+                        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(212, 168, 83, 0.02); font-size: 13px; color: var(--text-dim); display: flex; justify-content: space-between;">
                             <span>Nhật ký phát sinh gần đây</span>
                             <span id="diagnostic-count" style="color: var(--accent);">0 sự cố</span>
                         </div>
