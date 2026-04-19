@@ -26,7 +26,7 @@ if (fs.existsSync(distZipDir)) {
 fs.mkdirSync(distZipDir, { recursive: true });
 
 console.log(`\n📦 [2/3] Đóng gói Aladinn-v${version}.zip...`);
-const zipPath = `../../dist-zip/Aladinn-v${version}.zip`;
+const zipPath = `../dist-zip/Aladinn-v${version}.zip`;
 execSync(
     `cd dist && zip -r "${zipPath}" . -x "*.DS_Store"`,
     { stdio: 'inherit', cwd: path.join(__dirname, '..') }

@@ -514,3 +514,7 @@ input[type="checkbox"]:checked + .toggle-slider::before {
     font-size: 11px;
     color: var(--al-text-dim);
 }
+@keyframes fab-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

@@ -294,10 +294,39 @@ async function initPopup() {
                     }
                 }
                 if(updateBanner) updateBanner.style.display = 'block';
+            } else {
+                if(updateBanner) updateBanner.style.display = 'none';
             }
         } catch (_err) {
             // Ignore
         }
+    }
+
+    const checkUpdateBtn = document.getElementById('btn-check-update');
+    if (checkUpdateBtn) {
+        checkUpdateBtn.addEventListener('click', async () => {
+            const svg = checkUpdateBtn.querySelector('svg');
+            if (svg) {
+                svg.style.animation = 'fab-spin 1s linear infinite';
+            }
+            try {
+                const res = await chrome.runtime.sendMessage({ action: 'checkUpdate' });
+                // If there's no update, checkAndShowUpdate will hide the banner, else show it
+                await checkAndShowUpdate();
+                if (!res.update) {
+                    // Optional visual feedback for "up to date"
+                    const originalColor = checkUpdateBtn.style.color;
+                    checkUpdateBtn.style.color = '#4CAF50';
+                    setTimeout(() => checkUpdateBtn.style.color = originalColor, 2000);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                if (svg) {
+                    svg.style.animation = 'none';
+                }
+            }
+        });
     }
 
     if (updateDismissBtn) {
