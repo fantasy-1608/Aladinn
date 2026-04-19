@@ -280,22 +280,13 @@ const VNPTSettings = (function () {
         const style = document.createElement('style');
         style.id = 'vnpt-settings-v5-styles';
         style.textContent = `
-            :root {
-                --vnpt-bg: #ffffff;
-                --vnpt-text: #1e293b;
-                --vnpt-header: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-                --vnpt-border: #e2e8f0;
-                --vnpt-accent: #6366f1;
-                --vnpt-section: #f8fafc;
-            }
-
-            .vnpt-dark-mode {
-                --vnpt-bg: #1e293b;
-                --vnpt-text: #f1f5f9;
-                --vnpt-header: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-                --vnpt-border: #334155;
-                --vnpt-accent: #818cf8;
-                --vnpt-section: #0f172a;
+            .vnpt-settings-panel {
+                --vnpt-bg: #0b1121;
+                --vnpt-text: #f8fafc;
+                --vnpt-header: rgba(20, 27, 45, 0.95);
+                --vnpt-border: rgba(212, 168, 83, 0.2);
+                --vnpt-accent: #d4a853;
+                --vnpt-section: #141b2d;
             }
 
             .vnpt-settings-panel {
@@ -311,15 +302,38 @@ const VNPTSettings = (function () {
                 overflow: hidden; border: 1px solid var(--vnpt-border); transform: translateY(10px);
                 transition: transform 0.3s ease;
             }
-            .vnpt-settings-panel.visible .vnpt-settings-container { transform: translateY(0); }
+            .vnpt-settings-panel.visible .vnpt-settings-container { transform: translateY(0);            }
 
             .vnpt-settings-header {
-                padding: 20px; background: var(--vnpt-header); color: white;
-                display: flex; justify-content: space-between; align-items: center;
+                background: var(--vnpt-bg);
+                color: var(--vnpt-text);
+                padding: 16px 20px;
+                border-bottom: 1px solid var(--vnpt-border);
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                border-radius: 12px 12px 0 0;
             }
-            .header-title { display: flex; align-items: center; gap: 10px; }
-            .header-title h3 { margin: 0; font-size: 16px; font-weight: 600; }
-            .vnpt-settings-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+
+            .vnpt-settings-header .header-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .vnpt-settings-header h3 {
+                margin: 0;
+                font-size: 15px;
+                font-family: inherit;
+                color: var(--vnpt-accent);
+                font-weight: 600;
+            }
+            .vnpt-settings-close { 
+                background: none; border: none; color: var(--vnpt-text); 
+                font-size: 24px; cursor: pointer; opacity: 0.7; transition: 0.3s;
+            }
+            .vnpt-settings-close:hover { opacity: 1; transform: scale(1.1); color: #ef4444; }
 
             .vnpt-settings-content { padding: 20px; max-height: 60vh; overflow-y: auto; }
             .vnpt-settings-section { margin-bottom: 20px; padding: 15px; background: var(--vnpt-section); border-radius: 12px; }

@@ -137,38 +137,38 @@ HIS.ApiKeyService = (function () {
                 <style>
                     #his-pin-overlay {
                         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                        background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+                        background: rgba(11, 17, 33, 0.7); backdrop-filter: blur(4px);
                         display: flex; align-items: center; justify-content: center;
                         z-index: 999999; animation: hisPinFadeIn 0.25s ease;
                     }
                     @keyframes hisPinFadeIn { from { opacity: 0; } to { opacity: 1; } }
                     .his-pin-dialog {
-                        background: #1e293b; border-radius: 16px; padding: 32px;
-                        border: 1px solid #334155; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                        background: rgba(20, 27, 45, 0.95); border-radius: 16px; padding: 32px;
+                        border: 1px solid rgba(212, 168, 83, 0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.5);
                         text-align: center; min-width: 340px;
                         animation: hisPinSlideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
                     }
                     @keyframes hisPinSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                     .his-pin-dialog h3 {
-                        margin: 0 0 8px 0; color: #f1f5f9; font-size: 18px; font-weight: 700;
+                        margin: 0 0 8px 0; color: #d4a853; font-size: 18px; font-weight: 700; font-family: Outfit, sans-serif;
                     }
                     .his-pin-dialog p {
-                        margin: 0 0 20px 0; color: #94a3b8; font-size: 13px; line-height: 1.5;
+                        margin: 0 0 20px 0; color: #8B8579; font-size: 13px; line-height: 1.5;
                     }
                     .his-pin-boxes {
                         display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;
                     }
                     .his-pin-input {
-                        width: 42px; height: 50px; background: #0f172a; border: 2px solid #475569;
-                        border-radius: 10px; font-size: 22px; text-align: center; color: #f1f5f9;
+                        width: 42px; height: 50px; background: rgba(212, 168, 83, 0.03); border: 1px solid rgba(212, 168, 83, 0.12);
+                        border-radius: 10px; font-size: 22px; text-align: center; color: #E8E0D4;
                         outline: none; transition: all 0.2s;
                         -webkit-text-security: disc;
                     }
                     .his-pin-input:focus {
-                        border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
+                        border-color: #d4a853; box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.15); background: rgba(212, 168, 83, 0.08);
                     }
                     .his-pin-input.error {
-                        border-color: #ef4444; animation: hisPinShake 0.4s;
+                        border-color: #E85454; animation: hisPinShake 0.4s; box-shadow: 0 0 0 3px rgba(232, 84, 84, 0.15);
                     }
                     @keyframes hisPinShake {
                         0%,100% { transform: translateX(0); }
@@ -181,16 +181,16 @@ HIS.ApiKeyService = (function () {
                         font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
                     }
                     .his-pin-submit {
-                        background: #7c3aed; color: white;
+                        background: #d4a853; color: #0b1121;
                     }
-                    .his-pin-submit:hover { background: #6d28d9; }
+                    .his-pin-submit:hover { filter: brightness(1.1); }
                     .his-pin-submit:disabled { opacity: 0.5; cursor: not-allowed; }
                     .his-pin-cancel {
-                        background: #334155; color: #94a3b8;
+                        background: rgba(212, 168, 83, 0.05); color: #8B8579; border: 1px solid rgba(212, 168, 83, 0.2);
                     }
-                    .his-pin-cancel:hover { background: #475569; }
+                    .his-pin-cancel:hover { background: rgba(212, 168, 83, 0.1); color: #E8E0D4; }
                     .his-pin-error-msg {
-                        color: #ef4444; font-size: 12px; margin-top: 12px;
+                        color: #E85454; font-size: 12px; margin-top: 12px;
                         min-height: 18px; font-weight: 500;
                     }
                 </style>

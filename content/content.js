@@ -203,8 +203,8 @@
 
             // Scanner module actions
             if (action === 'TOGGLE_SCANNER_UI') {
-                if (window.Aladinn?.Scanner?.UI?.toggle) {
-                    window.Aladinn.Scanner.UI.toggle();
+                if (window.Aladinn?.Scanner?.Settings?.toggle) {
+                    window.Aladinn.Scanner.Settings.toggle();
                 }
                 sendResponse({ success: true });
             }

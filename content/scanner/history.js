@@ -214,8 +214,8 @@ const VNPTHistory = (function () {
                 50% { box-shadow: 0 4px 16px rgba(255,152,0,0.7); }
             }
             @keyframes fab-pulse-vip {
-                0%, 100% { box-shadow: 0 2px 12px rgba(124,58,237,0.5), 0 0 6px rgba(167,139,250,0.3); }
-                50% { box-shadow: 0 4px 24px rgba(124,58,237,0.8), 0 0 16px rgba(167,139,250,0.6); }
+                0%, 100% { box-shadow: 0 2px 12px rgba(212,168,83,0.5), 0 0 6px rgba(245,158,11,0.3); }
+                50% { box-shadow: 0 4px 24px rgba(212,168,83,0.8), 0 0 16px rgba(245,158,11,0.6); }
             }
             @keyframes fab-spin {
                 from { transform: rotate(0deg); }
@@ -249,7 +249,7 @@ const VNPTHistory = (function () {
                 animation: fab-pulse-base 2.5s ease-in-out infinite !important;
             }
             #vnpt-history-fab.vip {
-                background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+                background: linear-gradient(135deg, #d4a853, #f59e0b) !important;
                 border-color: rgba(255,255,255,0.5) !important;
                 animation: fab-pulse-vip 2s ease-in-out infinite !important;
             }

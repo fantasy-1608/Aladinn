@@ -155,7 +155,7 @@ async function initPopup() {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'TOGGLE_SCANNER_UI' }).catch(() => {
-                    showError('⚠️ Không thể kết nối Giao diện Scanner.');
+                    showError('⚠️ Vui lòng vào trang hệ thống VNPT HIS để dùng tính năng này.');
                 });
             }
         });

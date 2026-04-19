@@ -23,11 +23,11 @@ const AIUIInjector = {
         }
 
         // Ép kiểu CSS ưu tiên cao nhất (important) để đè lên giao diện cũ
-        button.style.setProperty('background', 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', 'important');
-        button.style.setProperty('color', '#ffffff', 'important');
+        button.style.setProperty('background', 'linear-gradient(135deg, #d4a853 0%, #f59e0b 100%)', 'important');
+        button.style.setProperty('color', '#0b1121', 'important');
         button.style.setProperty('border', '2px solid rgba(255, 255, 255, 0.4)', 'important');
-        button.style.setProperty('box-shadow', '0 4px 15px rgba(124, 58, 237, 0.5), 0 0 20px rgba(79, 70, 229, 0.4)', 'important');
-        button.style.setProperty('text-shadow', '0 1px 2px rgba(0, 0, 0, 0.2)', 'important');
+        button.style.setProperty('box-shadow', '0 4px 15px rgba(212, 168, 83, 0.5), 0 0 20px rgba(245, 158, 11, 0.4)', 'important');
+        button.style.setProperty('text-shadow', 'none', 'important');
         button.style.setProperty('transform', 'scale(1.05)', 'important');
         button.style.setProperty('transition', 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 'important');
 
@@ -120,34 +120,36 @@ const AIUIInjector = {
             .toggle-label {
                 font-size: 9px;
                 font-weight: 800;
-                color: #94a3b8;
+                color: #8B8579;
                 letter-spacing: 0.05em;
                 transition: color 0.3s;
             }
-            .vip-active .toggle-label.vip { color: #a78bfa; }
-            .vip-active .toggle-label.base { color: #64748b; }
+            .vip-active .toggle-label.vip { color: #d4a853; }
+            .vip-active .toggle-label.base { color: #8B8579; }
             .toggle-switch {
                 width: 32px;
                 height: 16px;
-                background: #334155;
+                background: rgba(212, 168, 83, 0.1);
+                border: 1px solid rgba(212, 168, 83, 0.3);
                 border-radius: 10px;
                 position: relative;
                 transition: background 0.3s;
             }
-            .vip-active .toggle-switch { background: #6d28d9; }
+            .vip-active .toggle-switch { background: #d4a853; border-color: #f59e0b; }
             .toggle-handle {
                 width: 12px;
                 height: 12px;
-                background: white;
+                background: #E8E0D4;
                 border-radius: 50%;
                 position: absolute;
-                top: 2px;
-                left: 2px;
+                top: 1px;
+                left: 1px;
                 transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .vip-active .toggle-handle {
                 transform: translateX(16px);
-                box-shadow: 0 0 10px rgba(167, 139, 250, 0.8);
+                background: #0b1121;
+                box-shadow: 0 0 10px rgba(212, 168, 83, 0.8);
             }
         `;
         document.head.appendChild(style);
@@ -159,12 +161,13 @@ const AIUIInjector = {
         style.id = 'vnpt-ai-keyframes';
         style.textContent = `
             @keyframes ai-glow-pulse {
-                0% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5), 0 0 10px rgba(79, 70, 229, 0.4); }
-                50% { box-shadow: 0 4px 25px rgba(124, 58, 237, 0.8), 0 0 30px rgba(79, 70, 229, 0.7); }
-                100% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5), 0 0 10px rgba(79, 70, 229, 0.4); }
+                0% { box-shadow: 0 4px 15px rgba(212, 168, 83, 0.5), 0 0 10px rgba(245, 158, 11, 0.4); }
+                50% { box-shadow: 0 4px 25px rgba(212, 168, 83, 0.8), 0 0 30px rgba(245, 158, 11, 0.7); }
+                100% { box-shadow: 0 4px 15px rgba(212, 168, 83, 0.5), 0 0 10px rgba(245, 158, 11, 0.4); }
             }
             .vnpt-ai-btn-active {
                 animation: ai-glow-pulse 2s infinite ease-in-out !important;
+                font-weight: bold !important;
             }
             .vnpt-base-btn-active {
                 transition: all 0.4s ease !important;
