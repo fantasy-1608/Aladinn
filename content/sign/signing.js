@@ -163,7 +163,6 @@ window.Aladinn.Sign.Signing = (function () {
         if (!WORKFLOW.isActive) return;
         const Utils = _utils();
         const UI = _ui();
-        const DOM = _dom();
 
         // 0. Always close current modal before navigating to next patient
         if (WORKFLOW.currentIndex >= 0) {
@@ -311,7 +310,6 @@ window.Aladinn.Sign.Signing = (function () {
     }
 
     function afterTypingComplete(creatorInput, $, iframeDoc, iframe) {
-        const DOM = _dom();
         const Utils = _utils();
 
         triggerEnterKey(creatorInput, $);
@@ -321,7 +319,7 @@ window.Aladinn.Sign.Signing = (function () {
             if ($grid.length && $grid[0].triggerToolbar) {
                 $grid[0].triggerToolbar();
             }
-        } catch (e) { /* Error triggering toolbar */ }
+        } catch (_e) { /* Error triggering toolbar */ }
 
         setTimeout(() => { creatorInput.blur(); }, 100);
 
@@ -543,7 +541,7 @@ window.Aladinn.Sign.Signing = (function () {
                                 closed = true;
                                 break;
                             }
-                        } catch (e) { /* ignore safeclick error */ }
+                        } catch (_e) { /* ignore safeclick error */ }
                     }
 
                     // If no close button found via selector, try text-based search WITHIN this modal only
@@ -564,7 +562,7 @@ window.Aladinn.Sign.Signing = (function () {
 
                     if (closed) break;
                 }
-            } catch (e) { /* ignore modal search error */ }
+            } catch (_e) { /* ignore modal search error */ }
             if (closed) break;
         }
 
@@ -587,11 +585,11 @@ window.Aladinn.Sign.Signing = (function () {
                                     closed = true;
                                     break;
                                 }
-                            } catch (e) { /* ignore safeclick error inside iframe */ }
+                            } catch (_e) { /* ignore safeclick error inside iframe */ }
                         }
                         if (closed) break;
                     }
-                } catch (e) { /* ignore iframe search error */ }
+                } catch (_e) { /* ignore iframe search error */ }
                 if (closed) break;
             }
         }
