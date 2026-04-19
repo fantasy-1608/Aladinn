@@ -2,8 +2,7 @@
  * HIS Voice Assistant - UI Module
  * Panel creation, visibility, toast notifications, and lock screen
  */
-
-// ========================================
+/* global chrome, DEMO_DATA, ICONS_SAFE, MEDICAL_FIELDS, VITAL_SIGNS */
 // Panel Visibility
 // ========================================
 function showPanel() {
@@ -239,7 +238,7 @@ async function copyToClipboard(text, btn = null) {
             }, 1500);
         }
         showToast('📋 Đã sao chép vào bộ nhớ');
-    } catch (e) {
+    } catch (_err) {
         showToast('❌ Lỗi copy!', true);
     }
 }
@@ -486,10 +485,6 @@ function createFloatingPanel() {
 }
 
 function setupPanelEvents() {
-    const panel = document.getElementById('his-floating-panel');
-    const miniBtn = document.getElementById('his-mini-btn');
-    const miniLockBtn = document.getElementById('his-mini-lock-btn');
-
     document.getElementById('his-minimize-btn')?.addEventListener('click', hidePanel);
     document.getElementById('his-lock-close-btn')?.addEventListener('click', collapseLockPanel);
     document.getElementById('his-settings-btn')?.addEventListener('click', () => {

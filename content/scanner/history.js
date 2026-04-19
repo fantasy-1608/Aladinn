@@ -28,10 +28,10 @@ const VNPTHistory = (function () {
         try {
             const frameOrigin = iframe.contentWindow?.location?.origin;
             if (frameOrigin && frameOrigin !== 'null') return frameOrigin;
-        } catch (e) { /* ignore cross-origin error */ }
+        } catch (_e) { /* ignore cross-origin error */ }
         try {
             if (iframe.src) return new URL(iframe.src, window.location.href).origin;
-        } catch (e) { console.warn('[Aladinn/History] Error resolving iframe origin:', e); }
+        } catch (_err) { console.warn('[Aladinn/History] Error resolving iframe origin:', _err); }
         return getAllowedOrigin();
     }
 
@@ -106,7 +106,7 @@ const VNPTHistory = (function () {
                 if (iframe.contentDocument) {
                     allIframes = allIframes.concat(getNestedIframes(iframe.contentDocument));
                 }
-            } catch (e) { }
+            } catch (_err) { }
         }
         return allIframes;
     }
@@ -616,8 +616,8 @@ const VNPTHistory = (function () {
                      */
                     const calculateSimilarity = (str1, str2) => {
                         if (!str1 || !str2) return 0;
-                        const words1 = str1.toLowerCase().replace(/[,.:;+-\/]/g, ' ').split(/\s+/).filter((/** @type {string} */ w) => w.length > 0);
-                        const words2 = str2.toLowerCase().replace(/[,.:;+-\/]/g, ' ').split(/\s+/).filter((/** @type {string} */ w) => w.length > 0);
+                        const words1 = str1.toLowerCase().replace(/[.,:;+\\-]/g, ' ').replace(/\//g, ' ').split(/\s+/).filter((/** @type {string} */ w) => w.length > 0);
+                        const words2 = str2.toLowerCase().replace(/[.,:;+\\-]/g, ' ').replace(/\//g, ' ').split(/\s+/).filter((/** @type {string} */ w) => w.length > 0);
 
                         const set1 = new Set(words1);
                         const set2 = new Set(words2);
@@ -845,7 +845,7 @@ const VNPTHistory = (function () {
         try {
             const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_HISTORY', { rowId }, 5000);
             return res.history || null;
-        } catch (e) {
+        } catch (_err) {
             return null;
         }
     }
@@ -855,7 +855,7 @@ const VNPTHistory = (function () {
         try {
             const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_TREATMENT', { rowId }, 8000);
             return res.treatmentList || [];
-        } catch (e) {
+        } catch (_err) {
             return [];
         }
     }

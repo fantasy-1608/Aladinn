@@ -214,7 +214,14 @@ function createVitalSignsItem(vitals) {
 
             const valueSpan = document.createElement('span');
             valueSpan.className = 'value';
-            valueSpan.textContent = vitals[v.key];
+            
+            // Remove the unit string ignoring case and trailing spaces from the raw value
+            let cleanVal = vitals[v.key].toString().trim();
+            if (v.unit) {
+                const unitRegex = new RegExp('\\s*' + v.unit.replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i');
+                cleanVal = cleanVal.replace(unitRegex, '');
+            }
+            valueSpan.textContent = cleanVal;
 
             const unitSpan = document.createElement('span');
             unitSpan.className = 'unit';
@@ -259,15 +266,17 @@ function createICD10Section(icdList) {
 
         const codeSpan = document.createElement('span');
         codeSpan.className = 'code';
-        codeSpan.textContent = icd.code;
+        const codeText = icd.code || icd.ma || icd.id || (typeof icd === 'string' ? icd : 'MÃ');
+        codeSpan.textContent = codeText;
         codeSpan.title = 'Copy mã ICD';
-        codeSpan.addEventListener('click', () => copyToClipboard(icd.code, codeSpan));
+        codeSpan.addEventListener('click', () => window.copyToClipboard ? window.copyToClipboard(codeText, codeSpan) : navigator.clipboard.writeText(codeText));
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'name';
-        nameSpan.textContent = icd.name;
+        const nameText = icd.name || icd.ten || icd.description || (typeof icd === 'string' ? '' : 'Không rõ');
+        nameSpan.textContent = nameText;
         nameSpan.title = 'Copy tên bệnh';
-        nameSpan.addEventListener('click', () => copyToClipboard(icd.name, nameSpan));
+        nameSpan.addEventListener('click', () => window.copyToClipboard ? window.copyToClipboard(nameText, nameSpan) : navigator.clipboard.writeText(nameText));
 
         chip.appendChild(codeSpan);
         chip.appendChild(nameSpan);
