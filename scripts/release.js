@@ -34,7 +34,8 @@ execSync(
 
 console.log(`\n🚀 [3/3] Đẩy lên Github Release...`);
 try {
-    const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "Aladinn v${version}" --generate-notes`;
+    const latestCommitMsg = execSync('git log -1 --pretty=%B').toString().trim();
+    const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "Aladinn v${version}" --notes "${latestCommitMsg}"`;
     execSync(ghCommand, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
     console.log(`\n✅ Hoàn tất! Đã release v${version} thành công lên GitHub!`);
 } catch (e) {
