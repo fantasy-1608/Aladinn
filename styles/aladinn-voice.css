@@ -143,7 +143,10 @@
 .his-panel-body {
   padding: 12px;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
+  height: 300px; /* fallback */
+  max-height: 50vh; /* fallback */
+  max-height: calc(100vh - 260px);
   min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 168, 83, 0.4) transparent;
