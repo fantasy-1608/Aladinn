@@ -33,7 +33,6 @@
   position: fixed;
   top: 80px;
   right: 20px;
-  bottom: 30px;
   width: 320px;
   background: var(--his-bg-glass);
   backdrop-filter: blur(8px) saturate(180%);
@@ -139,32 +138,62 @@
 }
 
 /* ========================================
-   Panel Body
+   Panel Body Wrapper (Body + Scroll Buttons)
    ======================================== */
+.his-panel-body-wrapper {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+}
+
 .his-panel-body {
   padding: 12px;
   overflow-y: auto;
-  min-height: 0;
   flex: 1 1 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 168, 83, 0.4) transparent;
+  min-height: 0;
+  scrollbar-width: none; /* hide native scrollbar, we have buttons */
 }
 
 .his-panel-body::-webkit-scrollbar {
-  width: 6px;
+  display: none; /* hide native scrollbar on WebKit */
 }
 
-.his-panel-body::-webkit-scrollbar-track {
-  background: transparent;
+/* Scroll Buttons */
+.his-scroll-buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 2px;
+  flex-shrink: 0;
 }
 
-.his-panel-body::-webkit-scrollbar-thumb {
-  background: rgba(212, 168, 83, 0.4);
-  border-radius: 10px;
+.his-scroll-btn {
+  width: 22px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(212, 168, 83, 0.15);
+  color: var(--his-accent);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.6;
 }
 
-.his-panel-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 168, 83, 0.8);
+.his-scroll-btn:hover {
+  background: rgba(212, 168, 83, 0.35);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.his-scroll-btn:active {
+  background: rgba(212, 168, 83, 0.5);
+  transform: scale(0.95);
 }
 
 /* ========================================

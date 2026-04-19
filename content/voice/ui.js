@@ -427,16 +427,22 @@ function createFloatingPanel() {
                 <button class="his-panel-btn" id="his-minimize-btn" title="Thu nhỏ">${ICONS_SAFE.minimize}</button>
             </div>
         </div>
-        <div class="his-panel-body">
-            <div class="his-quick-actions" id="his-quick-actions">
-                <button class="his-quick-btn his-quick-primary" id="his-autofill" title="Auto Fill">${ICONS_SAFE.autofill} <span>Fill</span></button>
-                <button class="his-quick-btn his-quick-hoichan" id="his-hoichan-fill" title="Hội chẩn" style="display:none">${ICONS_SAFE.hoichan}</button>
-                <button class="his-quick-btn his-quick-chuyenvien" id="his-chuyenvien-fill" title="Chuyển viện" style="display:none">${ICONS_SAFE.chuyenvien}</button>
-                <button class="his-quick-btn" id="his-copy-all" title="Copy All">${ICONS_SAFE.copy}</button>
-                <button class="his-quick-btn" id="his-demo-btn" title="Demo">${ICONS_SAFE.demo}</button>
+        <div class="his-panel-body-wrapper">
+            <div class="his-panel-body" id="his-panel-body">
+                <div class="his-quick-actions" id="his-quick-actions">
+                    <button class="his-quick-btn his-quick-primary" id="his-autofill" title="Auto Fill">${ICONS_SAFE.autofill} <span>Fill</span></button>
+                    <button class="his-quick-btn his-quick-hoichan" id="his-hoichan-fill" title="Hội chẩn" style="display:none">${ICONS_SAFE.hoichan}</button>
+                    <button class="his-quick-btn his-quick-chuyenvien" id="his-chuyenvien-fill" title="Chuyển viện" style="display:none">${ICONS_SAFE.chuyenvien}</button>
+                    <button class="his-quick-btn" id="his-copy-all" title="Copy All">${ICONS_SAFE.copy}</button>
+                    <button class="his-quick-btn" id="his-demo-btn" title="Demo">${ICONS_SAFE.demo}</button>
+                </div>
+                <div class="his-section aladinn-hidden" id="his-results-section">
+                    <div class="his-results-compact" id="his-results-container"></div>
+                </div>
             </div>
-            <div class="his-section aladinn-hidden" id="his-results-section">
-                <div class="his-results-compact" id="his-results-container"></div>
+            <div class="his-scroll-buttons">
+                <button class="his-scroll-btn" id="his-scroll-up" title="Cuộn lên">▲</button>
+                <button class="his-scroll-btn" id="his-scroll-down" title="Cuộn xuống">▼</button>
             </div>
         </div>
         <div class="his-panel-footer">
@@ -499,6 +505,30 @@ function setupPanelEvents() {
     document.getElementById('his-hoichan-fill')?.addEventListener('click', window.autoFillHoiChan || function(){});
     document.getElementById('his-chuyenvien-fill')?.addEventListener('click', window.autoFillChuyenVien || function(){});
     document.getElementById('his-process-btn')?.addEventListener('click', window.processWithAI || function(){});
+
+    // Scroll buttons
+    const panelBody = document.getElementById('his-panel-body');
+    const scrollUpBtn = document.getElementById('his-scroll-up');
+    const scrollDownBtn = document.getElementById('his-scroll-down');
+    if (panelBody && scrollUpBtn && scrollDownBtn) {
+        let scrollInterval = null;
+        const startScroll = (dir) => {
+            panelBody.scrollBy({ top: dir * 120, behavior: 'smooth' });
+            scrollInterval = setInterval(() => {
+                panelBody.scrollBy({ top: dir * 80, behavior: 'smooth' });
+            }, 200);
+        };
+        const stopScroll = () => { if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; } };
+
+        scrollUpBtn.addEventListener('mousedown', () => startScroll(-1));
+        scrollUpBtn.addEventListener('mouseup', stopScroll);
+        scrollUpBtn.addEventListener('mouseleave', stopScroll);
+        scrollDownBtn.addEventListener('mousedown', () => startScroll(1));
+        scrollDownBtn.addEventListener('mouseup', stopScroll);
+        scrollDownBtn.addEventListener('mouseleave', stopScroll);
+        scrollUpBtn.addEventListener('click', () => panelBody.scrollBy({ top: -120, behavior: 'smooth' }));
+        scrollDownBtn.addEventListener('click', () => panelBody.scrollBy({ top: 120, behavior: 'smooth' }));
+    }
 
     const transcriptEl = document.getElementById('his-transcript');
     if (transcriptEl) {
