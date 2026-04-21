@@ -45,9 +45,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window.VNPTMenuManager && window.VNPTDashboard && window.VNPTScanFlow) {
                 window.VNPTMenuManager.injectNativeMenu({
                     onScanRoom: () => startScanning('room'),
-                    onScanVitals: () => startScanning('vitals'),
                     onScanDrugs: () => startScanning('drugs'),
-                    onScanLabs: () => startScanning('labs'),
+                    onScanPttt: () => startScanning('pttt'),
                     onStopScan: () => window.VNPTScanFlow.stop(),
                     onShowDashboard: () => window.VNPTDashboard.show(),
                     onShowSettings: () => {
@@ -100,11 +99,6 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (window.VNPTUI) window.VNPTUI.updateProgress(count, total);
             },
             onRoomFound: (tr, text) => injectRoomText(tr, text, true),
-            onVitalsFound: (tr, vitals) => {
-                let text = `${vitals.weight}kg | ${vitals.height}cm`;
-                if (vitals.bloodPressure) text += ` | ${vitals.bloodPressure}`;
-                injectVitalsText(tr, text);
-            },
             onDrugsFound: (tr, drugs) => {
                 if (!drugs || drugs.length === 0) return;
                 const tdVal = new Date();
@@ -115,15 +109,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     injectDrugsBadge(tr);
                 }
             },
-            onLabsFound: (tr, labs) => {
-                if (!labs || labs.length === 0) return;
-                console.log(`🔬 [CDS] Bệnh nhân ${tr.id}: ${labs.length} kết quả XN`, labs);
-                injectLabsBadge(tr, labs.length);
-                
-                // Cache for CDS Engine to consume via Extractor
-                window._aladinn_cds_labs = labs;
-                // Trigger CDS rescan with new lab data
-                window.dispatchEvent(new Event('ALADINN_MANUAL_SCAN'));
+            onPtttFound: (tr, ptttList) => {
+                if (!ptttList || ptttList.length === 0) return;
+                console.log(`🔪 [Scanner] Bệnh nhân ${tr.id}: ${ptttList.length} kết quả PTTT`, ptttList);
+                injectPtttBadge(tr, ptttList.length);
             },
             onComplete: (m, stats) => {
                 if (window.VNPTMenuManager) {
@@ -161,26 +150,6 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (isReal) bedTd.classList.add('aladinn-scan-has-real-name');
     }
 
-    function injectVitalsText(tr, text) {
-        const iconTd = tr.querySelector("td[aria-describedby$='_ICON1']");
-        if (!iconTd) return;
-
-        let container = iconTd.querySelector('.aladinn-scan-vitals-info-display');
-        if (!container) {
-            container = iconTd.querySelector('.vitals-info-display');
-            if (!container) {
-                container = document.createElement('div');
-                container.className = 'aladinn-scan-vitals-info-display';
-                const centerTag = iconTd.querySelector('center');
-                if (centerTag) centerTag.appendChild(container);
-                else iconTd.appendChild(container);
-            } else {
-                container.className = 'aladinn-scan-vitals-info-display'; // Upgrade class
-            }
-        }
-        container.textContent = text;
-    }
-
     function injectDrugsBadge(tr) {
         let nameTd = tr.querySelector("td[aria-describedby$='_TENBENHNHAN']");
         if (!nameTd) nameTd = tr.querySelector("td[aria-describedby*='TENBENHNHAN']");
@@ -197,21 +166,37 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
     }
 
-    function injectLabsBadge(tr, count) {
+    function injectPtttBadge(tr, count) {
         let nameTd = tr.querySelector("td[aria-describedby$='_TENBENHNHAN']");
         if (!nameTd) nameTd = tr.querySelector("td[aria-describedby*='TENBENHNHAN']");
         if (!nameTd) return;
 
-        let badge = nameTd.querySelector('.aladinn-scan-labs-badge');
+        let badge = nameTd.querySelector('.aladinn-scan-pttt-badge');
         if (!badge) {
             badge = document.createElement('span');
-            badge.className = 'aladinn-scan-labs-badge';
-            badge.innerHTML = '🔬';
-            badge.title = `Có ${count} kết quả xét nghiệm`;
-            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 4px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));';
+            badge.className = 'aladinn-scan-pttt-badge';
+            badge.innerHTML = '🪡';
+            badge.title = `Có ${count} phiếu PTTT (Click để in chứng nhận)`;
+            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 4px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8)); cursor: pointer; transform-origin: bottom center; transition: transform 0.2s;';
+            
+            // Add click listener
+            badge.addEventListener('click', (_e) => {
+                // Let the click propagate to select the row
+                // Then trigger the PTTT print action via messaging
+                window.postMessage({
+                    type: 'TRIGGER_PTTT_PRINT',
+                    rowId: tr.id,
+                    token: window.__ALADINN_BRIDGE_TOKEN__
+                }, window.location.origin);
+                
+                // Add a small animation 
+                badge.style.transform = 'scale(1.2) rotate(15deg)';
+                setTimeout(() => badge.style.transform = '', 200);
+            });
+            
             nameTd.appendChild(badge);
         } else {
-            badge.title = `Có ${count} kết quả xét nghiệm`;
+            badge.title = `Có ${count} phiếu PTTT (Click để in chứng nhận)`;
         }
     }
 

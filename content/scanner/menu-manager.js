@@ -51,14 +51,11 @@ const VNPTMenuManager = (function () {
                 <a class="vnpt-native-action" id="native-scan-room">
                     <span style="font-size:16px;margin-right:6px;vertical-align:middle">🏥</span> Quét Buồng
                 </a>
-                <a class="vnpt-native-action" id="native-scan-vitals">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">❤️</span> Quét Vitals
-                </a>
                 <a class="vnpt-native-action" id="native-scan-drugs">
                     <span style="font-size:16px;margin-right:6px;vertical-align:middle">💊</span> Quét Thuốc
                 </a>
-                <a class="vnpt-native-action" id="native-scan-labs">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">🔬</span> Quét Xét Nghiệm
+                <a class="vnpt-native-action" id="native-scan-pttt">
+                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">✂️</span> Quét PTTT
                 </a>
                 <a class="vnpt-native-action" id="native-stop-scan" style="display:none;">
                     <span style="font-size:16px;margin-right:6px;vertical-align:middle">🛑</span> Dừng Quét
@@ -84,9 +81,8 @@ const VNPTMenuManager = (function () {
         // Bind Events
         setTimeout(() => {
             const scanRoom = document.getElementById('native-scan-room');
-            const scanVitals = document.getElementById('native-scan-vitals');
             const scanDrugs = document.getElementById('native-scan-drugs');
-            const scanLabs = document.getElementById('native-scan-labs');
+            const scanPttt = document.getElementById('native-scan-pttt');
             const stopScan = document.getElementById('native-stop-scan');
             const showDashboard = document.getElementById('native-show-dashboard');
             const showSettings = document.getElementById('native-show-settings');
@@ -103,9 +99,8 @@ const VNPTMenuManager = (function () {
                     if (callbacks.onLeaveScanRoom) callbacks.onLeaveScanRoom();
                 };
             }
-            if (scanVitals && callbacks.onScanVitals) scanVitals.onclick = (e) => { e.stopPropagation(); callbacks.onScanVitals(); };
             if (scanDrugs && callbacks.onScanDrugs) scanDrugs.onclick = (e) => { e.stopPropagation(); callbacks.onScanDrugs(); };
-            if (scanLabs && callbacks.onScanLabs) scanLabs.onclick = (e) => { e.stopPropagation(); callbacks.onScanLabs(); };
+            if (scanPttt && callbacks.onScanPttt) scanPttt.onclick = (e) => { e.stopPropagation(); callbacks.onScanPttt(); };
             
             if (stopScan && callbacks.onStopScan) stopScan.onclick = (e) => { e.stopPropagation(); callbacks.onStopScan(); };
             if (showDashboard && callbacks.onShowDashboard) showDashboard.onclick = (e) => { e.stopPropagation(); callbacks.onShowDashboard(); };

@@ -1383,3 +1383,438 @@
     color: rgba(255, 255, 255, 0.5);
     font-style: italic;
 }
+
+/* ========================= */
+/* ADVANCED SIGN MODAL       */
+/* ========================= */
+
+.his-btn-advanced {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    margin-top: 6px;
+}
+
+.his-btn-advanced:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%) !important;
+}
+
+.his-advsign-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 2147483646;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.his-advsign-overlay.visible {
+    opacity: 1;
+}
+
+.his-advsign-modal {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 16px;
+    width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(99, 102, 241, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #e2e8f0;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.his-advsign-overlay.visible .his-advsign-modal {
+    transform: scale(1) translateY(0);
+}
+
+/* Header */
+.his-advsign-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.his-advsign-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.his-advsign-bolt {
+    color: #818cf8;
+    filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.6));
+}
+
+.his-advsign-bolt-spin {
+    animation: boltSpin 1.5s ease-in-out infinite;
+}
+
+@keyframes boltSpin {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(15deg) scale(1.1); }
+}
+
+.his-advsign-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.his-advsign-subtitle {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.his-advsign-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.his-advsign-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+/* Stats */
+.his-advsign-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.his-advsign-stat {
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.his-advsign-stat-num {
+    font-size: 22px;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.his-advsign-stat-label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.his-advsign-stat-done .his-advsign-stat-num {
+    color: #34d399;
+}
+
+.his-advsign-stat-pending .his-advsign-stat-num {
+    color: #818cf8;
+}
+
+/* Toolbar */
+.his-advsign-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+.his-advsign-selectall {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.his-advsign-selectall input[type="checkbox"] {
+    accent-color: #6366f1;
+    width: 14px;
+    height: 14px;
+}
+
+.his-advsign-selected-count {
+    font-size: 11px;
+    color: #818cf8;
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.15);
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+/* Document List */
+.his-advsign-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    min-height: 100px;
+    max-height: 350px;
+}
+
+.his-advsign-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.his-advsign-list::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+}
+
+.his-advsign-group {
+    margin-bottom: 8px;
+}
+
+.his-advsign-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.his-advsign-group-icon {
+    font-size: 13px;
+}
+
+.his-advsign-group-name {
+    flex: 1;
+}
+
+.his-advsign-group-count {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 10px;
+}
+
+.his-advsign-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    margin: 2px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.his-advsign-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.his-advsign-item-done {
+    opacity: 0.6;
+}
+
+.his-advsign-check {
+    accent-color: #6366f1;
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.his-advsign-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.his-advsign-item-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.his-advsign-item-meta {
+    display: block;
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.his-advsign-item-status {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.his-advsign-unsigned {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+}
+
+.his-advsign-signed {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.his-advsign-signing {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    animation: signingPulse 1.5s ease-in-out infinite;
+}
+
+.his-advsign-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+@keyframes signingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Empty State */
+.his-advsign-empty {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.his-advsign-empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.his-advsign-empty-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: #34d399;
+}
+
+.his-advsign-empty-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+/* Footer */
+.his-advsign-footer {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.his-btn-advanced-confirm {
+    flex: 2;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.his-btn-advanced-confirm:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.his-btn-advanced-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Progress Bar */
+.his-advsign-progress {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.his-advsign-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.his-advsign-progress-bar-container {
+    height: 6px;
+    background: rgba(71, 85, 105, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.his-advsign-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #a5b4fc, #6366f1);
+    background-size: 200% 100%;
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+    animation: progressGradient 2s linear infinite;
+}
+
+/* Loading State */
+.his-advsign-loading-body {
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.his-advsign-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.his-advsign-loading-text {
+    font-size: 13px;
+    color: #94a3b8;
+}

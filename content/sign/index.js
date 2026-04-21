@@ -4,4 +4,6 @@ import './smart-detection.js';
 import './filter.js';
 import './ui.js';
 import './signing.js';
+import './advanced-sign.js';
+import './advanced-sign-ui.js';
 import './sign-init.js';

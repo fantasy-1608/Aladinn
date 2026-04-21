@@ -62,14 +62,6 @@ const VNPTScanFlow = (function () {
                         VNPTLogger.warn('ScanFlow', `Timeout fetching room for row ${tr.id}`);
                     }
                 }
-                else if (mode === 'vitals') {
-                    const res = await VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId: tr.id }, 8000);
-                    if (res.vitals && (/** @type {any} */(options)).onVitalsFound) {
-                        (/** @type {any} */(options)).onVitalsFound(tr, res.vitals);
-                    } else if (res.timeout) {
-                        VNPTLogger.warn('ScanFlow', `Timeout fetching vitals for row ${tr.id}`);
-                    }
-                }
                 else if (mode === 'drugs') {
                     const res = await VNPTMessaging.sendRequest('REQ_FETCH_DRUGS', { rowId: tr.id }, 8000);
                     if (res.drugList && (/** @type {any} */(options)).onDrugsFound) {
@@ -78,12 +70,12 @@ const VNPTScanFlow = (function () {
                         VNPTLogger.warn('ScanFlow', `Timeout fetching drugs for row ${tr.id}`);
                     }
                 }
-                else if (mode === 'labs') {
-                    const res = await VNPTMessaging.sendRequest('REQ_FETCH_LABS', { rowId: tr.id }, 8000);
-                    if (res.labList && (/** @type {any} */(options)).onLabsFound) {
-                        (/** @type {any} */(options)).onLabsFound(tr, res.labList);
+                else if (mode === 'pttt') {
+                    const res = await VNPTMessaging.sendRequest('REQ_FETCH_PTTT', { rowId: tr.id }, 8000);
+                    if (res.ptttList && (/** @type {any} */(options)).onPtttFound) {
+                        (/** @type {any} */(options)).onPtttFound(tr, res.ptttList);
                     } else if (res.timeout) {
-                        VNPTLogger.warn('ScanFlow', `Timeout fetching labs for row ${tr.id}`);
+                        VNPTLogger.warn('ScanFlow', `Timeout fetching PTTT for row ${tr.id}`);
                     }
                 }
             } catch (err) {
