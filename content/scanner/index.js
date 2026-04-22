@@ -19,4 +19,5 @@ import './notification.js';
 import './store.js';
 import './history.js';
 import './nutrition.js';
+import './emergency.js';
 import './scanner-init.js';
