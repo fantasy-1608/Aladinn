@@ -40,43 +40,73 @@ const KNOWLEDGE_BASE = {
     'pantoprazole': { icd: 'K20,K21,K25,K26,K27,K29,K30', msg: 'PPI cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).' },
     'esomeprazole': { icd: 'K20,K21,K25,K26,K27,K29,K30', msg: 'PPI cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).' },
     
-    // Respiratory
+    // ============ EXPANDED KNOWLEDGE BASE ============
+    // Respiratory & Allergy
     'salbutamol': { icd: 'J44,J45,J46', msg: 'SABA cần chẩn đoán Hen phế quản / COPD (J44-J46).' },
     'ambroxol': { icd: 'J', msg: 'Thuốc long đờm cần chẩn đoán bệnh lý Hô hấp (J).' },
     'acetylcystein': { icd: 'J', msg: 'Thuốc tiêu nhầy cần chẩn đoán bệnh lý Hô hấp (J).' },
+    'budesonide': { icd: 'J44,J45,J46', msg: 'ICS cần chẩn đoán Hen phế quản / COPD (J44-J46).' },
+    'montelukast': { icd: 'J45,J30', msg: 'LTRA cần chẩn đoán Hen phế quản hoặc Viêm mũi dị ứng.' },
+    'loratadine': { icd: 'L50,J30', msg: 'Kháng histamin cần chẩn đoán Dị ứng/Viêm mũi/Mề đay.' },
+    'cetirizine': { icd: 'L50,J30', msg: 'Kháng histamin cần chẩn đoán Dị ứng/Viêm mũi/Mề đay.' },
     
-    // Diabetes
-    'metformin': { icd: 'E10,E11,E12,E13,E14', msg: 'Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).' },
-    'gliclazide': { icd: 'E10,E11,E12,E13,E14', msg: 'Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).' },
-    'acarbose': { icd: 'E10,E11,E12,E13,E14', msg: 'Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).' },
+    // Neuro & Psych
+    'gabapentin': { icd: 'G62,G63,G53,M54', msg: 'Gabapentin cần chẩn đoán Đau thần kinh (G62-G63, M54).' },
+    'pregabalin': { icd: 'G62,G63,G53,M54', msg: 'Pregabalin cần chẩn đoán Đau thần kinh (G62-G63, M54).' },
+    'sertraline': { icd: 'F32,F33,F41', msg: 'SSRI cần chẩn đoán Trầm cảm hoặc Rối loạn âu lo (F32-F41).' },
+    'amitriptyline': { icd: 'F32,F33,G62,G63', msg: 'TCA cần chẩn đoán Trầm cảm hoặc Đau thần kinh.' },
+    'levodopa': { icd: 'G20', msg: 'Levodopa cần chẩn đoán Parkinson (G20).' },
     
-    // Other
-    'allopurinol': { icd: 'M10,E79', msg: 'Thuốc hạ acid uric cần chẩn đoán Gout (M10) hoặc Tăng acid uric máu (E79).' },
-    'colchicin': { icd: 'M10', msg: 'Colchicin cần chẩn đoán Gout (M10).' },
+    // Anticoagulants
     'warfarin': { icd: 'I48,I80,I81,I82,Z95', msg: 'Thuốc chống đông cần chẩn đoán Rung nhĩ / Huyết khối / Mang van tim nhân tạo.' },
     'acenocoumarol': { icd: 'I48,I80,I81,I82,Z95', msg: 'Thuốc chống đông cần chẩn đoán Rung nhĩ / Huyết khối / Mang van tim nhân tạo.' },
+    'rivaroxaban': { icd: 'I48,I80,I81,I82,Z95', msg: 'NOAC cần chẩn đoán Rung nhĩ / Huyết khối.' },
+    'apixaban': { icd: 'I48,I80,I81,I82,Z95', msg: 'NOAC cần chẩn đoán Rung nhĩ / Huyết khối.' },
+    'clopidogrel': { icd: 'I20,I21,I25,I63,I64', msg: 'Chống ngưng tập tiểu cầu cần chẩn đoán Mạch vành / Đột quỵ.' },
+    'aspirin': { icd: 'I20,I21,I25,I63,I64', msg: 'Aspirin liều thấp cần chẩn đoán Mạch vành / Đột quỵ.' },
+    
+    // GI & Endocrine
+    'levothyroxine': { icd: 'E03,E89', msg: 'Hormon tuyến giáp cần chẩn đoán Suy giáp (E03, E89).' },
+    'domperidone': { icd: 'K30,R11', msg: 'Thuốc chống nôn cần chẩn đoán Rối loạn tiêu hóa / Nôn (K30, R11).' },
+    'metoclopramide': { icd: 'K30,R11', msg: 'Thuốc chống nôn cần chẩn đoán Rối loạn tiêu hóa / Nôn (K30, R11).' },
+    
+    // Gout & Others
+    'allopurinol': { icd: 'M10,E79', msg: 'Thuốc hạ acid uric cần chẩn đoán Gout (M10) hoặc Tăng acid uric máu (E79).' },
+    'colchicin': { icd: 'M10', msg: 'Colchicin cần chẩn đoán Gout (M10).' },
     'albendazol': { icd: 'B65,B66,B67,B68,B69,B70,B71,B72,B73,B74,B75,B76,B77,B78,B79,B80,B81,B82,B83', msg: 'Thuốc tẩy giun sán cần chẩn đoán bệnh Ký sinh trùng (B65-B83).' },
 };
 
 // Heuristics based on suffixes if not found in explicit map
 function matchBySuffix(generic) {
-    if (generic.match(/(cilin|cillin|mycin|micin|floxacin|cefa|cef|penem)$/)) {
+    if (generic.match(/(cilin|cillin|mycin|micin|floxacin|cefa|cef|penem|cycline)$/)) {
         return { icd: 'A,B,J,N,L,K,H,T', msg: 'Kháng sinh cần chẩn đoán bệnh lý nhiễm khuẩn (A, B, J, N, L...).' };
     }
-    if (generic.match(/(olol|dipin|pril|sartan)$/)) {
+    if (generic.match(/(olol|dipin|dipine|pril|sartan|zosin)$/)) {
         return { icd: 'I10,I11,I15,I20,I25,I50', msg: 'Thuốc tim mạch / hạ áp cần chẩn đoán THA / Mạch vành / Suy tim (I10-I15, I20, I50).' };
     }
-    if (generic.match(/(statin)$/)) {
+    if (generic.match(/(statin|fibrate)$/)) {
         return { icd: 'E78,I10,I11,I20,I25,I63', msg: 'Thuốc hạ lipid máu cần chẩn đoán Rối loạn lipid máu (E78) hoặc Bệnh tim mạch (I).' };
     }
-    if (generic.match(/(prazol|tidin)$/)) {
+    if (generic.match(/(prazol|prazole|tidin|tidine)$/)) {
         return { icd: 'K20,K21,K25,K26,K27,K29,K30', msg: 'Thuốc dạ dày cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).' };
     }
-    if (generic.match(/(conazol)$/)) {
+    if (generic.match(/(conazol|conazole|fungin)$/)) {
         return { icd: 'B35,B36,B37,B38,B39,B40,B41,B42,B43,B44,B45,B46,B47,B48,B49', msg: 'Thuốc chống nấm cần chẩn đoán Bệnh nấm (B35-B49).' };
     }
-    if (generic.match(/(gli|gli|formin)$/)) {
+    if (generic.match(/(gli|gli|formin|flozin|tide|liptin)$/)) {
         return { icd: 'E10,E11,E12,E13,E14', msg: 'Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).' };
+    }
+    if (generic.match(/(vir|navir)$/)) {
+        return { icd: 'B18,B20,B21,B22,B23,B24', msg: 'Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).' };
+    }
+    if (generic.match(/(mab|nib|ximab)$/)) {
+        return { icd: 'C,D', msg: 'Thuốc sinh học / Hóa trị cần chẩn đoán Ung thư hoặc Bệnh tự miễn (C, D).' };
+    }
+    if (generic.match(/(sone|solone|nide|cort)$/)) {
+        return { icd: 'J44,J45,M05,M06,L,T', msg: 'Corticosteroid cần chẩn đoán Viêm/Dị ứng/Hen/Khớp (J44-45, M05-06, L, T).' };
+    }
+    if (generic.match(/(fenac|profen|coxib|oxicam)$/)) {
+        return { icd: 'M,R50,R51,R52,T', msg: 'Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).' };
     }
     return null;
 }

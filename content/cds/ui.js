@@ -37,6 +37,7 @@ export const CDSUI = {
                 </div>
             </div>
             <div id="cds-crawl-info" style="display:none"></div>
+            <div id="cds-patient-info" style="display:none" class="cds-patient-info"></div>
             <div class="cds-body">
                 <div id="cds-alerts-container">
                     <div class="cds-empty-state">
@@ -249,6 +250,26 @@ export const CDSUI = {
             #cds-crawl-info { color: #8B8579 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(20,27,45,0.5) !important; }
             #cds-crawl-info.success { color: #34d399 !important; }
             .cds-empty-state { text-align: center; color: #8B8579 !important; font-size: 13px !important; margin-top: 40px !important; }
+
+            .cds-patient-info {
+                padding: 10px 20px !important;
+                border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+                background: rgba(255,255,255,0.02) !important;
+            }
+            .cds-patient-name {
+                font-weight: 700 !important;
+                color: #E8E0D4 !important;
+                font-size: 13px !important;
+                margin-bottom: 4px !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+            }
+            .cds-patient-diag {
+                font-size: 11px !important;
+                color: #8B8579 !important;
+                line-height: 1.4 !important;
+            }
             
             /* Alert Cards — Dark */
             .cds-alert-card {
@@ -340,11 +361,30 @@ export const CDSUI = {
         this.hasUserDismissed = true;  // Ghi nhận user tự đóng
     },
 
-    update({ summary, alerts, debug }) {
+    update({ summary, alerts, debug, context }) {
         if (!this.panel) this.init();
 
         const container = document.getElementById('cds-alerts-container');
         const statusText = document.getElementById('cds-status-text');
+        const patientInfo = document.getElementById('cds-patient-info');
+
+        // Render Patient Info
+        if (context && context.patient && context.patient.id) {
+            const diagCodes = context.encounter.diagnoses.map(d => d.code).filter(Boolean);
+            const diagStr = diagCodes.length > 0 ? `Chẩn đoán: ${diagCodes.join(', ')}` : 'Chưa có chẩn đoán ICD';
+            
+            patientInfo.innerHTML = `
+                <div class="cds-patient-name">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    ${context.patient.name || context.patient.id}
+                </div>
+                <div class="cds-patient-diag">${diagStr}</div>
+            `;
+            patientInfo.style.display = 'block';
+        } else {
+            patientInfo.style.display = 'none';
+        }
+
         
         // Cập nhật Shield Icon (KHÔNG tự bung panel — user click khi cần)
         this.iconToggle.className = '';
@@ -507,5 +547,62 @@ export const CDSUI = {
             infoEl.innerHTML = `📅 Data: ${meta?.seedVersion || 'chưa rõ'}`;
         }
         infoEl.style.display = '';
+    },
+
+    /**
+     * BHYT Guard: Hiển thị Toast cảnh báo Warn-only khi Ra viện
+     */
+    showBhytToast(alerts) {
+        if (!alerts || alerts.length === 0) return;
+        
+        let toast = document.getElementById('aladinn-bhyt-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'aladinn-bhyt-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(232, 168, 56, 0.95);
+                color: #fff;
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                z-index: 2147483647;
+                font-family: system-ui, sans-serif;
+                font-size: 15px;
+                max-width: 400px;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.2);
+                transition: opacity 0.3s, transform 0.3s;
+                pointer-events: none;
+            `;
+            document.body.appendChild(toast);
+        }
+
+        const count = alerts.length;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <span style="font-size: 24px;">🛡️</span>
+                <strong style="font-size: 16px;">BHYT Guard: Cảnh báo Rủi ro</strong>
+            </div>
+            <div>Phát hiện <b>${count}</b> vấn đề BHYT/Lâm sàng có thể gây xuất toán hoặc sai sót hồ sơ.</div>
+            <div style="margin-top: 8px; font-size: 13px; opacity: 0.9;"><i>Hệ thống vẫn đang Lưu hồ sơ bình thường. Vui lòng kiểm tra lại Panel Aladinn ở góc phải.</i></div>
+        `;
+        
+        toast.style.opacity = '1';
+        toast.style.transform = 'translate(-50%, 0)';
+        
+        // Hiện panel Aladinn lên để bác sĩ xem chi tiết
+        this.show();
+
+        // Ẩn sau 8 giây
+        setTimeout(() => {
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+            }
+        }, 8000);
     }
 };

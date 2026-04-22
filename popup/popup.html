@@ -1,49 +1,94 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
-    <title>Aladinn — Trợ lý VNPT HIS</title>
+    <title>Aladinn — Trợ lý VNPT HIS (Test Popup)</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="popup.css">
-</head>
+    <style>
+        /* Test specific overrides or additions for the new layout */
+        .master-switch-card {
+            margin: 16px 16px 0;
+            padding: 12px 16px;
+            background: rgba(212, 168, 83, 0.08);
+            border: 1px solid var(--al-gold);
+            border-radius: var(--al-radius-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .master-switch-card.paused {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--al-border);
+            color: var(--al-text-muted);
+        }
+        .paused-icon {
+            display: none;
+            color: var(--al-text-muted);
+        }
+        .master-switch-card.paused .active-icon {
+            display: none;
+        }
+        .master-switch-card.paused .paused-icon {
+            display: block;
+        }
+        
+        .master-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .master-switch-card.paused .master-title {
+            color: var(--al-text-muted);
+        }
 
+        .master-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--al-gold);
+        }
+
+        /* Grey out main content when paused */
+        .main-content {
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+        body.is-paused .main-content {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        .section-header {
+            margin: 16px 16px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--al-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Ensure popup is tall enough */
+        body { min-height: 480px; }
+    </style>
+</head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
             <div class="logo">
-                <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn Lamp">
+                <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn Lamp" id="genie-logo" style="transition: all 0.3s ease;">
                 <span class="app-title">Aladinn</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-                <button id="btn-check-update" title="Kiểm tra bản cập nhật" style="background: none; border: none; cursor: pointer; color: #8B8579; padding: 2px; transition: color 0.2s; display: flex; align-items: center; justify-content: center;">
-                    <svg class="al-icon" style="width: 14px; height: 14px;" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="version-badge">v1.1.4</div>
+                <div class="version-badge">v1.1.6</div>
             </div>
         </header>
-
-        <!-- Update Banner (hidden by default) -->
-        <div id="update-banner" class="update-banner" style="display: none;">
-            <div class="update-content">
-                <div class="update-icon">
-                    <svg class="al-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813h6.112l-4.968 3.602 1.912 5.813L12 14.624l-4.968 3.604 1.912-5.813-4.968-3.602h6.112z"/></svg>
-                </div>
-                <div class="update-info">
-                    <div class="update-title">Bản cập nhật <span id="update-version"></span></div>
-                    <div class="update-desc" id="update-changelog">Tính năng mới & Sửa đổi</div>
-                </div>
-            </div>
-            <div class="update-actions">
-                <a id="update-download-btn" href="#" target="_blank" class="update-btn update-btn-primary">
-                    Cập nhật ngay
-                </a>
-                <button id="update-dismiss-btn" class="update-btn update-btn-secondary">
-                    Bỏ qua
-                </button>
-            </div>
-        </div>
 
         <!-- Feature Toggles - Control Center -->
         <div class="feature-toggles">
@@ -81,99 +126,68 @@
             </label>
         </div>
 
-        <!-- Tabs Navigation -->
-        <nav class="tabs-nav">
-            <button class="tab-btn active" data-target="tab-scanner">
-                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                Quét & Nhập
-            </button>
-            <button class="tab-btn" data-target="tab-voice">
-                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-                Gọi AI
-            </button>
-            <button class="tab-btn" data-target="tab-sign">
-                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                Ký số
-            </button>
-        </nav>
-
-        <!-- Tab Content: Scanner Actions -->
-        <div id="tab-scanner" class="tab-content active">
-            <div class="action-grid">
-                <div id="scan-room-btn" class="action-btn primary">
-                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
-                    Quét Phòng / Giường
+        <div class="main-content">
+            <div class="section-header" id="header-scanner" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    Quét Dữ Liệu & Bệnh Án
                 </div>
-                <div id="scan-vitals-btn" class="action-btn">
-                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                    Quét Sinh hiệu
-                </div>
-                <div id="show-dashboard-btn" class="action-btn">
-                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                    Mở Dashboard
-                </div>
-                <div id="toggle-ui-btn" class="action-btn">
-                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Cài đặt Scanner
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab Content: Voice/AI Info -->
-        <div id="tab-voice" class="tab-content">
-            <div class="voice-status-card">
-                <div class="status-indicator active" id="voice-indicator">
-                    <div class="pulse"></div>
-                </div>
-                <div class="status-text">
-                    <div class="status-title" id="voice-status-title">Trợ lý AI Đang sẵn sàng</div>
-                    <div class="status-desc" id="voice-status-desc">Bấm vào biểu tượng Micro trên trang bệnh án để bắt đầu ra lệnh bằng giọng nói.</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab Content: Sign Module -->
-        <div id="tab-sign" class="tab-content">
-            <div class="sign-controls">
-                <label class="sign-auto-toggle">
-                    <span class="toggle-label">Chế độ ký tự tin (Bỏ qua confirm)</span>
-                    <div class="toggle-item" style="border: none; padding: 0; background: transparent; width: 44px;">
-                        <input type="checkbox" id="sign-auto-toggle" checked>
-                        <div class="toggle-slider"></div>
-                    </div>
+                <label style="font-size: 11px; font-weight: normal; display: flex; align-items: center; gap: 4px; cursor: pointer; color: #888;">
+                    <input type="checkbox" id="scan-selected-only" style="margin: 0; cursor: pointer;">
+                    Chỉ BN chọn
                 </label>
-                
-                <div class="action-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
-                    <button id="sign-select-all-btn" class="action-btn" style="padding: 12px; border-radius: 12px;">
+            </div>
+            <div class="action-grid" id="grid-scanner" style="padding-top: 0; padding-bottom: 8px;">
+                <div id="show-dashboard-btn" class="action-btn primary" style="grid-column: span 2; padding: 14px; flex-direction: row; justify-content: center;">
+                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                    Bảng Điều Khiển & Thống kê
+                </div>
+                <div id="scan-room-btn" class="action-btn" style="padding: 12px 8px;">
+                    <span style="font-size:18px; margin-bottom:4px;">🏥</span>
+                    Quét Buồng
+                </div>
+                <div id="scan-drugs-btn" class="action-btn" style="padding: 12px 8px;">
+                    <span style="font-size:18px; margin-bottom:4px;">💊</span>
+                    Quét Thuốc
+                </div>
+                <div id="ai-lab-summary-btn" class="action-btn" style="padding: 12px 8px;">
+                    <span style="font-size:18px; margin-bottom:4px;">✨</span>
+                    Tóm tắt CLS
+                </div>
+                <div id="scan-pttt-btn" class="action-btn" style="padding: 12px 8px;">
+                    <span style="font-size:18px; margin-bottom:4px;">✂️</span>
+                    Quét PTTT
+                </div>
+                <div id="scan-bhyt-btn" class="action-btn" style="padding: 12px 8px; border-color: rgba(232, 168, 56, 0.4); color: rgba(232, 168, 56, 1);">
+                    <span style="font-size:18px; margin-bottom:4px;">🛡️</span>
+                    Quét BHYT
+                </div>
+                <div id="clear-cache-btn" class="action-btn" style="grid-column: span 2; padding: 10px; flex-direction: row; justify-content: center; border-color: rgba(239, 68, 68, 0.2); color: rgba(239, 68, 68, 0.8);">
+                    <svg class="al-icon al-icon-sm action-icon" style="color: inherit;" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Xóa Cache Bộ nhớ
+                </div>
+            </div>
+
+
+
+            <div class="section-header" id="header-sign">
+                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                Ký số Hồ sơ (Smart CA)
+            </div>
+            <div class="sign-controls" id="grid-sign" style="padding-top: 0;">
+                <div class="action-grid" style="grid-template-columns: 1fr 1fr; padding: 0 0 8px 0; gap: 8px;">
+                    <button id="sign-select-all-btn" class="action-btn" style="padding: 10px; border-radius: 10px; gap: 6px; flex-direction: row; justify-content: center;">
                         <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                         Chọn tất cả
                     </button>
-                    <button id="sign-start-btn" class="action-btn primary" style="padding: 12px; border-radius: 12px;">
+                    <button id="sign-start-btn" class="action-btn primary" style="padding: 10px; border-radius: 10px; gap: 6px; flex-direction: row; justify-content: center;">
                         <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                        Ký hồ sơ đang chọn
+                        Ký hồ sơ chọn
                     </button>
                 </div>
-
-                <div class="sign-stats">
-                    <div class="sign-stat-item">
-                        <div class="sign-stat-label">ĐÃ CHỌN</div>
-                        <div class="sign-stat-value" id="sign-stat-selected">0</div>
-                    </div>
-                    <div class="sign-stat-item">
-                        <div class="sign-stat-label">ĐÃ KÝ</div>
-                        <div class="sign-stat-value" id="sign-stat-signed">0</div>
-                    </div>
-                    <div class="sign-stat-item">
-                        <div class="sign-stat-label">BỎ QUA</div>
-                        <div class="sign-stat-value" id="sign-stat-skipped">0</div>
-                    </div>
-                </div>
-
-                <div class="sign-history-section">
-                    <div class="sign-history-header">Lịch sử phiên ký số</div>
-                    <ul id="sign-history-list" class="sign-history-list">
-                        <li class="sign-history-empty">Chưa có phiên ký số gần đây</li>
-                    </ul>
+                
+                <div style="background: rgba(212, 168, 83, 0.05); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: var(--al-text-dim); border: 1px dashed var(--al-border);">
+                    <span id="sign-status-text">Chỉ hoạt động ở màn hình chờ Ký số HIS</span>
                 </div>
             </div>
         </div>
@@ -184,11 +198,10 @@
     <footer class="app-footer">
         <button id="open-options-btn" class="footer-btn">
             <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            Cài đặt
+            Cài đặt hệ thống
         </button>
-        <div class="author-info">Thiết kế bởi Huỳnh Trung Anh</div>
+        <div class="author-info">Huỳnh Trung Anh</div>
     </footer>
     <script type="module" src="popup.js"></script>
 </body>
-
 </html>

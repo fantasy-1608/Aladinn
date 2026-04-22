@@ -1,5 +1,5 @@
 /**
- * Aladinn Scanner v1.1.0 - Desert Mystic UI
+ * Aladinn Scanner v1.1.6 - Desert Mystic UI
  * Midnight Navy + Royal Gold Design System
  */
 
@@ -786,4 +786,21 @@ body.vnpt-native-active #vnpt-scanner-ui {
     border-radius: 5px;
     border: 1px solid #ddd;
     font-size: 11px;
+}
+
+/* Overlay for Lab Timeline Modal */
+.vnpt-glass-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    animation: vnpt-fade-in 0.2s ease-out;
 }

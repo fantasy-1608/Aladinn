@@ -11,7 +11,7 @@ const AIUIInjector = {
 
         // Clean up base label
         let baseText = label || (btnText ? btnText.innerText : button.innerText) || 'Điền Bệnh án';
-        baseText = baseText.replace(/[✨📋⏳✅]/g, '').replace(/\(VIP\)/gi, '').replace(/\(AI VIP\)/gi, '').trim();
+        baseText = baseText.replace(/[✨📋⏳✅]/gu, '').replace(/\(VIP\)/gi, '').replace(/\(AI VIP\)/gi, '').trim();
 
         const iconUrl = chrome.runtime?.getURL ? chrome.runtime.getURL('assets/icons/icon16.png') : '';
         const vipText = `<img src="${iconUrl}" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><span style="vertical-align:middle;">${baseText} (AI VIP)</span>`;

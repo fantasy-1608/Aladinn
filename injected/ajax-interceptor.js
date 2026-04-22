@@ -34,7 +34,7 @@
         options.success = function (data, textStatus, jqXHR) {
             // --- Heuristic Snooping for CDS ---
             try {
-                let payload = { patientId: null, weight: null, diagnoses: [], medications: [], labs: [] };
+                let payload = { patientId: null, benhnhanId: null, khambenhId: null, maBa: null, weight: null, diagnoses: [], medications: [], labs: [] };
                 let hasData = false;
                 
                 const parseDate = (dStr) => {
@@ -50,12 +50,22 @@
                 else if (typeof data === 'string' && data.includes('"rows":')) {
                     try { items = JSON.parse(data).rows || []; } catch(e){}
                 }
+                else if (data && typeof data === 'object' && !Array.isArray(data)) items = [data];
 
                 if (items.length > 0) {
                     items.forEach(item => {
                         if (!item) return;
                         
-                        // Patient ID global search
+                        // Extract specific IDs for background fetching
+                        if (!payload.benhnhanId && item.BENHNHANID) payload.benhnhanId = String(item.BENHNHANID);
+                        if (!payload.khambenhId && item.KHAMBENHID) payload.khambenhId = String(item.KHAMBENHID);
+                        if (!payload.khambenhId && item.MADIEUTRI) payload.khambenhId = String(item.MADIEUTRI);
+                        if (!payload.maBa && item.MABA) payload.maBa = String(item.MABA);
+
+                        // Patient ID global search - Ưu tiên Mã Bệnh Án (MABA) vì nó hiển thị trên UI
+                        if (!payload.patientId && item.MABA) payload.patientId = String(item.MABA);
+                        if (!payload.patientId && item.SOBENHAN) payload.patientId = String(item.SOBENHAN);
+                        if (!payload.patientId && item.MABENHAN) payload.patientId = String(item.MABENHAN);
                         if (!payload.patientId && item.BENHNHANID) payload.patientId = String(item.BENHNHANID);
                         if (!payload.patientId && item.KHAMBENHID) payload.patientId = String(item.KHAMBENHID);
                         if (!payload.patientId && item.HOSOBENHANID) payload.patientId = String(item.HOSOBENHANID);
@@ -137,14 +147,22 @@
                         }
 
                         // 3. Chẩn đoán (Diagnoses & ICD)
-                        // Heuristic: có MAICD hoặc CHUANDOAN (sai chính tả phổ biến trên HIS) hoặc CHANDOAN
-                        const icd = item.MAICD || item.ICD || item.MA_ICD;
-                        if (isPatientSpecific && icd && typeof icd === 'string' && /^[A-Z]\d{2,3}(?:\.\d{1,2})?$/.test(icd.trim().toUpperCase())) {
-                            payload.diagnoses.push({
-                                code: icd.trim().toUpperCase(),
-                                is_primary: payload.diagnoses.length === 0
-                            });
-                            hasData = true;
+                        // Bắt cả mã chính và các mã phụ (thường bị ngăn cách bởi dấu phẩy)
+                        const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
+                        const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
+                        const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                        
+                        if (isPatientSpecific && combinedIcd) {
+                            const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                            if (matches) {
+                                matches.forEach(code => {
+                                    payload.diagnoses.push({
+                                        code: code,
+                                        is_primary: payload.diagnoses.length === 0
+                                    });
+                                });
+                                hasData = true;
+                            }
                         }
 
                         // 4. Sinh hiệu (Vitals / Weight)

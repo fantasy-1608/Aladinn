@@ -1,4 +1,5 @@
-const GeminiAPI = (() => {
+/* global AIAuditLogger */
+void (() => {
     /**
      * @param {string} rawTreatments 
      * @param {string} [apiKey] - Optional. If omitted, auto-resolved via HIS.getApiKey()

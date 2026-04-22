@@ -162,6 +162,7 @@ Văn bản nhập liệu: "${text}"`;
 // ========================================
 function sanitizeKey(key) {
     if (!key) return '';
+    // eslint-disable-next-line no-control-regex
     return key.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
 }
 
@@ -199,7 +200,7 @@ async function fetchWithRetry(url, options, retries = RETRY_DELAYS) {
         } catch (err) {
             // AbortError = user cancelled, don't retry
             if (err.name === 'AbortError') {
-                throw new Error('Request đã bị hủy.');
+                throw new Error('Request đã bị hủy.', { cause: err });
             }
 
             // Network errors: retry
@@ -294,7 +295,7 @@ export async function requestAI({ text, model, requestId }) {
     if (result.geminiApiKey_encrypted && result.pin_salt) {
         try {
             apiKey = await decryptAPIKeyInBg(result.geminiApiKey_encrypted, result.pin_salt);
-        } catch (e) {
+        } catch (_e) {
             // Decryption failed
         }
     }

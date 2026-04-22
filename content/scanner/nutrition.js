@@ -43,7 +43,7 @@ const VNPTNutrition = (function () {
         try {
             const frameOrigin = iframe.contentWindow?.location?.origin;
             if (frameOrigin && frameOrigin !== 'null') return frameOrigin;
-        } catch (e) { /* cross-origin error */ }
+        } catch (_e) { /* cross-origin error */ }
         try {
             if (iframe.src) return new URL(iframe.src, window.location.href).origin;
         } catch (e) { console.warn('[Aladinn/Nutrition] Error reading context:', e); }
@@ -137,7 +137,7 @@ const VNPTNutrition = (function () {
                     }
                     break;
                 }
-            } catch (e) {
+            } catch (_e) {
                 // Cross-origin iframe, skip
             }
         }
@@ -226,7 +226,7 @@ const VNPTNutrition = (function () {
                         fab.setAttribute('data-tooltip', '🍽️ Điền phiếu DD-03');
                     }
                 }, 2500);
-            } catch (e) {
+            } catch (_e) {
                 fab.className = 'error';
                 fab.innerHTML = '❌';
                 setTimeout(() => {
@@ -346,7 +346,7 @@ const VNPTNutrition = (function () {
 
                 // Ghi chú: Có thể lblMSG_BOSUNG nằm bên TRONG iframe, ta sẽ để Helper tự quét thêm nếu TOP frame không tìm thấy.
                 if (!admissionDate) console.log('[Nutrition] TOP: Không tìm thấy Ngày nhập khoa ở Top frame lẫn API. Sẽ chuyển giao cho Iframe Helper.');
-            } catch (_e) { console.warn('[Nutrition] Lỗi nội bộ khi dò parse Ngày nhập viện', e); }
+            } catch (_e) { console.warn('[Nutrition] Lỗi nội bộ khi dò parse Ngày nhập viện', _e); }
 
             // Gửi lệnh điền — gửi cả weight/bloodPressure + admissionDate
             await sendCmd(target, 'NUTRITION_FILL_FORM', {
@@ -377,7 +377,7 @@ const VNPTNutrition = (function () {
         try {
             const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId }, 5000);
             return res.vitals || null;
-        } catch (e) {
+        } catch (_e) {
             return null;
         }
     }

@@ -84,8 +84,8 @@
                     // Fallback: Tìm ô nhập text đầu tiên có format thời gian
                     if (!injectedDate) {
                         var inputs = document.querySelectorAll('input[type="text"]');
-                        for (var i = 0; i < inputs.length; i++) {
-                            var el = inputs[i];
+                        for (var j = 0; j < inputs.length; j++) {
+                            var el = inputs[j];
                             var val = el.value || '';
                             if (val && val.match(/\d{2}\/\d{2}\/\d{4}/)) {
                                 el.removeAttribute('disabled');

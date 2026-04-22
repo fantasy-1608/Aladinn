@@ -17,18 +17,42 @@ export const CDSExtractor = {
      * Thu thập toàn bộ Context của Bệnh nhân hiện tại trên màn hình Kê Đơn.
      * @returns {Object} PatientContext
      */
-    extractContext() {
+    async extractContext() {
         const currentDomPatientId = this.getPatientId();
+        const currentDomPatientName = this.getPatientName();
         CDSCache.checkPatientContext(currentDomPatientId); // Đảm bảo Cache đúng BN đang thao tác
+
+        let diagnoses = this.getDiagnoses();
+        const cache = CDSCache.get();
+
+        // --- FETCH TỪ BACKGROUND NẾU THIẾU CHẨN ĐOÁN PHỤ ---
+        // Nếu chỉ có 0 hoặc 1 mã ICD (từ UI), có khả năng bị sót chẩn đoán kèm theo.
+        if (diagnoses.length <= 1 && cache.benhnhanId && cache.khambenhId) {
+            try {
+                const fetchedDiagnoses = await this.fetchDiagnosesFromBridge(cache.benhnhanId, cache.khambenhId);
+                if (fetchedDiagnoses && fetchedDiagnoses.length > diagnoses.length) {
+                    diagnoses = fetchedDiagnoses;
+                    // Cập nhật lại Cache để không phải fetch lại nhiều lần
+                    for (const d of fetchedDiagnoses) {
+                        if (!cache.diagnoses.some(x => x.code === d.code)) {
+                            cache.diagnoses.push(d);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[Aladinn CDS] Background fetch diagnoses failed:', e);
+            }
+        }
 
         return {
             patient: {
                 id: currentDomPatientId,
+                name: currentDomPatientName,
                 weight: this.getWeight()
             },
             encounter: {
                 id: this.getEncounterId(),
-                diagnoses: this.getDiagnoses()
+                diagnoses: diagnoses
             },
             insurance: {
                 care_setting: this.getCareSetting(),
@@ -39,8 +63,37 @@ export const CDSExtractor = {
         };
     },
 
-    getElementsAcrossIframes(selector) {
+    fetchDiagnosesFromBridge(benhnhanId, khambenhId) {
+        return new Promise((resolve) => {
+            const reqId = Date.now() + Math.random();
+            const listener = (event) => {
+                if (event.data && event.data.type === 'FETCH_DIAGNOSES_RESULT' && event.data.requestId === reqId) {
+                    window.removeEventListener('message', listener);
+                    resolve(event.data.data ? event.data.data.diagnoses : null);
+                }
+            };
+            window.addEventListener('message', listener);
+            
+            // Timeout 3s
+            setTimeout(() => {
+                window.removeEventListener('message', listener);
+                resolve(null);
+            }, 3000);
+
+            const token = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || '');
+            window.postMessage({
+                type: 'REQ_FETCH_DIAGNOSES',
+                benhnhanId: benhnhanId,
+                khambenhId: khambenhId,
+                requestId: reqId,
+                token: token
+            }, window.location.origin);
+        });
+    },
+
+    getElementsAcrossIframes(selector, allowHidden = false) {
         const isVisible = (el) => {
+            if (allowHidden) return true;
             const rect = el.getBoundingClientRect();
             // Loại bỏ các element bị jQuery UI ẩn đi bằng cách left: -10000px
             return rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
@@ -51,8 +104,8 @@ export const CDSExtractor = {
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
-                // Chỉ duyệt qua iframe thực sự đang hiển thị
-                if (iframe.contentDocument && isVisible(iframe)) {
+                // Chỉ duyệt qua iframe nếu nó hiển thị hoặc allowHidden = true
+                if (iframe.contentDocument && (allowHidden || isVisible(iframe))) {
                     const iframeElements = Array.from(iframe.contentDocument.querySelectorAll(selector)).filter(isVisible);
                     elements = elements.concat(iframeElements);
                 }
@@ -64,10 +117,48 @@ export const CDSExtractor = {
     },
 
     getPatientId() {
-        // Luôn xác thực Bệnh Nhân dựa trên DOM vì đó là thứ người dùng thực tế đang nhìn thấy
         const els = this.getElementsAcrossIframes('#txtMaBenhNhan, [name="MaBn"], #txtMaBA');
         for (const el of els) if (el.value) return el.value;
+        
+        // Cố gắng tìm trong các thanh bar thông tin (VD: "2604221155 | NGUYỄN HỮU ĐẢM...")
+        const infoBars = this.getElementsAcrossIframes('div, span, td');
+        for (const el of infoBars) {
+            const text = el.innerText || '';
+            // Match dạng "Mã BA: 123456"
+            const match1 = text.match(/Mã BA:\s*(\d+)/i);
+            if (match1) return match1[1];
+            
+            // Match dạng "123456789 | NGUYỄN VĂN A"
+            const match2 = text.match(/^(\d{8,12})\s*\|/);
+            if (match2) return match2[1];
+        }
+        
         return 'anonymous_patient';
+    },
+
+    getPatientName() {
+        // Tìm qua input
+        const els = this.getElementsAcrossIframes('#txtTenBenhNhan, [name="TenBn"], [id*="TenBenhNhan"], .patient-name');
+        for (const el of els) {
+            const val = el.value || el.innerText;
+            if (val && val.trim().length > 3) return val.trim();
+        }
+        
+        // Tìm qua text
+        const infoBars = this.getElementsAcrossIframes('div, span, td');
+        for (const el of infoBars) {
+            const text = el.innerText || '';
+            
+            // Match dạng "Tên bệnh nhân: NGUYỄN THỊ MỸ VÂN"
+            const match1 = text.match(/Tên bệnh nhân:\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+)/i);
+            if (match1 && match1[1].trim().length > 3) return match1[1].trim();
+            
+            // Match dạng "123456789 | NGUYỄN HỮU ĐẢM |"
+            const match2 = text.match(/^\d{8,12}\s*\|\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+)\s*\|/i);
+            if (match2 && match2[1].trim().length > 3) return match2[1].trim();
+        }
+        
+        return 'Bệnh nhân';
     },
 
     getEncounterId() {
@@ -109,14 +200,17 @@ export const CDSExtractor = {
         // 1. Quét ưu tiên các ô nhập liệu (Input/Textarea) thường chứa mã bệnh
         const icdSelectors = [
             '#txtMaBenh', '#txtMaICD', '#txtMaBenhKemTheo', '#txtChuanDoan_Hide', '#txtBenhKemTheo',
+            '#lblCHANDOANVAOKHOA_KEMTHEO', '#lblCHANDOANVAOKHOA',
             '[id*="MaBenh"]', '[id*="ICD"]', '[id*="icd"]', '[id*="ChuanDoan"]', '[id*="BenhKemTheo"]',
             '[name*="MaBenh"]', '[name*="ICD"]', '[name*="ChuanDoan"]', '[name*="BenhKemTheo"]',
             'textarea' // Bệnh kèm theo thường lọt vào textarea
         ].join(', ');
         
-        const inputs = this.getElementsAcrossIframes(icdSelectors);
+        // Cực kỳ quan trọng: Cho phép lấy element ẩn (allowHidden = true)
+        // Vì ở tab "Thuốc(4)", các thẻ <label> hoặc ô nhập liệu chẩn đoán của bệnh nhân thường bị jQuery UI ẩn đi (display: none)
+        const inputs = this.getElementsAcrossIframes(icdSelectors, true);
         inputs.forEach(el => {
-            const rawVal = el.value || el.innerText || '';
+            const rawVal = el.value || el.innerText || el.textContent || '';
             const matches = rawVal.match(icdPattern);
             if (matches) {
                 matches.forEach(code => {
@@ -131,7 +225,7 @@ export const CDSExtractor = {
 
         // 2. Mắt xích thứ hai: Quét toàn bộ Text của popup/trang để tóm các bệnh đã được CHỌN & HIỂN THỊ
         // Trong VNPT HIS, bệnh đã chọn thường được render dưới dạng "S61-Vết thương..." hoặc "M15 - Thoái hóa..."
-        const docTexts = this.getElementsAcrossIframes('body, .form-group, .panel-body, td, div');
+        const docTexts = this.getElementsAcrossIframes('body, .form-group, .panel-body, td, div', false);
         // Regex bắt chặt định dạng "Mã ICD đi kèm dấu gạch ngang hoặc kết hợp với chữ" để tránh rác (VD: Tầng 3A, M15 máy in...)
         // Bắt các mẫu như: "M15-Thoái hóa", "S56.5 - Tổn thương"
         const strictIcdPattern = /\b([A-Z]\d{2,3}(?:\.\d{1,2})?)\s*(-|:)\s*[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝ/]/gi;

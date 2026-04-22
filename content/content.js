@@ -22,7 +22,7 @@
     if (typeof HIS !== 'undefined' && HIS.init) {
         HIS.init({
             name: 'Aladinn',
-            version: window.Aladinn?.VERSION || '1.1.0',
+            version: window.Aladinn?.VERSION || '1.1.6',
             prefix: 'aladinn',
             emoji: '🧞'
         });
@@ -150,30 +150,25 @@
 
         // CDS Module
         if (features.cds && window === window.top) {
-            console.log('[Aladinn] 🧠 CDS: features.cds=true, checking window.Aladinn.CDS...');
-            console.log('[Aladinn] 🧠 CDS: window.Aladinn=', typeof window.Aladinn, 'CDS=', typeof window.Aladinn?.CDS, 'init=', typeof window.Aladinn?.CDS?.init);
             if (Logger) Logger.info('Main', '🧠 Khởi tạo CDS module...');
             try {
                 if (window.Aladinn?.CDS?.init) {
-                    console.log('[Aladinn] 🧠 CDS: Found init function, calling...');
                     chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                         const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
                         window.Aladinn.CDS.init(true, filterLow);
                         if (Logger) Logger.success('Main', '🧠 CDS module ✅');
                     });
                 } else {
-                    console.warn('[Aladinn] 🧠 CDS: window.Aladinn.CDS.init NOT FOUND! Attempting delayed init...');
-                    // Retry after 1s in case of race condition
+                    // Retry after 1.5s in case of race condition with module registration
                     setTimeout(() => {
-                        console.log('[Aladinn] 🧠 CDS retry: window.Aladinn.CDS=', typeof window.Aladinn?.CDS, 'init=', typeof window.Aladinn?.CDS?.init);
                         if (window.Aladinn?.CDS?.init) {
                             chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                                 const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
                                 window.Aladinn.CDS.init(true, filterLow);
-                                console.log('[Aladinn] 🧠 CDS: Delayed init SUCCESS ✅');
+                                if (Logger) Logger.success('Main', '🧠 CDS module (delayed) ✅');
                             });
                         } else {
-                            console.error('[Aladinn] 🧠 CDS: STILL NOT FOUND after retry. Module failed to register.');
+                            if (Logger) Logger.warn('Main', '🧠 CDS module not found after retry.');
                         }
                     }, 1500);
                 }

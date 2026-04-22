@@ -1,3 +1,4 @@
+/* global ICONS */
 /**
  * HIS Voice Assistant - Speech Module
  * Speech recognition functionality
@@ -92,7 +93,7 @@ function toggleRecording() {
         if (!window.recognition) initSpeechRecognition();
         try {
             window.recognition?.start();
-        } catch (e) {
+        } catch (_e) {
             window.showToast('Không thể bắt đầu ghi âm', true);
         }
     }

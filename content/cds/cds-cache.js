@@ -12,7 +12,10 @@ class CDSCacheManager {
 
     reset() {
         this.cache = {
-            patientId: null,
+            patientIds: new Set(),
+            benhnhanId: null,
+            khambenhId: null,
+            maBa: null,
             encounterId: null,
             weight: null,
             diagnoses: [], // { code: 'M15.0', is_primary: true }
@@ -43,15 +46,32 @@ class CDSCacheManager {
         if (!payload) return;
         let hasChanges = false;
 
-        // Reset nếu khác bệnh nhân
-        if (payload.patientId && this.cache.patientId && payload.patientId !== this.cache.patientId) {
-            this.reset();
-            this.cache.patientId = payload.patientId;
-            hasChanges = true;
-        } else if (payload.patientId && !this.cache.patientId) {
-            this.cache.patientId = payload.patientId;
-            hasChanges = true;
+        // Reset nếu khác bệnh nhân (chỉ reset nếu có ID mới và ID này không khớp với bất kỳ ID nào đã lưu)
+        if (payload.patientId) {
+            const pId = String(payload.patientId);
+            if (this.cache.patientIds.size > 0 && !this.cache.patientIds.has(pId)) {
+                // Heuristic: Nếu ID có độ dài quá khác biệt (VD 7 số vs 10 số), có thể một bên là KHAMBENHID, bên kia là MABA
+                // Tạm thời KHÔNG reset nếu kích thước ID khác biệt hoàn toàn để tránh mất dữ liệu khi đổi API
+                const existingIds = Array.from(this.cache.patientIds);
+                const hasSameLength = existingIds.some(id => Math.abs(id.length - pId.length) < 2);
+                
+                if (hasSameLength) {
+                    this.reset();
+                    this.cache.patientIds.add(pId);
+                    hasChanges = true;
+                } else {
+                    // ID khác độ dài -> Coi như là bí danh (alias) của cùng một bệnh nhân
+                    this.cache.patientIds.add(pId);
+                }
+            } else if (this.cache.patientIds.size === 0) {
+                this.cache.patientIds.add(pId);
+                hasChanges = true;
+            }
         }
+        
+        if (payload.benhnhanId) this.cache.benhnhanId = payload.benhnhanId;
+        if (payload.khambenhId) this.cache.khambenhId = payload.khambenhId;
+        if (payload.maBa) this.cache.maBa = payload.maBa;
 
         if (payload.weight && this.cache.weight !== payload.weight) {
             this.cache.weight = payload.weight;
@@ -111,18 +131,27 @@ class CDSCacheManager {
 
     checkPatientContext(currentDomPatientId) {
         if (!currentDomPatientId) return false;
+        const pId = String(currentDomPatientId);
         
-        // Nếu mã bệnh nhân trên hệ thống của Cache khác với DOM, xóa sạch Cache
-        if (this.cache.patientId && this.cache.patientId !== currentDomPatientId) {
-            console.log('[Aladinn CDS] 🔄 Patient changed in DOM, flushing cache!');
-            this.reset();
-            this.cache.patientId = currentDomPatientId;
-            return true;
+        if (this.cache.patientIds.size > 0 && !this.cache.patientIds.has(pId)) {
+            const existingIds = Array.from(this.cache.patientIds);
+            const hasSameLength = existingIds.some(id => Math.abs(id.length - pId.length) < 2);
+            
+            if (hasSameLength) {
+                console.log(`[Aladinn CDS] 🔄 Patient changed in DOM (${Array.from(this.cache.patientIds).join(', ')} -> ${pId}), flushing cache!`);
+                this.reset();
+                this.cache.patientIds.add(pId);
+                return true;
+            } else {
+                // Khác độ dài -> Coi như bí danh
+                this.cache.patientIds.add(pId);
+                return false;
+            }
         }
         
         // Gán lần đầu nếu cache chưa có
-        if (!this.cache.patientId) {
-            this.cache.patientId = currentDomPatientId;
+        if (this.cache.patientIds.size === 0) {
+            this.cache.patientIds.add(pId);
         }
         
         return false;

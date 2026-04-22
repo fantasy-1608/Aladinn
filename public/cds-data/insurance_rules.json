@@ -137,7 +137,7 @@
     "condition_type": "icd_prefix_required",
     "condition_value": "E10,E11,E12,E13,E14",
     "severity": "high",
-    "message": "Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).",
+    "message": "Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -187,6 +187,61 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-LANSOPRAZOLE",
+    "generic_name": "lansoprazole",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "K20,K21,K25,K26,K27,K29,K30",
+    "severity": "high",
+    "message": "Thuốc dạ dày cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-RABEPRAZOLE",
+    "generic_name": "rabeprazole",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "K20,K21,K25,K26,K27,K29,K30",
+    "severity": "high",
+    "message": "Thuốc dạ dày cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-CLOPIDOGREL",
+    "generic_name": "clopidogrel",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I20,I21,I25,I63,I64",
+    "severity": "high",
+    "message": "Chống ngưng tập tiểu cầu cần chẩn đoán Mạch vành / Đột quỵ.",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-ASPIRIN",
+    "generic_name": "aspirin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I20,I21,I25,I63,I64",
+    "severity": "high",
+    "message": "Aspirin liều thấp cần chẩn đoán Mạch vành / Đột quỵ.",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-RIVAROXABAN",
+    "generic_name": "rivaroxaban",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I48,I80,I81,I82,Z95",
+    "severity": "high",
+    "message": "NOAC cần chẩn đoán Rung nhĩ / Huyết khối.",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-ATORVASTATIN",
     "generic_name": "atorvastatin",
     "condition_type": "icd_prefix_required",
@@ -204,6 +259,17 @@
     "condition_value": "E78,I10,I11,I20,I25,I63",
     "severity": "high",
     "message": "Thuốc hạ lipid máu cần chẩn đoán Rối loạn lipid máu (E78) hoặc Bệnh tim mạch (I).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-AMLODIPINE",
+    "generic_name": "amlodipine",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I10,I11,I15,I20,I25,I50",
+    "severity": "high",
+    "message": "Thuốc tim mạch / hạ áp cần chẩn đoán THA / Mạch vành / Suy tim (I10-I15, I20, I50).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -286,6 +352,50 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-GABAPENTIN",
+    "generic_name": "gabapentin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "G62,G63,G53,M54",
+    "severity": "high",
+    "message": "Gabapentin cần chẩn đoán Đau thần kinh (G62-G63, M54).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-PREGABALIN",
+    "generic_name": "pregabalin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "G62,G63,G53,M54",
+    "severity": "high",
+    "message": "Pregabalin cần chẩn đoán Đau thần kinh (G62-G63, M54).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-DOMPERIDONE",
+    "generic_name": "domperidone",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "K30,R11",
+    "severity": "high",
+    "message": "Thuốc chống nôn cần chẩn đoán Rối loạn tiêu hóa / Nôn (K30, R11).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-KETOCONAZOLE",
+    "generic_name": "ketoconazole",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B35,B36,B37,B38,B39,B40,B41,B42,B43,B44,B45,B46,B47,B48,B49",
+    "severity": "high",
+    "message": "Thuốc chống nấm cần chẩn đoán Bệnh nấm (B35-B49).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-ERYTHROMYCIN",
     "generic_name": "erythromycin",
     "condition_type": "icd_prefix_required",
@@ -297,23 +407,34 @@
     "is_active": true
   },
   {
-    "rule_code": "INS-AUTO-GLICLAZIDE",
-    "generic_name": "gliclazide",
+    "rule_code": "INS-AUTO-DEXAMETHASONE",
+    "generic_name": "dexamethasone",
     "condition_type": "icd_prefix_required",
-    "condition_value": "E10,E11,E12,E13,E14",
+    "condition_value": "J44,J45,M05,M06,L,T",
     "severity": "high",
-    "message": "Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).",
+    "message": "Corticosteroid cần chẩn đoán Viêm/Dị ứng/Hen/Khớp (J44-45, M05-06, L, T).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
   },
   {
-    "rule_code": "INS-AUTO-ACARBOSE",
-    "generic_name": "acarbose",
+    "rule_code": "INS-AUTO-PREDNISOLONE",
+    "generic_name": "prednisolone",
     "condition_type": "icd_prefix_required",
-    "condition_value": "E10,E11,E12,E13,E14",
+    "condition_value": "J44,J45,M05,M06,L,T",
     "severity": "high",
-    "message": "Thuốc hạ đường huyết cần chẩn đoán Đái tháo đường (E10-E14).",
+    "message": "Corticosteroid cần chẩn đoán Viêm/Dị ứng/Hen/Khớp (J44-45, M05-06, L, T).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-METHYLPREDNISOLONE",
+    "generic_name": "methylprednisolone",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "J44,J45,M05,M06,L,T",
+    "severity": "high",
+    "message": "Corticosteroid cần chẩn đoán Viêm/Dị ứng/Hen/Khớp (J44-45, M05-06, L, T).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -330,12 +451,34 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-ACICLOVIR",
+    "generic_name": "aciclovir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-ALBENDAZOL",
     "generic_name": "albendazol",
     "condition_type": "icd_prefix_required",
     "condition_value": "B65,B66,B67,B68,B69,B70,B71,B72,B73,B74,B75,B76,B77,B78,B79,B80,B81,B82,B83",
     "severity": "high",
     "message": "Thuốc tẩy giun sán cần chẩn đoán bệnh Ký sinh trùng (B65-B83).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-ALFUZOSIN",
+    "generic_name": "alfuzosin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I10,I11,I15,I20,I25,I50",
+    "severity": "high",
+    "message": "Thuốc tim mạch / hạ áp cần chẩn đoán THA / Mạch vành / Suy tim (I10-I15, I20, I50).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -495,12 +638,56 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-DAPAGLIFLOZIN",
+    "generic_name": "dapagliflozin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E10,E11,E12,E13,E14",
+    "severity": "high",
+    "message": "Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-DARUNAVIR",
+    "generic_name": "darunavir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-DEXIBUPROFEN",
+    "generic_name": "dexibuprofen",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M,R50,R51,R52,T",
+    "severity": "high",
+    "message": "Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-ESOMEPRAZOL",
     "generic_name": "esomeprazol",
     "condition_type": "icd_prefix_required",
     "condition_value": "K20,K21,K25,K26,K27,K29,K30",
     "severity": "high",
     "message": "Thuốc dạ dày cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-ETORICOXIB",
+    "generic_name": "etoricoxib",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M,R50,R51,R52,T",
+    "severity": "high",
+    "message": "Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -572,12 +759,34 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-KETOPROFEN",
+    "generic_name": "ketoprofen",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M,R50,R51,R52,T",
+    "severity": "high",
+    "message": "Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-LANSOPRAZOL",
     "generic_name": "lansoprazol",
     "condition_type": "icd_prefix_required",
     "condition_value": "K20,K21,K25,K26,K27,K29,K30",
     "severity": "high",
     "message": "Thuốc dạ dày cần chẩn đoán Bệnh lý dạ dày - tá tràng (K20-K30).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-LEVODOPA",
+    "generic_name": "levodopa",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "G20",
+    "severity": "high",
+    "message": "Levodopa cần chẩn đoán Parkinson (G20).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -594,12 +803,45 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-LINAGLIPTIN",
+    "generic_name": "linagliptin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E10,E11,E12,E13,E14",
+    "severity": "high",
+    "message": "Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-LOPINAVIR",
+    "generic_name": "lopinavir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-LOVASTATIN",
     "generic_name": "lovastatin",
     "condition_type": "icd_prefix_required",
     "condition_value": "E78,I10,I11,I20,I25,I63",
     "severity": "high",
     "message": "Thuốc hạ lipid máu cần chẩn đoán Rối loạn lipid máu (E78) hoặc Bệnh tim mạch (I).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-MELOXICAM",
+    "generic_name": "meloxicam",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M,R50,R51,R52,T",
+    "severity": "high",
+    "message": "Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -748,6 +990,17 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-RITONAVIR",
+    "generic_name": "ritonavir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-SALBUTAMOL",
     "generic_name": "salbutamol",
     "condition_type": "icd_prefix_required",
@@ -759,12 +1012,56 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-SITAGLIPTIN",
+    "generic_name": "sitagliptin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E10,E11,E12,E13,E14",
+    "severity": "high",
+    "message": "Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-SPIRAMYCIN",
     "generic_name": "spiramycin",
     "condition_type": "icd_prefix_required",
     "condition_value": "A,B,J,N,L,K,H,T",
     "severity": "high",
     "message": "Kháng sinh cần chẩn đoán bệnh lý nhiễm khuẩn (A, B, J, N, L...).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-TENOFOVIR",
+    "generic_name": "tenofovir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-TENOFOVIRLAMIVUDINEDOLUTEGRAVIR",
+    "generic_name": "tenofovir/lamivudine/dolutegravir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-TENOXICAM",
+    "generic_name": "tenoxicam",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "M,R50,R51,R52,T",
+    "severity": "high",
+    "message": "Thuốc chống viêm NSAID cần chẩn đoán viêm/đau/sốt (M, R, T).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true
@@ -814,6 +1111,28 @@
     "is_active": true
   },
   {
+    "rule_code": "INS-AUTO-VILDAGLIPTIN",
+    "generic_name": "vildagliptin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E10,E11,E12,E13,E14",
+    "severity": "high",
+    "message": "Thuốc ĐTĐ cần chẩn đoán Đái tháo đường (E10-E14).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-ACYCLOVIR",
+    "generic_name": "acyclovir",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B18,B20,B21,B22,B23,B24",
+    "severity": "high",
+    "message": "Thuốc kháng virus cần chẩn đoán Nhiễm Virus / Viêm gan / HIV (B18-B24).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
     "rule_code": "INS-AUTO-AMPICILLIN",
     "generic_name": "ampicillin",
     "condition_type": "icd_prefix_required",
@@ -853,6 +1172,28 @@
     "condition_value": "A,B,J,N,L,K,H,T",
     "severity": "high",
     "message": "Kháng sinh cần chẩn đoán bệnh lý nhiễm khuẩn (A, B, J, N, L...).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-DOXYCYCLINE",
+    "generic_name": "doxycycline",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "A,B,J,N,L,K,H,T",
+    "severity": "high",
+    "message": "Kháng sinh cần chẩn đoán bệnh lý nhiễm khuẩn (A, B, J, N, L...).",
+    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
+    "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-AUTO-ITRACONAZOLE",
+    "generic_name": "itraconazole",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "B35,B36,B37,B38,B39,B40,B41,B42,B43,B44,B45,B46,B47,B48,B49",
+    "severity": "high",
+    "message": "Thuốc chống nấm cần chẩn đoán Bệnh nấm (B35-B49).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
     "is_active": true

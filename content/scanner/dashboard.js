@@ -74,7 +74,7 @@ const VNPTDashboard = (function () {
 
         modal.querySelector('#vnpt-dashboard-close')?.addEventListener('click', closeDashboard);
         modal.querySelector('#vnpt-dashboard-ok')?.addEventListener('click', closeDashboard);
-        modal.querySelector('#vnpt-export-csv-dash')?.addEventListener('click', () => {
+        modal.querySelector('#vnpt-export-csv')?.addEventListener('click', () => {
             if (window.VNPTExport) window.VNPTExport.toCSV();
         });
 
@@ -153,7 +153,6 @@ const VNPTDashboard = (function () {
         const isMini = containerId.includes('mini');
         const stats = window.VNPTStore.get('roomStatistics') || {};
         const entries = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-        const totalInRooms = Object.values(stats).reduce((a, b) => a + b, 0);
         const highestCount = entries.length > 0 ? entries[0][1] : 0;
 
         const totalRoomsEl = document.getElementById('dash-total-rooms');

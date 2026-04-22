@@ -10,105 +10,10 @@ const VNPTMenuManager = (function () {
     /**
      * Inject native menu into VNPT HIS top navigation
      */
-    function injectNativeMenu(/** @type {any} */ callbacks) {
-        if (window.self !== window.top) return false;
-
-        const candidates = document.querySelectorAll('ul, div.navbar-nav, div.nav');
-        let targetContainer = null;
-
-        for (const c of candidates) {
-            if (c.textContent.includes('Nội trú') || c.textContent.includes('Ngoại trú')) {
-                targetContainer = c;
-                break;
-            }
-        }
-
-        if (!targetContainer) {
-            targetContainer = document.querySelector('#main-menu ul');
-        }
-
-        if (!targetContainer) return false;
-        if (targetContainer.querySelector('.vnpt-native-menu-item')) return true;
-
-        const li = document.createElement('li');
-        li.className = 'vnpt-native-menu-item';
-        li.innerHTML = `
-            <span>⚡ Tiện ích</span>
-            <span id="vnpt-progress-badge" style="
-                display: none;
-                margin-left: 6px;
-                background: linear-gradient(135deg, #f39c12, #e74c3c);
-                color: white;
-                padding: 2px 8px;
-                border-radius: 10px;
-                font-size: 11px;
-                font-weight: bold;
-                animation: vnpt-pulse 1s infinite;
-            ">0%</span>
-            <i class="vnpt-native-arrow">▼</i>
-            
-            <div class="vnpt-native-dropdown">
-                <a class="vnpt-native-action" id="native-scan-room">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">🏥</span> Quét Buồng
-                </a>
-                <a class="vnpt-native-action" id="native-scan-drugs">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">💊</span> Quét Thuốc
-                </a>
-                <a class="vnpt-native-action" id="native-scan-pttt">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">✂️</span> Quét PTTT
-                </a>
-                <a class="vnpt-native-action" id="native-stop-scan" style="display:none;">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">🛑</span> Dừng Quét
-                </a>
-
-                <div class="vnpt-dropdown-divider"></div>
-                <a class="vnpt-native-action" id="native-show-settings">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">⚙️</span> Cài đặt
-                </a>
-                <a class="vnpt-native-action" id="native-show-dashboard">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">📊</span> Thống kê
-                </a>
-
-                <div class="vnpt-dropdown-divider"></div>
-                <a class="vnpt-native-action" id="native-clear-cache">
-                    <span style="font-size:16px;margin-right:6px;vertical-align:middle">🗑️</span> Xóa Cache
-                </a>
-            </div>
-        `;
-
-        targetContainer.appendChild(li);
-
-        // Bind Events
-        setTimeout(() => {
-            const scanRoom = document.getElementById('native-scan-room');
-            const scanDrugs = document.getElementById('native-scan-drugs');
-            const scanPttt = document.getElementById('native-scan-pttt');
-            const stopScan = document.getElementById('native-stop-scan');
-            const showDashboard = document.getElementById('native-show-dashboard');
-            const showSettings = document.getElementById('native-show-settings');
-            const clearCache = document.getElementById('native-clear-cache');
-
-            if (scanRoom && callbacks.onScanRoom) {
-                scanRoom.onclick = (e) => { e.stopPropagation(); callbacks.onScanRoom(); };
-
-                // Add Hover events for Mini-Dashboard
-                scanRoom.onmouseenter = () => {
-                    if (callbacks.onHoverScanRoom) callbacks.onHoverScanRoom(scanRoom);
-                };
-                scanRoom.onmouseleave = () => {
-                    if (callbacks.onLeaveScanRoom) callbacks.onLeaveScanRoom();
-                };
-            }
-            if (scanDrugs && callbacks.onScanDrugs) scanDrugs.onclick = (e) => { e.stopPropagation(); callbacks.onScanDrugs(); };
-            if (scanPttt && callbacks.onScanPttt) scanPttt.onclick = (e) => { e.stopPropagation(); callbacks.onScanPttt(); };
-            
-            if (stopScan && callbacks.onStopScan) stopScan.onclick = (e) => { e.stopPropagation(); callbacks.onStopScan(); };
-            if (showDashboard && callbacks.onShowDashboard) showDashboard.onclick = (e) => { e.stopPropagation(); callbacks.onShowDashboard(); };
-            if (showSettings && callbacks.onShowSettings) showSettings.onclick = (e) => { e.stopPropagation(); callbacks.onShowSettings(); };
-            if (clearCache && callbacks.onClearCache) clearCache.onclick = (e) => { e.stopPropagation(); callbacks.onClearCache(); };
-        }, 100);
-
-        return true;
+    function injectNativeMenu(/** @type {any} */ _callbacks) {
+        // Deprecated: UI moved to Extension Popup.
+        // Doing nothing here.
+        return false;
     }
 
     /**

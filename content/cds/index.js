@@ -24,7 +24,7 @@ async function runScan() {
     if (!isCDSEnabled || !isKBLoaded) return;
 
     try {
-        const context = CDSExtractor.extractContext();
+        const context = await CDSExtractor.extractContext();
         
         // Hash cache — bỏ qua nếu dữ liệu không đổi (GỘP CẢ PATIENT ID + LABS để đồng bộ khi đổi BN)
         const currentHash = (context.patient?.id || '') + '$$'
@@ -45,7 +45,7 @@ async function runScan() {
         }));
         
         if (context.medications.length === 0) {
-            CDSUI.update({ summary: { critical_count: 0, warning_count: 0, info_count: 0, total_scanned: 0 }, alerts: [], debug: { normalized_drugs: [] } });
+            CDSUI.update({ summary: { critical_count: 0, warning_count: 0, info_count: 0, total_scanned: 0 }, alerts: [], debug: { normalized_drugs: [] }, context });
             return;
         }
 
@@ -59,7 +59,8 @@ async function runScan() {
         CDSUI.update({
             summary: { critical_count, warning_count, info_count, total_scanned: context.medications.length },
             alerts: result.alerts,
-            debug: result.debug
+            debug: result.debug,
+            context
         });
 
     } catch (error) {
@@ -262,5 +263,6 @@ window.addEventListener('ALADINN_CRAWL_RESULT', async (event) => {
 
 window.Aladinn = window.Aladinn || {};
 window.Aladinn.CDS = {
-    init: initCDS
+    init: initCDS,
+    analyzeLocally: analyzeLocally
 };

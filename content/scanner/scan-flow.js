@@ -78,6 +78,14 @@ const VNPTScanFlow = (function () {
                         VNPTLogger.warn('ScanFlow', `Timeout fetching PTTT for row ${tr.id}`);
                     }
                 }
+                else if (mode === 'bhyt') {
+                    const diagRes = await VNPTMessaging.sendRequest('REQ_FETCH_DIAGNOSES', { rowId: tr.id }, 8000);
+                    const drugsRes = await VNPTMessaging.sendRequest('REQ_FETCH_DRUGS', { rowId: tr.id }, 8000);
+                    
+                    if (diagRes && drugsRes && (/** @type {any} */(options)).onBhytFound) {
+                        (/** @type {any} */(options)).onBhytFound(tr, diagRes.diagnoses || [], drugsRes.drugList || []);
+                    }
+                }
             } catch (err) {
                 VNPTLogger.error('ScanFlow', `Error during ${mode} scan for row ${tr.id}`, String(err));
             }

@@ -1,3 +1,4 @@
+/* global FIELD_SELECTORS, fillFormField, smartJoin */
 /**
  * HIS Voice Assistant - AutoFill Module
  * Form auto-fill functionality for main form, Hội chẩn, and Chuyển viện

@@ -375,6 +375,38 @@ function runDrugLabRules(drugs, labMap) {
             effect: 'eGFR < 60 — Cần hiệu chỉnh liều thuốc bài tiết qua thận.',
             recommendation: 'Giảm liều theo bảng hiệu chỉnh eGFR. Theo dõi tác dụng phụ (buồn ngủ, chóng mặt).'
         },
+        {
+            drugs: ['colchicin', 'colchicine'],
+            lab: 'eGFR',
+            check: (v) => v < 30,
+            severity: 'high',
+            effect: 'eGFR < 30 — Nguy cơ ngộ độc Colchicin rất cao!',
+            recommendation: 'Giảm liều tối đa (0.5mg/ngày) hoặc kéo dài khoảng cách liều. Chống chỉ định nếu suy thận nặng kèm dùng clarithromycin.'
+        },
+        {
+            drugs: ['allopurinol'],
+            lab: 'eGFR',
+            check: (v) => v < 60,
+            severity: 'medium',
+            effect: 'eGFR < 60 — Cần giảm liều Allopurinol khởi đầu.',
+            recommendation: 'Bắt đầu với liều thấp 50-100mg/ngày để tránh hội chứng quá mẫn Allopurinol (AHS).'
+        },
+        {
+            drugs: ['rivaroxaban', 'apixaban', 'dabigatran'],
+            lab: 'eGFR',
+            check: (v) => v < 15,
+            severity: 'high',
+            effect: 'eGFR < 15 — Chống chỉ định NOAC (chống đông đường uống mới)!',
+            recommendation: 'Ngừng NOAC. Xem xét chuyển sang Warfarin nếu bệnh nhân suy thận giai đoạn cuối.'
+        },
+        {
+            drugs: ['rivaroxaban', 'apixaban', 'dabigatran'],
+            lab: 'eGFR',
+            check: (v) => v >= 15 && v <= 50,
+            severity: 'medium',
+            effect: 'eGFR 15-50 — Cần giảm liều NOAC.',
+            recommendation: 'Hiệu chỉnh liều chống đông theo chức năng thận để tránh xuất huyết.'
+        },
 
         // === POTASSIUM-AFFECTING DRUGS ===
         {
@@ -521,6 +553,12 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
             const allowed = (rule.condition_value || '').split(',').map(v => v.trim().toUpperCase()).filter(Boolean);
             const hasMatch = allowed.length === 0 || normalized.icd_codes.some(icd => allowed.some(p => icd.toUpperCase().startsWith(p)));
             if (!hasMatch) {
+                // Bỏ qua cảnh báo BHYT cho Paracetamol/Acetaminophen để tránh Alert Fatigue
+                // vì đây là thuốc quá phổ biến, thường dùng cho nhiều mục đích ngoài chẩn đoán chính.
+                if (['paracetamol', 'acetaminophen'].includes(rule.generic_name.toLowerCase())) {
+                    continue;
+                }
+
                 alerts.push({
                     rule_code: rule.rule_code,
                     domain: 'insurance',

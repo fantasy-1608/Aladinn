@@ -103,7 +103,7 @@ const VNPTStore = (function () {
         persistState(changedKeys);
 
         if (window.VNPTLogger && changedKeys.length > 0) {
-            VNPTLogger.debug('Store', 'State updated:', changedKeys);
+            window.VNPTLogger.debug('Store', 'State updated:', changedKeys);
         }
     }
 
@@ -209,7 +209,7 @@ const VNPTStore = (function () {
                         if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
                             Object.assign(state, data);
                             if (window.VNPTLogger) {
-                                VNPTLogger.debug('Store', 'State restored from chrome.storage');
+                                window.VNPTLogger.debug('Store', 'State restored from chrome.storage');
                             }
                             // Notify subscribers that state has been restored
                             notifySubscribers('*', state);
@@ -338,7 +338,7 @@ const VNPTStore = (function () {
     function init() {
         restoreState();
         if (window.VNPTLogger) {
-            VNPTLogger.info('Store', '✅ State management initialized');
+            window.VNPTLogger.info('Store', '✅ State management initialized');
         }
     }
 

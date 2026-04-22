@@ -1,3 +1,4 @@
+/* global encryptData, decryptData */
 /**
  * HIS Voice Assistant - Storage Module
  * Chrome storage operations with versioned schema and migration
@@ -144,7 +145,7 @@ function saveData() {
                     results: encryptedResults
                 });
             }
-        } catch (e) {
+        } catch (_e) {
             console.log('Extension context invalidated - please refresh page');
         }
     }, 300);
@@ -216,7 +217,7 @@ async function loadSavedData() {
                 // Legacy object format - use as is, will be encrypted on next save
             } else if (typeof r === 'string' && !isEncryptedResults) {
                 // Legacy JSON string (rare case)
-                try { r = JSON.parse(r); } catch (e) { r = null; }
+                try { r = JSON.parse(r); } catch (_e) { r = null; }
             }
 
             window.currentResults = r;

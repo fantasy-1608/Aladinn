@@ -1,7 +1,8 @@
 /**
- * 🧞 Aladinn — Unified Options Logic
+ * 🧞 Aladinn — Unified Options Logic (Test Version)
  */
-import HISDiagnostic from '../shared/diagnostic.js';
+
+// Real Chrome Extension environment expected.
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -27,13 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
         scanTooltip: document.getElementById('opt-scan-tooltip'),
         scanNutrition: document.getElementById('opt-scan-nutrition'),
         cdsFilterLow: document.getElementById('opt-cds-filter-low'),
+        signSafeMode: document.getElementById('opt-sign-safemode'),
+        signAdvanced: document.getElementById('opt-sign-advanced'),
         pin: document.getElementById('opt-pin')
     };
 
     // Track crypto state for save operations
     let _pinSalt = '';
     let _hasPinHash = false;
-    let _currentPinForEncrypt = ''; // Only held in memory temporarily during save
+    let _currentPinForEncrypt = ''; 
 
     function loadSettings() {
         chrome.storage.local.get([
@@ -41,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'geminiApiKey_encrypted',
             'selectedModel', 
             'aladinn_voice_appSettings',
-            'dashboard_password', // Legacy plaintext PIN (will be migrated)
+            'dashboard_password', // Legacy
             'pin_hash',
             'pin_salt'
         ], async (localRes) => {
@@ -60,17 +63,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 localRes.pin_hash = hash;
                 localRes.pin_salt = salt;
                 if (encKey) localRes.geminiApiKey_encrypted = encKey;
-                console.log('[Aladinn Options] Auto-migrated plaintext PIN → hash');
             }
 
-            // --- Load API Key (try decrypted first, fallback to plaintext) ---
+            let hasValidApi = false;
+
+            // --- Load API Key ---
             if (localRes.geminiApiKey && !localRes.geminiApiKey.includes(':')) {
-                // Plaintext API key (legacy or no PIN set)
                 elements.apiKey.value = localRes.geminiApiKey;
+                hasValidApi = true;
             } else if (localRes.geminiApiKey_encrypted) {
-                // Encrypted — will show placeholder, user needs PIN to see
                 elements.apiKey.value = '';
                 elements.apiKey.placeholder = '🔒 API Key đã được mã hóa. Nhập PIN để xem.';
+                hasValidApi = true;
             }
 
             if (localRes.selectedModel) {
@@ -92,21 +96,27 @@ document.addEventListener('DOMContentLoaded', () => {
             _hasPinHash = !!(localRes.pin_hash && localRes.pin_salt);
 
             if (_hasPinHash) {
-                elements.pin.value = '••••••'; // Masked
+                elements.pin.value = '••••••';
                 initPinUI('••••••');
             } else {
                 initPinUI('');
             }
+
+            toggleAIFeatures(hasValidApi);
         });
 
-        // Load scanner settings from localStore (bridging legacy and current his_settings)
+        // Load scanner settings
         chrome.storage.local.get(['vnpt_scanner_settings', 'his_settings'], (res) => {
             const sSettings = res.his_settings || res.vnpt_scanner_settings || { vitalsDisplay: true, templateAutofill: true };
             elements.scanTooltip.checked = sSettings.vitalsDisplay !== undefined ? sSettings.vitalsDisplay : (sSettings.showTooltip || false);
             elements.scanNutrition.checked = sSettings.templateAutofill !== undefined ? sSettings.templateAutofill : (sSettings.autoForm || false);
+            if (elements.signSafeMode && sSettings.signSafeMode !== undefined) {
+                elements.signSafeMode.checked = sSettings.signSafeMode;
+            }
+            if (elements.signAdvanced && sSettings.signAdvanced !== undefined) {
+                elements.signAdvanced.checked = sSettings.signAdvanced;
+            }
         });
-
-
 
         // Load CDS settings
         chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
@@ -117,6 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Setup fetch models button
         document.getElementById('fetch-models-btn').addEventListener('click', fetchModels);
+    }
+
+    function toggleAIFeatures(isUnlocked) {
+        const container = document.getElementById('ai-features-container');
+        if (isUnlocked) {
+            container.classList.remove('locked');
+        } else {
+            container.classList.add('locked');
+        }
     }
 
     async function fetchModels() {
@@ -140,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const data = await response.json();
             
-            // Filter models that support generation and are gemini models
             const validModels = (data.models || []).filter(m => 
                 m.name.includes('gemini') && 
                 m.supportedGenerationMethods && 
@@ -152,21 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Save current selection to restore if possible
             const currentSelected = elements.aiModel.value;
-            
-            // Clear existing options
             elements.aiModel.innerHTML = '';
             
-            // Add new options, sorted by name
             validModels.sort((a, b) => b.name.localeCompare(a.name)).forEach(model => {
                 const option = document.createElement('option');
-                // Strip "models/" prefix
                 const modelValue = model.name.replace('models/', '');
                 option.value = modelValue;
                 option.textContent = `${model.displayName} (${model.version})`;
                 
-                // Add recommendation hints
                 if (modelValue.includes('2.5-flash')) {
                     option.textContent = `${model.displayName} (Khuyên dùng - Mới nhất)`;
                 } else if (modelValue.includes('1.5-flash') && !validModels.some(m => m.name.includes('2.5-flash'))) {
@@ -176,12 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.aiModel.appendChild(option);
             });
 
-            // Restore selection if exists, else select the best default (usually 2.5 flash or latest)
             let match = Array.from(elements.aiModel.options).find(opt => opt.value === currentSelected);
             if (match) {
                 elements.aiModel.value = currentSelected;
             } else {
-                elements.aiModel.selectedIndex = 0; // Usually the newest based on sort
+                elements.aiModel.selectedIndex = 0; 
             }
 
             showToast('✅ Đã cập nhật danh sách mô hình!');
@@ -197,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Save Data ---
     document.getElementById('save-all-btn').addEventListener('click', async () => {
         const apiKeyVal = elements.apiKey.value.trim();
-        updateHiddenPinStr(); // Ensure we have the latest entered PIN
+        updateHiddenPinStr(); 
         const pinVal = elements.pin.value.trim();
 
         if (pinVal.length > 0 && pinVal.length < 6 && !pinVal.includes('•')) {
@@ -207,13 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const isNewPin = pinVal.length === 6 && !pinVal.includes('•');
 
-        // FORCE PIN FOR API KEY
         if (apiKeyVal && !_hasPinHash && !isNewPin) {
             showToast('Bắt buộc phải thiết lập mã PIN (6 số) để bảo mật API Key!', true);
             return;
         }
 
-        // We MUST preserve existing his_settings if they exist
         const res = await new Promise(r => chrome.storage.local.get(['his_settings'], r));
         const currentHisSettings = res.his_settings || {
             scanTimeout: 5000, apiTimeout: 8000, autoScan: true, 
@@ -221,18 +230,17 @@ document.addEventListener('DOMContentLoaded', () => {
             darkMode: false, aiEnabled: false, geminiApiKey: '', geminiModel: 'gemini-1.5-flash'
         };
 
-        // Update with options page values
         currentHisSettings.vitalsDisplay = elements.scanTooltip.checked;
         currentHisSettings.templateAutofill = elements.scanNutrition.checked;
         currentHisSettings.geminiModel = elements.aiModel.value;
+        if (elements.signSafeMode) currentHisSettings.signSafeMode = elements.signSafeMode.checked;
+        if (elements.signAdvanced) currentHisSettings.signAdvanced = elements.signAdvanced.checked;
 
         const aiVipToggle = document.getElementById('opt-scan-aivip');
         if (aiVipToggle) {
             currentHisSettings.aiEnabled = aiVipToggle.checked;
         }
 
-        // --- SECURITY PURGE ---
-        // Ensure we purge any legacy plaintext key inside his_settings
         currentHisSettings.geminiApiKey = '';
 
         const localPatch = {
@@ -248,9 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // --- Crypto: Hash PIN + Encrypt API Key ---
         if (isNewPin) {
-            // Check crypto availability first
             if (!crypto?.subtle) {
                 showToast('❌ Trình duyệt không hỗ trợ mã hóa (crypto.subtle). Vui lòng cập nhật Chrome.', true);
                 return;
@@ -264,30 +270,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 _hasPinHash = true;
                 _currentPinForEncrypt = pinVal;
 
-                // Encrypt API key with new PIN
                 if (apiKeyVal) {
                     const encryptedKey = await _encryptAPIKey(apiKeyVal, pinVal, salt);
                     localPatch.geminiApiKey_encrypted = encryptedKey;
+                    toggleAIFeatures(true);
                 }
 
-                // Remove legacy plaintext PIN and plaintext API key
                 chrome.storage.local.remove(['dashboard_password', 'geminiApiKey']);
-
                 initPinUI('••••••');
             } catch (cryptoErr) {
-                console.error('[Aladinn Options] Lỗi mã hóa PIN:', cryptoErr);
                 showToast(`❌ Lỗi mã hóa PIN: ${cryptoErr.message || 'Unknown error'}. Kiểm tra Console.`, true);
                 return;
             }
         } else {
-            // PIN unchanged
             if (_hasPinHash && apiKeyVal && _currentPinForEncrypt) {
-                // PIN exists → encrypt API key, do NOT save plaintext
                 try {
                     const encryptedKey = await _encryptAPIKey(apiKeyVal, _currentPinForEncrypt, _pinSalt);
                     localPatch.geminiApiKey_encrypted = encryptedKey;
-                    // Remove any leftover plaintext
                     chrome.storage.local.remove('geminiApiKey');
+                    toggleAIFeatures(true);
                 } catch (_e) {
                     showToast('Lỗi mã hóa API Key.', true);
                     return;
@@ -296,18 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('❌ Để cập nhật API Key mới, vui lòng nhấn "Xóa mã PIN" bên dưới và thiết lập lại từ đầu.', true);
                 return;
             } else if (apiKeyVal && !_hasPinHash) {
-                 // Should be blocked by the early return, but just in case
                  showToast('Không lưu được: Yêu cầu mã PIN!', true);
                  return;
+            } else if (!apiKeyVal) {
+                 toggleAIFeatures(false);
             }
         }
 
         chrome.storage.local.set(localPatch, () => {
             chrome.storage.sync.set({}, () => {
                 showToast('✅ Đã lưu cấu hình thành công!');
-                _currentPinForEncrypt = ''; // Clear from memory
+                _currentPinForEncrypt = ''; 
                 
-                // Notify content scripts to refresh settings
                 chrome.tabs.query({url: '*://*.vncare.vn/*'}, (tabs) => {
                     tabs.forEach(tab => {
                         chrome.tabs.sendMessage(tab.id, { action: 'UPDATE_SETTINGS' });
@@ -389,14 +390,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     btnResetPin.addEventListener('click', () => {
         if (!resetConfirmActive) {
-            // First click: show warning
             resetConfirmActive = true;
             btnResetPin.textContent = '⚠️ Xác nhận XÓA PIN & API Key?';
             btnResetPin.style.background = 'rgba(239,68,68,0.15)';
             btnResetPin.style.color = '#ef4444';
             btnResetPin.style.borderColor = '#ef4444';
             
-            // Auto-cancel after 5 seconds
             setTimeout(() => {
                 if (resetConfirmActive) {
                     resetConfirmActive = false;
@@ -408,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Second click: actually reset
         resetConfirmActive = false;
         _hasExistingPin = false;
         _hasPinHash = false;
@@ -418,11 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.apiKey.value = '';
         elements.apiKey.placeholder = 'Nhập Gemini API Key';
         initPinUI('');
+        toggleAIFeatures(false);
+
         btnResetPin.textContent = 'Xóa mã PIN & Khôi phục';
         btnResetPin.style.background = '';
         btnResetPin.style.borderColor = 'rgba(239,68,68,0.3)';
         
-        // Remove all credential data
         chrome.storage.local.remove([
             'dashboard_password',
             'pin_hash',
@@ -450,11 +449,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Easter Egg (AI VIP) ---
     const versionTag = document.getElementById('aladinn-version-tag');
-    const scannerSection = document.getElementById('sec-scanner');
+    const advancedSection = document.getElementById('ai-features-container');
     let clickCount = 0;
     let clickTimer = null;
 
-    if (versionTag && scannerSection) {
+    if (versionTag && advancedSection) {
         let aiVipContainer = document.getElementById('ai-vip-container');
         if (!aiVipContainer) {
             aiVipContainer = document.createElement('div');
@@ -471,15 +470,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="slider"></span>
                 </label>
             `;
-            // Add after the second toggle
-            scannerSection.appendChild(aiVipContainer);
+            advancedSection.appendChild(aiVipContainer);
             
-            // Load state
             chrome.storage.local.get(['his_settings'], (res) => {
                 const sSettings = res.his_settings || {};
                 document.getElementById('opt-scan-aivip').checked = !!sSettings.aiEnabled;
                 if (sSettings.aiEnabled) {
-                    aiVipContainer.style.display = 'flex'; // reveal if already enabled
+                    aiVipContainer.style.display = 'flex'; 
                     versionTag.style.color = 'var(--success)';
                 }
             });
@@ -495,15 +492,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (isHidden) {
                     aiVipContainer.style.display = 'flex';
-                    // Reset animation if it was already there
                     aiVipContainer.classList.remove('magic-reveal');
-                    void aiVipContainer.offsetWidth; // trigger reflow
+                    void aiVipContainer.offsetWidth; 
                     aiVipContainer.classList.add('magic-reveal');
                     
                     versionTag.style.color = 'var(--success)';
                     showToast('🧞✨ Bùm! Thần đèn đã ban cho bạn tính năng AI VIP!');
                     
-                    // Create sparkles
                     createSparkles(e.clientX, e.clientY);
                 } else {
                     aiVipContainer.style.display = 'none';
@@ -525,7 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 sparkle.style.left = x + 'px';
                 sparkle.style.top = y + 'px';
                 
-                // Random trajectory
                 const angle = Math.random() * Math.PI * 2;
                 const velocity = 50 + Math.random() * 150;
                 const tx = Math.cos(angle) * velocity;
@@ -545,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ========================================
-    // INLINE CRYPTO HELPERS (Options page doesn't have Aladinn.Crypto)
+    // INLINE CRYPTO HELPERS 
     // ========================================
     const _ITERATIONS = 100000;
     const _KEY_LENGTH = 256;
@@ -596,7 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSyncCds.innerHTML = '⏳ Đang yêu cầu đồng bộ...';
             btnSyncCds.disabled = true;
             
-            // Send message to background or content to trigger re-seed
             chrome.runtime.sendMessage({ type: 'FORCE_CDS_SYNC' }, (_response) => {
                 showToast('✅ Đã nạp lại Cấu trúc Cảnh báo Lâm sàng!');
                 setTimeout(() => {
@@ -606,8 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
-
 
     // Initialization
     loadSettings();

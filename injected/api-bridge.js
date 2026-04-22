@@ -41,6 +41,12 @@
             case 'REQ_FETCH_PTTT':
                 fetchPttt(event.data.rowId, event.data.requestId);
                 break;
+            case 'REQ_FETCH_LABS':
+                fetchLabs(event.data.rowId, event.data.requestId);
+                break;
+            case 'REQ_FETCH_DIAGNOSES':
+                fetchDiagnosesForCDS(event.data.rowId, event.data.benhnhanId, event.data.khambenhId, event.data.requestId);
+                break;
             case 'TRIGGER_PTTT_PRINT':
                 triggerPtttPrint(event.data.rowId);
                 break;
@@ -185,6 +191,80 @@
 
     // SECURITY: callSP() has been removed. All data access is now routed through
     // dedicated, validated handlers (fetchVitals, fetchHistory, fetchRoom, fetchTreatment, fetchDrugs).
+
+    function fetchDiagnosesForCDS(rowId, benhnhanId, khambenhId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [] }, requestId);
+                return;
+            }
+            if (rowId && (!benhnhanId || !khambenhId)) {
+                const rowData = _$('#grdBenhNhan').jqGrid('getRowData', rowId);
+                benhnhanId = benhnhanId || rowData.BENHNHANID;
+                khambenhId = khambenhId || rowData.KHAMBENHID || rowData.MADIEUTRI;
+            }
+            if (!benhnhanId || !khambenhId) {
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [] }, requestId);
+                return;
+            }
+
+            const params = {
+                func: 'ajaxExecuteQueryPaging',
+                uuid: _jsonrpc.AjaxJson.uuid,
+                params: ['NT.024.DSPHIEU'],
+                options: [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '4' },
+                    { name: '[3]', value: String(khambenhId) }
+                ]
+            };
+
+            const xhr = new XMLHttpRequest();
+            const url = `/vnpthis/RestService?_search=false&rows=50&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            const rows = response.rows || [];
+                            let allDiagnoses = [];
+                            
+                            rows.forEach(item => {
+                                const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
+                                const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
+                                const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                                
+                                const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                                if (matches) {
+                                    matches.forEach(code => {
+                                        if (!allDiagnoses.some(d => d.code === code)) {
+                                            allDiagnoses.push({
+                                                code: code,
+                                                is_primary: allDiagnoses.length === 0
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+
+                            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: allDiagnoses }, requestId);
+                        } catch (_e) {
+                            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+                        }
+                    } else {
+                        sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+                    }
+                }
+            };
+            xhr.send(null);
+
+        } catch (_e) {
+            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+        }
+    }
 
     function fetchDrugs(rowId, requestId) {
         try {
@@ -350,6 +430,255 @@
 
         } catch (_e) {
             sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: [] }, requestId);
+        }
+    }
+
+    async function fetchLabs(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_LABS_RESULT', rowId, { labsData: [] }, requestId);
+                return;
+            }
+            const grid = _$('#grdBenhNhan');
+            const rowData = grid.jqGrid('getRowData', rowId);
+            
+            const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
+            const benhnhanId = rowData.BENHNHANID || '';
+            const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
+            
+            let patientName = 'Bệnh Nhân';
+            try {
+                // Try from rowData keys first
+                for (const key in rowData) {
+                    if (key.toUpperCase() === 'HOTEN' || key.toUpperCase() === 'TENBENHNHAN' || key.toUpperCase() === 'TEN_BENH_NHAN' || key.toUpperCase() === 'TEN') {
+                        const val = String(rowData[key]).replace(/<[^>]+>/g, '').trim();
+                        if (val) { patientName = val; break; }
+                    }
+                }
+                // Try from DOM if still not found
+                if (patientName === 'Bệnh Nhân' || !patientName) {
+                    const rowElem = _$('#' + rowId);
+                    rowElem.find('td').each(function() {
+                        const aria = _$(this).attr('aria-describedby') || '';
+                        if (aria.toUpperCase().includes('HOTEN') || aria.toUpperCase().includes('TENBENHNHAN')) {
+                            patientName = _$(this).text().trim() || patientName;
+                        }
+                    });
+                }
+            } catch(_e) {}
+
+            if (!benhnhanId) {
+                sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], patientName: '' }, requestId);
+                return;
+            }
+
+            const uuid = _jsonrpc.AjaxJson.uuid;
+            const baseUrl = '/vnpthis/RestService';
+
+            // ══════════════════════════════════════════════════════
+            // PROVEN STRATEGY: NT.024.DSPHIEU with HOSOBENHANID
+            // returns ALL lab sheets across ALL departments in the
+            // current admission. Verified via live API testing.
+            // ══════════════════════════════════════════════════════
+            const _fetchSheets = async (apiId, opts) => {
+                try {
+                    const p = { func: 'ajaxExecuteQueryPaging', uuid, params: [apiId], options: opts };
+                    const u = new URL(baseUrl, window.location.origin);
+                    u.searchParams.set('_search', 'false');
+                    u.searchParams.set('rows', '500');
+                    u.searchParams.set('page', '1');
+                    u.searchParams.set('postData', JSON.stringify(p));
+                    const r = await fetch(u.toString(), { credentials: 'include' });
+                    if (r.ok) { const d = await r.json(); return d.rows || []; }
+                } catch (_e) { /* silent */ }
+                return [];
+            };
+
+            const strategies = [];
+
+            // --- XÉT NGHIỆM (type=1) ---
+            if (hsbaId) {
+                strategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '1' },
+                    { name: '[3]', value: String(hsbaId) }
+                ]));
+            }
+            if (khambenhId) {
+                strategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '1' },
+                    { name: '[3]', value: String(khambenhId) }
+                ]));
+            }
+
+            // --- CĐHA (type=2) ---
+            const cdhaStrategies = [];
+            if (hsbaId) {
+                cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '2' },
+                    { name: '[3]', value: String(hsbaId) }
+                ]));
+            }
+            if (khambenhId) {
+                cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '2' },
+                    { name: '[3]', value: String(khambenhId) }
+                ]));
+            }
+
+            const [xnResults, cdhaResults] = await Promise.all([
+                Promise.all(strategies).then(r => r.flat()),
+                Promise.all(cdhaStrategies).then(r => r.flat())
+            ]);
+
+            // Deduplicate XN sheets
+            const uniqueSheets = [];
+            const seenSheetIds = new Set();
+            for (const s of xnResults) {
+                const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
+                if (sid && !seenSheetIds.has(String(sid))) {
+                    seenSheetIds.add(String(sid));
+                    uniqueSheets.push(s);
+                }
+            }
+
+            // Deduplicate CĐHA sheets
+            const uniqueCdha = [];
+            for (const s of cdhaResults) {
+                const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
+                if (sid && !seenSheetIds.has(String(sid))) {
+                    seenSheetIds.add(String(sid));
+                    uniqueCdha.push(s);
+                }
+            }
+
+            console.log(`[API-Bridge] Found ${uniqueSheets.length} XN sheets, ${uniqueCdha.length} CĐHA sheets`);
+
+            if (uniqueSheets.length === 0 && uniqueCdha.length === 0) {
+                sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [] }, requestId);
+                return;
+            }
+
+            // Step 3: Fetch XN details for each sheet (NT.024.2)
+            const allLabs = [];
+            const detailPromises = uniqueSheets.map(async (sheet) => {
+                const sheetId = sheet.MAUBENHPHAMID;
+                if (!sheetId) return;
+
+                const detailParams = {
+                    func: 'ajaxExecuteQueryPaging',
+                    uuid: uuid,
+                    params: ['NT.024.2'],
+                    options: [{ name: '[0]', value: String(sheetId) }]
+                };
+                const detailUrl = new URL(baseUrl, window.location.origin);
+                detailUrl.searchParams.set('_search', 'false');
+                detailUrl.searchParams.set('rows', '500');
+                detailUrl.searchParams.set('page', '1');
+                detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
+
+                try {
+                    const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
+                    if (detailRes.ok) {
+                        const detailData = await detailRes.json();
+                        (detailData.rows || []).forEach(item => {
+                            const getVal = (obj, keys) => {
+                                if (!obj) return '';
+                                for (const k of Object.keys(obj)) {
+                                    if (keys.includes(k.toUpperCase())) return obj[k];
+                                }
+                                return '';
+                            };
+
+                            const parsedTestName = getVal(item, ['TENXETNGHIEM', 'TENDICHVU_CHA', 'LOAIXETNGHIEM']) || getVal(sheet, ['TENXETNGHIEM', 'TENDICHVU', 'TEN_DICHVU_KYTHUAT', 'TENLOAICHIDINH']) || '';
+                            const parsedCode = getVal(item, ['TEN', 'TENCHISO', 'TENDICHVU', 'TENCHIDINH', 'TENTONGHOP']) || '';
+                            const parsedValue = getVal(item, ['GIATRI_KETQUA', 'KETQUA', 'KETQUACLS']) || '';
+                            const parsedUnit = getVal(item, ['DONVITINH', 'DONVI']) || '';
+                            const refMin = item.GIATRINHONHAT || item.GIATRI_MIN || '';
+                            const refMax = item.GIATRILONNHAT || item.GIATRI_MAX || '';
+                            const refDisplay = item.TRISOBINHTHUONG || '';
+
+                            let status = '';
+                            const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
+                            if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                                status = 'Cao';
+                            } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                                status = 'Thấp';
+                            }
+                            if (!status && parsedValue) {
+                                const numVal = parseFloat(String(parsedValue).replace(',', '.'));
+                                const numMin = parseFloat(String(refMin).replace(',', '.'));
+                                const numMax = parseFloat(String(refMax).replace(',', '.'));
+                                if (!isNaN(numVal)) {
+                                    if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
+                                    else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
+                                }
+                            }
+
+                            if (parsedValue) {
+                                allLabs.push({
+                                    sheetId: sheetId,
+                                    sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                    testName: parsedTestName,
+                                    code: parsedCode,
+                                    value: parsedValue,
+                                    unit: parsedUnit,
+                                    refMin: refMin,
+                                    refMax: refMax,
+                                    refDisplay: refDisplay,
+                                    status: status
+                                });
+                            }
+                        });
+                    }
+                } catch (_e) {
+                    console.error('[API-Bridge] Error fetching details for sheet', sheetId, _e);
+                }
+            });
+
+            await Promise.all(detailPromises);
+
+            // Build CĐHA data — fetch detail for each sheet via NT.024.2
+            const imagingData = [];
+            const cdhaDetailPromises = uniqueCdha.map(async (sheet) => {
+                const sheetId = sheet.MAUBENHPHAMID;
+                if (!sheetId) return;
+                try {
+                    const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
+                    if (rows.length > 0) {
+                        for (const item of rows) {
+                            imagingData.push({
+                                sheetId,
+                                sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
+                                code: item.MADICHVU || item.MA || '',
+                                conclusion: item.KETLUAN || item.KETQUA || item.GIATRI_KETQUA || item.KETQUACLS || '',
+                                status: item.TRANGTHAI || sheet.TRANGTHAI || '',
+                                department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
+                            });
+                        }
+                    } else {
+                        imagingData.push({
+                            sheetId, sheetDate: sheet.NGAYMAUBENHPHAM || '', name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
+                            code: '', conclusion: '', status: sheet.TRANGTHAI || '', department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
+                        });
+                    }
+                } catch (_e) { /* silent */ }
+            });
+            await Promise.all(cdhaDetailPromises);
+
+            sendResult('FETCH_LABS_RESULT', rowId, { labsData: allLabs, imagingData, patientName }, requestId);
+
+        } catch (err) {
+            console.error('[API-Bridge] fetchLabs error:', err);
+            sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '' }, requestId);
         }
     }
 
