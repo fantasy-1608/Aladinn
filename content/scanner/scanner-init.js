@@ -180,8 +180,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             },
             onBhytFound: async (tr, diagnoses, drugs) => {
                 console.log(`[Aladinn Scanner] BHYT Scan - Row ${tr.id}`);
-                console.log(` - Chẩn đoán:`, diagnoses);
-                console.log(` - Thuốc:`, drugs);
+                console.log(' - Chẩn đoán:', diagnoses);
+                console.log(' - Thuốc:', drugs);
 
                 if (window.Aladinn && window.Aladinn.CDS && typeof window.Aladinn.CDS.analyzeLocally === 'function') {
                     try {
