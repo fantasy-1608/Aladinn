@@ -96,15 +96,18 @@ const VNPTEmergency = (function () {
                 const cboDanhSach = doc.getElementById('cboDANHSACH');
                 const hasEmergencyCbo = cboDanhSach && cboDanhSach.options[cboDanhSach.selectedIndex]?.text?.includes('39/BV2');
                 
+                const gridRow = doc.querySelector('td[aria-describedby*="grdDanhSach_TEN_FORM"].markedRow, tr.ui-state-highlight td[aria-describedby*="grdDanhSach_TEN_FORM"], td[aria-describedby*="grdDanhSach_TEN_FORM"].ui-state-highlight');
+                const hasEmergencyGrid = gridRow && gridRow.textContent.includes('39/BV2');
+
                 let hasEmergencyText = false;
-                if (!hasEmergencyCbo && doc.querySelector('input[id^="textfield_"]')) {
+                if (!hasEmergencyCbo && !hasEmergencyGrid && doc.querySelector('input[id^="textfield_"]')) {
                     const textContent = doc.body.textContent || "";
                     if (textContent.includes('Phiếu nhận định phân loại') || textContent.includes('NDPLNBCC-')) {
                         hasEmergencyText = true;
                     }
                 }
 
-                if (iframe.offsetWidth > 0 && (hasEmergencyCbo || hasEmergencyText)) {
+                if (iframe.offsetWidth > 0 && (hasEmergencyCbo || hasEmergencyGrid || hasEmergencyText)) {
                     found = true;
                     currentFormIframe = iframe;
 
