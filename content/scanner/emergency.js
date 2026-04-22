@@ -102,7 +102,11 @@ const VNPTEmergency = (function () {
                 let hasEmergencyText = false;
                 if (!hasEmergencyCbo && !hasEmergencyGrid && doc.querySelector('input[id^="textfield_"]')) {
                     const textContent = doc.body.textContent || "";
-                    if (textContent.includes('Phiếu nhận định phân loại') || textContent.includes('NDPLNBCC-')) {
+                    if (
+                        textContent.includes('Phiếu nhận định phân loại') || 
+                        textContent.includes('NDPLNBCC-') ||
+                        (textContent.includes('Mạch') && textContent.includes('Nhiệt độ') && textContent.includes('Huyết áp'))
+                    ) {
                         hasEmergencyText = true;
                     }
                 }
