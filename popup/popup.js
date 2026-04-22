@@ -78,8 +78,7 @@ async function initPopup() {
         if(el) el.addEventListener('change', saveFeatures);
     });
 
-    // --- Scanner Actions ---
-    function executeContentFunction(funcName, arg = null, errMsg = '⚠️ Vui lòng mở trang VNPT HIS nội trú') {
+    function executeContentFunction(funcName, arg = null, errMsg = '⚠️ Vui lòng F5 tải lại trang VNPT HIS (Do Extension vừa được cập nhật)') {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
                 target: { tabId: tabs[0].id },
@@ -99,7 +98,7 @@ async function initPopup() {
                     showError(errMsg);
                 }
             }).catch((_err) => {
-                showError('⚠️ Lỗi: Không thể thực thi hành động. Có thể bạn đang không ở trang HIS.');
+                showError('⚠️ Lỗi: Không thể thực thi. Bạn hãy F5 lại trang HIS.');
             });
         });
     }
