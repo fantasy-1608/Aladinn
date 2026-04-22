@@ -39,14 +39,33 @@
                 }
             }
 
-            // Điền các chỉ số sinh tồn (bỏ qua những cái null/rỗng)
-            // Nhịp thở không có trong vitals lấy từ api (thường có nhưng mapper ko map), tạm bỏ qua. 
-            // Cân nặng, Chiều cao không có input trên giao diện của form này.
+            function findInputByLabel(doc, labelText) {
+                const inputs = Array.from(doc.querySelectorAll('input[type="text"][id^="textfield_"]'));
+                for (const input of inputs) {
+                    const td = input.closest('td');
+                    if (!td) continue;
+                    
+                    const prevTd = td.previousElementSibling;
+                    if (prevTd && prevTd.textContent.includes(labelText)) {
+                        return input.id;
+                    }
+                    
+                    if (td.textContent.includes(labelText)) {
+                        return input.id;
+                    }
+                }
+                return null;
+            }
 
-            if (d.pulse) safeSet('textfield_671', d.pulse);
-            if (d.temperature) safeSet('textfield_673', d.temperature);
-            if (d.bloodPressure) safeSet('textfield_674', d.bloodPressure);
-            if (d.bmi) safeSet('textfield_677', d.bmi);
+            const idPulse = findInputByLabel(document, 'Mạch:') || 'textfield_671';
+            const idTemp = findInputByLabel(document, 'Nhiệt độ:') || 'textfield_673';
+            const idBp = findInputByLabel(document, 'Huyết áp:') || 'textfield_674';
+            const idBmi = findInputByLabel(document, 'BMI:') || 'textfield_677';
+
+            if (d.pulse) safeSet(idPulse, d.pulse);
+            if (d.temperature) safeSet(idTemp, d.temperature);
+            if (d.bloodPressure) safeSet(idBp, d.bloodPressure);
+            if (d.bmi) safeSet(idBmi, d.bmi);
 
         } catch (e) {
             console.error('[Emergency Iframe] Lỗi khi điền form:', e);

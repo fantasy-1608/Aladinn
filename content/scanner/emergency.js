@@ -94,10 +94,17 @@ const VNPTEmergency = (function () {
 
                 // Form Nhận định cấp cứu
                 const cboDanhSach = doc.getElementById('cboDANHSACH');
-                const hasEmergency = cboDanhSach && cboDanhSach.options[cboDanhSach.selectedIndex]?.text?.includes('39/BV2');
+                const hasEmergencyCbo = cboDanhSach && cboDanhSach.options[cboDanhSach.selectedIndex]?.text?.includes('39/BV2');
                 
-                // Form NDPLNBCC-381000 có textfield_671 (Mạch), textfield_673 (Nhiệt độ)
-                if (iframe.offsetWidth > 0 && (hasEmergency || (doc.getElementById('textfield_671') && doc.getElementById('textfield_673')))) {
+                let hasEmergencyText = false;
+                if (!hasEmergencyCbo && doc.querySelector('input[id^="textfield_"]')) {
+                    const textContent = doc.body.textContent || "";
+                    if (textContent.includes('Phiếu nhận định phân loại') || textContent.includes('NDPLNBCC-')) {
+                        hasEmergencyText = true;
+                    }
+                }
+
+                if (iframe.offsetWidth > 0 && (hasEmergencyCbo || hasEmergencyText)) {
                     found = true;
                     currentFormIframe = iframe;
 
