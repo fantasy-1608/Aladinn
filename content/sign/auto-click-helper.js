@@ -44,6 +44,32 @@
         return null;
     }
 
+    function closeTopModal() {
+        const closeSelectors = [
+            '.jBox-closeButton',
+            '.ui-dialog-titlebar-close',
+            'button.ui-dialog-titlebar-close',
+            '#btnDONG', '#btnClose', '.btnClose'
+        ];
+        const docs = [document];
+        try { if (window.parent && window.parent.document && window.parent !== window) docs.push(window.parent.document); } catch(e){}
+        try { if (window.top && window.top.document && window.top !== window && window.top !== window.parent) docs.push(window.top.document); } catch(e){}
+
+        for (const doc of docs) {
+            for (const sel of closeSelectors) {
+                try {
+                    const btns = doc.querySelectorAll(sel);
+                    for (const btn of btns) {
+                        if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+                            btn.click();
+                            return;
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+    }
+
     setInterval(() => {
         if (!isSignModuleEnabled) return;
         // Khi signing session đang chạy, signing.js quản lý auto-click riêng
@@ -89,6 +115,11 @@
                 okBtn.dataset.aladinnClicked = '1';
                 okBtn.click();
                 lastOkClick = now;
+                
+                // Đóng modal chính của HIS (HIS - Đẩy hồ sơ bệnh án điện tử) sau khi báo thành công
+                setTimeout(() => {
+                    closeTopModal();
+                }, 500);
             }
         }
     }, 1000);
