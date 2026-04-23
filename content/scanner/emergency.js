@@ -20,6 +20,7 @@ const VNPTEmergency = (function () {
     const _chrome = typeof window['chrome'] !== 'undefined' ? window['chrome'] : null;
 
     let fillButton = null;
+
     let currentFormIframe = null;
 
     let cachedVitals = null;
@@ -61,25 +62,8 @@ const VNPTEmergency = (function () {
         lastPatientId = pid;
         cachedVitals = null;
 
-        try {
-            const vitals = await fetchVitalsForPatient(pid);
-            if (vitals) {
-                cachedVitals = vitals;
-                console.log('[Emergency] Vitals trích xuất thành công:', pid, vitals);
-                if (window.VNPTStore) {
-                    window.VNPTStore.actions.updateVitals(pid, {
-                        weight: vitals.weight,
-                        height: vitals.height,
-                        bmi: vitals.bmi || '',
-                        bloodPressure: vitals.bloodPressure || '',
-                        pulse: vitals.pulse || '',
-                        temperature: vitals.temperature || ''
-                    });
-                }
-            }
-        } catch (e) {
-            console.warn('[Emergency] Lỗi trích xuất vitals:', e);
-        }
+        // Đã hoàn thành bắt API, không cần hiện nút Tìm API nữa
+        // showAPICreateButton(pid);
     }
 
     function checkForEmergencyForm() {
@@ -101,11 +85,10 @@ const VNPTEmergency = (function () {
 
                 let hasEmergencyText = false;
                 if (!hasEmergencyCbo && !hasEmergencyGrid && doc.querySelector('input[id^="textfield_"]')) {
-                    const textContent = doc.body.textContent || "";
+                    const textContent = doc.body.textContent || '';
                     if (
                         textContent.includes('Phiếu nhận định phân loại') || 
-                        textContent.includes('NDPLNBCC-') ||
-                        (textContent.includes('Mạch') && textContent.includes('Nhiệt độ') && textContent.includes('Huyết áp'))
+                        textContent.includes('NDPLNBCC-')
                     ) {
                         hasEmergencyText = true;
                     }
@@ -137,8 +120,9 @@ const VNPTEmergency = (function () {
         container.style.zIndex = '999999';
         
         const rect = iframe.getBoundingClientRect();
-        container.style.top = (rect.top + 10) + 'px';
-        container.style.right = (window.innerWidth - rect.right + 10) + 'px';
+        // Đẩy nút lùi vào trong để không bị che lấp bởi Nút Đóng (X) của Form
+        container.style.top = (rect.top + 35) + 'px';
+        container.style.right = (window.innerWidth - rect.right + 45) + 'px';
 
         fillButton = container;
         fillButton.id = 'vnpt-emergency-fill-btn';
@@ -202,7 +186,7 @@ const VNPTEmergency = (function () {
                         fab.setAttribute('data-tooltip', '🚑 Điền phiếu cấp cứu');
                     }
                 }, 2500);
-            } catch (e) {
+            } catch (_e) {
                 fab.className = 'error';
                 fab.innerHTML = '❌';
                 setTimeout(() => {
@@ -224,6 +208,8 @@ const VNPTEmergency = (function () {
         if (el) el.remove();
         fillButton = null;
     }
+
+
 
     async function doFillForm(targetIframe) {
         const target = targetIframe || currentFormIframe;
@@ -262,15 +248,86 @@ const VNPTEmergency = (function () {
                 }
             }
 
-            window.VNPTRealtime?.showToast('⏳ Đang điền phiếu...', 'info');
+            const patientData = window.VNPTStore.get('patientDataMap')?.[pid] || {};
+            let ngayDenKham = patientData.THOIGIANVAOVIEN || patientData.THOIGIANVAOKHOA || '';
+
+            // Cố gắng đọc từ lblMSG_BOSUNG trên top window nếu đang ở module có hiển thị header (ví dụ Nội Trú)
+            if (!ngayDenKham) {
+                const lblBosung = document.getElementById('lblMSG_BOSUNG');
+                if (lblBosung) {
+                    const txt = lblBosung.innerText || '';
+                    const parts = txt.split('|');
+                    if (parts.length > 1) {
+                        const datePart = parts[1].trim();
+                        if (datePart.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+                            ngayDenKham = datePart;
+                        }
+                    }
+                }
+            }
+
+            // Nếu vẫn trống, thử lấy từ cột thời gian của grid
+            if (!ngayDenKham && window.$) {
+                try {
+                    const rowData = window.$('#grdBenhNhan').jqGrid('getRowData', pid);
+                    if (rowData && rowData.THOIGIANVAOVIEN) ngayDenKham = rowData.THOIGIANVAOVIEN;
+                    else if (rowData && rowData.THOIGIANVAOKHOA) ngayDenKham = rowData.THOIGIANVAOKHOA;
+                } catch(_e) {}
+            }
+
+            // Fallback cuối cùng là giờ hiện tại
+            if (!ngayDenKham) {
+                const now = new Date();
+                ngayDenKham = String(now.getDate()).padStart(2, '0') + '/' + 
+                              String(now.getMonth() + 1).padStart(2, '0') + '/' + 
+                              now.getFullYear() + ' ' + 
+                              String(now.getHours()).padStart(2, '0') + ':' + 
+                              String(now.getMinutes()).padStart(2, '0') + ':00';
+            }
+
+            // Lấy Lý do vào viện - cùng nguồn với Bệnh án (medicalHistoryMap từ API NT.006.HSBA.HIS)
+            let lyDoVaoVien = '';
+            const historyMap = window.VNPTStore.get('medicalHistoryMap') || {};
+            const historyData = historyMap[pid];
+            if (historyData && historyData.LYDOVAOVIEN) {
+                lyDoVaoVien = historyData.LYDOVAOVIEN;
+            }
+            // Fallback: DOM trên tab Bệnh án đang mở
+            if (!lyDoVaoVien) {
+                const txtLyDo = document.getElementById('tcBenhAntxtLYDOVAOVIEN');
+                if (txtLyDo && txtLyDo.value) {
+                    lyDoVaoVien = txtLyDo.value.trim();
+                }
+            }
+            // Fallback cuối: tìm trong tất cả iframe đang mở
+            if (!lyDoVaoVien) {
+                const allIframes = document.querySelectorAll('iframe');
+                for (const iframe of allIframes) {
+                    try {
+                        const iDoc = iframe.contentDocument;
+                        if (!iDoc) continue;
+                        const el = iDoc.getElementById('txtLYDOVAOVIEN');
+                        if (el && el.value && el.value.trim()) {
+                            lyDoVaoVien = el.value.trim();
+                            break;
+                        }
+                    } catch(_) {}
+                }
+            }
+
+            window.VNPTRealtime?.showToast('⏳ Đang tạo phiếu qua API...', 'info');
 
             await injectHelperIntoIframe(target);
 
-            await sendCmd(target, 'EMERGENCY_FILL_FORM', {
+            await sendCmd(target, 'EMERGENCY_FILL_FORM_API', {
                 pulse: vitals?.pulse || '',
                 temperature: vitals?.temperature || '',
                 bloodPressure: vitals?.bloodPressure || '',
-                bmi: vitals?.bmi || ''
+                respiratoryRate: vitals?.respiratoryRate || vitals?.respiration || '',
+                spo2: vitals?.spo2 || '',
+                bmi: vitals?.bmi || '',
+                ngayDenKham: ngayDenKham,
+                lyDoVaoVien: lyDoVaoVien
             }, 'EMERGENCY_FILL_RESULT');
 
             window.VNPTRealtime?.showToast('✅ Đã điền xong phiếu cấp cứu!', 'success');
@@ -278,7 +335,7 @@ const VNPTEmergency = (function () {
         } catch (e) {
             console.error('[Emergency] Lỗi:', e);
             const msg = e instanceof Error ? e.message : 'Lỗi';
-            window.VNPTRealtime?.showToast('❌ ' + msg, 'warning');
+            window.VNPTRealtime?.showToast(`❌ ${msg}`, 'warning');
         }
     }
 
@@ -323,7 +380,7 @@ const VNPTEmergency = (function () {
 
             const timer = setTimeout(() => {
                 window.removeEventListener('message', handleResponse);
-                reject(new Error('Timeout: ' + cmd));
+                reject(new Error(`Timeout: ${cmd}`));
             }, timeout);
 
             function handleResponse(e) {

@@ -12,6 +12,9 @@
     // SECURITY: Get token assigned by extension
     const SECURE_TOKEN = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : null;
 
+    // Cache to prevent duplicate simultaneous requests from multiple modules
+    const vitalsCache = {};
+
     window.addEventListener('message', function (event) {
         // SECURITY: Allow local origin or any origin on the same domain if needed
         if (event.origin !== window.location.origin) return;
@@ -49,6 +52,9 @@
                 break;
             case 'TRIGGER_PTTT_PRINT':
                 triggerPtttPrint(event.data.rowId);
+                break;
+            case 'REQ_FETCH_VITALS':
+                fetchVitals(event.data.rowId, event.data.requestId);
                 break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
@@ -111,6 +117,143 @@
             sendResult('FETCH_ROOM_RESULT', rowId, { giuong }, requestId);
         } catch (_e) {
             sendResult('FETCH_ROOM_RESULT', rowId, { giuong: '' }, requestId);
+        }
+    }
+
+    function fetchVitals(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
+                return;
+            }
+
+            const now = Date.now();
+            if (vitalsCache[rowId] && (now - vitalsCache[rowId].timestamp < 10000)) {
+                console.log(`[API-Bridge] Serving vitals for ${rowId} from cache.`);
+                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: vitalsCache[rowId].data }, requestId);
+                return;
+            }
+
+            const grid = _$('#grdBenhNhan');
+            if (grid.length === 0) {
+                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
+                return;
+            }
+            
+            const rowData = grid.jqGrid('getRowData', rowId);
+            let finalVitals = { pulse: '', temperature: '', bloodPressure: '', weight: '', height: '', bmi: '', respiratoryRate: '', spo2: '' };
+            let found = { w: false, h: false, bp: false };
+            
+            if (rowData) {
+                finalVitals.pulse = rowData.MACH || '';
+                finalVitals.temperature = rowData.NHIETDO || '';
+                finalVitals.bloodPressure = rowData.HUYETAP || rowData.HUYET_AP || rowData.HA || '';
+                finalVitals.weight = rowData.CANNANG || '';
+                finalVitals.height = rowData.CHIEUCAO || '';
+                finalVitals.bmi = rowData.BMI || '';
+                finalVitals.respiratoryRate = rowData.NHIPTHO || rowData.NHIP_THO || '';
+                finalVitals.spo2 = rowData.SPO2 || '';
+            }
+            
+            if (finalVitals.weight && finalVitals.weight != '0' && finalVitals.weight != '&nbsp;') found.w = true;
+            if (finalVitals.height && finalVitals.height != '0' && finalVitals.height != '&nbsp;') found.h = true;
+            if (finalVitals.bloodPressure && finalVitals.bloodPressure != '0' && finalVitals.bloodPressure != '&nbsp;') found.bp = true;
+
+            // Fallback reading from DOM TD attributes if rowData is incomplete
+            if (!finalVitals.pulse || !finalVitals.temperature || !found.bp || !found.w || !found.h) {
+                const rowElem = _$('#' + rowId);
+                rowElem.find('td').each(function() {
+                    const aria = _$(this).attr('aria-describedby') || '';
+                    const text = _$(this).text().trim();
+                    if (text && text !== '&nbsp;') {
+                        const ariaUpper = aria.toUpperCase();
+                        if (ariaUpper.includes('MACH') && !finalVitals.pulse) finalVitals.pulse = text;
+                        else if (ariaUpper.includes('NHIETDO') && !finalVitals.temperature) finalVitals.temperature = text;
+                        else if (ariaUpper.includes('NHIPTHO') && !finalVitals.respiratoryRate) finalVitals.respiratoryRate = text;
+                        else if (ariaUpper.includes('SPO2') && !finalVitals.spo2) finalVitals.spo2 = text;
+                        else if ((ariaUpper.includes('HUYETAP') || ariaUpper.includes('_HA')) && !finalVitals.bloodPressure) { finalVitals.bloodPressure = text; found.bp = true; }
+                        else if (ariaUpper.includes('CANNANG') && !finalVitals.weight) { finalVitals.weight = text; found.w = true; }
+                        else if (ariaUpper.includes('CHIEUCAO') && !finalVitals.height) { finalVitals.height = text; found.h = true; }
+                    }
+                });
+            }
+
+            // Fallback API if DOM still misses vitals
+            if (!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) {
+                const hosobenhanid = rowData.HOSOBENHANID || rowData.HSBAID || '';
+                const kbIdHienTai = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
+
+                function accumulate(rec) {
+                    if (!rec) return;
+                    for (let k in rec) {
+                        let val = rec[k];
+                        if (val === null || val === undefined || String(val).trim() === '' || val == '0') continue;
+                        const uk = k.toUpperCase().trim();
+
+                        if (!finalVitals.weight && (uk === 'KHAMBENH_CANNANG' || uk === 'CANNANG' || uk === 'CAN_NANG' || uk === 'WEIGHT')) {
+                            finalVitals.weight = String(val); found.w = true;
+                        }
+                        if (!finalVitals.height && (uk === 'KHAMBENH_CHIEUCAO' || uk === 'CHIEUCAO' || uk === 'CHIEU_CAO' || uk === 'HEIGHT')) {
+                            finalVitals.height = String(val); found.h = true;
+                        }
+                        if (!finalVitals.pulse && (uk === 'KHAMBENH_MACH' || uk === 'MACH' || uk === 'NHIP_TIM' || uk === 'NHIP_MACH')) {
+                            finalVitals.pulse = String(val);
+                        }
+                        if (!finalVitals.temperature && (uk === 'KHAMBENH_NHIETDO' || uk === 'NHIETDO' || uk === 'NHIET_DO' || uk === 'TEMP')) {
+                            finalVitals.temperature = String(val);
+                        }
+                        if (!finalVitals.respiratoryRate && (uk === 'KHAMBENH_NHIPTHO' || uk === 'NHIPTHO' || uk === 'NHIP_THO' || uk === 'RESP')) {
+                            finalVitals.respiratoryRate = String(val);
+                        }
+                        if (!finalVitals.spo2 && (uk === 'KHAMBENH_SPO2' || uk === 'SPO2')) {
+                            finalVitals.spo2 = String(val);
+                        }
+
+                        // Blood Pressure handling (Systolic / Tâm thu)
+                        if (uk === 'KHAMBENH_HUYETAP' || uk === 'KHAMBENH_HUYETAP_HIGH' || uk === 'HUYETAP' || uk === 'HUYETAP_CAO' || uk === 'HUYET_AP_CAO' || uk === 'HUYETAP_T' || uk === 'HUYETAP_HIGH' || uk === 'HUYETAP1' || uk === 'HUYETAPMAX') {
+                            if (!finalVitals.bloodPressure) finalVitals.bloodPressure = String(val);
+                            else if (!finalVitals.bloodPressure.includes('/')) finalVitals.bloodPressure = val + '/' + finalVitals.bloodPressure;
+                            found.bp = true;
+                        }
+                        // Blood Pressure handling (Diastolic / Tâm trương)
+                        if (uk === 'KHAMBENH_HUYETAP_DUOI' || uk === 'KHAMBENH_HUYETAP_LOW' || uk === 'HUYETAP_THAP' || uk === 'HUYET_AP_THAP' || uk === 'HUYETAP_D' || uk === 'HUYETAP_LOW' || uk === 'HUYETAP2' || uk === 'HUYETAPMIN') {
+                            if (!finalVitals.bloodPressure) finalVitals.bloodPressure = String(val);
+                            else if (!finalVitals.bloodPressure.includes('/')) finalVitals.bloodPressure = finalVitals.bloodPressure + '/' + val;
+                            found.bp = true;
+                        }
+                    }
+                }
+
+                const trySP = (sp, p) => {
+                    try {
+                        const params = (typeof p === 'object') ? JSON.stringify(p) : p;
+                        const res = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, 0);
+                        if (!res) return;
+                        const data = (typeof res === 'string' && res.trim() !== '') ? JSON.parse(res) : res;
+                        const recs = Array.isArray(data) ? data : [data];
+                        recs.forEach(accumulate);
+                    } catch (_e) { }
+                };
+
+                if (kbIdHienTai) trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && hosobenhanid) trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hosobenhanid });
+                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && kbIdHienTai) trySP('NT.005', kbIdHienTai);
+            }
+
+            // Clean up
+            for (let key in finalVitals) {
+                if (finalVitals[key] === '&nbsp;' || finalVitals[key] === 'undefined' || finalVitals[key] === 'null') {
+                    finalVitals[key] = '';
+                } else {
+                    finalVitals[key] = String(finalVitals[key]).replace(/<[^>]+>/g, '').trim();
+                }
+            }
+
+            vitalsCache[rowId] = { data: finalVitals, timestamp: Date.now() };
+            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: finalVitals }, requestId);
+        } catch (e) {
+            console.error('[API-Bridge] fetchVitals error:', e);
+            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
         }
     }
 

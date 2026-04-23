@@ -29,6 +29,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window.VNPTStore) window.VNPTStore.init();
             if (window.VNPTHistory) window.VNPTHistory.init();
             if (window.VNPTNutrition) window.VNPTNutrition.init();
+            if (window.VNPTEmergency) window.VNPTEmergency.init();
 
             // 3. Shortcuts
             if (window.VNPTShortcuts) {

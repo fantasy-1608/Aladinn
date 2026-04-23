@@ -27,28 +27,23 @@
                         window.JWTStore.set(parsed.uuid);
                     }
                 }
-            } catch (e) { }
+            } catch (_e) { }
         }
 
         // 2. Wrap Callbacks
-        options.success = function (data, textStatus, jqXHR) {
+        options.success = function (data, _textStatus, _jqXHR) {
             // --- Heuristic Snooping for CDS ---
             try {
                 let payload = { patientId: null, benhnhanId: null, khambenhId: null, maBa: null, weight: null, diagnoses: [], medications: [], labs: [] };
                 let hasData = false;
                 
-                const parseDate = (dStr) => {
-                    if (!dStr) return 0;
-                    const match = dStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-                    if (match) return new Date(match[3], match[2] - 1, match[1]).getTime();
-                    return 0;
-                };
+
 
                 let items = [];
                 if (data && data.rows) items = data.rows;
                 else if (Array.isArray(data)) items = data;
                 else if (typeof data === 'string' && data.includes('"rows":')) {
-                    try { items = JSON.parse(data).rows || []; } catch(e){}
+                    try { items = JSON.parse(data).rows || []; } catch(_e){}
                 }
                 else if (data && typeof data === 'object' && !Array.isArray(data)) items = [data];
 
@@ -166,7 +161,7 @@
                         }
 
                         // 4. Sinh hiệu (Vitals / Weight)
-                        if (item.CANNANG && item.CANNANG !== "0") {
+                        if (item.CANNANG && item.CANNANG !== '0') {
                             payload.weight = parseFloat(item.CANNANG);
                             hasData = true;
                         }
@@ -176,14 +171,14 @@
                 if (hasData) {
                     window.postMessage({ type: 'ALADINN_CDS_SNOOP', payload: payload }, window.location.origin);
                 }
-            } catch (snoopErr) {
+            } catch (_snoopErr) {
                 // Silent fail for snooping
             }
 
             if (success) success.apply(this, arguments);
         };
 
-        options.error = function (jqXHR, textStatus, errorThrown) {
+        options.error = function (jqXHR, textStatus, _errorThrown) {
             const shouldRetry = (textStatus === 'timeout' || textStatus === 'error' || jqXHR.status >= 500);
             if (shouldRetry && currentAttempt < RETRY_CONFIG.maxRetries) {
                 const delay = RETRY_CONFIG.baseDelayMs * Math.pow(2, currentAttempt);
@@ -199,8 +194,8 @@
 
         try {
             return originalAjax.apply(this, arguments);
-        } catch (e) {
-            if (error) error.call(this, { status: 0 }, 'error', e.message);
+        } catch (_e) {
+            if (error) error.call(this, { status: 0 }, 'error', _e.message);
             return null;
         }
     };

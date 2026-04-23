@@ -89,27 +89,6 @@ const VNPTNutrition = (function () {
         console.log('[Nutrition] Phát hiện chọn bệnh nhân:', pid);
         lastPatientId = pid;
         cachedVitals = null;
-
-        try {
-            const vitals = await fetchVitalsForPatient(pid);
-            if (vitals) {
-                cachedVitals = vitals;
-                console.log('[Nutrition] Vitals trích xuất thành công:', pid, vitals);
-                // Also update store's vitals map for other modules
-                if (window.VNPTStore) {
-                    window.VNPTStore.actions.updateVitals(pid, {
-                        weight: vitals.weight,
-                        height: vitals.height,
-                        bmi: vitals.bmi || '',
-                        bloodPressure: vitals.bloodPressure || '',
-                        pulse: vitals.pulse || '',
-                        temperature: vitals.temperature || ''
-                    });
-                }
-            }
-        } catch (e) {
-            console.warn('[Nutrition] Lỗi trích xuất vitals:', e);
-        }
     }
 
     /**

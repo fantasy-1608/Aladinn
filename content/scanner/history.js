@@ -136,7 +136,10 @@ const VNPTHistory = (function () {
                     doc.getElementById('txtTG_CHIDINH') ||
                     doc.getElementById('txtTGCHIDINH');
 
-                const hasAnyField = (isTabAorGeneral || isTabB) && !isTreatmentSheet;
+                // Bỏ qua form "Khám hỏi bệnh" của Ngoại trú
+                const isOutpatientExam = iframe.src && iframe.src.includes('NGT02K002_KhamBenhHoiBenh');
+
+                const hasAnyField = (isTabAorGeneral || isTabB) && !isTreatmentSheet && !isOutpatientExam;
 
                 if (iframe.offsetWidth > 0 && hasAnyField) {
                     found = true;
@@ -387,15 +390,24 @@ const VNPTHistory = (function () {
             // Đồng bộ hoá Cân nặng, Chiều cao từ module Sinh hiệu (Vitals) sang Bệnh án
             try {
                 const vitalsStorage = window.VNPTStore?.get('vitalsDataMap');
-                const vitals = vitalsStorage ? vitalsStorage[pid] : null;
+                let vitals = vitalsStorage ? vitalsStorage[pid] : null;
+
+                if (!vitals || !vitals.pulse || !vitals.temperature || !vitals.bloodPressure || !vitals.weight || !vitals.height) {
+                    window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
+                    const fresh = await fetchVitalsForPatient(pid);
+                    if (fresh) vitals = fresh;
+                }
+
                 if (vitals) {
                     history.KHAMBENH_CANNANG = history.KHAMBENH_CANNANG || vitals.weight || '';
                     history.KHAMBENH_CHIEUCAO = history.KHAMBENH_CHIEUCAO || (vitals.height && vitals.height > 0 ? vitals.height : '');
                     history.KHAMBENH_BMI = history.KHAMBENH_BMI || (vitals.bmi && vitals.bmi > 0 ? vitals.bmi : '');
 
-                    // NEW: Mạch, Nhiệt độ, Huyết áp
+                    // NEW: Mạch, Nhiệt độ, Huyết áp, Nhịp thở, SpO2
                     history.KHAMBENH_MACH = history.KHAMBENH_MACH || vitals.pulse || '';
                     history.KHAMBENH_NHIETDO = history.KHAMBENH_NHIETDO || vitals.temperature || '';
+                    history.KHAMBENH_NHIPTHO = history.KHAMBENH_NHIPTHO || vitals.respiratoryRate || vitals.respiration || '';
+                    history.KHAMBENH_SPO2 = history.KHAMBENH_SPO2 || vitals.spo2 || '';
 
                     if (vitals.bloodPressure && !history.KHAMBENH_HUYETAP) {
                         if (vitals.bloodPressure.includes('/')) {
@@ -444,6 +456,7 @@ const VNPTHistory = (function () {
                 'KHAMBENH_NHIPTHO': findId(['txtNHIPTHO', 'txtKHAMBENH_NHIPTHO']),
                 'KHAMBENH_CHIEUCAO': findId(['txtCHIEUCAO', 'txtKHAMBENH_CHIEUCAO', 'txtCHIECCO']),
                 'KHAMBENH_CANNANG': findId(['txtCANNANG', 'txtKHAMBENH_CANNANG']),
+                'KHAMBENH_SPO2': findId(['txtSPO2', 'txtKHAMBENH_SPO2']),
                 'KHAMBENH_TUANHOAN': 'txtTUANHOAN',
                 'KHAMBENH_HOHAP': 'txtHOHAP',
                 'KHAMBENH_TIEUHOA': 'txtTIEUHOA',
@@ -474,6 +487,7 @@ const VNPTHistory = (function () {
                 'KHAMBENH_NHIPTHO': 'txtNHIPTHO',
                 'KHAMBENH_CHIEUCAO': findId(['txtCHIEUCAO', 'txtCHIECCO']), // HIS hay viết sai chính tả thành "CHIECCO"
                 'KHAMBENH_CANNANG': 'txtCANNANG',
+                'KHAMBENH_SPO2': 'txtSPO2',
                 'KHAMBENH_BMI': 'txtBMI',
                 'KHAMBENH_TUANHOAN': 'txtTUANHOAN',
                 'KHAMBENH_HOHAP': 'txtHOHAP',
@@ -812,6 +826,11 @@ const VNPTHistory = (function () {
                 };
             }
 
+            // Gán giá trị mặc định cho các cơ quan quan trọng nếu trống
+            history.KHAMBENH_TUANHOAN = history.KHAMBENH_TUANHOAN || 'Tim đều';
+            history.KHAMBENH_HOHAP = history.KHAMBENH_HOHAP || 'Phổi thô';
+            history.KHAMBENH_TIEUHOA = history.KHAMBENH_TIEUHOA || 'Bụng mềm';
+
             // Chuẩn bị mapping cuối cùng
             const finalMapping = { ...mapping };
             if (isDetailed) {
@@ -857,6 +876,16 @@ const VNPTHistory = (function () {
             return res.treatmentList || [];
         } catch (_err) {
             return [];
+        }
+    }
+
+    async function fetchVitalsForPatient(rowId) {
+        if (!window.VNPTMessaging) return null;
+        try {
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId }, 5000);
+            return res.vitals || null;
+        } catch (_e) {
+            return null;
         }
     }
 
