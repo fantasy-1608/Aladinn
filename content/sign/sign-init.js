@@ -647,6 +647,11 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             // 7. Documents found — WAIT for user to sign then click panel buttons
             showNotice(`🖊️ [${idx}/${total}] ${patientName} — Ký phiếu rồi nhấn "Ký tiếp" trên panel`);
 
+            // 8. Watch for modal being closed by HIS after signing 1 document.
+            //    If QLBA closes while ward batch is still active for this patient,
+            //    auto-reopen QLBA so the user can continue signing remaining docs.
+            startQlbaAutoReopen(row, patientName, idx, total);
+
         } catch (err) {
             if (Logger) Logger.error('Sign', `Ward signing error for ${patientName}:`, err);
             WARD_STATE.stats.failed++;
@@ -659,9 +664,97 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
     }
 
     /**
+     * Monitor QLBA modal (jBox/divDlgBA). If HIS closes it while we're still
+     * processing the same patient (WARD_STATE hasn't advanced), re-open QLBA
+     * so the user can keep signing remaining documents.
+     */
+    function startQlbaAutoReopen(row, patientName, idx, total) {
+        // Cancel any previous watcher
+        stopQlbaAutoReopen();
+
+        const expectedIndex = WARD_STATE.currentIndex;
+        let reopenTimer = null;
+
+        WARD_STATE._qlbaWatcher = setInterval(() => {
+            // Stop watching if the session moved on or is no longer active
+            if (!WARD_STATE.isActive || WARD_STATE.currentIndex !== expectedIndex) {
+                stopQlbaAutoReopen();
+                return;
+            }
+
+            // Check if modal is still open
+            const iframe = document.querySelector('#divDlgBAifmView, .jBox-container iframe');
+            if (iframe) return; // Modal is still open — nothing to do
+
+            // Modal gone! HIS closed it after signing a document.
+            // Wait a moment then re-open QLBA for the same patient.
+            if (!reopenTimer) {
+                reopenTimer = setTimeout(async () => {
+                    // Double-check session is still on this patient
+                    if (!WARD_STATE.isActive || WARD_STATE.currentIndex !== expectedIndex) {
+                        stopQlbaAutoReopen();
+                        return;
+                    }
+
+                    if (Logger) Logger.info('Sign', `QLBA closed by HIS — re-opening for ${patientName}`);
+                    showNotice(`🔄 [${idx}/${total}] Mở lại QLBA cho ${patientName}...`);
+
+                    try {
+                        // Re-click the QLBA button
+                        const qlbaBtn = findQLBAButton();
+                        if (!qlbaBtn) {
+                            showNotice('❌ Không tìm thấy nút QLBA để mở lại');
+                            return;
+                        }
+                        qlbaBtn.click();
+
+                        // Wait for new modal
+                        const newIframe = await waitForJBoxIframe(10000);
+                        if (!newIframe) {
+                            showNotice('⚠️ Không mở lại được QLBA');
+                            return;
+                        }
+
+                        await waitForIframeReady(newIframe, 10000);
+                        const creatorName = getWardCreatorName();
+                        await waitForGridInIframe(newIframe, 5000);
+                        await waitForGridStable(newIframe, 8000);
+
+                        if (creatorName) {
+                            filterInsideQlbaIframe(newIframe, creatorName);
+                            await waitForFilterComplete(newIframe, 8000);
+                        }
+
+                        const finalRows = countDomRows(newIframe);
+                        if (finalRows === 0) {
+                            showNotice(`✅ [${idx}/${total}] ${patientName} — Đã ký hết phiếu! Nhấn "Ký tiếp" để chuyển.`);
+                        } else {
+                            showNotice(`🖊️ [${idx}/${total}] ${patientName} — Còn ${finalRows} phiếu. Tiếp tục ký...`);
+                        }
+
+                        reopenTimer = null; // Allow future re-opens
+                    } catch (err) {
+                        if (Logger) Logger.error('Sign', 'Error re-opening QLBA:', err);
+                        showNotice('❌ Lỗi mở lại QLBA: ' + (err.message || ''));
+                        reopenTimer = null;
+                    }
+                }, 2000); // 2s delay to let HIS settle
+            }
+        }, 500);
+    }
+
+    function stopQlbaAutoReopen() {
+        if (WARD_STATE._qlbaWatcher) {
+            clearInterval(WARD_STATE._qlbaWatcher);
+            WARD_STATE._qlbaWatcher = null;
+        }
+    }
+
+    /**
      * Called when user clicks "Ký tiếp" on the panel
      */
     function onWardNext() {
+        stopQlbaAutoReopen();
         WARD_STATE.stats.completed++;
         const row = WARD_STATE.queue[WARD_STATE.currentIndex];
         const name = extractWardPatientName(row);
@@ -679,6 +772,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
      * Called when user clicks "Bỏ qua" on the panel
      */
     function onWardSkip() {
+        stopQlbaAutoReopen();
         WARD_STATE.stats.skipped++;
         const row = WARD_STATE.queue[WARD_STATE.currentIndex];
         const name = extractWardPatientName(row);
@@ -696,6 +790,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
      * Called when user clicks "Dừng" on the panel
      */
     function onWardStop() {
+        stopQlbaAutoReopen();
         showNotice('🛑 Đã dừng quy trình ký');
         if (Logger) Logger.info('Sign', 'Ward: user stopped signing');
         closeJBoxModal();

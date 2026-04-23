@@ -56,6 +56,9 @@
             case 'REQ_FETCH_VITALS':
                 fetchVitals(event.data.rowId, event.data.requestId);
                 break;
+            case 'REQ_FETCH_DRUGS_CLS':
+                fetchDrugsForCLS(event.data.rowId, event.data.requestId);
+                break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
     });
@@ -463,7 +466,12 @@
                                     const drugs = rows.map(r => ({
                                         NGAYMAUBENHPHAM_SUDUNG: r.NGAYMAUBENHPHAM_SUDUNG || r.NGAYSD || r.NGAYSUDUNG || '',
                                         TENTHUOC: r.TENDICHVU || r.TENTHUOC || '',
-                                        MAUBENHPHAMID: r.MAUBENHPHAMID || ''
+                                        MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                                        LIEUDUNG: r.LIEUDUNG || r.LIEU || '',
+                                        DONVITINH: r.DONVITINH || r.DONVI || '',
+                                        DUONGDUNG: r.DUONGDUNG || r.TENDUONGDUNG || '',
+                                        CACHDUNG: r.CACHDUNG || r.SOLO_CACHDUNG || r.SUDUNG || '',
+                                        SOLUONG: r.SOLUONG || r.SOLUONG_SUDUNG || ''
                                     }));
                                     sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs }, requestId);
                                 } else {
@@ -482,6 +490,180 @@
 
         } catch (_e) {
             sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
+        }
+    }
+
+    // Fetch thuốc toàn đợt điều trị (dùng HOSOBENHANID) — cho modal CLS + Thuốc
+    // 2-step: 1) Lấy danh sách phiếu thuốc (NT.024.DSTHUOCVT)
+    //         2) Lấy chi tiết từng phiếu (NT.024.2) — trả về tên thuốc, liều, đường dùng
+    async function fetchDrugsForCLS(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                return;
+            }
+            const grid = _$('#grdBenhNhan');
+            const rowData = grid.jqGrid('getRowData', rowId);
+            const uuid = _jsonrpc?.AjaxJson?.uuid;
+            if (!uuid) {
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                return;
+            }
+
+            const benhnhanId = rowData.BENHNHANID || '';
+            const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
+            const baseUrl = '/vnpthis/RestService';
+
+            // Candidate IDs to try for the sheet list
+            let candidates = [
+                rowData.KHAMBENHID,
+                rowData.MADIEUTRI,
+                hsbaId,
+                rowData.TIEPNHANID
+            ].filter(v => v && v.trim() !== '');
+            candidates = Array.from(new Set(candidates));
+
+            // --- Step 1: Fetch list of drug sheets ---
+            let sheets = [];
+            for (const testId of candidates) {
+                try {
+                    const params = {
+                        func: 'ajaxExecuteQueryPaging',
+                        uuid: uuid,
+                        params: ['NT.024.DSTHUOCVT'],
+                        options: [
+                            { name: '[0]', value: String(testId) },
+                            { name: '[1]', value: String(benhnhanId) },
+                            { name: '[2]', value: '7;' },
+                            { name: '[3]', value: String(hsbaId || testId) }
+                        ]
+                    };
+                    const url = `${baseUrl}?_search=false&rows=500&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+                    const res = await fetch(url, { credentials: 'include' });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if ((data.rows || []).length > 0) {
+                            sheets = data.rows;
+                            console.log(`[Aladinn Drug] Step 1: Found ${sheets.length} drug sheets via candidate ${testId}`);
+                            break;
+                        }
+                    }
+                } catch (_e) { /* try next candidate */ }
+            }
+
+            if (sheets.length === 0) {
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                return;
+            }
+
+            // --- Step 2: Fetch drug details for each sheet ---
+            // NT.024.2 is for labs — drugs use different query codes.
+            // Try multiple common VNPT HIS drug detail endpoints.
+            const DRUG_DETAIL_QUERIES = [
+                'NT.034.1',
+                'NT.024.CTPHIEUTHUOC',
+                'NT.024.DSTHUOC',
+                'NT.024.DSVTTHUOC',
+                'NT.024.3',
+                'NT.024.4',
+                'NT.024.CHITIETTHUOC',
+                'NT.024.2'  // fallback
+            ];
+
+            // Discover the correct query using the first sheet
+            const firstSheet = sheets[0];
+            const firstSheetId = firstSheet.MAUBENHPHAMID || firstSheet.IDPHIEU;
+            let workingQuery = null;
+
+            for (const queryCode of DRUG_DETAIL_QUERIES) {
+                try {
+                    const testParams = {
+                        func: 'ajaxExecuteQueryPaging',
+                        uuid: uuid,
+                        params: [queryCode],
+                        options: [{ name: '[0]', value: String(firstSheetId) }]
+                    };
+                    const testUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(testParams))}`;
+                    const testRes = await fetch(testUrl, { credentials: 'include' });
+                    if (testRes.ok) {
+                        const testData = await testRes.json();
+                        const testRows = testData.rows || [];
+                        console.log(`[Aladinn Drug] Trying ${queryCode} for sheet ${firstSheetId}: ${testRows.length} rows`);
+                        if (testRows.length > 0) {
+                            console.log(`[Aladinn Drug] ✅ ${queryCode} WORKS! Sample:`, JSON.stringify(testRows[0], null, 2));
+                            console.log(`[Aladinn Drug] Keys:`, Object.keys(testRows[0]));
+                            workingQuery = queryCode;
+                            break;
+                        }
+                    }
+                } catch (_e) {
+                    console.log(`[Aladinn Drug] ${queryCode} failed:`, _e.message);
+                }
+            }
+
+            if (!workingQuery) {
+                console.warn('[Aladinn Drug] No drug detail query found. Falling back to sheet-level data.');
+                // Fallback: return sheet-level data (no drug names, but at least dates)
+                const fallbackDrugs = sheets.map(s => ({
+                    NGAYMAUBENHPHAM_SUDUNG: s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYMAUBENHPHAM || '',
+                    TENTHUOC: s.TEAKHO || s.LOAIPHIEU || `Phiếu ${s.SOPHIEU || ''}`,
+                    MAUBENHPHAMID: s.MAUBENHPHAMID || '',
+                    LIEUDUNG: '', DONVITINH: '', DUONGDUNG: '', CACHDUNG: '',
+                    SOLUONG: ''
+                }));
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: fallbackDrugs }, requestId);
+                return;
+            }
+
+            // Now fetch all sheets with the working query
+            const allDrugs = [];
+            const detailPromises = sheets.map(async (sheet) => {
+                const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
+                const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYMAUBENHPHAM || '';
+                if (!sheetId) return;
+
+                try {
+                    const detailParams = {
+                        func: 'ajaxExecuteQueryPaging',
+                        uuid: uuid,
+                        params: [workingQuery],
+                        options: [{ name: '[0]', value: String(sheetId) }]
+                    };
+                    const detailUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(detailParams))}`;
+                    const detailRes = await fetch(detailUrl, { credentials: 'include' });
+                    if (detailRes.ok) {
+                        const detailData = await detailRes.json();
+                        const items = detailData.rows || [];
+                        for (const item of items) {
+                            // Dynamic name resolution — try all possible keys
+                            const name = item.TEN || item.TENTHUOC || item.TENDICHVU ||
+                                         item.TENCHISO || item.TENCHIDINH || item.TENTONGHOP ||
+                                         item.TEN_THUOC || item.TENDICHVU_CHA ||
+                                         item.TENVATTU || item.TEN_DICHVU_KYTHUAT || '';
+                            if (!name) continue;
+
+                            allDrugs.push({
+                                NGAYMAUBENHPHAM_SUDUNG: sheetDate,
+                                TENTHUOC: name,
+                                MAUBENHPHAMID: String(sheetId),
+                                LIEUDUNG: item.LIEUDUNG || item.LIEU || item.HAMLUONG || item.NONGDO || '',
+                                DONVITINH: item.DONVITINH || item.DONVI || item.DVT || '',
+                                DUONGDUNG: item.DUONGDUNG || item.TENDUONGDUNG || '',
+                                CACHDUNG: item.CACHDUNG || item.SOLO_CACHDUNG || item.SUDUNG || '',
+                                SOLUONG: item.SOLUONG || item.SOLUONG_SUDUNG || ''
+                            });
+                        }
+                    }
+                } catch (_e) { /* skip failed sheet */ }
+            });
+
+            await Promise.all(detailPromises);
+            console.log(`[Aladinn Drug] Step 2: Found ${allDrugs.length} drug items total from ${sheets.length} sheets (query: ${workingQuery})`);
+            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
+
+        } catch (_e) {
+            console.error('[Aladinn Drug] Error:', _e);
+            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
         }
     }
 

@@ -57,7 +57,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         return;
                     }
                     
-                    window.VNPTRealtime?.showToast('🪄 Đang tải lịch sử xét nghiệm từ VNPT HIS...', 'info');
+                    window.VNPTRealtime?.showToast('🪄 Đang tải CLS + Thuốc từ VNPT HIS...', 'info');
                     
                     const fetchLabsFromBridge = (rowId) => {
                         return new Promise((resolve) => {
@@ -86,24 +86,55 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         });
                     };
 
-                    const result = await fetchLabsFromBridge(pid);
+                    const fetchDrugsFromBridge = (rowId) => {
+                        return new Promise((resolve) => {
+                            const requestId = 'drugs_' + Date.now().toString() + Math.random().toString().slice(2);
+                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
+                            
+                            const listener = (event) => {
+                                if (event.data && event.data.type === 'FETCH_DRUGS_CLS_RESULT' && event.data.requestId === requestId) {
+                                    window.removeEventListener('message', listener);
+                                    resolve({ drugList: event.data.drugList || [] });
+                                }
+                            };
+                            window.addEventListener('message', listener);
+                            
+                            window.postMessage({
+                                type: 'REQ_FETCH_DRUGS_CLS',
+                                rowId: rowId,
+                                requestId: requestId,
+                                token: token
+                            }, window.location.origin);
+                            
+                            setTimeout(() => {
+                                window.removeEventListener('message', listener);
+                                resolve({ drugList: [] });
+                            }, 15000);
+                        });
+                    };
+
+                    const [result, drugsResult] = await Promise.all([
+                        fetchLabsFromBridge(pid),
+                        fetchDrugsFromBridge(pid)
+                    ]);
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
+                    const drugs = drugsResult?.drugList || [];
                     
                     const storeName = window.VNPTStore?.get('selectedPatientName');
                     const patientName = storeName || result?.patientName || 'Bệnh Nhân';
 
-                    if (labs.length === 0 && imaging.length === 0) {
-                        window.VNPTRealtime?.showToast('⚠️ Không tìm thấy kết quả Xét nghiệm của bệnh nhân này.', 'warning');
+                    if (labs.length === 0 && imaging.length === 0 && drugs.length === 0) {
+                        window.VNPTRealtime?.showToast('⚠️ Không tìm thấy dữ liệu CLS / Thuốc của bệnh nhân này.', 'warning');
                         return;
                     }
 
                     window.VNPTRealtime?.showToast('🪄 Đang vẽ biểu đồ...', 'info');
                     
                     if (typeof showLabTimelineModal === 'function') {
-                        showLabTimelineModal(labs, imaging, patientName);
+                        showLabTimelineModal(labs, imaging, drugs, patientName);
                     }
-                    window.VNPTRealtime?.showToast('✅ Đã tải Tiền sử Xét nghiệm!', 'success');
+                    window.VNPTRealtime?.showToast('✅ Đã tải CLS + Thuốc!', 'success');
                 } catch (err) {
                     console.error('[AI Lab] Lỗi:', err);
                     window.VNPTRealtime?.showToast('❌ Lỗi tạo tóm tắt: ' + (err.message || 'Lỗi không xác định'), 'warning');
@@ -365,7 +396,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         return 'Sinh hóa';
     }
 
-    function showLabTimelineModal(labs, imaging, patientName = 'Bệnh Nhân') {
+    function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân') {
         const existing = document.getElementById('vnpt-lab-timeline-modal');
         if (existing) existing.remove();
         const imgList = imaging || [];
@@ -594,6 +625,100 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             </div>`;
         }
 
+        // --- Drug Timeline Processing ---
+        const drugList = drugs || [];
+        const drugsByDate = {};
+        for (const d of drugList) {
+            const rawDate = d.NGAYMAUBENHPHAM_SUDUNG || '';
+            const dateOnly = rawDate.split(' ')[0] || rawDate;
+            if (!dateOnly) continue;
+            if (!drugsByDate[dateOnly]) drugsByDate[dateOnly] = [];
+            drugsByDate[dateOnly].push(d);
+        }
+        const drugDates = Object.keys(drugsByDate).sort((a, b) => {
+            const pa = a.split('/').reverse().join(''); const pb = b.split('/').reverse().join('');
+            return pb.localeCompare(pa);
+        });
+        const uniqueDrugNames = new Set(drugList.map(d => d.TENTHUOC).filter(Boolean));
+        const totalUniqueDrugs = uniqueDrugNames.size;
+        let totalAdded = 0, totalStopped = 0;
+
+        let drugTimelineHtml = '';
+        if (drugDates.length > 0) {
+            const todayStr = (() => { const n = new Date(); return String(n.getDate()).padStart(2,'0') + '/' + String(n.getMonth()+1).padStart(2,'0') + '/' + n.getFullYear(); })();
+            // Summary cards
+            drugTimelineHtml += `<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:16px;">
+              <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
+                <div style="font-size:10px; color:#34d399; text-transform:uppercase; letter-spacing:1px; font-weight:700;">💊 Tổng thuốc</div>
+                <div style="font-size:22px; font-weight:800; color:#34d399; margin-top:4px;">${totalUniqueDrugs}</div>
+                <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">loại thuốc khác nhau</div>
+              </div>
+              <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
+                <div style="font-size:10px; color:#d4a25a; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Số ngày</div>
+                <div style="font-size:22px; font-weight:800; color:#d4a25a; margin-top:4px;">${drugDates.length}</div>
+                <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">${drugDates[drugDates.length-1]} → ${drugDates[0]}</div>
+              </div>
+            </div>`;
+
+            // Timeline by day
+            for (let di = 0; di < drugDates.length; di++) {
+                const dt = drugDates[di];
+                const isToday = dt === todayStr;
+                const dayDrugs = drugsByDate[dt];
+                const prevDrugs = di < drugDates.length - 1 ? drugsByDate[drugDates[di + 1]] : [];
+                const prevNames = new Set((prevDrugs || []).map(d => d.TENTHUOC));
+                const currNames = new Set(dayDrugs.map(d => d.TENTHUOC));
+
+                drugTimelineHtml += `<div style="margin-bottom:16px;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(212,162,90,0.15);">
+                    <div style="width:36px; height:36px; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:800; ${isToday ? 'background:linear-gradient(135deg,#10b981,#059669); color:#fff;' : 'background:rgba(100,100,100,0.2); color:#7a6e5e;'}">
+                      <span style="font-size:13px; line-height:1;">${dt.substring(0,2)}</span>
+                      <span style="font-size:8px; opacity:0.7;">${dt.substring(3,5)}</span>
+                    </div>
+                    <div>
+                      <span style="font-size:12px; font-weight:700; color:${isToday ? '#34d399' : '#a18764'};">${isToday ? 'Hôm nay' : dt}</span>
+                      <span style="font-size:10px; color:#7a6e5e; margin-left:6px;">${dayDrugs.length} thuốc</span>
+                    </div>
+                  </div>`;
+
+                for (const drug of dayDrugs) {
+                    const name = drug.TENTHUOC || '—';
+                    const isNew = prevDrugs.length > 0 && !prevNames.has(name);
+                    if (isNew) totalAdded++;
+                    const dose = [drug.LIEUDUNG, drug.DONVITINH].filter(Boolean).join(' ');
+                    const route = drug.DUONGDUNG || '';
+                    const usage = drug.CACHDUNG || '';
+                    const dotColor = isNew ? '#34d399' : '#a78bfa';
+                    const badge = isNew ? '<span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(16,185,129,0.15); color:#34d399; font-weight:700; border:1px solid rgba(16,185,129,0.3); margin-left:6px;">MỚI</span>' : '';
+                    drugTimelineHtml += `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:4px; border-radius:8px; background:rgba(30,30,30,0.3); border:1px solid rgba(100,100,100,0.15); transition:background 0.2s;" onmouseover="this.style.background='rgba(50,50,50,0.4)'" onmouseout="this.style.background='rgba(30,30,30,0.3)'">
+                      <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; flex-shrink:0; box-shadow:0 0 6px ${dotColor}40;"></span>
+                      <span style="flex:1; font-size:12px; font-weight:600; color:#e8dcc8; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}${badge}</span>
+                      ${dose ? `<span style="font-size:10px; color:#a78bfa; font-weight:600; background:rgba(167,139,250,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(167,139,250,0.2); flex-shrink:0;">${dose}</span>` : ''}
+                      ${route ? `<span style="font-size:10px; color:#7a6e5e; flex-shrink:0; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${route}</span>` : ''}
+                    </div>`;
+                }
+
+                // Check stopped drugs
+                if (di > 0) {
+                    const nextDayDrugs = drugsByDate[drugDates[di - 1]];
+                    const nextNames = new Set((nextDayDrugs || []).map(d => d.TENTHUOC));
+                    for (const name of currNames) {
+                        if (!nextNames.has(name)) {
+                            totalStopped++;
+                            drugTimelineHtml += `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:4px; border-radius:8px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15);">
+                              <span style="width:6px; height:6px; border-radius:50%; background:#f87171; flex-shrink:0;"></span>
+                              <span style="flex:1; font-size:12px; color:#f87171; text-decoration:line-through; opacity:0.7;">${name}</span>
+                              <span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(239,68,68,0.15); color:#f87171; font-weight:700; border:1px solid rgba(239,68,68,0.3);">NGƯNG</span>
+                            </div>`;
+                        }
+                    }
+                }
+                drugTimelineHtml += '</div>';
+            }
+        } else {
+            drugTimelineHtml = '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu thuốc.</div>';
+        }
+
         // --- Modal ---
         const modal = document.createElement('div');
         modal.id = 'vnpt-lab-timeline-modal';
@@ -601,9 +726,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         modal.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;animation:vnpt-fade-in 0.2s ease-out;';
 
         const tabsHeaderHtml = `
-            <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:8px;">
-                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); border-bottom:2px solid #d4a25a; color:#d4a25a; padding:10px; font-weight:700; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; transition:0.2s; line-height:normal;">🧪 Xét nghiệm (${totalIndicators} chỉ số)</button>
-                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; transition:0.2s; line-height:normal;">🩻 Chẩn đoán hình ảnh (${imgList.length} phiếu)</button>
+            <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:6px;">
+                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); border-bottom:2px solid #d4a25a; color:#d4a25a; padding:10px; font-weight:700; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">🧪 Xét nghiệm (${totalIndicators})</button>
+                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+                <button id="aladinn-tab-drugs" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">💊 Thuốc (${totalUniqueDrugs})</button>
             </div>
         `;
 
@@ -612,7 +738,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; flex-shrink:0;">
                     <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
                         <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
-                        Cận Lâm Sàng <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
+                        CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
                     </h3>
                     <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;" title="Đóng">&times;</button>
                 </div>
@@ -626,6 +752,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     <div id="aladinn-content-cdha" style="display:none;">
                         ${cdhaHtml || '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>'}
                     </div>
+                    <div id="aladinn-content-drugs" style="display:none;">
+                        ${drugTimelineHtml}
+                    </div>
                 </div>
                 <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid rgba(212,162,90,0.2); padding-top:12px;">
                     <button style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); color:#d4a25a; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(212,162,90,0.2)'" onmouseout="this.style.background='rgba(212,162,90,0.1)'" onclick="document.getElementById('vnpt-lab-timeline-modal').remove()">Đóng</button>
@@ -638,34 +767,38 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // Tab logic
         const tabXn = modal.querySelector('#aladinn-tab-xn');
         const tabCdha = modal.querySelector('#aladinn-tab-cdha');
+        const tabDrugs = modal.querySelector('#aladinn-tab-drugs');
         const contentXn = modal.querySelector('#aladinn-content-xn');
         const contentCdha = modal.querySelector('#aladinn-content-cdha');
+        const contentDrugs = modal.querySelector('#aladinn-content-drugs');
 
-        tabXn?.addEventListener('click', () => {
-            tabXn.style.background = 'rgba(212,162,90,0.1)';
-            tabXn.style.borderColor = 'rgba(212,162,90,0.3)';
-            tabXn.style.borderBottomColor = '#d4a25a';
-            tabXn.style.color = '#d4a25a';
-            tabCdha.style.background = 'transparent';
-            tabCdha.style.borderColor = 'transparent';
-            tabCdha.style.borderBottomColor = 'transparent';
-            tabCdha.style.color = '#7a6e5e';
-            contentXn.style.display = 'block';
-            contentCdha.style.display = 'none';
-        });
+        const allTabs = [tabXn, tabCdha, tabDrugs];
+        const allContents = [contentXn, contentCdha, contentDrugs];
+        const tabColors = ['#d4a25a', '#60a5fa', '#34d399'];
 
-        tabCdha?.addEventListener('click', () => {
-            tabCdha.style.background = 'rgba(96,165,250,0.1)';
-            tabCdha.style.borderColor = 'rgba(96,165,250,0.3)';
-            tabCdha.style.borderBottomColor = '#60a5fa';
-            tabCdha.style.color = '#60a5fa';
-            tabXn.style.background = 'transparent';
-            tabXn.style.borderColor = 'transparent';
-            tabXn.style.borderBottomColor = 'transparent';
-            tabXn.style.color = '#7a6e5e';
-            contentCdha.style.display = 'block';
-            contentXn.style.display = 'none';
-        });
+        function activateTab(idx) {
+            allTabs.forEach((t, i) => {
+                if (!t) return;
+                if (i === idx) {
+                    t.style.background = `rgba(${i === 0 ? '212,162,90' : i === 1 ? '96,165,250' : '16,185,129'},0.1)`;
+                    t.style.borderColor = `rgba(${i === 0 ? '212,162,90' : i === 1 ? '96,165,250' : '16,185,129'},0.3)`;
+                    t.style.borderBottomColor = tabColors[i];
+                    t.style.color = tabColors[i];
+                    t.style.fontWeight = '700';
+                } else {
+                    t.style.background = 'transparent';
+                    t.style.borderColor = 'transparent';
+                    t.style.borderBottomColor = 'transparent';
+                    t.style.color = '#7a6e5e';
+                    t.style.fontWeight = '600';
+                }
+            });
+            allContents.forEach((c, i) => { if (c) c.style.display = i === idx ? 'block' : 'none'; });
+        }
+
+        tabXn?.addEventListener('click', () => activateTab(0));
+        tabCdha?.addEventListener('click', () => activateTab(1));
+        tabDrugs?.addEventListener('click', () => activateTab(2));
     }
 
 })();
