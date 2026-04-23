@@ -52,6 +52,14 @@ chrome.storage.local.get(['aladinn_voice_enabled', 'geminiBaseUrl'], (result) =>
     }
 });
 
+// SECURITY: Auto-purge legacy plaintext API key if encrypted version exists
+chrome.storage.local.get(['geminiApiKey', 'geminiApiKey_encrypted'], (result) => {
+    if (result.geminiApiKey_encrypted && result.geminiApiKey) {
+        chrome.storage.local.remove('geminiApiKey');
+        console.log('[Aladinn Security] 🧹 Purged legacy plaintext API key (encrypted version exists)');
+    }
+});
+
 
 
 // ========================================

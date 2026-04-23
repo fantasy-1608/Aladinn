@@ -9,8 +9,7 @@
         "alarms",
         "scripting",
         "storage",
-        "tabs",
-        "webNavigation"
+        "tabs"
     ],
     "host_permissions": [
         "*://*.vncare.vn/*",
@@ -105,13 +104,15 @@
                 "content/scanner/*-iframe-helper.js",
                 "styles/aladinn-scanner.css",
                 "styles/aladinn-voice.css",
-                "assets/icons/*",
-                "cds-data/*.json"
+                "assets/icons/*"
             ],
             "matches": [
                 "*://*.vncare.vn/*"
             ],
             "use_dynamic_url": true
         }
-    ]
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
+    }
 }

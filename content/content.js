@@ -49,6 +49,14 @@
     }
 
     // ========================================
+    // SECURITY: Shared nonce + random JWT channel (per-session)
+    // ========================================
+    const __ALADINN_NONCE__ = crypto.randomUUID();
+    const __ALADINN_JWT_CHANNEL__ = `__aladinn_tk_${crypto.randomUUID().slice(0, 8)}`;
+    window.__ALADINN_NONCE__ = __ALADINN_NONCE__;
+    window.__ALADINN_JWT_CHANNEL__ = __ALADINN_JWT_CHANNEL__;
+
+    // ========================================
     // INJECT PAGE SCRIPTS (Scanner module)
     // ========================================
     function injectPageScripts() {
@@ -71,6 +79,14 @@
 
             const script = document.createElement('script');
             script.id = id;
+
+            // SECURITY: Pass shared nonce to ALL injected scripts
+            script.dataset.aladinnNonce = __ALADINN_NONCE__;
+
+            // SECURITY: Pass random JWT channel name to token-capture
+            if (fileName === 'injected/token-capture.js') {
+                script.dataset.aladinnChannel = __ALADINN_JWT_CHANNEL__;
+            }
 
             // Add secure token for api-bridge
             if (fileName === 'injected/api-bridge.js') {

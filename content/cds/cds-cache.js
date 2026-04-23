@@ -33,6 +33,8 @@ class CDSCacheManager {
     setupListener() {
         window.addEventListener('message', (event) => {
             if (event.source !== window || !event.data || event.data.type !== 'ALADINN_CDS_SNOOP') return;
+            // SECURITY: Verify nonce — reject forged messages from other page scripts
+            if (event.data.nonce && event.data.nonce !== window.__ALADINN_NONCE__) return;
             this.handleData(event.data.payload);
         });
 

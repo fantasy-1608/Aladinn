@@ -1,8 +1,11 @@
 /**
  * AJAX Interceptor
  * Intercepts jQuery.ajax calls to capture tokens and implement retry logic.
+ * SECURITY: Includes per-session nonce in postMessage for verification.
  */
 (function () {
+    // SECURITY: Read nonce from data attribute (set by content.js)
+    const _NONCE = document.currentScript?.dataset?.aladinnNonce || '';
     const _$ = window['$'] || window['jQuery'];
     if (!_$ || !_$.ajax) return;
 
@@ -169,7 +172,7 @@
                 }
 
                 if (hasData) {
-                    window.postMessage({ type: 'ALADINN_CDS_SNOOP', payload: payload }, window.location.origin);
+                    window.postMessage({ type: 'ALADINN_CDS_SNOOP', nonce: _NONCE, payload: payload }, window.location.origin);
                 }
             } catch (_snoopErr) {
                 // Silent fail for snooping

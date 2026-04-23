@@ -93,6 +93,21 @@ HIS.Utils = {
     },
 
     /**
+     * SECURITY: Sanitize HTML — strip <script> tags and inline event handlers
+     * Use for innerHTML that may contain HIS API data.
+     * Preserves display HTML (spans, divs, etc.) but removes executable content.
+     * @param {string} html
+     * @returns {string}
+     */
+    safeHTML(html) {
+        if (!html) return '';
+        return html
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, '')
+            .replace(/javascript\s*:/gi, '');
+    },
+
+    /**
      * Check trang hiện tại có phải VNPT HIS không
      */
     isHisPage() {

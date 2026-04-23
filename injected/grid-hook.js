@@ -1,8 +1,11 @@
 /**
  * jqGrid Hook
  * Detects patient selection and broadcasts row data to the extension.
+ * SECURITY: Includes per-session nonce in postMessage for verification.
  */
 (function () {
+    // SECURITY: Read nonce from data attribute (set by content.js)
+    const _NONCE = document.currentScript?.dataset?.aladinnNonce || '';
     const _$ = window['$'] || window['jQuery'];
     if (!_$ || typeof _$.fn.jqGrid !== 'function') return;
 
@@ -53,6 +56,7 @@
     function broadcast(rowId, data) {
         window.postMessage({
             type: 'VNPT_EXAM_DATA_READY',
+            nonce: _NONCE,
             patientId: rowId,
             data: data
         }, window.location.origin);

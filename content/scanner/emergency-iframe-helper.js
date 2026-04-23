@@ -87,10 +87,8 @@
                     }
 
                     if (isMatch) {
-                        var cb = null;
-                        
                         // 1. Nằm chung TD hoặc TH (ngay trong element đang check)
-                        cb = elements[i].querySelector('input[type="text"], input[type="number"], input[role="textbox"], input.form-control:not([type="checkbox"]):not([type="radio"])');
+                        var cb = elements[i].querySelector('input[type="text"], input[type="number"], input[role="textbox"], input.form-control:not([type="checkbox"]):not([type="radio"])');
 
                         // 2. Thẻ kế tiếp nếu là TD/TH
                         if (!cb && (elements[i].tagName === 'TD' || elements[i].tagName === 'TH' || elements[i].tagName === 'DIV')) {

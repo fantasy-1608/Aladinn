@@ -31,4 +31,12 @@
         if (window._oldHosobenhanid !== undefined) window.hosobenhanid = window._oldHosobenhanid;
         if (window._oldTiepnhanid !== undefined) window.tiepnhanid = window._oldTiepnhanid;
     });
+
+    // SECURITY: Auto-restore watchdog — prevent stuck mock context
+    setTimeout(() => {
+        if (window.patientInfo?.tiepnhanid === s.dataset.tiepnhanid) {
+            window.dispatchEvent(new Event('ALADINN_RESTORE_MOCK'));
+            console.warn('[Aladinn Security] ⏱ Auto-restored mock context (30s safety timeout)');
+        }
+    }, 30000);
 })();

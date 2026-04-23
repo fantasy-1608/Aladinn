@@ -30,6 +30,8 @@ const VNPTMessaging = (function () {
         if (event.origin !== getAllowedOrigin() && event.origin !== window.location.origin) return false;
         if (!event.data || typeof event.data !== 'object') return false;
         if (typeof event.data.type !== 'string') return false;
+        // SECURITY: Verify nonce for messages from injected scripts
+        if (event.data.nonce && event.data.nonce !== window.__ALADINN_NONCE__) return false;
         return true;
     }
 

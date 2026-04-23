@@ -591,7 +591,7 @@
                         console.log(`[Aladinn Drug] Trying ${queryCode} for sheet ${firstSheetId}: ${testRows.length} rows`);
                         if (testRows.length > 0) {
                             console.log(`[Aladinn Drug] ✅ ${queryCode} WORKS! Sample:`, JSON.stringify(testRows[0], null, 2));
-                            console.log(`[Aladinn Drug] Keys:`, Object.keys(testRows[0]));
+                            console.log('[Aladinn Drug] Keys:', Object.keys(testRows[0]));
                             workingQuery = queryCode;
                             break;
                         }

@@ -1,18 +1,25 @@
 /**
  * SECURE JWT STORAGE (Closure-based)
  * Captured from HIS API calls for background authentication.
- * SECURITY: Only communicates via chrome.runtime.sendMessage (not postMessage)
+ * SECURITY: Uses randomized event channel name (set by content.js per-session)
+ * to prevent other scripts from eavesdropping on the JWT token.
  */
 window.JWTStore = (function () {
     let _token = null;
+    // SECURITY: Read random channel name from data attribute (set by content.js)
+    const _channel = document.currentScript?.dataset?.aladinnChannel || '__aladinn_token';
+    let _dispatched = false;
     return {
         set: (token) => {
             _token = token;
-            // SECURITY: Use a custom event that only the extension's content script listens to
-            // instead of window.postMessage which any page script can intercept
-            window.dispatchEvent(new CustomEvent('__aladinn_token', { detail: { token } }));
+            // SECURITY: Dispatch on random channel — only content script knows the name
+            // Only dispatch once (first capture) to minimize exposure window
+            if (!_dispatched) {
+                window.dispatchEvent(new CustomEvent(_channel, { detail: { token } }));
+                _dispatched = true;
+            }
         },
         get: () => _token,
-        clear: () => { _token = null; }
+        clear: () => { _token = null; _dispatched = false; }
     };
 })();
