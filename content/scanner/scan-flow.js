@@ -79,11 +79,9 @@ const VNPTScanFlow = (function () {
                     }
                 }
                 else if (mode === 'bhyt') {
-                    const diagRes = await VNPTMessaging.sendRequest('REQ_FETCH_DIAGNOSES', { rowId: tr.id }, 8000);
-                    const drugsRes = await VNPTMessaging.sendRequest('REQ_FETCH_DRUGS', { rowId: tr.id }, 8000);
-                    
-                    if (diagRes && drugsRes && (/** @type {any} */(options)).onBhytFound) {
-                        (/** @type {any} */(options)).onBhytFound(tr, diagRes.diagnoses || [], drugsRes.drugList || []);
+                    const res = await VNPTMessaging.sendRequest('REQ_FETCH_BHYT_TIMES', { rowId: tr.id }, 15000);
+                    if (res && !res.timeout && (/** @type {any} */(options)).onBhytFound) {
+                        (/** @type {any} */(options)).onBhytFound(tr, res.sheets || [], res.patientName || '');
                     }
                 }
             } catch (err) {

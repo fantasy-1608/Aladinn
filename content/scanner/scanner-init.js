@@ -30,6 +30,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window.VNPTHistory) window.VNPTHistory.init();
             if (window.VNPTNutrition) window.VNPTNutrition.init();
             if (window.VNPTEmergency) window.VNPTEmergency.init();
+            if (window.Aladinn?.Scanner?.QuickTimeEdit) window.Aladinn.Scanner.QuickTimeEdit.init();
 
             // 3. Shortcuts
             if (window.VNPTShortcuts) {
@@ -398,6 +399,355 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     };
 
     // ========================================
+    // BHYT TIME ERROR SCANNER (Live Report)
+    // ========================================
+    let _bhytScanResults = [];
+    let _bhytRawKeys = null;
+
+    function _parseBhytDate(str) {
+        if (!str) return null;
+        const parts = str.split(/[/\s:]/);
+        if (parts.length >= 5) {
+            return new Date(parts[2], parseInt(parts[1]) - 1, parts[0], parts[3], parts[4], parts[5] || 0);
+        }
+        return null;
+    }
+
+    function analyzeBhytTimeErrors(sheets) {
+        const errors = [];
+        for (const s of sheets) {
+            const tCD = _parseBhytDate(s.tgChiDinh);
+            const tTH = _parseBhytDate(s.tgThucHien);
+            const tKQ = _parseBhytDate(s.tgKetQua);
+
+            // Rule 1: Execution after result → error
+            if (tTH && tKQ && tTH > tKQ) {
+                errors.push({
+                    id: s.id, tenDV: s.tenDV || 'Đường máu MM',
+                    loi: `Thực hiện(${s.tgThucHien}) > Trả KQ(${s.tgKetQua})`,
+                    loaiLoi: 'TH_GT_KQ', ketQua: s.ketQua
+                });
+            }
+            // Rule 2: TG Chỉ định > TG Kết quả
+            if (tCD && tKQ && tCD > tKQ) {
+                errors.push({
+                    id: s.id, tenDV: s.tenDV || 'Đường máu MM',
+                    loi: `CĐ(${s.tgChiDinh}) > TGTRAKETQUA(${s.tgKetQua})`,
+                    loaiLoi: 'CD_GT_KQ', ketQua: s.ketQua
+                });
+            }
+            // Rule 3: TG Chỉ định > TG Thực hiện
+            if (tCD && tTH && tCD > tTH) {
+                errors.push({
+                    id: s.id, tenDV: s.tenDV || 'Đường máu MM',
+                    loi: `CĐ(${s.tgChiDinh}) > TGTHUCHIEN(${s.tgThucHien})`,
+                    loaiLoi: 'CD_GT_TH', ketQua: s.ketQua
+                });
+            }
+        }
+        return errors;
+    }
+
+    // Open the live BHYT report modal immediately
+    function openBhytLiveReport() {
+        const existing = document.getElementById('aladinn-bhyt-report');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'aladinn-bhyt-report';
+        overlay.innerHTML = `
+            <style>
+                #aladinn-bhyt-report {
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.6); z-index: 2147483646;
+                    display: flex; align-items: center; justify-content: center;
+                    animation: bhytFadeIn .25s ease;
+                    font-family: 'Inter', 'Segoe UI', sans-serif;
+                }
+                @keyframes bhytFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes bhytSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                @keyframes bhytPulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+                .bhyt-modal {
+                    background: linear-gradient(145deg, #1a1510, #0f0d0a);
+                    border: 1px solid rgba(212,162,90,0.3);
+                    border-radius: 14px;
+                    width: 720px; max-height: 82vh;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,162,90,0.08);
+                    animation: bhytSlideUp .3s ease;
+                    display: flex; flex-direction: column;
+                }
+                .bhyt-header {
+                    padding: 16px 22px;
+                    border-bottom: 1px solid rgba(212,162,90,0.15);
+                    display: flex; justify-content: space-between; align-items: center;
+                }
+                .bhyt-title { font-size: 15px; font-weight: 700; color: #e8dcc8; display: flex; align-items: center; gap: 8px; }
+                .bhyt-subtitle { font-size: 10px; color: #7a6e5e; margin-top: 2px; }
+                .bhyt-scanning-dot { width: 8px; height: 8px; border-radius: 50%; background: #d4a25a; animation: bhytPulse 1s infinite; }
+                .bhyt-scanning-dot.done { animation: none; background: #22c55e; }
+                .bhyt-stats { display: flex; gap: 10px; }
+                .bhyt-stat {
+                    text-align: center; padding: 5px 10px;
+                    background: rgba(212,162,90,0.08); border-radius: 8px; min-width: 50px;
+                }
+                .bhyt-stat-num { font-size: 20px; font-weight: 700; color: #d4a25a; line-height: 1; }
+                .bhyt-stat-label { font-size: 8px; color: #7a6e5e; text-transform: uppercase; letter-spacing: 0.5px; }
+                .bhyt-stat.error .bhyt-stat-num { color: #f87171; }
+                .bhyt-body { padding: 0; overflow-y: auto; flex: 1; min-height: 100px; }
+                .bhyt-row {
+                    display: flex; align-items: flex-start; padding: 8px 22px; gap: 10px;
+                    border-bottom: 1px solid rgba(212,162,90,0.06);
+                    animation: bhytFadeIn .2s ease;
+                }
+                .bhyt-row:hover { background: rgba(212,162,90,0.04); }
+                .bhyt-row-icon { flex-shrink: 0; font-size: 13px; margin-top: 1px; }
+                .bhyt-row-name {
+                    font-size: 12px; font-weight: 600; color: #e8dcc8; min-width: 140px;
+                    cursor: pointer; flex-shrink: 0;
+                }
+                .bhyt-row-name:hover { color: #d4a25a; }
+                .bhyt-row-detail { font-size: 11px; color: #7a6e5e; flex: 1; }
+                .bhyt-row-sheets { font-size: 10px; color: #5a5040; }
+                .bhyt-row-errors { margin-top: 3px; }
+                .bhyt-err-line {
+                    font-size: 10px; color: #f87171; display: flex; gap: 6px; padding: 1px 0;
+                }
+                .bhyt-err-dv { color: #d4a25a; min-width: 100px; }
+                .bhyt-err-msg { color: #e8dcc8; font-family: 'Courier New', monospace; font-size: 10px; }
+                .bhyt-raw-keys {
+                    font-size: 10px; color: #5a5040; padding: 10px 22px;
+                    border-top: 1px solid rgba(212,162,90,0.1);
+                    max-height: 80px; overflow-y: auto;
+                    word-break: break-all; line-height: 1.5;
+                }
+                .bhyt-raw-keys strong { color: #7a6e5e; }
+                .bhyt-time-details { margin-top: 4px; }
+                .bhyt-time-row {
+                    display: flex; align-items: center; gap: 4px; padding: 2px 0;
+                    font-size: 10px; flex-wrap: wrap;
+                }
+                .bhyt-time-dv {
+                    color: #7a6e5e; min-width: 100px; font-size: 9px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0;
+                }
+                .bhyt-time-tag {
+                    padding: 1px 5px; border-radius: 4px; font-family: 'Courier New', monospace;
+                    font-size: 9px; white-space: nowrap;
+                }
+                .bhyt-time-tag.cd { background: rgba(96,165,250,0.15); color: #60a5fa; }
+                .bhyt-time-tag.tn { background: rgba(168,152,128,0.15); color: #a89880; }
+                .bhyt-time-tag.th { background: rgba(212,162,90,0.15); color: #d4a25a; }
+                .bhyt-time-tag.kq { background: rgba(34,197,94,0.15); color: #22c55e; }
+                .bhyt-time-arrow { color: #3a3530; font-size: 8px; }
+                .bhyt-time-date { color: #4a4035; font-size: 8px; margin-left: 4px; }
+                .bhyt-footer {
+                    padding: 10px 22px;
+                    border-top: 1px solid rgba(212,162,90,0.15);
+                    display: flex; justify-content: space-between; align-items: center;
+                }
+                .bhyt-footer-info { font-size: 10px; color: #7a6e5e; }
+                .bhyt-close {
+                    background: none; border: 1px solid rgba(212,162,90,0.3);
+                    color: #d4a25a; padding: 5px 14px; border-radius: 8px;
+                    cursor: pointer; font-size: 11px; font-weight: 600; transition: all .15s;
+                }
+                .bhyt-close:hover { background: rgba(212,162,90,0.15); }
+                .bhyt-empty-msg { padding: 30px; text-align: center; color: #5a5040; font-size: 12px; }
+            </style>
+            <div class="bhyt-modal">
+                <div class="bhyt-header">
+                    <div>
+                        <div class="bhyt-title">
+                            <span class="bhyt-scanning-dot" id="bhyt-scan-dot"></span>
+                            🛡️ Quét Lỗi Thời Gian BHYT
+                        </div>
+                        <div class="bhyt-subtitle" id="bhyt-status-text">Đang quét...</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <button class="bhyt-close" id="bhyt-toggle-compact" title="Thu gọn/Mở rộng chi tiết thời gian">👁️ Chi tiết</button>
+                    <div class="bhyt-stats">
+                        <div class="bhyt-stat">
+                            <div class="bhyt-stat-num" id="bhyt-stat-total">0</div>
+                            <div class="bhyt-stat-label">Đã quét</div>
+                        </div>
+                        <div class="bhyt-stat">
+                            <div class="bhyt-stat-num" id="bhyt-stat-sheets">0</div>
+                            <div class="bhyt-stat-label">Phiếu</div>
+                        </div>
+                        <div class="bhyt-stat error">
+                            <div class="bhyt-stat-num" id="bhyt-stat-errors">0</div>
+                            <div class="bhyt-stat-label">Lỗi</div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="bhyt-body" id="bhyt-body">
+                    <div class="bhyt-empty-msg" id="bhyt-empty">⏳ Đang chuẩn bị quét...</div>
+                </div>
+                <div class="bhyt-raw-keys" id="bhyt-raw-keys" style="display:none">
+                    <strong>📋 API Fields (Debug):</strong> <span id="bhyt-raw-keys-list"></span>
+                </div>
+                <div class="bhyt-footer">
+                    <div class="bhyt-footer-info" id="bhyt-footer-info">Click tên BN để nhảy đến dòng tương ứng</div>
+                    <button class="bhyt-close" id="bhyt-close-btn">Đóng</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        overlay.querySelector('#bhyt-close-btn').onclick = () => overlay.remove();
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+        // Toggle compact mode (show/hide time details)
+        const toggleBtn = overlay.querySelector('#bhyt-toggle-compact');
+        if (toggleBtn) {
+            let isCompact = false;
+            toggleBtn.onclick = () => {
+                isCompact = !isCompact;
+                toggleBtn.textContent = isCompact ? '👁️ Thu gọn' : '👁️ Chi tiết';
+                const details = overlay.querySelectorAll('.bhyt-time-details');
+                details.forEach(d => { d.style.display = isCompact ? 'none' : ''; });
+            };
+        }
+    }
+
+    // Add one patient result to the live modal
+    function appendBhytResult(patientName, rowId, sheets, errors) {
+        const body = document.getElementById('bhyt-body');
+        if (!body) return;
+
+        // Remove empty placeholder
+        const empty = document.getElementById('bhyt-empty');
+        if (empty) empty.remove();
+
+        // Capture debug info from first result (2-level: sheet + detail)
+        if (!_bhytRawKeys && sheets.length > 0) {
+            const s = sheets[0];
+            const debugParts = [];
+            if (s._sheetRawKeys) debugParts.push('📋 Sheet fields: ' + s._sheetRawKeys.join(', '));
+            if (s._detailRawKeys) debugParts.push('📋 Detail fields: ' + s._detailRawKeys.join(', '));
+            if (s._sheetDateFields && Object.keys(s._sheetDateFields).length > 0) {
+                debugParts.push('📅 Sheet dates: ' + Object.entries(s._sheetDateFields).map(([k,v]) => `${k}=${v}`).join(' | '));
+            }
+            if (s._detailDateFields && Object.keys(s._detailDateFields).length > 0) {
+                debugParts.push('📅 Detail dates: ' + Object.entries(s._detailDateFields).map(([k,v]) => `${k}=${v}`).join(' | '));
+            }
+
+            // Dump ALL fields from first detail raw object
+            if (s._detailRaw) {
+                const allFields = Object.entries(s._detailRaw)
+                    .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
+                    .map(([k, v]) => `<b>${k}</b>=${String(v).substring(0, 40)}`)
+                    .join(' | ');
+                debugParts.push('🔍 Detail RAW (all non-empty): ' + allFields);
+            }
+
+            if (debugParts.length > 0) {
+                _bhytRawKeys = debugParts;
+                const keysEl = document.getElementById('bhyt-raw-keys');
+                const listEl = document.getElementById('bhyt-raw-keys-list');
+                if (keysEl && listEl) {
+                    listEl.innerHTML = debugParts.join('<br><br>');
+                    keysEl.style.display = '';
+                }
+            }
+
+            // Log full raw objects
+            if (s._detailRaw) console.log('[Aladinn BHYT] Detail raw sample:', s._detailRaw);
+        }
+
+        // Update stats
+        const totalEl = document.getElementById('bhyt-stat-total');
+        const sheetsEl = document.getElementById('bhyt-stat-sheets');
+        const errorsEl = document.getElementById('bhyt-stat-errors');
+        if (totalEl) totalEl.textContent = String(_bhytScanResults.length);
+        if (sheetsEl) sheetsEl.textContent = String(parseInt(sheetsEl.textContent || '0') + sheets.length);
+        if (errorsEl) errorsEl.textContent = String(parseInt(errorsEl.textContent || '0') + errors.length);
+
+        // Helper: extract only time part HH:mm from date string "DD/MM/YYYY HH:mm:ss"
+        const shortTime = (s) => {
+            if (!s) return '—';
+            const m = s.match(/(\d{2}:\d{2})/);
+            return m ? m[1] : s.substring(0, 16);
+        };
+        const shortDate = (s) => {
+            if (!s) return '';
+            return s.substring(0, 10); // DD/MM/YYYY
+        };
+
+        // Build compact sheet timeline (show first 5 results + summary)
+        const maxShow = 5;
+        const sheetsToShow = sheets.slice(0, maxShow);
+        const hasMore = sheets.length > maxShow;
+        const timelineHtml = sheetsToShow.map(s => {
+            const hasTime = s.tgChiDinh || s.tgThucHien || s.tgKetQua;
+            if (!hasTime) return `<div class="bhyt-time-row"><span class="bhyt-time-dv">${(s.tenDV || '?').substring(0, 22)}</span><span style="color:#5a5040">— không có dữ liệu giờ —</span></div>`;
+            return `<div class="bhyt-time-row">
+                <span class="bhyt-time-dv">${(s.tenDV || '?').substring(0, 22)}</span>
+                ${s.ketQua ? `<span style="color:#a89880;font-size:9px;margin-right:4px">[${s.ketQua}]</span>` : ''}
+                <span class="bhyt-time-tag cd">CĐ ${shortTime(s.tgChiDinh)}</span>
+                <span class="bhyt-time-arrow">→</span>
+                <span class="bhyt-time-tag th">TH ${shortTime(s.tgThucHien)}</span>
+                <span class="bhyt-time-arrow">→</span>
+                <span class="bhyt-time-tag kq">KQ ${shortTime(s.tgKetQua)}</span>
+                <span class="bhyt-time-date">${shortDate(s.tgChiDinh)}</span>
+            </div>`;
+        }).join('');
+
+        // Build row HTML
+        const icon = errors.length > 0 ? '❌' : '✅';
+        const rowNum = _bhytScanResults.length;
+        const row = document.createElement('div');
+        row.className = 'bhyt-row';
+        row.innerHTML = `
+            <span class="bhyt-row-icon">${icon}</span>
+            <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="bhyt-row-name" onclick="(function(){var tr=document.getElementById('${rowId}');if(tr){tr.scrollIntoView({behavior:'smooth',block:'center'});tr.click();}})()">${rowNum}. ${patientName || rowId}</span>
+                    <span class="bhyt-row-sheets">${sheets.length} phiếu</span>
+                    ${errors.length > 0 ? `<span style="background:rgba(239,68,68,0.2);color:#f87171;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px">${errors.length} lỗi</span>` : ''}
+                </div>
+                ${errors.length > 0 ? `
+                    <div class="bhyt-row-errors">
+                        ${errors.map(e => `
+                            <div class="bhyt-err-line">
+                                <span class="bhyt-err-dv">${(e.tenDV || '').substring(0, 25)}</span>
+                                <span class="bhyt-err-msg">${e.loi}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                <div class="bhyt-time-details">
+                    ${timelineHtml}
+                    ${hasMore ? `<div style="font-size:9px;color:#5a5040;padding:2px 0">... và ${sheets.length - maxShow} phiếu khác</div>` : ''}
+                </div>
+            </div>
+        `;
+        body.appendChild(row);
+
+        // Auto-scroll to latest result
+        body.scrollTop = body.scrollHeight;
+    }
+
+    // Finalize the report modal
+    function finalizeBhytReport() {
+        const dot = document.getElementById('bhyt-scan-dot');
+        if (dot) { dot.classList.add('done'); }
+
+        const totalErrors = _bhytScanResults.reduce((s, r) => s + r.errors.length, 0);
+        const statusEl = document.getElementById('bhyt-status-text');
+        if (statusEl) {
+            statusEl.textContent = totalErrors > 0
+                ? `Hoàn tất — ${totalErrors} lỗi ở ${_bhytScanResults.filter(r => r.errors.length > 0).length} BN`
+                : `Hoàn tất — Tất cả ${_bhytScanResults.length} BN đều hợp lệ ✓`;
+            statusEl.style.color = totalErrors > 0 ? '#f87171' : '#22c55e';
+        }
+
+        const footerInfo = document.getElementById('bhyt-footer-info');
+        if (footerInfo) footerInfo.textContent = `Quét xong ${_bhytScanResults.length} BN • ${new Date().toLocaleTimeString('vi-VN')}`;
+    }
+
+    // ========================================
     // SCANNING ORCHESTRATION
     // ========================================
     async function startScanning(params) {
@@ -411,16 +761,27 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (!window.VNPTScanFlow) return;
         if (window.VNPTScanFlow.isScanning()) return;
 
+        if (mode === 'bhyt') {
+            _bhytScanResults = [];
+            _bhytRawKeys = null;
+            openBhytLiveReport();
+        }
+
         window.VNPTScanFlow.start(mode, {
             singleRow: singleRow,
             onStart: (m) => {
                 if (window.VNPTMenuManager) window.VNPTMenuManager.toggleStopButton(true);
-                if (window.VNPTRealtime) window.VNPTRealtime.showToast(`🚀 Bắt đầu quét ${m}...`, 'info');
+                if (m !== 'bhyt' && window.VNPTRealtime) window.VNPTRealtime.showToast(`🚀 Bắt đầu quét ${m}...`, 'info');
             },
             onProgress: (count, total) => {
                 const percent = Math.round((count / total) * 100);
                 if (window.VNPTMenuManager) window.VNPTMenuManager.updateProgress(percent);
                 if (window.VNPTUI) window.VNPTUI.updateProgress(count, total);
+                // Update BHYT live modal status
+                if (mode === 'bhyt') {
+                    const statusEl = document.getElementById('bhyt-status-text');
+                    if (statusEl) statusEl.textContent = `Đang quét BN ${count}/${total}...`;
+                }
             },
             onRoomFound: (tr, text) => injectRoomText(tr, text, true),
             onDrugsFound: (tr, drugs) => {
@@ -438,32 +799,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (!ptttList || ptttList.length === 0) return;
                 injectPtttBadge(tr, ptttList.length);
             },
-            onBhytFound: async (tr, diagnoses, drugs) => {
-                console.log(`[Aladinn Scanner] BHYT Scan - Row ${tr.id}`);
-                console.log(' - Chẩn đoán:', diagnoses);
-                console.log(' - Thuốc:', drugs);
-
-                if (window.Aladinn && window.Aladinn.CDS && typeof window.Aladinn.CDS.analyzeLocally === 'function') {
-                    try {
-                        const context = {
-                            diagnoses: diagnoses || [],
-                            drugs: drugs || [],
-                            patientInfo: { age: 30, gender: 'unknown' } // Baseline info to satisfy engine validation
-                        };
-                        const result = await window.Aladinn.CDS.analyzeLocally(context, true); // true = filterLow
-                        const bhytAlerts = result.alerts.filter(a => a.domain === 'insurance' || a.domain === 'clinical');
-                        injectBhytBadge(tr, bhytAlerts.length, bhytAlerts);
-                    } catch (err) {
-                        console.error('[Scanner] Error running BHYT analysis:', err);
-                    }
-                }
+            onBhytFound: (tr, sheets, patientName) => {
+                const errors = analyzeBhytTimeErrors(sheets);
+                _bhytScanResults.push({ tr, patientName, sheets, errors });
+                injectBhytBadge(tr, errors.length, errors);
+                appendBhytResult(patientName, tr.id, sheets, errors);
             },
             onComplete: (m, stats) => {
                 if (window.VNPTMenuManager) {
                     window.VNPTMenuManager.toggleStopButton(false);
                     window.VNPTMenuManager.updateProgress(100, true);
                 }
-                if (window.VNPTRealtime) window.VNPTRealtime.showToast(`✅ Quét ${m} hoàn tất!`, 'success');
+                if (m === 'bhyt') {
+                    finalizeBhytReport();
+                } else {
+                    if (window.VNPTRealtime) window.VNPTRealtime.showToast(`✅ Quét ${m} hoàn tất!`, 'success');
+                }
                 if (m === 'room' && window.VNPTStore) window.VNPTStore.actions.endScan({}, stats);
             }
         });
@@ -544,7 +895,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
     }
 
-    function injectBhytBadge(tr, count, alerts = []) {
+    function injectBhytBadge(tr, count, errors = []) {
         let nameTd = tr.querySelector("td[aria-describedby$='_TENBENHNHAN']");
         if (!nameTd) nameTd = tr.querySelector("td[aria-describedby*='TENBENHNHAN']");
         if (!nameTd) return;
@@ -557,15 +908,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
 
         if (count > 0) {
-            badge.innerHTML = '⚠️';
-            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 6px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,0,0,0.8)); cursor: help;';
-            const alertText = alerts.map(a => `- ${a.title}`).join('\\n');
-            badge.title = `Phát hiện ${count} rủi ro BHYT:\\n${alertText}`;
-            tr.style.backgroundColor = 'rgba(232, 168, 56, 0.15)'; // Highlight row with warning color
+            badge.innerHTML = `🛡️<sup style="font-size:9px;color:#f87171;font-weight:700">${count}</sup>`;
+            badge.style.cssText = 'font-size:14px;display:inline-block;margin-left:6px;vertical-align:text-top;cursor:help;';
+            const errorText = errors.map(e => `• ${e.tenDV}: ${e.loi}`).join('\n');
+            badge.title = `Phát hiện ${count} lỗi thời gian BHYT:\n${errorText}`;
+            tr.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
         } else {
             badge.innerHTML = '✅';
-            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 6px; vertical-align: text-top; filter: grayscale(100%); opacity: 0.5;';
-            badge.title = 'BHYT Hợp lệ';
+            badge.style.cssText = 'font-size:14px;display:inline-block;margin-left:6px;vertical-align:text-top;filter:grayscale(100%);opacity:0.5;';
+            badge.title = 'Thời gian BHYT hợp lệ';
             tr.style.backgroundColor = '';
         }
     }

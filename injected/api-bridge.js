@@ -83,6 +83,9 @@
             case 'REQ_PACS_URL':
                 fetchPacsUrl(event.data.pacsConfig || event.data.sheetId, event.data.requestId);
                 break;
+            case 'REQ_FETCH_BHYT_TIMES':
+                fetchBhytTimes(event.data.rowId, event.data.requestId);
+                break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
     });
@@ -1224,6 +1227,164 @@
         } catch (err) {
             console.error('[API-Bridge] fetchLabs error:', err);
             sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '' }, requestId);
+        }
+    }
+
+    // ─── BHYT Time Error Scanner ─────────────────────────────────────────────
+    // Fetches all CLS sheets for a patient and returns time fields
+    // so the content script can detect BHYT violations (TH >= KQ, etc.)
+    async function fetchBhytTimes(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: [], patientName: '' }, requestId);
+                return;
+            }
+            const grid = _$('#grdBenhNhan');
+            const rowData = grid.jqGrid('getRowData', rowId);
+
+            const benhnhanId = rowData.BENHNHANID || '';
+            const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
+            const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
+            const uuid = _jsonrpc?.AjaxJson?.uuid;
+
+            // Get patient name
+            let patientName = '';
+            for (const key in rowData) {
+                if (['HOTEN', 'TENBENHNHAN', 'TEN_BENH_NHAN', 'TEN'].includes(key.toUpperCase())) {
+                    const val = String(rowData[key]).replace(/<[^>]+>/g, '').trim();
+                    if (val) { patientName = val; break; }
+                }
+            }
+            if (!patientName) {
+                _$('#' + rowId).find('td').each(function() {
+                    const aria = _$(this).attr('aria-describedby') || '';
+                    if (aria.toUpperCase().includes('HOTEN') || aria.toUpperCase().includes('TENBENHNHAN')) {
+                        patientName = _$(this).text().trim() || patientName;
+                    }
+                });
+            }
+
+            if (!benhnhanId || !uuid) {
+                sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: [], patientName }, requestId);
+                return;
+            }
+
+            const baseUrl = '/vnpthis/RestService';
+            const _apiQuery = async (queryCode, opts) => {
+                try {
+                    const p = { func: 'ajaxExecuteQueryPaging', uuid, params: [queryCode], options: opts };
+                    const u = new URL(baseUrl, window.location.origin);
+                    u.searchParams.set('_search', 'false');
+                    u.searchParams.set('rows', '500');
+                    u.searchParams.set('page', '1');
+                    u.searchParams.set('postData', JSON.stringify(p));
+                    const r = await fetch(u.toString(), { credentials: 'include' });
+                    if (r.ok) { const d = await r.json(); return d.rows || []; }
+                } catch (_e) { /* silent */ }
+                return [];
+            };
+
+            // ── Step 1: Fetch XN sheets only (type=1) ──
+            const candidates = [hsbaId, khambenhId].filter(v => v && v.trim() !== '');
+            let sheetRows = [];
+
+            for (const cid of candidates) {
+                sheetRows = await _apiQuery('NT.024.DSPHIEU', [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '1' }, // type=1 = XN only
+                    { name: '[3]', value: String(cid) }
+                ]);
+                if (sheetRows.length > 0) break;
+            }
+
+            // ── Step 2: For each sheet, fetch details (NT.024.2) to get execution/result times ──
+            const allResults = [];
+            // Multiple date formats: DD/MM/YYYY HH:mm, YYYY-MM-DD, ISO
+            const datePatterns = [
+                /\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}/,       // DD/MM/YYYY HH:mm
+                /\d{4}-\d{2}-\d{2}T?\d{2}:\d{2}/,           // ISO / YYYY-MM-DD HH:mm
+                /\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}/            // DD-MM-YYYY HH:mm
+            ];
+
+            // Auto-detect helper
+            const detectDates = (obj) => {
+                const found = {};
+                for (const k of Object.keys(obj)) {
+                    const v = String(obj[k] || '');
+                    if (datePatterns.some(p => p.test(v))) found[k] = v;
+                }
+                return found;
+            };
+
+            for (const sheet of sheetRows) {
+                const sheetId = sheet.MAUBENHPHAMID || sheet.SOPHIEUID;
+                if (!sheetId) continue;
+
+                const details = await _apiQuery('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
+
+                // Filter: STRICTLY ONLY "Đường máu mao mạch"
+                // Do NOT include "Định lượng Glucose [Máu]" because it has different API field mapping (not swapped).
+                const glucoseDetails = details.filter(d => {
+                    const name = (d.TEN || d.TENCHISO || d.TENDICHVU || d.TENTONGHOP || d.TENXETNGHIEM || '').toUpperCase();
+                    return name.includes('MAO MACH') || name.includes('MAO MẠCH');
+                });
+
+                if (glucoseDetails.length === 0) continue;
+
+                // Extract time from SHEET level
+                const sheetDateFields = allResults.length < 2 ? detectDates(sheet) : {};
+
+                for (const d of glucoseDetails) {
+                    // Auto-detect date fields from detail level
+                    const detailDateFields = allResults.length < 2 ? detectDates(d) : {};
+
+                    // Try to get times from detail level first, then sheet level
+                    const tryGet = (obj, ...keys) => {
+                        for (const k of keys) {
+                            if (obj[k]) return String(obj[k]);
+                        }
+                        return '';
+                    };
+
+                    const tenDV = tryGet(d, 'TEN', 'TENCHISO', 'TENDICHVU', 'TENCHIDINH', 'TENTONGHOP', 'TENXETNGHIEM') || tryGet(sheet, 'TENLOAICHIDINH', 'TENDICHVU');
+                    const ketqua = tryGet(d, 'GIATRI_KETQUA', 'KETQUA', 'KETQUACLS');
+
+                    // ── HYBRID Time Source Strategy ──
+                    // - tgThucHien: Detail-level THOIGIANTRAKETQUA (verified = HIS "Thực hiện" for mao mạch)
+                    // - tgKetQua: Sheet-level NGAYMAUBENHPHAM_HOANTHANH (verified = HIS "TG trả KQ")
+                    // - Detail TGTHUCHIEN is UNRELIABLE for KQ (05:06 vs HIS 05:10)
+                    // - Sheet has NO "Thực hiện" field (always empty)
+                    const tgTH = tryGet(d, 'THOIGIANTRAKETQUA', 'THOIGIANTRAKETQUA1');
+                    const tgKQ = tryGet(sheet, 'NGAYMAUBENHPHAM_HOANTHANH', 'THOIGIANTRAKETQUA', 'NGAYTRAKETQUA');
+
+                    allResults.push({
+                        id: sheetId,
+                        soPhieu: tryGet(sheet, 'SOPHIEU'),
+                        tenDV: tenDV,
+                        ketQua: ketqua,
+                        tgChiDinh: tryGet(sheet, 'NGAYMAUBENHPHAM', 'NGAYCHIDINH', 'NGAY_CHIDINH', 'THOIGIANCHIDINH', 'NGAYDICHVU'),
+                        tgThucHien: tgTH,
+                        tgKetQua: tgKQ,
+                        nguoiTH: tryGet(d, 'BACSITHUCHIEN', 'NGUOITHUCHIEN'),
+                        trangThai: tryGet(d, 'TRANGTHAIKETQUA', 'TENTRANGTHAI'),
+                        // Debug
+                        _detail_TGTHUCHIEN: tryGet(d, 'TGTHUCHIEN'),
+                        _detail_THOIGIANTRAKETQUA: tryGet(d, 'THOIGIANTRAKETQUA'),
+                        _sheetDateFields: allResults.length < 2 ? sheetDateFields : undefined,
+                        _detailDateFields: allResults.length < 2 ? detailDateFields : undefined,
+                        _detailRawKeys: allResults.length === 0 ? Object.keys(d) : undefined,
+                        _sheetRawKeys: allResults.length === 0 ? Object.keys(sheet) : undefined
+                    });
+                }
+            }
+
+            console.log(`[API-Bridge] BHYT Times: ${sheetRows.length} sheets → ${allResults.length} glucose tests for ${patientName}`);
+            sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: allResults, patientName, sheetCount: sheetRows.length }, requestId);
+
+        } catch (err) {
+            console.error('[API-Bridge] fetchBhytTimes error:', err);
+            sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: [], patientName: '' }, requestId);
         }
     }
 

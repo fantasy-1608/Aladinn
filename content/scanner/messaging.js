@@ -14,7 +14,8 @@ const VNPTMessaging = (function () {
         'FETCH_HISTORY_RESULT',
         'FETCH_TREATMENT_RESULT',
         'FETCH_DRUGS_RESULT',
-        'FETCH_PTTT_RESULT'
+        'FETCH_PTTT_RESULT',
+        'FETCH_BHYT_TIMES_RESULT'
     ]);
 
     function getAllowedOrigin() {
