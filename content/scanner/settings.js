@@ -69,7 +69,7 @@ const VNPTSettings = (function () {
         if (window.VNPTStore) window.VNPTStore.set('isDarkMode', settings.darkMode);
 
         if (window.VNPTConfig) {
-            window.VNPTConfig.VERSION = '1.1.6';
+            window.VNPTConfig.VERSION = '1.1.7';
         }
     }
 
@@ -90,7 +90,7 @@ const VNPTSettings = (function () {
                 <div class="vnpt-settings-header">
                     <div class="header-title">
                         <span class="header-icon" style="font-size:22px;">⚙️</span>
-                        <h3>Cài đặt Hệ thống v1.1.6</h3>
+                        <h3>Cài đặt Hệ thống v1.1.7</h3>
                     </div>
                     <button class="vnpt-settings-close">&times;</button>
                 </div>
@@ -161,7 +161,7 @@ const VNPTSettings = (function () {
 
                 <div class="vnpt-settings-footer">
                     <div class="version-info">
-                        VNPT HIS Smart Scanner <span class="version-tag" style="cursor: pointer;">v1.1.6</span>
+                        VNPT HIS Smart Scanner <span class="version-tag" style="cursor: pointer;">v1.1.7</span>
                     </div>
                 </div>
             </div>

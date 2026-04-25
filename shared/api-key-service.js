@@ -41,27 +41,20 @@ HIS.ApiKeyService = (function () {
                 )
             );
 
-            // 2. Encrypted key → try background PIN cache
+            // 2. Encrypted key → ask background to decrypt (background has cached CryptoKey)
             if (stored.geminiApiKey_encrypted && stored.pin_salt) {
-                const pin = await getPinFromBackground();
-                if (pin && HIS.Crypto?.decryptAPIKey) {
-                    const decrypted = await HIS.Crypto.decryptAPIKey(
-                        stored.geminiApiKey_encrypted, pin, stored.pin_salt
-                    );
-                    if (decrypted) {
-                        _cachedKey = sanitize(decrypted);
-                        _cacheTimestamp = Date.now();
-                        return _cachedKey;
-                    }
+                const decrypted = await getDecryptedKeyFromBackground();
+                if (decrypted) {
+                    _cachedKey = sanitize(decrypted);
+                    _cacheTimestamp = Date.now();
+                    return _cachedKey;
                 }
             }
 
-            // 3. Plaintext fallback (legacy or no PIN configured)
-            if (stored.geminiApiKey) {
-                return sanitize(stored.geminiApiKey);
-            }
-            if (stored.his_settings?.geminiApiKey) {
-                return sanitize(stored.his_settings.geminiApiKey);
+            // 3. SECURITY: Plaintext fallback REMOVED — trigger migration warning
+            if (stored.geminiApiKey || stored.his_settings?.geminiApiKey) {
+                console.warn('[ApiKeyService] ⚠️ Plaintext API key detected! Migration required. Ignoring plaintext key.');
+                // Don't return plaintext key — user must re-encrypt via Options
             }
 
         } catch (err) {
@@ -299,12 +292,16 @@ HIS.ApiKeyService = (function () {
 
     // --- Helper functions ---
 
-    async function getPinFromBackground() {
+    /**
+     * Ask background to decrypt the API key using its cached CryptoKey.
+     * Content scripts NEVER receive the PIN.
+     */
+    async function getDecryptedKeyFromBackground() {
         try {
             const response = await new Promise(resolve =>
-                chrome.runtime.sendMessage({ type: 'GET_SESSION_PIN' }, resolve)
+                chrome.runtime.sendMessage({ type: 'BG_DECRYPT_API_KEY' }, resolve)
             );
-            return response?.pin || '';
+            return response?.apiKey || '';
         } catch (_) {
             return '';
         }

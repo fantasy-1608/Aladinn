@@ -12,6 +12,7 @@
 
 // Import AI client
 import { requestAI, cancelRequest } from './ai-client.js';
+/* global deriveBgKeyFromPin, bgDecryptApiKey */ // defined in ai-client.js via globalThis
 // Import self-update checker
 import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
 
@@ -81,7 +82,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
         if (chrome.runtime.lastError || !tab?.url) return;
         // Only remember non-PDF tabs as "previous"
         const isPdf = tab.url.includes('blob:') || tab.url.includes('.pdf') ||
-                      tab.url.includes('pdf-viewer') || tab.url.includes('PrintPreview');
+            tab.url.includes('pdf-viewer') || tab.url.includes('PrintPreview');
         if (!isPdf) {
             lastActiveTabId = activeInfo.tabId;
         }
@@ -91,7 +92,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 function switchBackFromPdfTab(_pdfTabId) {
     // Switch focus back to the last non-PDF tab
     if (lastActiveTabId != null) {
-        chrome.tabs.update(lastActiveTabId, { active: true }).catch(() => {});
+        chrome.tabs.update(lastActiveTabId, { active: true }).catch(() => { });
     }
 }
 
@@ -143,15 +144,51 @@ chrome.storage.local.get('aladinn_features', (result) => {
 });
 
 // ========================================
+// SECURITY: Sender validation helper
+// ========================================
+function isValidSender(sender) {
+    // Only accept messages from this extension
+    if (sender.id !== chrome.runtime.id) return false;
+    // If from a tab, must be on vncare.vn domain
+    if (sender.tab?.url && !sender.tab.url.match(/^https?:\/\/[^/]*\.vncare\.vn\//)) return false;
+    return true;
+}
+
+// SECURITY: Whitelist for GET_SETTINGS / SET_SETTINGS
+const SETTINGS_READ_WHITELIST = [
+    'aladinn_voice_settings', 'aladinn_voice_enabled',
+    'selectedModel', 'geminiBaseUrl', 'aladinn_features'
+];
+const SETTINGS_WRITE_WHITELIST = [
+    'aladinn_voice_settings', 'aladinn_voice_enabled',
+    'selectedModel', 'geminiBaseUrl', 'aladinn_features',
+    'aladinn_voice_appSettings'
+];
+
+// ========================================
 // UNIFIED MESSAGE HANDLER (single listener — fixes race conditions)
 // ========================================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // SECURITY: Validate sender for all messages
+    if (!isValidSender(sender)) {
+        sendResponse({ ok: false, error: 'UNAUTHORIZED_SENDER' });
+        return false;
+    }
+
     const { type, action, requestId, payload } = message;
 
-    // ---- SESSION PIN CACHING (for background API key decryption) ----
+    // ---- SESSION PIN CACHING (derive key immediately, purge PIN) ----
     if (type === 'CACHE_SESSION_PIN') {
-        if (chrome.storage.session) {
-            chrome.storage.session.set({ _sessionPIN: payload?.pin || '' });
+        const pin = payload?.pin || '';
+        if (pin) {
+            // Derive CryptoKey in background memory, then purge PIN from session
+            deriveBgKeyFromPin(pin).then(() => {
+                // PIN is now only in the derived key (non-extractable)
+                sendResponse({ ok: true });
+            }).catch(() => {
+                sendResponse({ ok: false, error: 'KEY_DERIVATION_FAILED' });
+            });
+            return true; // async
         }
         sendResponse({ ok: true });
         return false;
@@ -171,16 +208,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
-    // ---- SESSION PIN RETRIEVAL (for content scripts that cannot access chrome.storage.session) ----
-    if (type === 'GET_SESSION_PIN') {
-        if (chrome.storage.session) {
-            chrome.storage.session.get('_sessionPIN', (result) => {
-                sendResponse({ ok: true, pin: result?._sessionPIN || '' });
-            });
-            return true; // async response
-        }
-        sendResponse({ ok: false, pin: '' });
-        return false;
+    // ---- BACKGROUND DECRYPT API KEY (content scripts ask background to decrypt) ----
+    if (type === 'GET_SESSION_PIN' || type === 'BG_DECRYPT_API_KEY') {
+        // Instead of returning PIN, decrypt API key in background and return it
+        bgDecryptApiKey().then(apiKey => {
+            sendResponse({ ok: true, apiKey: apiKey || '' });
+        }).catch(() => {
+            sendResponse({ ok: false, apiKey: '' });
+        });
+        return true; // async response
     }
 
     // ---- VOICE MODULE: AI Request ----
@@ -202,10 +238,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return false;
     }
 
-    // ---- VOICE MODULE: Settings ----
+    // ---- VOICE MODULE: Settings (SECURITY: whitelist keys) ----
     if (type === 'GET_SETTINGS') {
-        const keys = payload?.keys || ['aladinn_voice_settings', 'aladinn_voice_enabled', 'geminiApiKey', 'selectedModel', 'geminiBaseUrl', 'aladinn_features'];
-        chrome.storage.local.get(keys, (result) => {
+        const requestedKeys = payload?.keys || SETTINGS_READ_WHITELIST;
+        // Filter to only whitelisted keys — never expose geminiApiKey etc via messages
+        const safeKeys = requestedKeys.filter(k => SETTINGS_READ_WHITELIST.includes(k));
+        chrome.storage.local.get(safeKeys, (result) => {
             sendResponse({ ok: true, requestId, data: result });
         });
         return true;
@@ -213,7 +251,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (type === 'SET_SETTINGS') {
         const patch = payload?.settings || {};
-        chrome.storage.local.set(patch, () => {
+        // Filter to only whitelisted keys
+        const safePatch = {};
+        for (const key of Object.keys(patch)) {
+            if (SETTINGS_WRITE_WHITELIST.includes(key)) {
+                safePatch[key] = patch[key];
+            }
+        }
+        chrome.storage.local.set(safePatch, () => {
             sendResponse({ ok: true, requestId, data: { saved: true } });
         });
         return true;
@@ -255,7 +300,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             updateBadge(newState);
             const tabs = await chrome.tabs.query({ url: '*://*.vncare.vn/*' });
             for (const t of tabs) {
-                chrome.tabs.sendMessage(t.id, { type: 'TOGGLE_EXTENSION', enabled: newState }).catch(() => {});
+                chrome.tabs.sendMessage(t.id, { type: 'TOGGLE_EXTENSION', enabled: newState }).catch(() => { });
             }
             sendResponse({ ok: true, enabled: newState });
         });
@@ -335,7 +380,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     }
                 },
                 args: [message.rowIds]
-            }).catch(() => {});
+            }).catch(() => { });
         }
         sendResponse({ ok: true });
         return false;
@@ -373,12 +418,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 'transcript', 'results', 'ai_audit_logs',
                 'vnpt_scan_results', 'vnpt_error_logs'
             ]);
-            // Clear session PIN so AI Key cannot be decrypted without re-auth
+            // SECURITY: Wipe in-memory derived key and session PIN
+            globalThis._bgCachedKey = null;
+            globalThis._bgCachedSalt = null;
             if (chrome.storage.session) {
                 chrome.storage.session.remove('_sessionPIN');
             }
             // Notify content scripts to clear in-memory API key caches
-            chrome.tabs.sendMessage(tabId, { type: 'SESSION_LOGOUT' }).catch(() => {});
+            chrome.tabs.sendMessage(tabId, { type: 'SESSION_LOGOUT' }).catch(() => { });
         }
     }
 });
@@ -397,11 +444,11 @@ chrome.commands.onCommand.addListener(async (command) => {
                 action: 'filterByCreator',
                 userName: result.userName || '',
                 userId: result.userId || ''
-            }).catch(() => {});
+            }).catch(() => { });
         });
     } else if (command === 'start-signing') {
-        chrome.tabs.sendMessage(tabId, { action: 'startSigning' }).catch(() => {});
+        chrome.tabs.sendMessage(tabId, { action: 'startSigning' }).catch(() => { });
     } else if (command === 'next-patient') {
-        chrome.tabs.sendMessage(tabId, { action: 'nextPatient' }).catch(() => {});
+        chrome.tabs.sendMessage(tabId, { action: 'nextPatient' }).catch(() => { });
     }
 });

@@ -17,7 +17,7 @@ window.HIS = window.HIS || {};
  */
 HIS.init = function (config) {
     HIS.APP_NAME = config.name || 'HIS Extension';
-    HIS.APP_VERSION = config.version || '1.1.6';
+    HIS.APP_VERSION = config.version || '1.1.7';
     HIS.APP_PREFIX = config.prefix || 'his';
     HIS.APP_EMOJI = config.emoji || '🏥';
     HIS._initialized = true;

@@ -1,5 +1,5 @@
 /**
- * Aladinn Voice Assistant v1.1.6 - Desert Mystic UI
+ * Aladinn Voice Assistant v1.1.7 - Desert Mystic UI
  * Midnight Navy + Royal Gold Design System
  */
 
@@ -60,15 +60,17 @@
   animation: aladinn-fade-in-up 0.3s ease forwards;
 }
 
-/* Simplified Idle State - Zero geometry changes to prevent flickering */
+/* Simplified Idle State - Faded when mouse leaves */
 #his-floating-panel.faded {
-  opacity: 0.2;
+  opacity: 0.15;
   filter: none;
   cursor: pointer;
+  transition: opacity 0.5s ease;
 }
 
 #his-floating-panel.faded:hover {
   opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 /* Remove all complex aura/glow */
@@ -138,62 +140,44 @@
 }
 
 /* ========================================
-   Panel Body Wrapper (Body + Scroll Buttons)
+   Panel Body Wrapper
    ======================================== */
 .his-panel-body-wrapper {
-  display: flex;
   flex: 1 1 0;
   min-height: 0;
+  overflow: hidden;
   position: relative;
 }
 
 .his-panel-body {
   padding: 12px;
-  overflow-y: auto;
-  flex: 1 1 0;
-  min-height: 0;
-  scrollbar-width: none; /* hide native scrollbar, we have buttons */
+  overflow-y: auto !important;
+  height: 100%;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 83, 0.35) transparent;
 }
 
+/* Styled scrollbar — Desert Mystic gold */
 .his-panel-body::-webkit-scrollbar {
-  display: none; /* hide native scrollbar on WebKit */
+  width: 6px;
 }
 
-/* Scroll Buttons */
-.his-scroll-buttons {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 2px;
-  flex-shrink: 0;
-}
-
-.his-scroll-btn {
-  width: 22px;
-  height: 32px;
-  border: none;
+.his-panel-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 6px;
-  background: rgba(212, 168, 83, 0.15);
-  color: var(--his-accent);
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0.6;
+  margin: 4px 0;
 }
 
-.his-scroll-btn:hover {
+.his-panel-body::-webkit-scrollbar-thumb {
   background: rgba(212, 168, 83, 0.35);
-  opacity: 1;
-  transform: scale(1.1);
+  border-radius: 6px;
+  min-height: 30px;
 }
 
-.his-scroll-btn:active {
-  background: rgba(212, 168, 83, 0.5);
-  transform: scale(0.95);
+.his-panel-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 168, 83, 0.6);
 }
 
 /* ========================================

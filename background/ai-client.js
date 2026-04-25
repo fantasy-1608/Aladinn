@@ -6,43 +6,89 @@
 
 // ========================================
 // Crypto Helper (for decrypting API key in background context)
+// SECURITY: PIN is never stored. Only the derived CryptoKey (non-extractable) is cached.
 // ========================================
 const _CRYPTO_ITERATIONS = 100000;
 const _CRYPTO_KEY_LENGTH = 256;
 
+// In-memory only — non-extractable CryptoKey, wiped on timeout/logout
+let _cachedDecryptKey = null;
+let _cachedDecryptSalt = null;
+
+// SECURITY: Aliases for service-worker.js logout handler to clear
+// (service-worker.js uses `_bgCachedKey = null` to wipe on logout)
+// We use a getter/setter pattern so both names reference the same variable
+Object.defineProperty(globalThis, '_bgCachedKey', {
+    get() { return _cachedDecryptKey; },
+    set(v) { _cachedDecryptKey = v; }
+});
+Object.defineProperty(globalThis, '_bgCachedSalt', {
+    get() { return _cachedDecryptSalt; },
+    set(v) { _cachedDecryptSalt = v; }
+});
+
+/**
+ * Derive a CryptoKey from a PIN and cache it in memory.
+ * Called by service-worker when user authenticates via CACHE_SESSION_PIN.
+ * The PIN is used once to derive the key, then discarded.
+ */
+globalThis.deriveBgKeyFromPin = async function(pin) {
+    if (!pin) return;
+    try {
+        const stored = await chrome.storage.local.get(['pin_salt']);
+        const salt = stored.pin_salt;
+        if (!salt) return;
+        
+        const saltData = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+        const baseKey = await crypto.subtle.importKey(
+            'raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']
+        );
+        const derivedKey = await crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: saltData, iterations: _CRYPTO_ITERATIONS, hash: 'SHA-256' },
+            baseKey,
+            { name: 'AES-GCM', length: _CRYPTO_KEY_LENGTH },
+            false, ['decrypt']
+        );
+        _cachedDecryptKey = derivedKey;
+        _cachedDecryptSalt = salt;
+        touchActivity();
+        console.log('[Aladinn Security] 🔑 Derived key cached in memory (PIN discarded).');
+    } catch (e) {
+        console.error('[Aladinn Security] Key derivation failed:', e);
+    }
+};
+
+/**
+ * Decrypt the API key using the cached CryptoKey.
+ * Called by service-worker for BG_DECRYPT_API_KEY / GET_SESSION_PIN messages.
+ * Returns the decrypted API key string, or empty string.
+ */
+globalThis.bgDecryptApiKey = async function() {
+    try {
+        checkSessionTimeout();
+        if (!_cachedDecryptKey) return '';
+        
+        const stored = await chrome.storage.local.get(['geminiApiKey_encrypted', 'pin_salt']);
+        if (!stored.geminiApiKey_encrypted || !stored.pin_salt) return '';
+        
+        touchActivity();
+        return await _decryptWithKey(stored.geminiApiKey_encrypted, _cachedDecryptKey);
+    } catch (e) {
+        console.warn('[Aladinn Security] bgDecryptApiKey failed:', e);
+        return '';
+    }
+};
+
 async function decryptAPIKeyInBg(encryptedText, salt) {
     if (!encryptedText || !encryptedText.includes(':')) return '';
-    // We cannot know the PIN in background, but the key is derived from PIN+salt
-    // The background uses a session-cached derived key approach:
-    // On first successful decrypt, the key is cached for the session
     if (_cachedDecryptKey && _cachedDecryptSalt === salt) {
-        // SECURITY: Check if session has timed out
         checkSessionTimeout();
-        if (!_cachedDecryptKey) return ''; // Key was wiped by timeout
+        if (!_cachedDecryptKey) return '';
         touchActivity();
         return _decryptWithKey(encryptedText, _cachedDecryptKey);
     }
-    // If no cached key, we need the PIN from storage (set during auth)
-    const pinResult = await chrome.storage.session?.get?.('_sessionPIN');
-    const pin = pinResult?._sessionPIN;
-    if (!pin) {
-        // Try legacy: check if plaintext key exists as fallback
-        return '';
-    }
-    const saltData = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
-    const baseKey = await crypto.subtle.importKey(
-        'raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']
-    );
-    const derivedKey = await crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: saltData, iterations: _CRYPTO_ITERATIONS, hash: 'SHA-256' },
-        baseKey,
-        { name: 'AES-GCM', length: _CRYPTO_KEY_LENGTH },
-        false, ['decrypt']
-    );
-    _cachedDecryptKey = derivedKey;
-    _cachedDecryptSalt = salt;
-    touchActivity(); // Reset idle timer on fresh key derivation
-    return _decryptWithKey(encryptedText, derivedKey);
+    // No cached key available — caller must authenticate first
+    return '';
 }
 
 async function _decryptWithKey(encryptedText, key) {
@@ -52,9 +98,6 @@ async function _decryptWithKey(encryptedText, key) {
     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
     return new TextDecoder().decode(decrypted);
 }
-
-let _cachedDecryptKey = null;
-let _cachedDecryptSalt = null;
 
 // ========================================
 // SECURITY: Auto-Lock PIN after 30 minutes of inactivity
@@ -67,10 +110,6 @@ function checkSessionTimeout() {
         console.log('[Aladinn Security] 🔒 Session timeout (30 min idle) — clearing cached decryption key.');
         _cachedDecryptKey = null;
         _cachedDecryptSalt = null;
-        // Also wipe the session PIN so it must be re-entered
-        if (chrome.storage.session) {
-            chrome.storage.session.remove('_sessionPIN');
-        }
     }
 }
 

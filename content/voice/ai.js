@@ -14,9 +14,16 @@ async function processWithAI() {
         return;
     }
 
-    if (window.isLocked) {
-        window.showToast('Vui lòng mở khóa Panel trước!', true);
+    // SECURITY: Check if API key is configured
+    if (!window.hasApiKey) {
+        window.showToast('⚙️ Chưa cấu hình API Key. Vào Cài đặt để thiết lập.', true);
         return;
+    }
+
+    // If API key is encrypted but not yet unlocked, prompt for PIN
+    if (!window.isAiUnlocked) {
+        const unlocked = await promptPinForAI();
+        if (!unlocked) return;
     }
 
     const text = document.getElementById('his-transcript').value.trim();
@@ -289,8 +296,151 @@ function createICD10Section(icdList) {
 }
 
 // ========================================
+// Inline PIN Prompt for AI Features
+// ========================================
+/**
+ * Show a compact PIN prompt when user tries to use AI without unlocking.
+ * Returns true if PIN verified successfully.
+ */
+function promptPinForAI() {
+    return new Promise((resolve) => {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'his-ai-pin-overlay';
+        overlay.className = 'his-ai-pin-overlay';
+        overlay.innerHTML = `
+            <div class="his-ai-pin-dialog">
+                <div style="font-size: 14px; font-weight: 600; color: var(--his-accent, #d4a574); margin-bottom: 12px;">
+                    🔐 Nhập PIN để sử dụng AI
+                </div>
+                <input type="password" id="his-ai-pin-input" maxlength="6" inputmode="numeric" 
+                    placeholder="Nhập PIN 6 số" 
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(212,165,116,0.3); 
+                    background: rgba(0,0,0,0.3); color: white; text-align: center; font-size: 18px; letter-spacing: 8px;
+                    outline: none;">
+                <div style="margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.4);">
+                    Tự động xác thực khi nhập đủ 6 số
+                </div>
+            </div>
+        `;
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2147483647;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        `;
+
+        const dialog = overlay.querySelector('.his-ai-pin-dialog');
+        dialog.style.cssText = `
+            background: linear-gradient(135deg, rgba(30,25,20,0.95), rgba(45,35,25,0.95));
+            border: 1px solid rgba(212,165,116,0.3); border-radius: 16px; padding: 24px;
+            min-width: 280px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        `;
+
+        document.body.appendChild(overlay);
+        const input = document.getElementById('his-ai-pin-input');
+        setTimeout(() => input.focus(), 100);
+
+        // Close on overlay click (outside dialog)
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                resolve(false);
+            }
+        });
+
+        // Close on Escape
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                resolve(false);
+            }
+        });
+
+        input.addEventListener('input', async (e) => {
+            const val = e.target.value.replace(/\D/g, '').substring(0, 6);
+            e.target.value = val;
+
+            if (val.length === 6) {
+                try {
+                    const { pin_hash, pin_salt } = await new Promise(r =>
+                        chrome.storage.local.get(['pin_hash', 'pin_salt'], r)
+                    );
+                    if (!pin_hash || !pin_salt) {
+                        overlay.remove();
+                        resolve(false);
+                        return;
+                    }
+
+                    const isValid = await HIS.Crypto.verifyPIN(val, pin_hash, pin_salt);
+                    if (isValid) {
+                        // Cache derived key in background
+                        chrome.runtime.sendMessage({ type: 'CACHE_SESSION_PIN', payload: { pin: val } });
+                        window.isAiUnlocked = true;
+                        window.storageKey = window.deriveKeyFromPIN ? await window.deriveKeyFromPIN(val) : val;
+                        if (window.updateAIButtonVisibility) window.updateAIButtonVisibility();
+                        overlay.remove();
+                        window.showToast('🔓 AI đã mở khóa!');
+                        resolve(true);
+                    } else {
+                        input.value = '';
+                        input.style.borderColor = '#ef4444';
+                        window.showToast('Mã PIN không đúng!', true);
+                        setTimeout(() => { input.style.borderColor = 'rgba(212,165,116,0.3)'; }, 1000);
+                    }
+                } catch (_err) {
+                    overlay.remove();
+                    window.showToast('Lỗi xác minh PIN!', true);
+                    resolve(false);
+                }
+            }
+        });
+    });
+}
+
+/**
+ * Show/hide AI-related buttons based on API key availability.
+ * Called after loadSavedData and after PIN unlock.
+ */
+function updateAIButtonVisibility() {
+    const processBtn = document.getElementById('his-process-btn');
+    const autofillBtn = document.getElementById('his-autofill');
+
+    if (!window.hasApiKey) {
+        // No API key configured — hide AI buttons
+        if (processBtn) {
+            processBtn.style.opacity = '0.4';
+            processBtn.title = 'Cần cấu hình API Key trong Cài đặt';
+        }
+        if (autofillBtn) {
+            autofillBtn.style.opacity = '0.4';
+            autofillBtn.title = 'Cần cấu hình API Key';
+        }
+    } else if (!window.isAiUnlocked) {
+        // API key exists but not unlocked — show with lock indicator
+        if (processBtn) {
+            processBtn.style.opacity = '1';
+            processBtn.title = 'Nhấn để nhập PIN và sử dụng AI';
+        }
+        if (autofillBtn) {
+            autofillBtn.style.opacity = '1';
+        }
+    } else {
+        // Fully unlocked
+        if (processBtn) {
+            processBtn.style.opacity = '1';
+            processBtn.title = 'Xử lý nội dung bằng AI';
+        }
+        if (autofillBtn) {
+            autofillBtn.style.opacity = '1';
+        }
+    }
+}
+
+// ========================================
 // Exports
 // ========================================
 window.processWithAI = processWithAI;
 window.displayResults = displayResults;
 window.startAIButtonCooldown = startAIButtonCooldown;
+window.promptPinForAI = promptPinForAI;
+window.updateAIButtonVisibility = updateAIButtonVisibility;

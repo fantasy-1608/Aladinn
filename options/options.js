@@ -1,5 +1,5 @@
 /**
- * 🧞 Aladinn — Unified Options Logic (Test Version)
+ * 🧞 Aladinn — Unified Options Logic
  */
 
 // Real Chrome Extension environment expected.
@@ -24,9 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elements = {
         apiKey: document.getElementById('opt-api-key'),
         aiModel: document.getElementById('opt-ai-model'),
-        chuyenVien: document.getElementById('opt-voice-chuyenvien'),
         scanTooltip: document.getElementById('opt-scan-tooltip'),
-        scanNutrition: document.getElementById('opt-scan-nutrition'),
         cdsFilterLow: document.getElementById('opt-cds-filter-low'),
         signSafeMode: document.getElementById('opt-sign-safemode'),
         signAdvanced: document.getElementById('opt-sign-advanced'),
@@ -69,8 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- Load API Key ---
             if (localRes.geminiApiKey && !localRes.geminiApiKey.includes(':')) {
-                elements.apiKey.value = localRes.geminiApiKey;
-                hasValidApi = true;
+                // SECURITY: Plaintext key found — warn user, do NOT display the key
+                elements.apiKey.value = '';
+                elements.apiKey.placeholder = '⚠️ API Key cũ (plaintext) đã bị vô hiệu hóa. Nhập lại + tạo PIN mới.';
+                showToast('⚠️ Phát hiện API Key plaintext! Vui lòng nhập lại và đặt PIN để mã hóa.', true);
+                // Remove the plaintext key
+                chrome.storage.local.remove('geminiApiKey');
+                hasValidApi = false;
             } else if (localRes.geminiApiKey_encrypted) {
                 elements.apiKey.value = '';
                 elements.apiKey.placeholder = '🔒 API Key đã được mã hóa. Nhập PIN để xem.';
@@ -88,8 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.aiModel.value = localRes.selectedModel;
             }
             
-            const vSettings = localRes.aladinn_voice_appSettings || {};
-            elements.chuyenVien.checked = vSettings.autoChuyenVien !== false;
+            const _vSettings = localRes.aladinn_voice_appSettings || {};
             
             // --- PIN UI ---
             _pinSalt = localRes.pin_salt || '';
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.get(['vnpt_scanner_settings', 'his_settings'], (res) => {
             const sSettings = res.his_settings || res.vnpt_scanner_settings || { vitalsDisplay: true, templateAutofill: true };
             elements.scanTooltip.checked = sSettings.vitalsDisplay !== undefined ? sSettings.vitalsDisplay : (sSettings.showTooltip || false);
-            elements.scanNutrition.checked = sSettings.templateAutofill !== undefined ? sSettings.templateAutofill : (sSettings.autoForm || false);
+            // scanNutrition toggle removed — always enabled
             if (elements.signSafeMode && sSettings.signSafeMode !== undefined) {
                 elements.signSafeMode.checked = sSettings.signSafeMode;
             }
@@ -131,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleAIFeatures(isUnlocked) {
         const container = document.getElementById('ai-features-container');
-        if (isUnlocked) {
+        // SECURITY: Both API Key AND PIN required to unlock AI settings
+        if (isUnlocked && _hasPinHash) {
             container.classList.remove('locked');
         } else {
             container.classList.add('locked');
@@ -231,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         currentHisSettings.vitalsDisplay = elements.scanTooltip.checked;
-        currentHisSettings.templateAutofill = elements.scanNutrition.checked;
+        currentHisSettings.templateAutofill = true; // Always enabled
         currentHisSettings.geminiModel = elements.aiModel.value;
         if (elements.signSafeMode) currentHisSettings.signSafeMode = elements.signSafeMode.checked;
         if (elements.signAdvanced) currentHisSettings.signAdvanced = elements.signAdvanced.checked;
@@ -245,11 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const localPatch = {
             selectedModel: elements.aiModel.value,
-            aladinn_voice_appSettings: { autoChuyenVien: elements.chuyenVien.checked },
+            aladinn_voice_appSettings: { autoChuyenVien: true },
             his_settings: currentHisSettings,
             vnpt_scanner_settings: {
                 showTooltip: elements.scanTooltip.checked,
-                autoForm: elements.scanNutrition.checked
+                autoForm: true // Always enabled
             },
             vnpt_cds_settings: {
                 filterLow: elements.cdsFilterLow.checked

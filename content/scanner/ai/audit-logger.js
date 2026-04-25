@@ -9,21 +9,25 @@ const AIAuditLogger = {
      */
     async log(patientId, inputData, outputData, model, tokens = 0) {
         const now = new Date();
+        // SECURITY: Redact PHI — never store patient data or AI input/output in logs
         const logEntry = {
             timestamp: now.toISOString(),
-            patientId: patientId || 'UNKNOWN',
+            patientId: patientId ? '***' : 'UNKNOWN',  // Always mask
             model: model,
-            input: inputData,
-            output: outputData,
+            inputLength: (inputData || '').length,    // Only store length, not content
+            outputLength: (outputData || '').length,   // Only store length, not content
             tokens: tokens
         };
 
         return new Promise((resolve) => {
             chrome.storage.local.get(['ai_audit_logs', 'ai_daily_usage'], (/** @type {any} */ result) => {
                 // --- Audit Logs ---
-                const logs = result.ai_audit_logs || [];
+                let logs = result.ai_audit_logs || [];
                 logs.unshift(logEntry);
-                if (logs.length > 1000) logs.length = 1000;
+                // SECURITY: Reduced retention (200 entries max, 7-day auto-purge)
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                logs = logs.filter(l => l.timestamp > sevenDaysAgo);
+                if (logs.length > 200) logs.length = 200;
 
                 // --- Daily Usage Tracker ---
                 const todayKey = now.toISOString().split('T')[0]; // "2026-03-28"

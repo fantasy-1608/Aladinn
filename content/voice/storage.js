@@ -136,9 +136,13 @@ function saveData() {
     saveTimeout = setTimeout(async () => {
         try {
             if (chrome.runtime?.id) {
-                // Encrypt sensitive data if key is available
-                const encryptedTranscript = window.storageKey ? await encryptData(window.transcript, window.storageKey) : window.transcript;
-                const encryptedResults = (window.storageKey && window.currentResults) ? await encryptData(JSON.stringify(window.currentResults), window.storageKey) : window.currentResults;
+                // SECURITY: Only save data when encryption key is available
+                // Never store plaintext transcript/results
+                if (!window.storageKey) {
+                    return; // Skip saving — data stays in memory only
+                }
+                const encryptedTranscript = await encryptData(window.transcript, window.storageKey);
+                const encryptedResults = window.currentResults ? await encryptData(JSON.stringify(window.currentResults), window.storageKey) : null;
 
                 chrome.storage.local.set({
                     transcript: encryptedTranscript,
@@ -232,13 +236,47 @@ async function loadSavedData() {
             window.geminiBaseUrl = result.geminiBaseUrl;
         }
 
-        // --- PIN verification via hash ---
-        if (result.pin_hash && result.pin_salt) {
-            // PIN is set (hashed) — lock panel
-            if (!window.storageKey) window.lockPanel(false);
+        // --- API Key availability check (don't lock panel — it's always accessible) ---
+        // PIN + encrypted key → AI features available after unlock
+        // No PIN → AI features hidden
+        if (result.pin_hash && result.pin_salt && result.geminiApiKey_encrypted) {
+            window.hasApiKey = true;
+            // Check if background already has a cached derived key
+            try {
+                const resp = await new Promise(resolve =>
+                    chrome.runtime.sendMessage({ type: 'BG_DECRYPT_API_KEY' }, resolve)
+                );
+                if (resp?.apiKey) {
+                    // Background already has key decrypted — mark as unlocked
+                    window.isAiUnlocked = true;
+                    window.storageKey = resp.apiKey; // For transcript encryption
+                } else {
+                    window.isAiUnlocked = false;
+                }
+            } catch (_) {
+                window.isAiUnlocked = false;
+            }
         } else {
-            // No PIN — unlock
-            window.unlockPanel();
+            window.hasApiKey = false;
+            window.isAiUnlocked = false;
+        }
+        // Update AI button visibility
+        if (window.updateAIButtonVisibility) window.updateAIButtonVisibility();
+
+        // If no API key → hide panel entirely, only show mini button with lock indicator
+        if (!window.hasApiKey) {
+            window.hidePanel && window.hidePanel();
+            const miniBtn = document.getElementById('his-mini-btn');
+            if (miniBtn) {
+                miniBtn.style.opacity = '0.5';
+                miniBtn.title = '⚙️ Chưa cấu hình API Key — Nhấn để mở Cài đặt';
+            }
+        } else {
+            const miniBtn = document.getElementById('his-mini-btn');
+            if (miniBtn) {
+                miniBtn.style.opacity = '1';
+                miniBtn.title = 'Aladinn Voice Assistant';
+            }
         }
 
         window.isChuyenVienEnabled = result.aladinn_voice_appSettings?.autoChuyenVien === true;

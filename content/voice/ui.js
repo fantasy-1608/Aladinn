@@ -3,12 +3,19 @@
  * Panel creation, visibility, toast notifications, and lock screen
  */
 /* global DEMO_DATA, MEDICAL_FIELDS, VITAL_SIGNS */
-// Panel Visibility
+
 // ========================================
+// Panel Visibility — 3-state: Icon ↔ Panel ↔ Faded
+// State: icon (hidden) → hover opens → mouse-leave fades → click outside hides
+// ========================================
+let _fadeTimeout = null;
+
 function showPanel() {
     const panel = document.getElementById('his-floating-panel');
     const miniBtn = document.getElementById('his-mini-btn');
     if (!panel || !miniBtn) return;
+
+    clearTimeout(_fadeTimeout);
 
     // Only trigger animation if was hidden
     if (panel.classList.contains('aladinn-hidden')) {
@@ -21,15 +28,6 @@ function showPanel() {
     miniBtn.classList.add('aladinn-hidden');
     window.isPanelOpen = true;
     window.isPanelFaded = false;
-
-    // Auto focus PIN if locked
-    if (typeof window.isLocked !== 'undefined' && window.isLocked) {
-        const overlay = document.getElementById('his-lock-overlay');
-        if (overlay && !overlay.classList.contains('aladinn-hidden')) {
-            const pinInput = document.getElementById('his-unlock-input');
-            if (pinInput) setTimeout(() => pinInput.focus(), 100);
-        }
-    }
 }
 
 function hidePanel() {
@@ -37,9 +35,10 @@ function hidePanel() {
     const miniBtn = document.getElementById('his-mini-btn');
     if (!panel || !miniBtn) return;
 
+    clearTimeout(_fadeTimeout);
     panel.classList.add('aladinn-hidden');
     panel.classList.remove('faded');
-    if (miniBtn) miniBtn.classList.remove('aladinn-hidden');
+    miniBtn.classList.remove('aladinn-hidden');
     window.isPanelOpen = false;
     window.isPanelFaded = false;
 }
@@ -55,6 +54,7 @@ function fadePanel() {
 function unfadePanel() {
     const panel = document.getElementById('his-floating-panel');
     if (panel) {
+        clearTimeout(_fadeTimeout);
         panel.classList.remove('faded');
         window.isPanelFaded = false;
     }
@@ -68,6 +68,46 @@ function togglePanel() {
     } else {
         hidePanel();
     }
+}
+
+/**
+ * Setup hover/click-outside behavior for panel auto-show/fade/hide
+ */
+function setupPanelAutoVisibility() {
+    const panel = document.getElementById('his-floating-panel');
+    if (!panel) return;
+
+    // Mouse enters panel → unfade, stay visible
+    panel.addEventListener('mouseenter', () => {
+        unfadePanel();
+    });
+
+    // Mouse leaves panel → fade after short delay
+    panel.addEventListener('mouseleave', () => {
+        if (!window.isPanelOpen) return;
+        clearTimeout(_fadeTimeout);
+        _fadeTimeout = setTimeout(() => {
+            fadePanel();
+        }, 800); // Fade after 0.8s of leaving
+    });
+
+    // Click outside panel → hide panel back to icon
+    document.addEventListener('click', (e) => {
+        if (!window.isPanelOpen) return;
+        const panel = document.getElementById('his-floating-panel');
+        const miniBtn = document.getElementById('his-mini-btn');
+        if (!panel) return;
+
+        // Check if click is inside panel or mini button
+        if (panel.contains(e.target) || miniBtn?.contains(e.target)) return;
+
+        // Check if click is inside PIN overlay
+        const pinOverlay = document.getElementById('his-ai-pin-overlay');
+        if (pinOverlay && pinOverlay.contains(e.target)) return;
+
+        // Click is outside → collapse to icon
+        hidePanel();
+    }, true);
 }
 
 // ========================================
@@ -188,8 +228,8 @@ function updateProcessBtnState() {
 // Demo Data Loading
 // ========================================
 function loadDemoData() {
-    if (window.isLocked) {
-        showToast('Vui lòng mở khóa trước!', true);
+    if (!window.hasApiKey) {
+        showToast('⚙️ Cần cấu hình API Key trước!', true);
         return;
     }
     window.transcript = 'Bệnh nhân nam 45 tuổi, vào viện vì đau ngực trái 2 giờ, vã mồ hôi, khó thở. Tiền sử THA 5 năm, ĐTĐ type 2. Bố NMCT. Mạch 90, HA 150/95, SpO2 96%.';
@@ -384,10 +424,17 @@ function createFloatingPanel() {
 
     window.addEventListener('resize', syncPositions);
     miniBtn.addEventListener('mouseenter', () => {
-        if (!window.isLocked) showPanel();
+        if (!window.hasApiKey) return; // Don't open without API key
+        showPanel();
     });
     miniBtn.addEventListener('click', () => {
-        if (!window.isLocked) showPanel();
+        if (!window.hasApiKey) {
+            showToast('⚙️ Chưa có API Key. Vào Cài đặt để thiết lập.', true);
+            // Open settings page
+            chrome.runtime.sendMessage({ type: 'OPEN_OPTIONS' });
+            return;
+        }
+        showPanel();
     });
     
     miniLockBtn.addEventListener('click', () => {
@@ -440,10 +487,6 @@ function createFloatingPanel() {
                     <div class="his-results-compact" id="his-results-container"></div>
                 </div>
             </div>
-            <div class="his-scroll-buttons">
-                <button class="his-scroll-btn" id="his-scroll-up" title="Cuộn lên">▲</button>
-                <button class="his-scroll-btn" id="his-scroll-down" title="Cuộn xuống">▼</button>
-            </div>
         </div>
         <div class="his-panel-footer">
             <div class="his-section" style="padding-top: 0; border-top: none;">
@@ -487,6 +530,7 @@ function createFloatingPanel() {
 
     // Setup events
     setupPanelEvents();
+    setupPanelAutoVisibility(); // Hover/click-outside auto-visibility
     makeDraggable(panel, document.getElementById('his-panel-header'));
 }
 
@@ -506,29 +550,8 @@ function setupPanelEvents() {
     document.getElementById('his-chuyenvien-fill')?.addEventListener('click', window.autoFillChuyenVien || function(){});
     document.getElementById('his-process-btn')?.addEventListener('click', window.processWithAI || function(){});
 
-    // Scroll buttons
-    const panelBody = document.getElementById('his-panel-body');
-    const scrollUpBtn = document.getElementById('his-scroll-up');
-    const scrollDownBtn = document.getElementById('his-scroll-down');
-    if (panelBody && scrollUpBtn && scrollDownBtn) {
-        let scrollInterval = null;
-        const startScroll = (dir) => {
-            panelBody.scrollBy({ top: dir * 120, behavior: 'smooth' });
-            scrollInterval = setInterval(() => {
-                panelBody.scrollBy({ top: dir * 80, behavior: 'smooth' });
-            }, 200);
-        };
-        const stopScroll = () => { if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; } };
 
-        scrollUpBtn.addEventListener('mousedown', () => startScroll(-1));
-        scrollUpBtn.addEventListener('mouseup', stopScroll);
-        scrollUpBtn.addEventListener('mouseleave', stopScroll);
-        scrollDownBtn.addEventListener('mousedown', () => startScroll(1));
-        scrollDownBtn.addEventListener('mouseup', stopScroll);
-        scrollDownBtn.addEventListener('mouseleave', stopScroll);
-        scrollUpBtn.addEventListener('click', () => panelBody.scrollBy({ top: -120, behavior: 'smooth' }));
-        scrollDownBtn.addEventListener('click', () => panelBody.scrollBy({ top: 120, behavior: 'smooth' }));
-    }
+
 
     const transcriptEl = document.getElementById('his-transcript');
     if (transcriptEl) {

@@ -15,10 +15,31 @@
     // Cache to prevent duplicate simultaneous requests from multiple modules
     const vitalsCache = {};
 
+    // SECURITY: Rate-limiting to prevent request flooding
+    const _rateLimit = { count: 0, resetTime: Date.now() + 10000 };
+    const RATE_LIMIT_MAX = 150; // Tăng lên 150 để quét phòng lớn không bị đứng
+    const RATE_LIMIT_WINDOW = 10000;
+
+    function checkRateLimit() {
+        const now = Date.now();
+        if (now > _rateLimit.resetTime) {
+            _rateLimit.count = 0;
+            _rateLimit.resetTime = now + RATE_LIMIT_WINDOW;
+        }
+        _rateLimit.count++;
+        return _rateLimit.count <= RATE_LIMIT_MAX;
+    }
+
     window.addEventListener('message', function (event) {
         // SECURITY: Allow local origin or any origin on the same domain if needed
         if (event.origin !== window.location.origin) return;
         if (!event.data || !event.data.type) return;
+
+        // SECURITY: Rate-limit all incoming requests
+        if (event.data.type.startsWith('REQ_') && !checkRateLimit()) {
+            console.warn('[Aladinn API-Bridge] Rate limit exceeded — request dropped');
+            return;
+        }
 
         // SECURITY: Verify token for requests
         if (event.data.type.startsWith('REQ_')) {
@@ -58,6 +79,9 @@
                 break;
             case 'REQ_FETCH_DRUGS_CLS':
                 fetchDrugsForCLS(event.data.rowId, event.data.requestId);
+                break;
+            case 'REQ_PACS_URL':
+                fetchPacsUrl(event.data.pacsConfig || event.data.sheetId, event.data.requestId);
                 break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
@@ -471,7 +495,9 @@
                                         DONVITINH: r.DONVITINH || r.DONVI || '',
                                         DUONGDUNG: r.DUONGDUNG || r.TENDUONGDUNG || '',
                                         CACHDUNG: r.CACHDUNG || r.SOLO_CACHDUNG || r.SUDUNG || '',
-                                        SOLUONG: r.SOLUONG || r.SOLUONG_SUDUNG || ''
+                                        SOLUONG: r.SOLUONG || r.SOLUONG_SUDUNG || '',
+                                        HOATCHAT: r.HOATCHAT || r.TENHOATCHAT || r.HOAT_CHAT || r.TEN_HOATCHAT || r.TENHC || r.TEN_HC || r.TENKHOAHOC || '',
+                                        HAMLUONG: r.HAMLUONG || r.NONGDO || r.HAM_LUONG || r.NONG_DO || r.NDHL || ''
                                     }));
                                     sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs }, requestId);
                                 } else {
@@ -646,11 +672,13 @@
                                 NGAYMAUBENHPHAM_SUDUNG: sheetDate,
                                 TENTHUOC: name,
                                 MAUBENHPHAMID: String(sheetId),
-                                LIEUDUNG: item.LIEUDUNG || item.LIEU || item.HAMLUONG || item.NONGDO || '',
+                                LIEUDUNG: item.LIEUDUNG || item.LIEU || '',
                                 DONVITINH: item.DONVITINH || item.DONVI || item.DVT || '',
                                 DUONGDUNG: item.DUONGDUNG || item.TENDUONGDUNG || '',
                                 CACHDUNG: item.CACHDUNG || item.SOLO_CACHDUNG || item.SUDUNG || '',
-                                SOLUONG: item.SOLUONG || item.SOLUONG_SUDUNG || ''
+                                SOLUONG: item.SOLUONG || item.SOLUONG_SUDUNG || '',
+                                HOATCHAT: item.HOATCHAT || item.TENHOATCHAT || item.HOAT_CHAT || item.TEN_HOATCHAT || item.TENHC || item.TEN_HC || item.TENKHOAHOC || '',
+                                HAMLUONG: item.HAMLUONG || item.NONGDO || item.HAM_LUONG || item.NONG_DO || item.NDHL || ''
                             });
                         }
                     }
@@ -674,6 +702,187 @@
             ...data,
             requestId
         }, window.location.origin);
+    }
+
+    // ─── PACS Token Fetcher ────────────────────────────────────────────────────
+    // Dùng hàm getHashRIS() sẵn có của VNPT HIS để lấy URL ảnh DICOM.
+    // Không cần session cookie — xác thực bằng Hashids daily key.
+    async function fetchPacsUrl(config, requestId) {
+        try {
+            let sheetId, maubenhphamid, sophieu, madichvu, linkDicom;
+            if (typeof config === 'object' && config !== null) {
+                sheetId = config.sheetId;
+                maubenhphamid = config.maubenhphamid;
+                sophieu = config.sophieu;
+                madichvu = config.madichvu;
+                linkDicom = config.linkDicom;
+            } else {
+                sheetId = config;
+                maubenhphamid = config;
+                sophieu = config;
+                madichvu = '';
+                linkDicom = '';
+            }
+
+            // Priority 1: Direct linkDicom if present
+            if (linkDicom && linkDicom.trim() !== '') {
+                sendResult('PACS_URL_RESULT', null, { pacsUrl: linkDicom }, requestId);
+                return;
+            }
+
+            // Priority 2: Trigger native HIS button if available
+            let nativeTriggered = false;
+            const frames = [window, ...Array.from(document.querySelectorAll('iframe')).map(f => f.contentWindow).filter(Boolean)];
+            
+            for (const win of frames) {
+                if (win.$) {
+                    const grid = win.$('#tcCDHAHisgrdCDHA');
+                    if (grid.length > 0) {
+                        const rowIds = grid.jqGrid('getDataIDs');
+                        for (const id of rowIds) {
+                            const rowData = grid.jqGrid('getRowData', id);
+                            if (rowData.MAUBENHPHAMID == sheetId || rowData.SOPHIEU == sheetId || rowData.MAUBENHPHAMID == maubenhphamid || rowData.SOPHIEU == sophieu) {
+                                grid.jqGrid('setSelection', id, false);
+                                const btn = win.$('#tcCDHAHisbtnDicomViewer');
+                                if (btn.length > 0) {
+                                    btn.click();
+                                    nativeTriggered = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (nativeTriggered) break;
+            }
+
+            if (nativeTriggered) {
+                sendResult('PACS_URL_RESULT', null, { pacsUrl: 'NATIVE_TRIGGERED' }, requestId);
+                return;
+            }
+
+            // Priority 3: Fallback to manual fetch
+            let domain = window.RIS_SERVICE_DOMAIN_NAME || 'https://cdha-sadecdtp.vnpthis.vn/';
+            let getDicom = window.RIS_GET_DICOM_VIEWER || 'api/public/dicomViewer';
+            let secret = window.RIS_SECRET_KEY || 'vnptris';
+            
+            for (const win of frames) {
+                if (win.RIS_SECRET_KEY && win.RIS_SECRET_KEY.trim() !== '') secret = win.RIS_SECRET_KEY;
+                if (win.RIS_SERVICE_DOMAIN_NAME && win.RIS_SERVICE_DOMAIN_NAME.trim() !== '') domain = win.RIS_SERVICE_DOMAIN_NAME;
+                if (win.RIS_GET_DICOM_VIEWER && win.RIS_GET_DICOM_VIEWER.trim() !== '') getDicom = win.RIS_GET_DICOM_VIEWER;
+            }
+
+            const requestsToTry = [];
+            
+            // PRIORITY 1: MAUBENHPHAMID + MADICHVU (Proven to be the correct format for VNPT Dong Thap)
+            const targetId = maubenhphamid || sheetId;
+            
+            if (madichvu) {
+                requestsToTry.push({ url: domain + getDicom + '?requestCode=' + targetId + '&conceptCode=' + madichvu, identifyCode: targetId });
+                requestsToTry.push({ url: domain + 'ris/get_image.php?requestCode=' + targetId + '&conceptCode=' + madichvu, identifyCode: targetId });
+            }
+
+            // PRIORITY 2: MAUBENHPHAMID only
+            requestsToTry.push({ url: domain + getDicom + '?studyInstanceUID=' + targetId, identifyCode: targetId });
+            requestsToTry.push({ url: domain + 'ris/get_image.php?instanceUID=' + targetId, identifyCode: targetId });
+
+            // PRIORITY 2: combination of SOPHIEU & MAUBENHPHAMID
+            if (sophieu && maubenhphamid && sophieu !== maubenhphamid) {
+                requestsToTry.push({ url: domain + getDicom + '?ris_exam_id=' + sophieu + '&service_id=' + maubenhphamid, identifyCode: sophieu });
+                requestsToTry.push({ url: domain + getDicom + '?ris_exam_id=' + maubenhphamid + '&service_id=' + sophieu, identifyCode: maubenhphamid });
+                requestsToTry.push({ url: domain + 'ris/get_image.php?ris_exam_id=' + sophieu + '&service_id=' + maubenhphamid, identifyCode: sophieu });
+            }
+
+            // PRIORITY 3: SOPHIEU (fallback)
+            if (sophieu && sophieu !== targetId) {
+                requestsToTry.push({ url: domain + getDicom + '?studyInstanceUID=' + sophieu, identifyCode: sophieu });
+                requestsToTry.push({ url: domain + 'ris/get_image.php?instanceUID=' + sophieu, identifyCode: sophieu });
+                
+                if (madichvu) {
+                    requestsToTry.push({ url: domain + getDicom + '?requestCode=' + sophieu + '&conceptCode=' + madichvu, identifyCode: sophieu });
+                    requestsToTry.push({ url: domain + 'ris/get_image.php?requestCode=' + sophieu + '&conceptCode=' + madichvu, identifyCode: sophieu });
+                }
+            }
+
+            let lastError = null;
+            let corsBlockedUrl = null;
+
+            for (const req of requestsToTry) {
+                try {
+                    let hash = '';
+                    if (typeof window.getHashRIS === 'function') {
+                        const originalSecret = window.RIS_SECRET_KEY;
+                        window.RIS_SECRET_KEY = secret;
+                        hash = window.getHashRIS(String(req.identifyCode));
+                        window.RIS_SECRET_KEY = originalSecret;
+                    }
+
+                    const res = await fetch(req.url, {
+                        method: 'GET',
+                        headers: {
+                            'Ris-Access-Hash': hash,
+                            'Identify-Code': String(req.identifyCode)
+                        }
+                    });
+
+                    if (res.ok) {
+                        const contentType = res.headers.get('content-type') || '';
+                        
+                        if (contentType.includes('application/json')) {
+                            const json = await res.json();
+                            if (json && json.status_code === 200 && json.data) {
+                                sendResult('PACS_URL_RESULT', null, { pacsUrl: json.data }, requestId);
+                                return;
+                            } else {
+                                lastError = `JSON status: ${json?.status_code || 'unknown'}`;
+                            }
+                        } else {
+                            let finalUrl = req.url;
+                            if (hash && !finalUrl.includes('Ris-Access-Hash')) {
+                                finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
+                                finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                            }
+                            sendResult('PACS_URL_RESULT', null, { pacsUrl: finalUrl }, requestId);
+                            return;
+                        }
+                    } else {
+                        lastError = `HTTP ${res.status}`;
+                    }
+                } catch (e) {
+                    lastError = e.message;
+                    // If CORS blocks the request (common for HTML viewer endpoints like .php), fetch throws TypeError: Failed to fetch
+                    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+                        if (!corsBlockedUrl) {
+                            // Save the first CORS-blocked URL as our best-effort fallback
+                            let finalUrl = req.url;
+                            let hash = '';
+                            if (typeof window.getHashRIS === 'function') {
+                                const originalSecret = window.RIS_SECRET_KEY;
+                                window.RIS_SECRET_KEY = secret;
+                                hash = window.getHashRIS(String(req.identifyCode));
+                                window.RIS_SECRET_KEY = originalSecret;
+                            }
+                            if (hash && !finalUrl.includes('Ris-Access-Hash')) {
+                                finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
+                                finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                            }
+                            corsBlockedUrl = finalUrl;
+                        }
+                    }
+                }
+            }
+
+            // If we exhausted all URLs and got a CORS block on one of them, return it! 
+            // It's likely the correct viewer URL, we just couldn't verify it via JS due to CORS.
+            if (corsBlockedUrl) {
+                sendResult('PACS_URL_RESULT', null, { pacsUrl: corsBlockedUrl }, requestId);
+                return;
+            }
+
+            sendResult('PACS_URL_RESULT', null, { pacsUrl: null, pacsError: lastError || 'All fallback methods failed' }, requestId);
+        } catch (e) {
+            sendResult('PACS_URL_RESULT', null, { pacsUrl: null, pacsError: e.message }, requestId);
+        }
     }
 
     function fetchPttt(rowId, requestId) {
@@ -974,13 +1183,18 @@
             const imagingData = [];
             const cdhaDetailPromises = uniqueCdha.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID;
+                const pacsId = sheet.SOPHIEU || sheet.IDPHIEU || sheet.MAUBENHPHAMID;
                 if (!sheetId) return;
                 try {
                     const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
                     if (rows.length > 0) {
                         for (const item of rows) {
                             imagingData.push({
-                                sheetId,
+                                sheetId: pacsId,
+                                maubenhphamid: sheetId,
+                                sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
+                                madichvu: item.MADICHVU || item.MA || '',
+                                linkDicom: item.LINK_DICOM || sheet.LINK_DICOM || '',
                                 sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
                                 name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
                                 code: item.MADICHVU || item.MA || '',
@@ -991,7 +1205,13 @@
                         }
                     } else {
                         imagingData.push({
-                            sheetId, sheetDate: sheet.NGAYMAUBENHPHAM || '', name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
+                            sheetId: pacsId, 
+                            maubenhphamid: sheetId,
+                            sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
+                            madichvu: '',
+                            linkDicom: sheet.LINK_DICOM || '',
+                            sheetDate: sheet.NGAYMAUBENHPHAM || '', 
+                            name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
                             code: '', conclusion: '', status: sheet.TRANGTHAI || '', department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
                         });
                     }

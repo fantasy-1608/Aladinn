@@ -1,17 +1,22 @@
 {
   "name": "aladinn-his-assistant",
-  "version": "1.1.6",
-  "description": "Aladinn VNPT HIS Assistant",
+  "version": "1.1.7",
+  "description": "Tiện ích mở rộng AI (Giọng nói & Quét Dữ liệu) cho hệ thống VNPT HIS",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.2.0",
-    "globals": "^17.4.0"
+    "globals": "^17.4.0",
+    "jsdom": "^29.0.2",
+    "vitest": "^4.1.5"
   }
 }
