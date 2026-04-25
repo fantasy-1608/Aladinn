@@ -28,7 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cdsFilterLow: document.getElementById('opt-cds-filter-low'),
         signSafeMode: document.getElementById('opt-sign-safemode'),
         signAdvanced: document.getElementById('opt-sign-advanced'),
-        pin: document.getElementById('opt-pin')
+        pin: document.getElementById('opt-pin'),
+        // Feature Flags
+        flagScanner: document.getElementById('flag-scanner'),
+        flagSign: document.getElementById('flag-sign'),
+        flagCds: document.getElementById('flag-cds'),
+        flagVoice: document.getElementById('flag-voice'),
+        flagDebug: document.getElementById('flag-debug')
     };
 
     // Track crypto state for save operations
@@ -125,6 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.cdsFilterLow) {
                 elements.cdsFilterLow.checked = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
             }
+        });
+
+        // Load Feature Flags
+        chrome.storage.local.get(['aladinn_features', 'aladinn_debug_mode'], (res) => {
+            const flags = { scanner: true, sign: true, cds: true, voice: true, ...res.aladinn_features };
+            if (elements.flagScanner) elements.flagScanner.checked = flags.scanner !== false;
+            if (elements.flagSign) elements.flagSign.checked = flags.sign !== false;
+            if (elements.flagCds) elements.flagCds.checked = flags.cds !== false;
+            if (elements.flagVoice) elements.flagVoice.checked = flags.voice !== false;
+            if (elements.flagDebug) elements.flagDebug.checked = !!res.aladinn_debug_mode;
         });
 
         // Setup fetch models button
@@ -258,6 +274,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterLow: elements.cdsFilterLow.checked
             }
         };
+
+        // Feature Flags
+        const featureFlags = {
+            scanner: elements.flagScanner ? elements.flagScanner.checked : true,
+            sign: elements.flagSign ? elements.flagSign.checked : true,
+            cds: elements.flagCds ? elements.flagCds.checked : true,
+            voice: elements.flagVoice ? elements.flagVoice.checked : true
+        };
+        localPatch.aladinn_features = featureFlags;
+
+        // Debug Mode
+        if (elements.flagDebug) {
+            localPatch.aladinn_debug_mode = elements.flagDebug.checked;
+        }
 
         if (isNewPin) {
             if (!crypto?.subtle) {

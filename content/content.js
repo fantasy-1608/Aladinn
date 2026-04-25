@@ -194,6 +194,62 @@
             }
         }
 
+        // ========================================
+        // COMMAND BUS REGISTRATION
+        // ========================================
+        if (Aladinn.CommandBus) {
+            // Scanner commands
+            if (features.scanner && window.Aladinn?.Scanner) {
+                Aladinn.CommandBus.register('SCAN_PATIENT', (payload) => {
+                    if (window.VNPTScanFlow?.startScan) return window.VNPTScanFlow.startScan(payload);
+                });
+                Aladinn.CommandBus.register('SCAN_VITALS', () => {
+                    if (window.VNPTScanFlow?.startVitalsScan) return window.VNPTScanFlow.startVitalsScan();
+                });
+                Aladinn.CommandBus.register('SCAN_DRUGS', () => {
+                    if (window.VNPTScanFlow?.startDrugsScan) return window.VNPTScanFlow.startDrugsScan();
+                });
+                Aladinn.CommandBus.register('SHOW_DASHBOARD', () => {
+                    if (window.VNPTDashboard?.show) return window.VNPTDashboard.show();
+                });
+                Aladinn.CommandBus.register('SHOW_LAB_SUMMARY', () => {
+                    if (window.Aladinn?.Scanner?.showLabTimeline) return window.Aladinn.Scanner.showLabTimeline();
+                });
+                Aladinn.CommandBus.register('CLEAR_CACHE', () => {
+                    if (window.VNPTStore?.clearAll) return window.VNPTStore.clearAll();
+                });
+            }
+
+            // Sign commands
+            if (features.sign && window.Aladinn?.Sign) {
+                Aladinn.CommandBus.register('START_SIGNING', () => {
+                    if (window.Aladinn?.Sign?.Signing?.startSession) return window.Aladinn.Sign.Signing.startSession();
+                });
+                Aladinn.CommandBus.register('FILTER_BY_CREATOR', (payload) => {
+                    if (window.Aladinn?.Sign?.Filter?.filterByCreator) return window.Aladinn.Sign.Filter.filterByCreator(payload.userName, payload.userId);
+                });
+                Aladinn.CommandBus.register('NEXT_PATIENT', () => {
+                    if (window.Aladinn?.Sign?.Signing?.processNextPatient) return window.Aladinn.Sign.Signing.processNextPatient(true);
+                });
+            }
+
+            // CDS commands
+            if (features.cds && window.Aladinn?.CDS) {
+                Aladinn.CommandBus.register('RUN_CDS_CHECK', () => {
+                    if (window.Aladinn?.CDS?.Engine?.runCheck) return window.Aladinn.CDS.Engine.runCheck();
+                });
+            }
+
+            // Voice commands
+            if (features.voice && window.Aladinn?.Voice) {
+                Aladinn.CommandBus.register('TOGGLE_VOICE', (payload) => {
+                    if (window.Aladinn?.Voice?.toggle) return window.Aladinn.Voice.toggle(payload.enabled);
+                });
+            }
+
+            if (Logger) Logger.info('Main', `📡 CommandBus: ${Aladinn.CommandBus.list().length} commands registered`);
+        }
+
         if (Logger) Logger.success('Main', '🧞 Aladinn đã sẵn sàng!');
     }
 

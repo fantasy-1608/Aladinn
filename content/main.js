@@ -1,5 +1,7 @@
 import '../shared/constants.js';
 import '../shared/logger.js';
+import '../shared/error-handler.js';
+import '../shared/command-bus.js';
 import '../shared/utils.js';
 import '../shared/storage.js';
 import '../shared/crypto.js';
