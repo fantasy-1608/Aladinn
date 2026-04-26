@@ -30,6 +30,16 @@ class CDSCacheManager {
         this.diagSet = new Set();
     }
 
+    /**
+     * Chỉ xóa thuốc, giữ lại chẩn đoán + labs.
+     * Dùng khi đổi form kê thuốc nhưng vẫn cùng bệnh nhân.
+     */
+    resetMedications() {
+        this.cache.medications = [];
+        this.medsSet = new Set();
+        console.log('[Aladinn CDS Cache] 💊 Medications reset. Diagnoses preserved:', this.cache.diagnoses.length, 'codes');
+    }
+
     setupListener() {
         window.addEventListener('message', (event) => {
             if (event.source !== window || !event.data || event.data.type !== 'ALADINN_CDS_SNOOP') return;

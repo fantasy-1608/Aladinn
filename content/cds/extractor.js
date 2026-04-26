@@ -13,6 +13,7 @@ export const CDSCacheExtractor = {
 };
 
 export const CDSExtractor = {
+    _fetchedPatients: new Set(), // Track patient IDs đã fetch API diagnoses
     /**
      * Thu thập toàn bộ Context của Bệnh nhân hiện tại trên màn hình Kê Đơn.
      * @returns {Object} PatientContext
@@ -25,14 +26,23 @@ export const CDSExtractor = {
         let diagnoses = this.getDiagnoses();
         const cache = CDSCache.get();
 
-        // --- FETCH TỪ BACKGROUND NẾU THIẾU CHẨN ĐOÁN PHỤ ---
-        // Nếu chỉ có 0 hoặc 1 mã ICD (từ UI), có khả năng bị sót chẩn đoán kèm theo.
-        if (diagnoses.length <= 1 && cache.benhnhanId && cache.khambenhId) {
+        // --- FETCH TỪ API: Luôn gọi 1 lần per patient để lấy ĐẦY ĐỦ chẩn đoán từ tờ điều trị ---
+        const fetchKey = (cache.benhnhanId || '') + '_' + (cache.khambenhId || '');
+        if (cache.benhnhanId && cache.khambenhId && !CDSExtractor._fetchedPatients.has(fetchKey)) {
+            CDSExtractor._fetchedPatients.add(fetchKey);
             try {
                 const fetchedDiagnoses = await this.fetchDiagnosesFromBridge(cache.benhnhanId, cache.khambenhId);
-                if (fetchedDiagnoses && fetchedDiagnoses.length > diagnoses.length) {
-                    diagnoses = fetchedDiagnoses;
-                    // Cập nhật lại Cache để không phải fetch lại nhiều lần
+                if (fetchedDiagnoses && fetchedDiagnoses.length > 0) {
+                    console.log('[Aladinn CDS] 📡 API diagnoses:', fetchedDiagnoses.map(d => d.code).join(', '));
+                    // Merge vào diagnoses hiện tại
+                    const seenCodes = new Set(diagnoses.map(d => d.code));
+                    for (const d of fetchedDiagnoses) {
+                        if (!seenCodes.has(d.code)) {
+                            diagnoses.push(d);
+                            seenCodes.add(d.code);
+                        }
+                    }
+                    // Cập nhật Cache
                     for (const d of fetchedDiagnoses) {
                         if (!cache.diagnoses.some(x => x.code === d.code)) {
                             cache.diagnoses.push(d);
@@ -41,6 +51,8 @@ export const CDSExtractor = {
                 }
             } catch (e) {
                 console.warn('[Aladinn CDS] Background fetch diagnoses failed:', e);
+                // Cho phép retry lần sau
+                CDSExtractor._fetchedPatients.delete(fetchKey);
             }
         }
 
@@ -104,13 +116,12 @@ export const CDSExtractor = {
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
-                // Chỉ duyệt qua iframe nếu nó hiển thị hoặc allowHidden = true
                 if (iframe.contentDocument && (allowHidden || isVisible(iframe))) {
                     const iframeElements = Array.from(iframe.contentDocument.querySelectorAll(selector)).filter(isVisible);
                     elements = elements.concat(iframeElements);
                 }
             } catch (_e) {
-                // Bỏ qua lỗi CORS
+                // Bỏ qua lỗi CORS — dữ liệu thuốc từ iframe sẽ đến qua cds-iframe-helper
             }
         });
         return elements;
@@ -198,12 +209,17 @@ export const CDSExtractor = {
         const icdPattern = /\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/gi;
 
         // 1. Quét ưu tiên các ô nhập liệu (Input/Textarea) thường chứa mã bệnh
+        // Bao gồm: form kê thuốc (iframe), tờ điều trị, bệnh án (main frame)
         const icdSelectors = [
             '#txtMaBenh', '#txtMaICD', '#txtMaBenhKemTheo', '#txtChuanDoan_Hide', '#txtBenhKemTheo',
             '#lblCHANDOANVAOKHOA_KEMTHEO', '#lblCHANDOANVAOKHOA',
-            '[id*="MaBenh"]', '[id*="ICD"]', '[id*="icd"]', '[id*="ChuanDoan"]', '[id*="BenhKemTheo"]',
-            '[name*="MaBenh"]', '[name*="ICD"]', '[name*="ChuanDoan"]', '[name*="BenhKemTheo"]',
-            'textarea' // Bệnh kèm theo thường lọt vào textarea
+            // Tờ điều trị
+            '[id*="CHANDOAN"]', '[id*="chandoan"]', '[id*="ChuanDoan"]', '[id*="CHUANDOAN"]',
+            '[id*="MaBenh"]', '[id*="MABENH"]', '[id*="ICD"]', '[id*="icd"]', 
+            '[id*="BenhKemTheo"]', '[id*="BENHKEMTHEO"]',
+            '[name*="MaBenh"]', '[name*="MABENH"]', '[name*="ICD"]', '[name*="ChuanDoan"]', '[name*="CHUANDOAN"]', '[name*="BenhKemTheo"]', '[name*="BENHKEMTHEO"]',
+            // Label/Span chứa mã ICD đi kèm chẩn đoán
+            'label[for*="Benh"]', 'label[for*="ICD"]', 'label[for*="ChuanDoan"]', 'label[for*="CHUANDOAN"]'
         ].join(', ');
         
         // Cực kỳ quan trọng: Cho phép lấy element ẩn (allowHidden = true)
@@ -211,6 +227,8 @@ export const CDSExtractor = {
         const inputs = this.getElementsAcrossIframes(icdSelectors, true);
         inputs.forEach(el => {
             const rawVal = el.value || el.innerText || el.textContent || '';
+            // Bỏ qua text quá dài (grid data, nội dung bệnh án) — chỉ giữ ô chứa mã ICD
+            if (rawVal.length > 500) return;
             const matches = rawVal.match(icdPattern);
             if (matches) {
                 matches.forEach(code => {
@@ -222,35 +240,19 @@ export const CDSExtractor = {
                 });
             }
         });
-
-        // 2. Mắt xích thứ hai: Quét toàn bộ Text của popup/trang để tóm các bệnh đã được CHỌN & HIỂN THỊ
-        // Trong VNPT HIS, bệnh đã chọn thường được render dưới dạng "S61-Vết thương..." hoặc "M15 - Thoái hóa..."
-        const docTexts = this.getElementsAcrossIframes('body, .form-group, .panel-body, td, div', false);
-        // Regex bắt chặt định dạng "Mã ICD đi kèm dấu gạch ngang hoặc kết hợp với chữ" để tránh rác (VD: Tầng 3A, M15 máy in...)
-        // Bắt các mẫu như: "M15-Thoái hóa", "S56.5 - Tổn thương"
-        const strictIcdPattern = /\b([A-Z]\d{2,3}(?:\.\d{1,2})?)\s*(-|:)\s*[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝ/]/gi;
         
-        docTexts.forEach(el => {
-            // Chỉ quét các thẻ container nhỏ gọn, không quét thẻ TO quá tránh trùng lặp tốn CPU
-            if (el.children.length > 5) return; 
-
-            // Loại trừ container chứa bảng lưới dữ liệu bên trong để tránh thu thập chuỗi văn bản khổng lồ
-            if (el.querySelector && el.querySelector('table')) return;
-
-            // Loại trừ các text nằm trong dòng (TR) của một bảng dữ liệu lớn (như Danh sách bệnh nhân, thường > 5 cột)
-            // Form nhập liệu nếu dùng bảng thường chỉ có 2-4 cột.
-            const parentTr = el.closest ? el.closest('tr') : null;
-            if (parentTr && parentTr.children.length > 5) return;
-
-            const text = el.innerText || '';
-            if (text.length > 5) {
-                let match;
-                while ((match = strictIcdPattern.exec(text)) !== null) {
-                    const c = match[1].toUpperCase();
-                    if (!seenCodes.has(c)) {
-                        diagnoses.push({ code: c, is_primary: diagnoses.length === 0 });
-                        seenCodes.add(c);
-                    }
+        // 2. Quét riêng textarea có chứa mã ICD dạng "S20-Tổn thương..." (tờ điều trị)
+        const textareas = this.getElementsAcrossIframes('textarea', true);
+        const strictIcdInTextarea = /\b([A-Z]\d{2,3}(?:\.\d{1,2})?)\s*[-:]\s*[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝ]/gi;
+        textareas.forEach(el => {
+            const text = el.value || el.innerText || '';
+            if (text.length < 3 || text.length > 1000) return;
+            let match;
+            while ((match = strictIcdInTextarea.exec(text)) !== null) {
+                const c = match[1].toUpperCase();
+                if (!seenCodes.has(c)) {
+                    diagnoses.push({ code: c, is_primary: false });
+                    seenCodes.add(c);
                 }
             }
         });
@@ -290,21 +292,33 @@ export const CDSExtractor = {
         let _candidateCount = 0;
         let debugLog = [];
         
-        const DRUG_UNITS = ['viên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm'];
+        const DRUG_UNITS = ['viên', 'viên.', 'viên ', 'vên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm', 'đơn vị', 'đv'];
+        const DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'ngoài da', 'tiêm bắp', 'tiêm tĩnh mạch', 'pha', 'súc miệng'];
 
         for (const row of rows) {
             // Không xét phần header
             if (row.querySelector('th')) continue;
 
-            const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
+            let cells = Array.from(row.querySelectorAll('td'));
+            if (cells.length === 0) {
+                cells = Array.from(row.querySelectorAll(':scope > div'));
+            }
+            
+            const cols = cells.map(td => (td.innerText || td.textContent || '').trim());
             if (cols.length < 3) continue;
 
-            // Kiểm tra dòng này có chứa đơn vị dược (ở bất kỳ cột ngắn nào) không
+            // Dòng thuốc PHẢI có ít nhất Đơn vị tính (Viên, Lọ...) HOẶC Đường dùng (Uống, Tiêm...)
             const hasDrugUnit = DRUG_UNITS.some(u => {
-                return cols.some(c => c.length < 20 && c.toLowerCase().includes(u));
+                return cols.some(c => c.length > 0 && c.length < 15 && c.toLowerCase().includes(u));
             });
             
-            if (!hasDrugUnit) continue;
+            const hasDrugRoute = DRUG_ROUTES.some(r => {
+                return cols.some(c => c.length > 0 && c.length < 20 && c.toLowerCase().includes(r));
+            });
+            
+            const looksLikeDrugRow = hasDrugUnit || hasDrugRoute;
+            
+            if (!looksLikeDrugRow) continue;
 
             const rowText = cols.join(' ').toLowerCase();
             if (NOISE_WORDS.some(w => rowText.includes(w))) continue;

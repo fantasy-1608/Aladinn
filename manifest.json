@@ -73,7 +73,8 @@
             "js": [
                 "content/scanner/history-iframe-helper.js",
                 "content/scanner/nutrition-iframe-helper.js",
-                "content/scanner/emergency-iframe-helper.js"
+                "content/scanner/emergency-iframe-helper.js",
+                "content/cds/cds-iframe-helper.js"
             ],
             "run_at": "document_end",
             "all_frames": true

@@ -43,5 +43,10 @@
   { "condition_group_code": "stroke", "icd_prefix": "I63" },
   { "condition_group_code": "stroke", "icd_prefix": "I64" },
   { "condition_group_code": "stroke", "icd_prefix": "I65" },
-  { "condition_group_code": "stroke", "icd_prefix": "I66" }
+  { "condition_group_code": "stroke", "icd_prefix": "I66" },
+  { "condition_group_code": "parkinson", "icd_prefix": "G20" },
+  { "condition_group_code": "parkinson", "icd_prefix": "G21" },
+  { "condition_group_code": "bph", "icd_prefix": "N40" },
+  { "condition_group_code": "bph", "icd_prefix": "N41" },
+  { "condition_group_code": "pregnancy", "icd_prefix": "O" }
 ]

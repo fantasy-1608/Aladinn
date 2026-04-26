@@ -146,9 +146,13 @@
 
                         // 3. Chẩn đoán (Diagnoses & ICD)
                         // Bắt cả mã chính và các mã phụ (thường bị ngăn cách bởi dấu phẩy)
-                        const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
-                        const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
-                        const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                        let combinedIcd = '';
+                        Object.values(item).forEach(val => {
+                            if (typeof val === 'string' && val.length >= 3) {
+                                combinedIcd += ',' + val;
+                            }
+                        });
+                        combinedIcd = combinedIcd.toUpperCase();
                         
                         if (isPatientSpecific && combinedIcd) {
                             const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);

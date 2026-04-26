@@ -28,6 +28,9 @@ export const CDSUI = {
                     An Toàn Kê Đơn
                 </h3>
                 <div style="display:flex; gap: 8px;">
+                    <span id="cds-bhyt-audit-btn" class="header-action-btn" title="Kiểm tra BHYT (Pre-claim Audit)" style="font-size: 13px; letter-spacing: 0.5px;">
+                        🛡️
+                    </span>
                     <span id="cds-refresh-btn" class="header-action-btn" title="Làm mới & Xóa Bộ nhớ (Reset Cache)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                     </span>
@@ -106,6 +109,19 @@ export const CDSUI = {
             icon._rot = (icon._rot || 0) + 360;
         });
         document.getElementById('cds-close-btn').addEventListener('click', () => this.hide());
+
+        // Nút Kiểm tra BHYT
+        document.getElementById('cds-bhyt-audit-btn').addEventListener('click', () => {
+            const btn = document.getElementById('cds-bhyt-audit-btn');
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
+            window.dispatchEvent(new CustomEvent('ALADINN_BHYT_AUDIT'));
+            // Trả về trạng thái sau 2s
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }, 2000);
+        });
 
         // Kéo thả dọc (Vertical drag)
         let isDown = false;
@@ -604,5 +620,69 @@ export const CDSUI = {
                 toast.style.transform = 'translate(-50%, -20px)';
             }
         }, 8000);
+    },
+
+    /**
+     * BHYT Audit: Hiển thị kết quả kiểm tra BHYT on-demand (Phase 2)
+     */
+    showBhytAuditResults(result) {
+        if (!result) return;
+        
+        const container = document.getElementById('cds-alerts-container');
+        if (!container) return;
+
+        const { alerts, drugCount, icdCount, timestamp } = result;
+        const time = new Date(timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        
+        if (alerts.length === 0) {
+            // Thêm banner pass vào đầu panel
+            const passHtml = `
+                <div class="cds-alert" style="border-left: 4px solid #10b981; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 20px;">✅</span>
+                        <div>
+                            <div style="color: #10b981; font-weight: 700; font-size: 13px;">Kiểm tra BHYT: Đạt</div>
+                            <div style="color: #A0998E; font-size: 12px;">${drugCount} thuốc, ${icdCount} ICD • ${time}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', passHtml);
+            return;
+        }
+
+        // Render audit alerts (không replace, chỉ thêm vào đầu)
+        let html = `
+            <div style="background: rgba(232, 168, 56, 0.1); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(232, 168, 56, 0.3);">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <span style="font-size: 16px;">🛡️</span>
+                    <strong style="color: #E8A838; font-size: 13px;">BHYT Pre-claim Audit</strong>
+                    <span style="color: #A0998E; font-size: 11px; margin-left: auto;">${time}</span>
+                </div>
+                <div style="color: #A0998E; font-size: 11px; margin-bottom: 6px;">${drugCount} thuốc, ${icdCount} ICD • ${alerts.length} vấn đề</div>
+            </div>
+        `;
+
+        for (const alert of alerts) {
+            const borderColor = alert.severity === 'high' ? '#E85454' : '#E8A838';
+            const icon = alert.severity === 'high' ? '⛔' : '⚠️';
+            html += `
+                <div class="cds-alert" style="border-left: 4px solid ${borderColor}; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: flex-start; gap: 6px;">
+                        <span style="font-size: 14px; margin-top: 1px;">${icon}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="color: ${borderColor}; font-weight: 700; font-size: 12px; margin-bottom: 2px;">${alert.title}</div>
+                            <div style="color: #D4CFC5; font-size: 12px; line-height: 1.4;">${alert.effect}</div>
+                            <div style="color: #10b981; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: rgba(16,185,129,0.08); border-radius: 6px;">💡 ${alert.recommendation}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.insertAdjacentHTML('afterbegin', html);
+        
+        // Mở panel để hiển thị kết quả
+        this.show();
     }
 };

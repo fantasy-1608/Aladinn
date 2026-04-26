@@ -476,11 +476,11 @@
     "rule_code": "INS-AUTO-ALFUZOSIN",
     "generic_name": "alfuzosin",
     "condition_type": "icd_prefix_required",
-    "condition_value": "I10,I11,I15,I20,I25,I50",
+    "condition_value": "N40,N41,R30,R33,R39",
     "severity": "high",
-    "message": "Thuốc tim mạch / hạ áp cần chẩn đoán THA / Mạch vành / Suy tim (I10-I15, I20, I50).",
-    "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
-    "version": "1.2.0",
+    "message": "Alfuzosin (chẹn alpha-1) cần chẩn đoán Phì đại tuyến tiền liệt / Rối loạn tiểu tiện (N40-N41, R30, R33).",
+    "recommendation": "Bổ sung mã ICD N40 (Phì đại tuyến tiền liệt) hoặc R33 (Bí đái).",
+    "version": "1.3.0",
     "is_active": true
   },
   {
@@ -1229,6 +1229,94 @@
     "message": "Kháng sinh cần chẩn đoán bệnh lý nhiễm khuẩn (A, B, J, N, L...).",
     "recommendation": "Bổ sung mã chẩn đoán ICD-10 tương ứng hoặc lựa chọn phương án điều trị khác.",
     "version": "1.2.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-ITOPRIDE",
+    "generic_name": "itopride",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "K29,K30,K21,K25,K26,K27,R11",
+    "severity": "high",
+    "message": "Itopride (PL 40.746) cần chẩn đoán viêm dạ dày / rối loạn tiêu hóa (K29, K30, K21, R11). Số tiền xuất toán Q1/2026: 327 triệu.",
+    "recommendation": "Bổ sung mã ICD K29 (Viêm dạ dày) hoặc K30 (Khó tiêu chức năng).",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-INSULIN",
+    "generic_name": "insulin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E10,E11,E12,E13,E14,R73",
+    "severity": "high",
+    "message": "Insulin (DT22) cần chẩn đoán Đái tháo đường (E10-E14) hoặc Tăng đường huyết (R73). Nếu BN stress hyperglycemia, bổ sung R73.9.",
+    "recommendation": "Bổ sung mã ICD E10-E14 (ĐTĐ) hoặc R73.9 (Tăng glucose máu không xác định).",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-DUTASTERIDE",
+    "generic_name": "dutasteride",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "N40,N41,R30,R33,R39",
+    "severity": "high",
+    "message": "Dutasteride (ức chế 5-alpha reductase) cần chẩn đoán Phì đại tuyến tiền liệt (N40). Xuất toán thường gặp khi kê nhầm cho K30/K64.",
+    "recommendation": "Bổ sung mã ICD N40 (BPH). Nếu BN có triệu chứng tiểu tiện, bổ sung R30/R33.",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-TAMSULOSIN",
+    "generic_name": "tamsulosin",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "N40,N41,R30,R33,R39,N13,N20,N21",
+    "severity": "high",
+    "message": "Tamsulosin (chẹn alpha-1 chọn lọc) cần chẩn đoán Phì đại TLT (N40) hoặc Sỏi niệu (N20-N21). Bị xuất toán nếu kê cho THA.",
+    "recommendation": "Bổ sung mã ICD N40 (BPH) hoặc N20 (Sỏi thận). KHÔNG dùng mã I10.",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-TRIMETAZIDINE",
+    "generic_name": "trimetazidine",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "I20,I25,I49,H81",
+    "severity": "high",
+    "message": "Trimetazidine (Vastarel) cần chẩn đoán Bệnh mạch vành / Đau thắt ngực (I20, I25) hoặc Chóng mặt (H81). Chống chỉ định Parkinson (G20)!",
+    "recommendation": "Bổ sung mã ICD I20/I25. Kiểm tra BN KHÔNG có Parkinson (G20) trước khi kê.",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-SIMETHICONE",
+    "generic_name": "simethicone",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "K29,K30,K21,K25,K26,K27,K28,K52,K59,R14",
+    "severity": "high",
+    "message": "Simethicone (băng dạ dày) cần chẩn đoán bệnh lý dạ dày / ruột (K21-K59, R14). Thuốc bị xuất toán nhiều nhất (3730 lượt/Q1).",
+    "recommendation": "Bổ sung mã ICD K29 (Viêm DD) hoặc K30 (Khó tiêu) hoặc R14 (Đầy hơi).",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-TRIHEXYPHENIDYL",
+    "generic_name": "trihexyphenidyl",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "G20,G21,G24,G25,F20,F25",
+    "severity": "high",
+    "message": "Trihexyphenidyl (kháng cholinergic) cần chẩn đoán Parkinson (G20) / Hội chứng ngoại tháp (G21-G25) hoặc Tâm thần phân liệt (F20). Bị xuất toán 404 lượt/Q1.",
+    "recommendation": "Bổ sung mã ICD G20 (Parkinson) hoặc G25 (Rối loạn vận động).",
+    "version": "1.3.0",
+    "is_active": true
+  },
+  {
+    "rule_code": "INS-BHYT-FENOFIBRATE",
+    "generic_name": "fenofibrate",
+    "condition_type": "icd_prefix_required",
+    "condition_value": "E78",
+    "severity": "high",
+    "message": "Fenofibrate (hạ triglyceride) cần chẩn đoán Rối loạn lipid máu (E78). Xuất toán khi kê cho I10/E11 mà không có E78.",
+    "recommendation": "Bổ sung mã ICD E78 (Rối loạn chuyển hóa lipoprotein).",
+    "version": "1.3.0",
     "is_active": true
   }
 ]

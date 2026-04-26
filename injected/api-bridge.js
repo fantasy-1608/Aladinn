@@ -86,6 +86,9 @@
             case 'REQ_FETCH_BHYT_TIMES':
                 fetchBhytTimes(event.data.rowId, event.data.requestId);
                 break;
+            case 'REQ_PREFETCH_DIAGNOSES':
+                prefetchDiagnosesFromGrid(event.data.rowId, event.data.requestId);
+                break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
     });
@@ -436,6 +439,192 @@
 
         } catch (_e) {
             sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+        }
+    }
+
+    /**
+     * Pre-fetch chẩn đoán từ tờ điều trị cho BN đang chọn trong grid.
+     * Được gọi từ CDS module khi chọn BN hoặc khi mở tab.
+     */
+    function prefetchDiagnosesFromGrid(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
+                return;
+            }
+            const grid = _$('#grdBenhNhan');
+            if (grid.length === 0) {
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
+                return;
+            }
+            
+            // Lấy row đang chọn
+            const selectedId = rowId || grid.jqGrid('getGridParam', 'selrow');
+            if (!selectedId) {
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
+                return;
+            }
+            
+            const rowData = grid.jqGrid('getRowData', selectedId);
+            const benhnhanId = rowData.BENHNHANID || '';
+            const patientName = rowData.TENBENHNHAN || rowData.HOTEN || '';
+            
+            let candidates = [
+                rowData.HOSOBENHANID,
+                rowData.TIEPNHANID,
+                rowData.KHAMBENHID,
+                rowData.MADIEUTRI
+            ].filter(v => v && v.trim() !== '');
+
+            candidates = Array.from(new Set(candidates));
+            
+            if (!benhnhanId || candidates.length === 0) {
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId }, requestId);
+                return;
+            }
+
+            let currentIndex = 0;
+
+            const tryNext = () => {
+                if (currentIndex >= candidates.length) {
+                    console.log('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
+                    sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '' }, requestId);
+                    return;
+                }
+
+                const testId = candidates[currentIndex++];
+                const params = {
+                    func: 'ajaxExecuteQueryPaging',
+                    uuid: _jsonrpc.AjaxJson.uuid,
+                    params: ['NT.024.DSPHIEU'],
+                    options: [
+                        { name: '[0]', value: '' },
+                        { name: '[1]', value: String(benhnhanId) },
+                        { name: '[2]', value: '4' },
+                        { name: '[3]', value: String(testId) }
+                    ]
+                };
+
+                const xhr = new XMLHttpRequest();
+                const url = `/vnpthis/RestService?_search=false&rows=500&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                const rows = response.rows || [];
+                                
+                                if (rows.length > 0) {
+                                    let allDiagnoses = [];
+                                    let detailIds = [];
+
+                                    rows.forEach(item => {
+                                        const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
+                                        const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
+                                        const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                                        
+                                        const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                                        if (matches) {
+                                            matches.forEach(code => {
+                                                if (!allDiagnoses.some(d => d.code === code)) {
+                                                    allDiagnoses.push({ code: code, is_primary: allDiagnoses.length === 0 });
+                                                }
+                                            });
+                                        }
+                                        
+                                        // Thu thập ID tờ điều trị cho Mode 2
+                                        if (item.MADIEUTRI) detailIds.push(item.MADIEUTRI);
+                                        if (item.PHIEUDIEUTRIID) detailIds.push(item.PHIEUDIEUTRIID);
+                                        if (item.MAUBENHPHAMID) detailIds.push(item.MAUBENHPHAMID);
+                                        if (item.ID_PHIEU_DIEU_TRI) detailIds.push(item.ID_PHIEU_DIEU_TRI);
+                                    });
+
+                                    if (allDiagnoses.length > 0) {
+                                        console.log('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes from candidate', testId);
+                                        sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
+                                            diagnoses: allDiagnoses,
+                                            patientId: benhnhanId,
+                                            khambenhId: testId,
+                                            patientName: patientName
+                                        }, requestId);
+                                        return;
+                                    } else if (detailIds.length > 0) {
+                                        // Mode 2: Gọi NT.024.2.DETAIL cho các tờ điều trị vừa tìm được
+                                        detailIds = [...new Set(detailIds)].slice(0, 5); // Lấy tối đa 5 tờ gần nhất tránh đơ UI
+                                        console.log('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
+                                        
+                                        for (let dId of detailIds) {
+                                            try {
+                                                const resObj = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(dId), 0);
+                                                console.log('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
+                                                
+                                                let records = [];
+                                                if (typeof resObj === 'string' && resObj.trim() !== '') records = JSON.parse(resObj);
+                                                else if (typeof resObj === 'object' && resObj !== null) records = resObj;
+                                                
+                                                // Handle nested rows array if exists
+                                                if (records && records.rows && Array.isArray(records.rows)) {
+                                                    records = records.rows;
+                                                } else if (!Array.isArray(records)) {
+                                                    records = [records];
+                                                }
+                                                
+                                                records.forEach(item => {
+                                                    if (!item) return;
+                                                    let combinedIcd = '';
+                                                    
+                                                    // Universal extraction: Scan ALL strings in the object
+                                                    Object.values(item).forEach(val => {
+                                                        if (typeof val === 'string' && val.length >= 3) {
+                                                            combinedIcd += ',' + val;
+                                                        }
+                                                    });
+
+                                                    combinedIcd = combinedIcd.toUpperCase();
+                                                    const m = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                                                    if (m) {
+                                                        m.forEach(code => {
+                                                            if (!allDiagnoses.some(d => d.code === code)) {
+                                                                allDiagnoses.push({ code: code, is_primary: allDiagnoses.length === 0 });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            } catch (err) { 
+                                                console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
+                                            }
+                                        }
+
+                                        if (allDiagnoses.length > 0) {
+                                            console.log('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes from candidate', testId);
+                                            sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
+                                                diagnoses: allDiagnoses,
+                                                patientId: benhnhanId,
+                                                khambenhId: testId,
+                                                patientName: patientName
+                                            }, requestId);
+                                            return;
+                                        }
+                                    }
+                                }
+                                
+                                // Nếu không có data hoặc có data nhưng không có ICD -> Thử ID khác
+                                tryNext();
+                            } catch (_e) { tryNext(); }
+                        } else {
+                            tryNext();
+                        }
+                    }
+                };
+                xhr.send(null);
+            };
+
+            tryNext();
+
+        } catch (_e) {
+            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '' }, requestId);
         }
     }
 

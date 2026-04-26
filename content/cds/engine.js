@@ -48,7 +48,27 @@ const ALIAS_MAP = {
     codein: 'codeine',
     dexamethason: 'dexamethasone',
     prednisolon: 'prednisolone',
-    methylprednisolon: 'methylprednisolone'
+    methylprednisolon: 'methylprednisolone',
+
+    // BHYT Guard v1.3 — Thuốc bị xuất toán Q1/2026
+    itoprid: 'itopride',
+    trimetazidin: 'trimetazidine',
+    'trimetazidine dihydrochloride': 'trimetazidine',
+    vastarel: 'trimetazidine',
+    simethicon: 'simethicone',
+    simelox: 'simethicone',
+    bostogel: 'simethicone',
+    gelactive: 'simethicone',
+    trihexyphenidyl: 'trihexyphenidyl',
+    alusi: 'trihexyphenidyl',
+    mezatrihexyl: 'trihexyphenidyl',
+    fenofibrat: 'fenofibrate',
+    dutasterid: 'dutasteride',
+    dutabit: 'dutasteride',
+    dutaon: 'dutasteride',
+    tamsulosin: 'tamsulosin',
+    alanboss: 'tamsulosin',
+    prolufo: 'tamsulosin'
 };
 
 function applySuffixNormalization(token) {
@@ -573,6 +593,90 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
         }
     }
     return alerts;
+}
+
+// ===== PHASE 2: BHYT PRE-CLAIM AUDIT (On-demand) =====
+
+/**
+ * Chạy kiểm tra BHYT nâng cao — CHỈ KHI USER BẤM NÚT.
+ * Không chạy tự động để tránh ảnh hưởng hiệu năng.
+ */
+export async function runBhytAuditRules(context) {
+    const normalized = await normalizeContext(context);
+    const alerts = [];
+
+    // 1. Kiểm tra mã bệnh Z (Khám sức khỏe) cho BN BHYT
+    const zCheckCodes = ['Z00', 'Z01', 'Z02'];
+    const hasZCode = normalized.icd_codes.some(icd => 
+        zCheckCodes.some(z => icd.toUpperCase().startsWith(z))
+    );
+    if (hasZCode && normalized.normalized_drugs.length > 0) {
+        alerts.push({
+            rule_code: 'BHYT-AUDIT-Z-CODE',
+            domain: 'bhyt_audit',
+            severity: 'high',
+            title: 'Mã ICD Khám sức khỏe + Kê thuốc BHYT',
+            effect: 'ICD chính là Z00-Z02 (Khám sức khỏe), BHYT có thể từ chối thanh toán thuốc ngoài danh mục khám sức khỏe.',
+            recommendation: 'Kiểm tra lại: Nếu BN có bệnh lý thực sự, đổi ICD chính sang mã bệnh phù hợp.',
+            matched_items: { icd: normalized.icd_codes.filter(c => zCheckCodes.some(z => c.toUpperCase().startsWith(z))) }
+        });
+    }
+
+    // 2. Insulin không kèm ĐTĐ — gợi ý R73.9 nếu stress hyperglycemia
+    const hasInsulin = normalized.normalized_drugs.includes('insulin');
+    const hasDiabetesICD = normalized.icd_codes.some(icd => {
+        const upper = icd.toUpperCase();
+        return upper.startsWith('E10') || upper.startsWith('E11') || upper.startsWith('E12') || upper.startsWith('E13') || upper.startsWith('E14');
+    });
+    const hasR73 = normalized.icd_codes.some(icd => icd.toUpperCase().startsWith('R73'));
+    
+    if (hasInsulin && !hasDiabetesICD && !hasR73) {
+        // Kiểm tra glucose trong labs
+        const labs = context.labs || [];
+        const glucoseLab = labs.find(l => l.code === 'glucose' || l.code === 'Glucose');
+        const highGlucose = glucoseLab && glucoseLab.value > 11.1;
+        
+        alerts.push({
+            rule_code: 'BHYT-AUDIT-INSULIN-NO-DM',
+            domain: 'bhyt_audit',
+            severity: 'high',
+            title: 'Insulin không kèm chẩn đoán ĐTĐ (DT22)',
+            effect: `Insulin đang được kê nhưng KHÔNG có mã ICD E10-E14 (ĐTĐ) hoặc R73 (Tăng glucose máu).${highGlucose ? ' Glucose = ' + glucoseLab.value + ' mmol/L → Có thể do stress hyperglycemia.' : ''}`,
+            recommendation: highGlucose
+                ? 'Gợi ý: Bổ sung mã R73.9 (Tăng glucose máu không xác định) để hợp thức hóa.'
+                : 'Bổ sung mã ICD E10-E14 (ĐTĐ) hoặc R73.9 nếu tăng glucose máu phản ứng.',
+            matched_items: { drug: ['insulin'], icd: normalized.icd_codes }
+        });
+    }
+
+    // 3. Trimetazidine + Parkinson — CHỐNG CHỈ ĐỊNH (chuyên đề giám định)
+    const hasTrimetazidine = normalized.normalized_drugs.includes('trimetazidine');
+    const hasParkinsonICD = normalized.icd_codes.some(icd => {
+        const upper = icd.toUpperCase();
+        return upper.startsWith('G20') || upper.startsWith('G21');
+    });
+    if (hasTrimetazidine && hasParkinsonICD) {
+        alerts.push({
+            rule_code: 'BHYT-AUDIT-TRIMETAZIDINE-PARKINSON',
+            domain: 'bhyt_audit',
+            severity: 'high',
+            title: '⛔ Trimetazidine + Parkinson — Chống chỉ định!',
+            effect: 'Trimetazidine CHỐNG CHỈ ĐỊNH tuyệt đối ở BN Parkinson. Đây là chuyên đề giám định BHYT — 100% bị xuất toán.',
+            recommendation: 'Ngừng Trimetazidine NGAY. Chuyển sang Nicorandil/Ivabradine.',
+            matched_items: { drug: ['trimetazidine'], icd: normalized.icd_codes.filter(c => c.toUpperCase().startsWith('G20') || c.toUpperCase().startsWith('G21')) }
+        });
+    }
+
+    // 4. Bơm tiêm Insulin (VTYT DT61) không có thuốc tiêm tương ứng
+    // (Placeholder — cần dữ liệu VTYT từ extractor, sẽ mở rộng khi có)
+
+    return {
+        alerts,
+        auditType: 'bhyt_preclaim',
+        timestamp: new Date().toISOString(),
+        drugCount: normalized.normalized_drugs.length,
+        icdCount: normalized.icd_codes.length
+    };
 }
 
 export async function analyzeLocally(context, filterLow = true) {
