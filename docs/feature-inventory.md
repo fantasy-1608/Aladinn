@@ -1,6 +1,6 @@
 # 🧞 Aladinn — Feature Inventory v1.0
 
-> Bảng kiểm kê toàn bộ chức năng của Aladinn v1.1.7
+> Bảng kiểm kê toàn bộ chức năng của Aladinn v1.1.8
 > Cập nhật: 2026-04-25
 
 ---

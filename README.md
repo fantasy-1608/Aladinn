@@ -6,7 +6,7 @@
 _Giọng nói AI · Quét dữ liệu · Ký số tự động · Cảnh báo BHYT & Lâm sàng_
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.7-0052cc?style=for-the-badge&logo=git&logoColor=white" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.1.8-0052cc?style=for-the-badge&logo=git&logoColor=white" alt="Version" />
   <img src="https://img.shields.io/badge/Chrome-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Extension" />
   <img src="https://img.shields.io/badge/build-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite Build" />
   <img src="https://img.shields.io/badge/license-Custom-success?style=for-the-badge" alt="License" />
@@ -25,13 +25,14 @@ _Giọng nói AI · Quét dữ liệu · Ký số tự động · Cảnh báo BH
 
 ---
 
-## 🌟 Có gì mới trong bản v1.1.7?
+## 🌟 Có gì mới trong bản v1.1.8?
 
-- **Khắc phục lỗi xác thực thời gian BHYT:** Hoàn thiện bộ quy tắc kiểm tra thời gian cho các xét nghiệm "Đường máu mao mạch". Áp dụng chiến lược mapping dữ liệu lai (Hybrid Mapping) giữa Detail-level API và Sheet-level API để đảm bảo thời gian Thực hiện và Trả kết quả luôn khớp 100% với giao diện hiển thị của HIS.
-- **Hợp nhất Timeline Lâm sàng & Thuốc:** Giao diện hiển thị chi tiết bệnh nhân nay tích hợp cả Diễn tiến lâm sàng và Thuốc sử dụng trên cùng một trục thời gian duy nhất. Dễ dàng theo dõi thay đổi chỉ định thuốc theo từng ngày bệnh!
-- **Khử trùng lặp Dữ liệu Thuốc thông minh:** Cải tiến thuật toán hiển thị `Tên Thuốc (Hoạt Chất) (Hàm Lượng)`. Tự động ẩn Hoạt chất nếu trùng khớp hoàn toàn với Tên thương mại, giúp giao diện trực quan và gọn gàng hơn.
-- **Nâng cấp API Bridge:** Bổ sung cơ chế fallback tự động truy vấn qua 8 API khác nhau của hệ thống VNPT HIS để luôn lấy được thông tin Dược lý chính xác nhất.
-- **Tối ưu hiệu suất & Code siêu sạch:** Đã loại bỏ hoàn toàn các lỗi linter, dọn dẹp mã nguồn rác (unused variables/globals) để extension nhẹ nhàng và ổn định hơn bao giờ hết.
+- **✨ [MỚI] Tự động điền phiếu Chuyển viện:** Thêm nút FAB (🚑) tự động xuất hiện khi mở form "Thông tin chuyển viện". Nhấn nút để extension lấy đầy đủ dữ liệu lâm sàng (Dấu hiệu lâm sàng, Quá trình bệnh lý, Kết quả CLS, Tình trạng người bệnh, Thuốc, Hướng điều trị) và điền vào form một lần.
+- **✨ [MỚI] Hỗ trợ Grid Ngoại trú (#grdDSBenhNhan):** Extension nay nhận diện và load bệnh nhân từ trang Ngoại trú (`NGT02K001_KB_MHC`). Khác với Nội trú (row ID = patient ID), Ngoại trú dùng `KHAMBENHID` từ cell — đã được xử lý tự động.
+- **🔧 Sửa lỗi nghiêm trọng: Cross-frame `instanceof` Bug:** FAB Chuyển viện không hiện do `dlgXuTriifmView` nằm trong iframe lồng (`dlgPhieuKBifmView`) — `instanceof HTMLIFrameElement` trả về `false` khi element thuộc window context khác. Đã đổi sang `tagName !== 'IFRAME'` để tương thích tuyệt đối.
+- **🔧 Sửa lỗi phát hiện form sai vị trí:** FAB Chuyển viện xuất hiện nhầm trong module "Hỏi bệnh". Đã hardcode kiểm tra `iframe.id === 'dlgXuTriifmView'` và loại bỏ các field selector mơ hồ (`txtQUATRINHBENHLY`).
+- **🔧 Chuẩn hóa dữ liệu chẩn đoán:** Loại bỏ các artifact không phải lâm sàng (CĐQT phải, HINHANH, QUANGTUYEN, DICHVU) khỏi pipeline trích xuất chẩn đoán trong `REQ_FETCH_TREATMENT` bridge.
+- **🧹 Dọn dẹp Linter:** Xóa toàn bộ lỗi `var` redeclaration trong `api-bridge.js` và biến không dùng trong `clinical-fill.js`.
 
 ---
 

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Aladinn - VNPT HIS AI Assistant",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "description": "Tiện ích mở rộng siêu cấp vũ trụ dành cho hệ thống VNPT HIS: Giọng nói AI, Quét dữ liệu, Ký số tự động",
     "author": "Huỳnh Trung Anh",
     "permissions": [
@@ -23,7 +23,7 @@
             "48": "assets/icons/icon48.png",
             "128": "assets/icons/icon128.png"
         },
-        "default_title": "Aladinn — VNPT HIS Assistant v1.1.7"
+        "default_title": "Aladinn — VNPT HIS Assistant v1.1.8"
     },
     "icons": {
         "16": "assets/icons/icon16.png",

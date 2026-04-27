@@ -22,7 +22,7 @@
     if (typeof HIS !== 'undefined' && HIS.init) {
         HIS.init({
             name: 'Aladinn',
-            version: window.Aladinn?.VERSION || '1.1.7',
+            version: window.Aladinn?.VERSION || '1.1.8',
             prefix: 'aladinn',
             emoji: '🧞'
         });
