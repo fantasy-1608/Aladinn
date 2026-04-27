@@ -12,64 +12,115 @@ const VNPTRowObserver = (function () {
     let _lastSelectedId = '';
 
     /**
+     * Lấy patient ID từ row của grid ngoại trú (#grdDSBenhNhan)
+     * Row ID ngoại trú là số thứ tự, cần lấy KHAMBENHID từ cell
+     * @param {HTMLElement} tr
+     * @returns {string|null}
+     */
+    function getOutpatientRowId(tr) {
+        const cell = tr.querySelector(
+            "td[aria-describedby$='_KHAMBENHID'], td[aria-describedby*='KHAMBENHID']"
+        );
+        const id = cell ? cell.textContent.trim() : '';
+        return id.length > 2 ? id : null;
+    }
+
+    /**
      * Initialize listeners for patient selection
      * @param {Function} onSelect - Callback when a patient is selected
      */
     function init(onSelect) {
-        // 1. Mouse Click Listener (primary)
+        // 1. Mouse Click Listener (primary) — hỗ trợ cả nội trú và ngoại trú
         document.addEventListener('mousedown', (e) => {
             const target = /** @type {HTMLElement} */ (e.target);
             if (!target) return;
 
             const tr = target.closest('tr.ui-widget-content');
-            if (tr && tr.id && tr.id.length > 5) {
-                const grid = tr.closest('#grdBenhNhan');
-                if (grid) {
-                    _lastSelectedId = tr.id;
-                    onSelect(tr.id);
+            if (!tr) return;
+
+            // Grid nội trú
+            if (tr.closest('#grdBenhNhan') && tr.id && tr.id.length > 5) {
+                _lastSelectedId = tr.id;
+                onSelect(tr.id);
+                return;
+            }
+
+            // Grid ngoại trú
+            if (tr.closest('#grdDSBenhNhan')) {
+                const pid = getOutpatientRowId(tr);
+                if (pid && pid !== _lastSelectedId) {
+                    _lastSelectedId = pid;
+                    onSelect(pid);
                 }
             }
         }, true);
 
-        // 2. MutationObserver: Watch for class changes on grid rows (replaces setInterval)
+        // 2. MutationObserver: Watch for class changes on grid rows
         function startObserving() {
-            const grid = document.querySelector('#grdBenhNhan');
-            if (!grid) {
-                // Grid not ready yet — retry with a short delay
-                setTimeout(startObserving, 2000);
-                return;
+            // Grid nội trú
+            const inpatientGrid = document.querySelector('#grdBenhNhan');
+            if (inpatientGrid && !inpatientGrid._aladinnObserved) {
+                inpatientGrid._aladinnObserved = true;
+                const obs = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            const target = mutation.target;
+                            if (target.tagName === 'TR' &&
+                                target.classList.contains('ui-state-highlight') &&
+                                target.id && target.id !== _lastSelectedId) {
+                                _lastSelectedId = target.id;
+                                onSelect(target.id);
+                            }
+                        }
+                        if (mutation.type === 'childList') {
+                            const activeRow = inpatientGrid.querySelector('tr.ui-state-highlight');
+                            if (activeRow && activeRow.id && activeRow.id !== _lastSelectedId) {
+                                _lastSelectedId = activeRow.id;
+                                onSelect(activeRow.id);
+                            }
+                        }
+                    }
+                });
+                obs.observe(inpatientGrid, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+                if (_observer) _observer.disconnect();
+                _observer = obs;
             }
 
-            if (_observer) _observer.disconnect();
-
-            _observer = new MutationObserver((mutations) => {
-                for (const mutation of mutations) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        const target = mutation.target;
-                        if (target.tagName === 'TR' &&
-                            target.classList.contains('ui-state-highlight') &&
-                            target.id && target.id !== _lastSelectedId) {
-                            _lastSelectedId = target.id;
-                            onSelect(target.id);
+            // Grid ngoại trú
+            const outpatientGrid = document.querySelector('#grdDSBenhNhan');
+            if (outpatientGrid && !outpatientGrid._aladinnObserved) {
+                outpatientGrid._aladinnObserved = true;
+                const obs = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            const target = mutation.target;
+                            if (target.tagName === 'TR' && target.classList.contains('ui-state-highlight')) {
+                                const pid = getOutpatientRowId(target);
+                                if (pid && pid !== _lastSelectedId) {
+                                    _lastSelectedId = pid;
+                                    onSelect(pid);
+                                }
+                            }
+                        }
+                        if (mutation.type === 'childList') {
+                            const activeRow = outpatientGrid.querySelector('tr.ui-state-highlight');
+                            if (activeRow) {
+                                const pid = getOutpatientRowId(activeRow);
+                                if (pid && pid !== _lastSelectedId) {
+                                    _lastSelectedId = pid;
+                                    onSelect(pid);
+                                }
+                            }
                         }
                     }
-                    // Also handle new rows being added
-                    if (mutation.type === 'childList') {
-                        const activeRow = grid.querySelector('tr.ui-state-highlight');
-                        if (activeRow && activeRow.id && activeRow.id !== _lastSelectedId) {
-                            _lastSelectedId = activeRow.id;
-                            onSelect(activeRow.id);
-                        }
-                    }
-                }
-            });
+                });
+                obs.observe(outpatientGrid, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+            }
 
-            _observer.observe(grid, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['class']
-            });
+            // Nếu chưa tìm thấy grid nào, retry
+            if (!inpatientGrid && !outpatientGrid) {
+                setTimeout(startObserving, 2000);
+            }
         }
 
         startObserving();
