@@ -94,7 +94,7 @@ const VNPTClinicalFill = (function () {
             if (!doc) return;
             const iframes = doc.querySelectorAll('iframe');
             for (const iframe of Array.from(iframes)) {
-                if (!(iframe instanceof HTMLIFrameElement)) continue;
+                if (!iframe || iframe.tagName !== 'IFRAME') continue; // dùng tagName thay instanceof để tránh cross-frame class mismatch
                 if (iframe.offsetWidth === 0 && iframe.offsetHeight === 0) continue;
 
                 let isHoiChan = false;
