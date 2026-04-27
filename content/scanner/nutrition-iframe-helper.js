@@ -8,7 +8,7 @@
  */
 (function () {
     'use strict';
-    var PARENT_ORIGIN = window.location.origin;
+    var PARENT_ORIGIN = '*';
 
     var $ = window.jQuery || window.$;
 
@@ -19,7 +19,6 @@
 
     window._vnptNutritionHandler = function (event) {
         if (event.source !== window.parent) return;
-        if (event.origin !== PARENT_ORIGIN) return;
         if (!event.data || event.data.type !== 'NUTRITION_FILL_FORM') return;
 
         try {

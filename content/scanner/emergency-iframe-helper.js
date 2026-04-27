@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = window.location.origin;
+    var PARENT_ORIGIN = '*';
     var $ = window.jQuery || window.$;
 
     if (window._vnptEmergencyHandler) {
@@ -17,7 +17,6 @@
 
     window._vnptEmergencyHandler = function (event) {
         if (event.source !== window.parent) return;
-        if (event.origin !== PARENT_ORIGIN) return;
         
         if (!event.data || (event.data.type !== 'EMERGENCY_FILL_FORM' && event.data.type !== 'EMERGENCY_FILL_FORM_API')) return;
 
@@ -284,7 +283,7 @@
     console.log('[Aladinn/Emergency] DOM Scanner helper injected and listening.');
 
     if (window.parent !== window) {
-        window.parent.postMessage({ type: 'EMERGENCY_HELPER_READY' }, '*');
+        window.parent.postMessage({ type: 'EMERGENCY_HELPER_READY' }, PARENT_ORIGIN);
     }
 
     function setVal(el, val) {

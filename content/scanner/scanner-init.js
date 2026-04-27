@@ -30,6 +30,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window.VNPTHistory) window.VNPTHistory.init();
             if (window.VNPTNutrition) window.VNPTNutrition.init();
             if (window.VNPTEmergency) window.VNPTEmergency.init();
+            if (window.VNPTClinicalFill) window.VNPTClinicalFill.init();
             if (window.Aladinn?.Scanner?.QuickTimeEdit) window.Aladinn.Scanner.QuickTimeEdit.init();
 
             // 3. Shortcuts
@@ -168,11 +169,40 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         });
                     };
 
-                    const [result, drugsResult, historyData, treatmentList] = await Promise.all([
+                    const fetchClinicalSummaryFromBridge = (rowId) => {
+                        return new Promise((resolve) => {
+                            const requestId = 'clin_' + Date.now().toString() + Math.random().toString().slice(2);
+                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
+                            
+                            const listener = (event) => {
+                                if (event.data && event.data.type === 'FETCH_CLINICAL_SUMMARY_RESULT' && event.data.requestId === requestId) {
+                                    window.removeEventListener('message', listener);
+                                    // sendResult spreads data fields directly — chanDoanMoiNhat is at event.data level
+                                    resolve(event.data);
+                                }
+                            };
+                            window.addEventListener('message', listener);
+                            
+                            window.postMessage({
+                                type: 'REQ_FETCH_CLINICAL_SUMMARY',
+                                rowId: rowId,
+                                requestId: requestId,
+                                token: token
+                            }, window.location.origin);
+                            
+                            setTimeout(() => {
+                                window.removeEventListener('message', listener);
+                                resolve({});
+                            }, 10000);
+                        });
+                    };
+
+                    const [result, drugsResult, historyData, treatmentList, clinicalSummary] = await Promise.all([
                         fetchLabsFromBridge(pid),
                         fetchDrugsFromBridge(pid),
                         fetchHistoryFromBridge(pid),
-                        fetchTreatmentFromBridge(pid)
+                        fetchTreatmentFromBridge(pid),
+                        fetchClinicalSummaryFromBridge(pid)
                     ]);
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
@@ -193,9 +223,50 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                     } catch (_e) {}
 
+                    let diagHistory = [];
+                    if (treatmentList && treatmentList.length > 0) {
+                        // Extract all unique non-empty diagnoses from treatment list
+                        treatmentList.forEach(t => {
+                            let cd = t.CHANDOAN || '';
+                            if (t.CHANDOANKEMTHEO) cd += ' (' + t.CHANDOANKEMTHEO + ')';
+                            cd = cd.trim();
+                            if (cd && cd !== '-' && cd !== '()' && !diagHistory.includes(cd)) {
+                                diagHistory.push(cd);
+                            }
+                        });
+                        
+                        // Override current diagnosis with the latest sheet's diagnosis
+                        if (diagHistory.length > 0) {
+                            diagnosis = diagHistory[0];
+                        }
+                    }
+
+                    // Fallback: Use HSBA diagnosis if treatment sheets had no diagnosis data
+                    if (!diagnosis && historyData) {
+                        if (historyData.CHANDOAN) {
+                            diagnosis = historyData.CHANDOAN;
+                            if (historyData.CHANDOAN_KEMTHEO) {
+                                diagnosis += ' (' + historyData.CHANDOAN_KEMTHEO + ')';
+                            }
+                            // Put HSBA diagnosis as first entry in history
+                            if (!diagHistory.includes(diagnosis)) {
+                                diagHistory.unshift(diagnosis);
+                            }
+                        }
+                    }
+
+                    // Tối cao: Override bằng Clinical Summary chuẩn (loại bỏ CĐQT phải)
+                    if (clinicalSummary && clinicalSummary.chanDoanMoiNhat) {
+                        diagnosis = clinicalSummary.chanDoanMoiNhat;
+                        if (!diagHistory.includes(diagnosis)) {
+                            diagHistory.unshift(diagnosis);
+                        }
+                    }
+
                     const patientInfo = { 
                         age, 
                         diagnosis,
+                        diagHistory,
                         clinicalData: {
                             history: historyData || {},
                             treatments: treatmentList || []
@@ -635,9 +706,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
             // Dump ALL fields from first detail raw object
             if (s._detailRaw) {
+                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 const allFields = Object.entries(s._detailRaw)
                     .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
-                    .map(([k, v]) => `<b>${k}</b>=${String(v).substring(0, 40)}`)
+                    .map(([k, v]) => `<b>${escapeHtml(k)}</b>=${escapeHtml(String(v).substring(0, 40))}`)
                     .join(' | ');
                 debugParts.push('🔍 Detail RAW (all non-empty): ' + allFields);
             }
@@ -1425,8 +1497,28 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         const defaultActiveTab = hasLamsangData ? 0 : 1;
 
-        const patientAgeHtml = patientInfo.age ? `<span style="font-weight: 500; opacity:0.8;"> - Tuổi: ${patientInfo.age}</span>` : '';
-        const patientDiagHtml = patientInfo.diagnosis ? `<div style="font-size:12px; color:#a18764; margin-top:6px; background:rgba(212,162,90,0.1); padding:4px 8px; border-radius:4px; display:inline-block;">Chẩn đoán: ${patientInfo.diagnosis}</div>` : '';
+        const patientAgeHtml = patientInfo.age ? `<span style="font-weight: 500; color:#e8dcc8; opacity:0.9; margin-top:4px; display:inline-block;">- Năm sinh: ${patientInfo.age}</span>` : '';
+        let patientDiagHtml = '';
+        if (patientInfo.diagnosis) {
+            if (patientInfo.diagHistory && patientInfo.diagHistory.length > 1) {
+                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                const historyList = patientInfo.diagHistory.map(d => `<li style="margin-bottom:2px;">${escapeHtml(d)}</li>`).join('');
+                patientDiagHtml = `
+                    <details style="margin-top:6px;">
+                        <summary style="font-size:13px; color:#d4a25a; cursor:pointer; font-weight:500; outline:none; user-select:none; display:inline-block; background:rgba(212,162,90,0.1); padding:4px 8px; border-radius:4px; transition:0.2s;">
+                            Chẩn đoán (Mới nhất): <span style="color:#e8dcc8; font-weight:400;">${escapeHtml(patientInfo.diagnosis)}</span> <span style="font-size:11px; opacity:0.7; margin-left:4px;">▼ (${patientInfo.diagHistory.length})</span>
+                        </summary>
+                        <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.2); border-radius:6px; font-size:12px; color:#e8dcc8; max-height:100px; overflow-y:auto;">
+                            <div style="color:#a18764; margin-bottom:4px; font-weight:600;">Lịch sử chẩn đoán (Từ khi vào viện):</div>
+                            <ul style="margin:0; padding-left:16px; line-height:1.5;">${historyList}</ul>
+                        </div>
+                    </details>
+                `;
+            } else {
+                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                patientDiagHtml = `<div style="font-size:13px; color:#d4a25a; margin-top:6px; background:rgba(212,162,90,0.1); padding:4px 8px; border-radius:4px; display:inline-block;">Chẩn đoán: <span style="color:#e8dcc8; font-weight:400;">${escapeHtml(patientInfo.diagnosis)}</span></div>`;
+            }
+        }
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml ? `<div style="margin-top:2px;">${patientAgeHtml}${patientDiagHtml}</div>` : '';
 
         const tabsHeaderHtml = `

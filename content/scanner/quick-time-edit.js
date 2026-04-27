@@ -29,7 +29,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                 if (ifr.contentWindow && ifr.contentWindow.document) {
                     targetDocs.push(ifr.contentWindow.document);
                 }
-            } catch (e) {} // Bỏ qua lỗi cross-origin
+            } catch (_e) {} // Bỏ qua lỗi cross-origin
         });
 
         let nativeBtn = null;
@@ -185,18 +185,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
         return latestTime;
     }
 
-    /**
-     * Format Date object -> YYYY-MM-DDThh:mm (cho input datetime-local)
-     */
-    function dateToDatetimeLocal(d) {
-        if (!d) return '';
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const hh = String(d.getHours()).padStart(2, '0');
-        const min = String(d.getMinutes()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-    }
+
 
     /**
      * Mở modal HIS trước, sau đó hiển thị bảng điều khiển Aladinn bên cạnh để realtime update
@@ -543,7 +532,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
         let targetDocs = [document];
         try {
             if (window.top && window.top.document) targetDocs.push(window.top.document);
-        } catch(e) {}
+        } catch(_e) {}
         if (activeDoc && !targetDocs.includes(activeDoc)) targetDocs.push(activeDoc);
         
         try {
@@ -553,9 +542,9 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                     if (ifr.contentWindow && ifr.contentWindow.document) {
                         targetDocs.push(ifr.contentWindow.document);
                     }
-                } catch (e) {}
+                } catch (_e) {}
             });
-        } catch(e) {}
+        } catch(_e) {}
 
         // Tìm dialog "Sửa ngày trả kết quả"
         let targetDialog = null;
@@ -569,7 +558,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                     return text.includes('Sửa ngày trả kết quả') || text.includes('Sửa thời gian trả kết quả');
                 });
                 if (targetDialog) break;
-            } catch(e) {}
+            } catch(_e) {}
         }
 
         if (targetDialog) {
@@ -585,7 +574,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                             callback(doc);
                             return;
                         }
-                    } catch (e) {
+                    } catch (_e) {
                         // Cross-origin error or not loaded yet
                     }
                 } else {
@@ -596,7 +585,7 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                         return;
                     }
                 }
-            } catch(e) {}
+            } catch(_e) {}
         }
         
         setTimeout(() => waitForIframeReady(activeDoc, attempts + 1, callback), 200);

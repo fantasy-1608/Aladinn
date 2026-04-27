@@ -20,5 +20,6 @@ import './store.js';
 import './history.js';
 import './nutrition.js';
 import './emergency.js';
+import './clinical-fill.js';
 import './quick-time-edit.js';
 import './scanner-init.js';
