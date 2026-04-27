@@ -238,7 +238,7 @@ export async function initCDS(enabled = true, filter = true) {
         }
     }
 
-    // MutationObserver: theo dõi khi iframe phiếu thuốc xuất hiện/biến mất
+    // MutationObserver: bắt nhanh khi jBox mở ở top frame
     if (modalObserver) modalObserver.disconnect();
     
     modalObserver = new MutationObserver(() => {
@@ -251,6 +251,19 @@ export async function initCDS(enabled = true, filter = true) {
     });
     
     modalObserver.observe(document.body, { childList: true, subtree: true });
+
+    // setInterval fallback: bắt khi jBox mở bên trong iframe lồng (ifmView, v.v.)
+    // modalObserver không thể detect DOM changes trong inner frame
+    if (!window._cdsScanContextInterval) {
+        window._cdsScanContextInterval = setInterval(() => {
+            const ctx = detectScanContext();
+            if (ctx.enabled && !isModalOpen) {
+                startScanning(ctx.mode);
+            } else if (!ctx.enabled && isModalOpen) {
+                stopScanning();
+            }
+        }, 1500);
+    }
 
     // Kiểm tra ngay
     const ctx = detectScanContext();
