@@ -19,6 +19,7 @@ let modalObserver = null;
 let lastScanHash = '';
 let lastScanResultString = '';
 let isModalOpen = false;
+let currentScanMode = ''; // 'realtime' | 'oneshot' | ''
 
 // Dữ liệu được gửi từ iframe helper
 let iframeDrugs = [];
@@ -119,6 +120,7 @@ function startScanning(mode = 'oneshot') {
     
     console.log('[Aladinn CDS] ▶️ Context detected — mode:', mode);
     isModalOpen = true;
+    currentScanMode = mode;
     
     // RESET thuốc cũ nhưng GIỮ LẠI chẩn đoán (từ tờ điều trị/API snooping)
     lastScanHash = '';
@@ -145,6 +147,7 @@ function stopScanning() {
     if (!isModalOpen) return;
     console.log('[Aladinn CDS] ⏹️ Context lost — stop scanning.');
     isModalOpen = false;
+    currentScanMode = '';
     iframeDrugs = [];
     iframeDiagnoses = [];
     
@@ -257,10 +260,18 @@ export async function initCDS(enabled = true, filter = true) {
     if (!window._cdsScanContextInterval) {
         window._cdsScanContextInterval = setInterval(() => {
             const ctx = detectScanContext();
-            if (ctx.enabled && !isModalOpen) {
-                startScanning(ctx.mode);
-            } else if (!ctx.enabled && isModalOpen) {
+            if (!ctx.enabled && isModalOpen) {
+                // Form đã đóng, không còn context nào → dừng hẳn
                 stopScanning();
+            } else if (ctx.enabled) {
+                if (!isModalOpen) {
+                    // Chưa quét → bắt đầu
+                    startScanning(ctx.mode);
+                } else if (ctx.mode !== currentScanMode) {
+                    // Mode thay đổi (VD: realtime → oneshot khi đóng modal)
+                    // → Dừng session cũ, bắt đầu session mới với đúng mode
+                    startScanning(ctx.mode);
+                }
             }
         }, 1500);
     }
