@@ -68,12 +68,12 @@ const VNPTStorage = (function () {
         const results = await getResults();
         if (!results) return;
 
-        let count = 0;
+        let _count = 0;
         Object.keys(results).forEach(rowId => {
             const tr = document.getElementById(rowId);
             if (tr && results[rowId] === 'UNSENT') {
                 applyStatusFn(tr);
-                count++;
+                _count++;
             }
         });
     }

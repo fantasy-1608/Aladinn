@@ -77,7 +77,7 @@ HIS.Storage = {
         try {
             const value = localStorage.getItem(key);
             return value ? JSON.parse(value) : null;
-        } catch (e) {
+        } catch (_e) {
             return null;
         }
     },

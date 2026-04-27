@@ -6,7 +6,7 @@
  */
 
 const VNPTUI = (function () {
-    const DARK_MODE_KEY = 'vnpt_dark_mode';
+    const _DARK_MODE_KEY = 'vnpt_dark_mode';
 
     /**
      * Khởi tạo UI module

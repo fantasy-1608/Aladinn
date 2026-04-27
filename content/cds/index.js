@@ -160,6 +160,22 @@ function stopScanning() {
     CDSUI.hide();
 }
 
+// Helper: gửi message đệ quy đến mọi iframe visible (bao gồm iframe lồng)
+function sendRequestToVisibleIframes(doc, messageType) {
+    const iframes = doc.querySelectorAll('iframe');
+    iframes.forEach(iframe => {
+        const rect = iframe.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
+        if (!isVisible) return;
+        try {
+            iframe.contentWindow?.postMessage({ type: messageType }, window.location.origin);
+            if (iframe.contentDocument) {
+                sendRequestToVisibleIframes(iframe.contentDocument, messageType);
+            }
+        } catch (_e) { /* CORS */ }
+    });
+}
+
 // Kiểm tra ngữ cảnh cần quét và trả về mode
 function detectScanContext() {
     // 1. Tìm iframe "Tạo phiếu thuốc từ kho" (form nhập thuốc) → realtime
@@ -340,17 +356,8 @@ window.addEventListener('ALADINN_MANUAL_SCAN', () => {
     if (isModalOpen) {
         lastScanHash = '';
         lastScanResultString = '';
-        // Yêu cầu iframe helper gửi lại dữ liệu mới nhất
-        const iframes = document.querySelectorAll('iframe');
-        iframes.forEach(iframe => {
-            const rect = iframe.getBoundingClientRect();
-            const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
-            if (isVisible) {
-                try {
-                    iframe.contentWindow?.postMessage({ type: 'CDS_REQUEST_DRUGS' }, window.location.origin);
-                } catch (_e) { /* CORS */ }
-            }
-        });
+        // Yêu cầu iframe helper (bao gồm lồng) gửi lại dữ liệu mới nhất
+        sendRequestToVisibleIframes(document, 'CDS_REQUEST_DRUGS');
         setTimeout(runScan, 200);
     }
 });

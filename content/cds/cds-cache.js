@@ -28,6 +28,9 @@ class CDSCacheManager {
         // Cache để check tránh thêm trùng
         this.medsSet = new Set();
         this.diagSet = new Set();
+        
+        // Patient key chuẩn: benhnhanId_khambenhId
+        this._patientKey = null;
     }
 
     /**
@@ -58,22 +61,31 @@ class CDSCacheManager {
         if (!payload) return;
         let hasChanges = false;
 
-        // Reset nếu khác bệnh nhân (chỉ reset nếu có ID mới và ID này không khớp với bất kỳ ID nào đã lưu)
+        // === Patient Key chuẩn: benhnhanId + khambenhId ===
+        // Ưu tiên composite key thay vì heuristic độ dài ID
+        if (payload.benhnhanId && payload.khambenhId) {
+            const newKey = `${payload.benhnhanId}_${payload.khambenhId}`;
+            if (this._patientKey && this._patientKey !== newKey) {
+                console.log(`[Aladinn CDS Cache] 🔄 Patient changed: ${this._patientKey} → ${newKey}. Full reset.`);
+                this.reset();
+                hasChanges = true;
+            }
+            this._patientKey = newKey;
+        }
+
+        // Legacy fallback: patientId đơn lẻ (khi chưa có benhnhanId/khambenhId)
         if (payload.patientId) {
             const pId = String(payload.patientId);
             if (this.cache.patientIds.size > 0 && !this.cache.patientIds.has(pId)) {
-                // Heuristic: Nếu ID có độ dài quá khác biệt (VD 7 số vs 10 số), có thể một bên là KHAMBENHID, bên kia là MABA
-                // Tạm thời KHÔNG reset nếu kích thước ID khác biệt hoàn toàn để tránh mất dữ liệu khi đổi API
-                const existingIds = Array.from(this.cache.patientIds);
-                const hasSameLength = existingIds.some(id => Math.abs(id.length - pId.length) < 2);
-                
-                if (hasSameLength) {
+                // Khi đã có composite key → tin tưởng composite key, chỉ thêm alias
+                if (this._patientKey) {
+                    this.cache.patientIds.add(pId);
+                } else {
+                    // Chưa có composite key → reset an toàn (tránh giữ nhầm BN cũ)
+                    console.log(`[Aladinn CDS Cache] ⚠️ Unknown patient ID ${pId} without composite key. Resetting.`);
                     this.reset();
                     this.cache.patientIds.add(pId);
                     hasChanges = true;
-                } else {
-                    // ID khác độ dài -> Coi như là bí danh (alias) của cùng một bệnh nhân
-                    this.cache.patientIds.add(pId);
                 }
             } else if (this.cache.patientIds.size === 0) {
                 this.cache.patientIds.add(pId);

@@ -156,9 +156,9 @@ function findElementInAllFrames(id, cache = null) {
                 try {
                     const doc = iframe.contentDocument || iframe.contentWindow.document;
                     if (doc) searchRecursive(doc);
-                } catch (e) { /* Cross-origin frame */ }
+                } catch (_e) { /* Cross-origin frame */ }
             }
-        } catch (e) { /* Restricted access */ }
+        } catch (_e) { /* Restricted access */ }
     }
 
     // Start recursive search
@@ -181,7 +181,7 @@ function findElementInAllFrames(id, cache = null) {
                 style.visibility !== 'hidden' &&
                 style.opacity !== '0'
             );
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     });
@@ -238,7 +238,7 @@ function fillFormField(selectorId, value, cache = null, highlightColor = 'rgba(1
         });
 
         return true;
-    } catch (e) {
+    } catch (_e) {
         el.value = value;
         return true;
     }

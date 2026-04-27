@@ -30,10 +30,14 @@ const VNPTConfig = {
     // DOM SELECTORS
     // ===========================================
     selectors: {
-        // Main Patient Grid
+        // Main Patient Grid — Nội trú
         patientGrid: '#grdBenhNhan',
         patientGridBody: '#grdBenhNhan tbody',
-        patientRows: '#grdBenhNhan tbody tr.ui-widget-content',
+        // Ngoại trú
+        patientGridOutpatient: '#grdDSBenhNhan',
+        patientGridOutpatientBody: '#grdDSBenhNhan tbody',
+        // Combined rows (scan-flow sẽ quét cả 2 grid)
+        patientRows: '#grdBenhNhan tbody tr.ui-widget-content, #grdDSBenhNhan tbody tr.ui-widget-content',
 
         // Drug Tab Grid
         drugTab: "a[href='#tcThuoc']",

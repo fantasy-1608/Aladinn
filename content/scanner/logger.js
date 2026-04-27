@@ -106,7 +106,7 @@ const VNPTLogger = (function () {
                     _chrome.storage.local.set({ [key]: existing.slice(-50) });
                 });
             }
-        } catch (e) { /* Storage full or unavailable */ }
+        } catch (_e) { /* Storage full or unavailable */ }
 
         return entry;
     }

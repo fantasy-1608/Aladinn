@@ -346,7 +346,7 @@ const VNPTClinicalFill = (function () {
 
         // Kết luận chẩn đoán: ưu tiên nguyên chẩn đoán từ tờ điều trị mới nhất (chính + kèm theo)
         // Fallback: chẩn đoán chính + kèm theo từ HSBA
-        let chanDoanFull = '';
+        let chanDoanFull;
         if (raw.chanDoanMoiNhat) {
             // Có tờ điều trị → lấy nguyên chẩn đoán
             chanDoanFull = raw.chanDoanMoiNhat;
@@ -481,6 +481,13 @@ const VNPTClinicalFill = (function () {
         window.VNPTRealtime?.showToast('⏳ Đang trích xuất dữ liệu lâm sàng...', 'info');
 
         const raw = await fetchClinicalData(pid);
+
+        // Guard: bridge timeout hoặc lỗi kết nối
+        if (raw.timeout || raw.success === false) {
+            window.VNPTRealtime?.showToast('❌ Không thể trích xuất dữ liệu lâm sàng. Vui lòng thử lại.', 'error');
+            return;
+        }
+
         const isHC = type === 'hoichan';
         const formData = isHC ? buildHoiChanData(raw) : buildChuyenVienData(raw);
 

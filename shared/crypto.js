@@ -61,7 +61,7 @@ HIS.Crypto = (function () {
                     type: 'CACHE_SESSION_PIN',
                     payload: { pin }
                 });
-            } catch (e) { /* Extension context may be invalidated */ }
+            } catch (_e) { /* Extension context may be invalidated */ }
         }
         return isValid;
     }

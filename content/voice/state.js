@@ -26,7 +26,7 @@ window.storageKey = null; // AES-GCM key derived from PIN
 // ========================================
 // State Getters & Setters
 // ========================================
-const State = {
+const _State = {
     // Getters
     getTranscript: () => window.transcript,
     getResults: () => window.currentResults,

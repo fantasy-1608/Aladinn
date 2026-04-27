@@ -30,6 +30,64 @@
         return _rateLimit.count <= RATE_LIMIT_MAX;
     }
 
+    /**
+     * 🔍 Resolve active patient grid — Hỗ trợ cả Nội trú và Ngoại trú
+     * Tìm grid thực sự chứa rowId hoặc có selrow, ưu tiên grid có dữ liệu.
+     * @param {string|null} rowId - Row ID từ content script
+     * @returns {{ grid: any, rowData: Object, isOutpatient: boolean, effectiveRowId: string|null }}
+     */
+    function resolveActiveGrid(rowId) {
+        const EMPTY = { grid: null, rowData: {}, isOutpatient: false, effectiveRowId: null };
+        if (!_$) return EMPTY;
+
+        const inGrid = _$('#grdBenhNhan');
+        const outGrid = _$('#grdDSBenhNhan');
+
+        // Helper: thử lấy rowData từ grid
+        function tryGrid(grid, rid) {
+            if (!grid || grid.length === 0 || !rid) return null;
+            try {
+                const rd = grid.jqGrid('getRowData', rid);
+                if (rd && Object.keys(rd).length > 0) return rd;
+            } catch (_e) { /* grid không khớp */ }
+            return null;
+        }
+
+        // Helper: lấy selrow từ grid
+        function getSelRow(grid) {
+            if (!grid || grid.length === 0) return null;
+            try { return grid.jqGrid('getGridParam', 'selrow') || null; }
+            catch (_e) { return null; }
+        }
+
+        // 1. Nếu có rowId: thử tìm chính xác ở Nội trú trước
+        if (rowId) {
+            const rdIn = tryGrid(inGrid, rowId);
+            if (rdIn) return { grid: inGrid, rowData: rdIn, isOutpatient: false, effectiveRowId: rowId };
+
+            // Ngoại trú: rowId có thể là KHAMBENHID (không phải jqGrid row id)
+            // Thử lấy selrow từ outGrid và check KHAMBENHID match
+            const outSel = getSelRow(outGrid);
+            if (outSel) {
+                const rdOut = tryGrid(outGrid, outSel);
+                if (rdOut && (rdOut.KHAMBENHID === rowId || outSel === rowId)) {
+                    return { grid: outGrid, rowData: rdOut, isOutpatient: true, effectiveRowId: outSel };
+                }
+            }
+        }
+
+        // 2. Fallback: lấy selrow từ grid có row đang chọn
+        for (const [g, isOp] of [[inGrid, false], [outGrid, true]]) {
+            const sel = getSelRow(g);
+            if (sel) {
+                const rd = tryGrid(g, sel);
+                if (rd) return { grid: g, rowData: rd, isOutpatient: isOp, effectiveRowId: sel };
+            }
+        }
+
+        return EMPTY;
+    }
+
     window.addEventListener('message', function (event) {
         // SECURITY: Allow local origin or any origin on the same domain if needed
         if (event.origin !== window.location.origin) return;
@@ -102,8 +160,7 @@
                 sendResult('FETCH_HISTORY_RESULT', rowId, { history: {} }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID;
 
             if (!hsbaId) {
@@ -154,8 +211,7 @@
                 sendResult('FETCH_ROOM_RESULT', rowId, { giuong: '' }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
 
             const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.005', khambenhId, 0);
@@ -183,13 +239,11 @@
                 return;
             }
 
-            const grid = _$('#grdBenhNhan');
-            if (grid.length === 0) {
+            const { grid, rowData, effectiveRowId } = resolveActiveGrid(rowId);
+            if (!grid || !effectiveRowId) {
                 sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
                 return;
             }
-            
-            const rowData = grid.jqGrid('getRowData', rowId);
             let finalVitals = { pulse: '', temperature: '', bloodPressure: '', weight: '', height: '', bmi: '', respiratoryRate: '', spo2: '' };
             let found = { w: false, h: false, bp: false };
             
@@ -312,8 +366,7 @@
                 sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: [] }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
             const benhnhanId = rowData.BENHNHANID || '';
 
             let candidates = [
@@ -453,7 +506,7 @@
                 return;
             }
             if (rowId && (!benhnhanId || !khambenhId)) {
-                const rowData = _$('#grdBenhNhan').jqGrid('getRowData', rowId);
+                const { rowData } = resolveActiveGrid(rowId);
                 benhnhanId = benhnhanId || rowData.BENHNHANID;
                 khambenhId = khambenhId || rowData.KHAMBENHID || rowData.MADIEUTRI;
             }
@@ -530,20 +583,11 @@
                 sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            if (grid.length === 0) {
+            const { grid, rowData, effectiveRowId } = resolveActiveGrid(rowId);
+            if (!grid || !effectiveRowId) {
                 sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
                 return;
             }
-            
-            // Lấy row đang chọn
-            const selectedId = rowId || grid.jqGrid('getGridParam', 'selrow');
-            if (!selectedId) {
-                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
-                return;
-            }
-            
-            const rowData = grid.jqGrid('getRowData', selectedId);
             const benhnhanId = rowData.BENHNHANID || '';
             const patientName = rowData.TENBENHNHAN || rowData.HOTEN || '';
             
@@ -755,8 +799,7 @@
                 sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
 
             let candidates = [
                 rowData.KHAMBENHID,
@@ -841,8 +884,7 @@
                 sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
             const uuid = _jsonrpc?.AjaxJson?.uuid;
             if (!uuid) {
                 sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
@@ -1022,25 +1064,8 @@
                 return;
             }
 
-            // Tìm grid: ưu tiên Nội trú, fallback Ngoại trú
-            let grid = _$('#grdBenhNhan');
-            let isOutpatient = false;
-            if (!grid || grid.length === 0) {
-                grid = _$('#grdDSBenhNhan');
-                isOutpatient = true;
-            }
-
-            // Fallback: nếu content script không gửi rowId, tự đọc selrow từ grid
-            let effectiveRowId = null;
-            let rowData = {};
-            try {
-                effectiveRowId = rowId || grid.jqGrid('getGridParam', 'selrow');
-                if (effectiveRowId) {
-                    rowData = grid.jqGrid('getRowData', effectiveRowId) || {};
-                }
-            } catch (_gridErr) {
-                console.warn('[API-Bridge] fetchClinicalSummary: Grid access error:', _gridErr);
-            }
+            // Resolve grid: tự động chọn Nội trú hoặc Ngoại trú
+            const { rowData, isOutpatient, effectiveRowId } = resolveActiveGrid(rowId);
 
             if (!effectiveRowId) {
                 console.warn('[API-Bridge] fetchClinicalSummary: Không tìm thấy bệnh nhân đang chọn');
@@ -1607,8 +1632,7 @@
                 sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: [] }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
 
             let candidates = [
                 rowData.TIEPNHANID,
@@ -1689,8 +1713,7 @@
                 sendResult('FETCH_LABS_RESULT', rowId, { labsData: [] }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
             
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
             const benhnhanId = rowData.BENHNHANID || '';
@@ -1952,8 +1975,7 @@
                 sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: [], patientName: '' }, requestId);
                 return;
             }
-            const grid = _$('#grdBenhNhan');
-            const rowData = grid.jqGrid('getRowData', rowId);
+            const { rowData } = resolveActiveGrid(rowId);
 
             const benhnhanId = rowData.BENHNHANID || '';
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
@@ -2104,11 +2126,11 @@
     function triggerPtttPrint(rowId) {
         try {
             if (!_$) return;
-            const grid = _$('#grdBenhNhan');
-            if (grid.length === 0) return;
+            const { grid, effectiveRowId } = resolveActiveGrid(rowId);
+            if (!grid || !effectiveRowId) return;
             
             // 1. Select patient first
-            grid.jqGrid('setSelection', rowId);
+            grid.jqGrid('setSelection', effectiveRowId);
 
             // 2. Click the PTTT tab repeatedly or wait until it's available
             let attempts = 0;

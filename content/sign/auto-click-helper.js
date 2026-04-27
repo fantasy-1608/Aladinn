@@ -52,8 +52,8 @@
             '#btnDONG', '#btnClose', '.btnClose'
         ];
         const docs = [document];
-        try { if (window.parent && window.parent.document && window.parent !== window) docs.push(window.parent.document); } catch(e){}
-        try { if (window.top && window.top.document && window.top !== window && window.top !== window.parent) docs.push(window.top.document); } catch(e){}
+        try { if (window.parent && window.parent.document && window.parent !== window) docs.push(window.parent.document); } catch(_e){}
+        try { if (window.top && window.top.document && window.top !== window && window.top !== window.parent) docs.push(window.top.document); } catch(_e){}
 
         for (const doc of docs) {
             for (const sel of closeSelectors) {
@@ -65,7 +65,7 @@
                             return;
                         }
                     }
-                } catch(e) {}
+                } catch(_e) {}
             }
         }
     }

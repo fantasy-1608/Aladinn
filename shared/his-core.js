@@ -53,7 +53,7 @@ HIS.Core = {
 
             // Trigger jQuery change nếu jQuery tồn tại
             if (typeof jQuery !== 'undefined') {
-                try { jQuery(input).trigger('change'); } catch (e) { /* ignore */ }
+                try { jQuery(input).trigger('change'); } catch (_e) { /* ignore */ }
             }
 
             return true;
@@ -91,7 +91,7 @@ HIS.Core = {
 
             // Trigger jQuery click nếu tồn tại
             if (typeof jQuery !== 'undefined') {
-                try { jQuery(element).trigger('click'); } catch (e) { /* ignore */ }
+                try { jQuery(element).trigger('click'); } catch (_e) { /* ignore */ }
             }
 
             return true;
@@ -125,7 +125,7 @@ HIS.Core = {
                 selectEl.dispatchEvent(new Event('change', { bubbles: true }));
 
                 if (typeof jQuery !== 'undefined') {
-                    try { jQuery(selectEl).trigger('change'); } catch (e) { /* ignore */ }
+                    try { jQuery(selectEl).trigger('change'); } catch (_e) { /* ignore */ }
                 }
                 return true;
             }
@@ -261,7 +261,7 @@ HIS.Core = {
                 await this.safeClick(closeBtn);
                 return true;
             }
-        } catch (e) {
+        } catch (_e) {
             // No modal found, that's ok
         }
         return false;

@@ -10,7 +10,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
 window.Aladinn.Sign.UI = (function () {
     'use strict';
 
-    const Logger = window.Aladinn?.Logger;
+    const _Logger = window.Aladinn?.Logger;
     let hudElement = null;
     let toastContainer = null;
 
@@ -521,7 +521,7 @@ window.Aladinn.Sign.UI = (function () {
         list.innerHTML = '<li class="his-history-empty">Chưa có bệnh nhân nào được xử lý</li>';
     }
 
-    function showCreatorWarning(mismatchDetails, iframe) {
+    function showCreatorWarning(mismatchDetails, _iframe) {
         hideCreatorWarning();
 
         const warning = document.createElement('div');

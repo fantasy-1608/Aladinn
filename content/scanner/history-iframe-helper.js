@@ -49,7 +49,7 @@
             // Các trường chuyên khoa cần điền mặc định nếu trống (Lấy từ caller)
             var specializedFields = event.data.specializedFields || [];
 
-            var promises = [];
+            var _promises = [];
             for (var key in mapping) {
                 var fieldId = mapping[key];
                 var val = data[key];

@@ -115,7 +115,7 @@ window.Aladinn.Sign.Utils = (function () {
             if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
                 return el;
             }
-        } catch (e) {
+        } catch (_e) {
             // Cross-origin
         }
 
@@ -134,13 +134,13 @@ window.Aladinn.Sign.Utils = (function () {
     function findSafeButton(root, searchTexts, excludeTexts = ['Hủy', 'Đóng', 'Thoát', 'Xóa', 'In', 'Excel', 'Tải', 'No', 'Không']) {
         try {
             let container = root;
-            let doc = root;
+            let _doc = root;
 
             if (root.document) {
                 container = root.document.body;
-                doc = root.document;
+                _doc = root.document;
             } else if (root.ownerDocument) {
-                doc = root.ownerDocument;
+                _doc = root.ownerDocument;
             }
 
             if (!container) return null;
@@ -262,7 +262,7 @@ window.Aladinn.Sign.Utils = (function () {
                 }
 
                 return true;
-            } catch (e) {
+            } catch (_e) {
                 return false;
             }
         }, { timeout, interval: 30 });
