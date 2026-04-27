@@ -167,15 +167,19 @@ function detectScanContext() {
     const checkForInputForm = (doc) => {
         const iframes = doc.querySelectorAll('iframe');
         for (const iframe of iframes) {
+            const rect = iframe.getBoundingClientRect();
+            const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
+            
             const id = (iframe.id || '').toLowerCase();
             const src = (iframe.getAttribute('src') || '').toLowerCase();
-            if (id.includes('phieuthuoc') || id.includes('capthuoc') || 
-                src.includes('capthuoc') || src.includes('02d010')) {
+            
+            if (isVisible && (id.includes('phieuthuoc') || id.includes('capthuoc') || 
+                src.includes('capthuoc') || src.includes('02d010'))) {
                 hasInputForm = true;
                 return;
             }
             try {
-                if (iframe.contentDocument) checkForInputForm(iframe.contentDocument);
+                if (isVisible && iframe.contentDocument) checkForInputForm(iframe.contentDocument);
             } catch (_e) { /* CORS */ }
         }
     };
@@ -339,9 +343,13 @@ window.addEventListener('ALADINN_MANUAL_SCAN', () => {
         // Yêu cầu iframe helper gửi lại dữ liệu mới nhất
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach(iframe => {
-            try {
-                iframe.contentWindow?.postMessage({ type: 'CDS_REQUEST_DRUGS' }, window.location.origin);
-            } catch (_e) { /* CORS */ }
+            const rect = iframe.getBoundingClientRect();
+            const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
+            if (isVisible) {
+                try {
+                    iframe.contentWindow?.postMessage({ type: 'CDS_REQUEST_DRUGS' }, window.location.origin);
+                } catch (_e) { /* CORS */ }
+            }
         });
         setTimeout(runScan, 200);
     }
