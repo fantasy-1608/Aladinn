@@ -1568,11 +1568,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             <div style="max-width:960px; width:92%; max-height:92vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; flex-shrink:0;">
                     <div style="flex:1;">
-                        <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
-                            <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
-                            CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
-                        </h3>
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
+                                <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
+                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
+                            </h3>
+                            <button id="btn-ai-summary-modal" title="Nhờ AI phân tích hồ sơ" style="background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02)); border: 1px solid rgba(212,168,83,0.25); color: #D4A853; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,168,83,0.2)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02))'">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI
+                            </button>
+                        </div>
                         ${headerSubtitleHtml}
+                        <div id="ai-summary-result-modal" style="display: none; margin-top: 12px; padding: 14px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(212,168,83,0.15); font-size: 13px; color: #cbd5e1; line-height: 1.6; max-width: 100%;"></div>
                     </div>
                     <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;" title="Đóng">&times;</button>
                 </div>
@@ -1597,6 +1603,64 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         document.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
+
+        // --- AI Summary Button ---
+        const btnAIModal = modal.querySelector('#btn-ai-summary-modal');
+        const resAIModal = modal.querySelector('#ai-summary-result-modal');
+        if (btnAIModal && resAIModal) {
+            btnAIModal.addEventListener('click', async () => {
+                let apiKey = await window.HIS.ApiKeyService.getKey();
+                if (!apiKey) {
+                    const needsPin = await window.HIS.ApiKeyService.needsPin();
+                    if (needsPin) {
+                        apiKey = await window.HIS.ApiKeyService.promptAndUnlock();
+                    }
+                }
+
+                if (!apiKey) {
+                    resAIModal.style.display = 'block';
+                    resAIModal.innerHTML = '<span style="color:#E85454">⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.</span>';
+                    return;
+                }
+                
+                btnAIModal.disabled = true;
+                btnAIModal.innerHTML = '<span style="animation: pulse-warning 1s infinite;">✨ Đang xử lý...</span>';
+                resAIModal.style.display = 'block';
+                resAIModal.innerHTML = '<div style="display:flex; gap:8px; align-items:center; color: #D4A853;"><div class="cds-spinner" style="width:14px;height:14px;border:2px solid rgba(212,168,83,0.3);border-top-color:#D4A853;border-radius:50%;animation:spin 1s linear infinite;"></div> Đang tóm tắt dữ liệu...</div>';
+                
+                try {
+                    // Collect context for Gemini
+                    const contextDrugs = drugs.map(d => `${d.TENTHUOC} (${d.SOLUONG || ''})`).join(', ');
+                    const contextDiag = patientInfo.diagnosis || 'Không rõ';
+                    const contextAge = patientInfo.age || 'Không rõ';
+                    const prompt = `Bạn là bác sĩ chuyên khoa. Thông tin bệnh nhân:\n- Tên: ${patientName}\n- Tuổi/Năm sinh: ${contextAge}\n- Chẩn đoán: ${contextDiag}\n- Đơn thuốc: ${contextDrugs}\n\nHãy tóm tắt ngắn gọn tình trạng bệnh nhân và lưu ý quan trọng (tối đa 3 gạch đầu dòng, ngôn từ chuyên ngành, KHÔNG DÀI DÒNG).`;
+                    
+                    const model = await window.HIS.getAiModel();
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                        let text = data.candidates[0].content.parts[0].text;
+                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+                                   .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                                   .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
+                                   .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
+                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
+                    } else {
+                        throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
+                    }
+                } catch (e) {
+                    resAIModal.innerHTML = '<span style="color:#E85454">Lỗi AI: ' + e.message + '</span>';
+                } finally {
+                    btnAIModal.disabled = false;
+                    btnAIModal.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI';
+                }
+            });
+        }
 
         // Block clicks from bubbling to HIS background (e.g., jqGrid row selection)
         modal.addEventListener('mousedown', e => e.stopPropagation());

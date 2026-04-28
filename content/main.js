@@ -23,3 +23,9 @@ import '../styles/aladinn-core.css';
 import '../styles/aladinn-scanner.css';
 import '../styles/aladinn-voice.css';
 import '../styles/aladinn-sign.css';
+import { initTemplateEngine } from './template/template-engine.js';
+
+// Khởi tạo các module tiện ích
+setTimeout(() => {
+    initTemplateEngine();
+}, 1000);

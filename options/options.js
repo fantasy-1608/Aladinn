@@ -633,6 +633,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Template Management ---
+    import('../shared/template-store.js').then(({ TemplateStore }) => {
+        const listContainer = document.getElementById('template-list-container');
+        const btnAdd = document.getElementById('btn-add-template');
+        const inpShortcut = document.getElementById('tpl-shortcut');
+        const inpTitle = document.getElementById('tpl-title');
+        const inpContent = document.getElementById('tpl-content');
+
+        async function renderTemplates() {
+            const templates = await TemplateStore.getTemplates();
+            listContainer.innerHTML = '';
+            
+            if (templates.length === 0) {
+                listContainer.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Chưa có mẫu nào. Hãy thêm mẫu mới!</div>';
+                return;
+            }
+
+            templates.forEach(tpl => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;';
+                item.innerHTML = `
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                            ${tpl.title}
+                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">/${tpl.shortcut}</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${tpl.content}</div>
+                    </div>
+                    <button class="btn-delete-tpl" data-id="${tpl.id}" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            document.querySelectorAll('.btn-delete-tpl').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    if (confirm('Bạn có chắc muốn xóa mẫu này?')) {
+                        await TemplateStore.removeTemplate(id);
+                        showToast('Đã xóa mẫu!');
+                        renderTemplates();
+                    }
+                });
+            });
+        }
+
+        btnAdd.addEventListener('click', async () => {
+            const shortcut = inpShortcut.value.trim();
+            const title = inpTitle.value.trim();
+            const content = inpContent.value.trim();
+
+            if (!shortcut || !title || !content) {
+                showToast('Vui lòng nhập đủ Phím tắt, Tiêu đề và Nội dung!', true);
+                return;
+            }
+            if (shortcut.includes(' ')) {
+                showToast('Phím tắt không được chứa khoảng trắng!', true);
+                return;
+            }
+
+            await TemplateStore.addTemplate(title, shortcut, content);
+            showToast('Đã thêm mẫu thành công!');
+            
+            inpShortcut.value = '';
+            inpTitle.value = '';
+            inpContent.value = '';
+            
+            renderTemplates();
+        });
+
+        // Initialize templates list
+        renderTemplates();
+    }).catch(err => console.error('Lỗi tải TemplateStore:', err));
+
     // Initialization
     loadSettings();
 });
