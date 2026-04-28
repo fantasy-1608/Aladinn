@@ -598,12 +598,23 @@ export const CDSUI = {
 
         // 2a. Thuốc ĐÃ KIỂM TRA (normalized)
         const checked = debug.normalized_drugs || [];
+        
+        // Lọc ra những thuốc AN TOÀN (không nằm trong cảnh báo nào)
+        const alertDrugs = new Set();
+        alerts.forEach(a => {
+            if (a.matched_items && a.matched_items.drug) {
+                a.matched_items.drug.forEach(d => alertDrugs.add(d.toLowerCase()));
+            }
+        });
+        
+        const safeDrugs = checked.filter(d => !alertDrugs.has(d.toLowerCase()));
+        
         let checkedHtml = '';
-        if (checked.length > 0) {
+        if (safeDrugs.length > 0) {
             checkedHtml = `
                 <div class="cds-coverage-group cds-checked">
-                    <div class="cds-coverage-label">✅ Đã kiểm tra tương tác <span class="cds-coverage-count">(${checked.length})</span></div>
-                    <div class="cds-coverage-pills">${checked.map(d => `<span class="cds-pill checked">${d}</span>`).join('')}</div>
+                    <div class="cds-coverage-label">✅ Đã kiểm tra an toàn <span class="cds-coverage-count">(${safeDrugs.length})</span></div>
+                    <div class="cds-coverage-pills">${safeDrugs.map(d => `<span class="cds-pill checked">${d}</span>`).join('')}</div>
                 </div>`;
         }
 
