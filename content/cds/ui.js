@@ -461,20 +461,48 @@ export const CDSUI = {
             for (const d of diagnoses) {
                 if (!d.code) continue;
                 const matches = d.code.match(icdRegex);
-                const desc = (d.name || d.code.replace(icdRegex, '').replace(/^[\s,;=\-\|]+/, '').replace(/[\s,;=\-\|]+$/, '').trim()) || (d.is_primary ? 'Chẩn đoán chính' : 'Bệnh kèm theo');
+                let rawDesc = d.name || d.code.replace(icdRegex, '').trim();
+                
+                // Clean up leading separators from rawDesc
+                rawDesc = rawDesc.replace(/^[\s,;=\-\|]+/, '').replace(/[\s,;=\-\|]+$/, '').trim();
 
                 if (matches) {
-                    for (const m of matches) {
+                    const descParts = rawDesc ? rawDesc.split(/;\s*-?\s*/).map(s => s.trim()).filter(s => s) : [];
+                    const offset = Math.max(0, matches.length - descParts.length);
+                    
+                    matches.forEach((m, idx) => {
                         if (!seenCodes.has(m)) {
                             seenCodes.add(m);
-                            parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0, desc: desc });
+                            
+                            let individualDesc = '';
+                            if (descParts.length > 0) {
+                                // Align right: if there are more codes than descriptions, the missing ones are at the beginning
+                                if (matches.length > descParts.length && idx >= offset) {
+                                    individualDesc = descParts[idx - offset];
+                                } else if (matches.length <= descParts.length) {
+                                    individualDesc = descParts[idx];
+                                }
+                            }
+                            
+                            if (individualDesc) {
+                                individualDesc = individualDesc.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
+                                individualDesc = individualDesc.replace(/^-\s*/, '').trim();
+                            }
+                            
+                            // Fallback if no description could be matched
+                            if (!individualDesc) {
+                                individualDesc = (d.is_primary && parsedCodes.length === 0 && idx === 0) ? 'Chẩn đoán chính' : 'Bệnh kèm theo';
+                            }
+                            
+                            parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0, desc: individualDesc });
                         }
-                    }
+                    });
                 } else {
                     // d.code is already a clean code
                     if (!seenCodes.has(d.code)) {
                         seenCodes.add(d.code);
-                        parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0, desc: desc });
+                        let individualDesc = rawDesc || (d.is_primary && parsedCodes.length === 0 ? 'Chẩn đoán chính' : 'Bệnh kèm theo');
+                        parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0, desc: individualDesc });
                     }
                 }
             }
