@@ -774,10 +774,10 @@ window.Aladinn.Sign.Signing = (function () {
         });
     }
 
-    // Enable observation globally on load
-    setTimeout(() => {
-        if (AUTO_SIGN.isEnabled) enableAutoOkDetection();
-    }, 1000);
+    // NOTE: enableAutoOkDetection() is called ONLY from startSession().
+    // Previously it was also called on page load, which caused the background
+    // autoSignEnabled flag to be set even without an active signing session,
+    // resulting in unwanted auto-switch-back from PDF tabs.
 
     return {
         startSession,

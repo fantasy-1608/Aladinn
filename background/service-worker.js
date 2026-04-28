@@ -137,11 +137,10 @@ function autoClickInTab(tabId) {
 // auto-click-helper.js (content script) xử lý auto-click trực tiếp trong page.
 // Background chỉ giữ autoClickInTab() cho on-demand use (action: autoClickInAllFrames).
 
-// Read feature flags on startup (for PDF switch-back behavior)
-chrome.storage.local.get('aladinn_features', (result) => {
-    const features = result.aladinn_features || {};
-    autoSignEnabled = features.sign !== false;
-});
+// NOTE: autoSignEnabled starts as FALSE and is ONLY set to TRUE by
+// the content script sending 'enableAutoSign' during an active signing session.
+// Previously this was also set from feature flags on startup, causing unwanted
+// tab-switching whenever ANY PDF opened — even without a signing session.
 
 // ========================================
 // SECURITY: Sender validation helper
@@ -320,15 +319,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     // ---- FEATURE TOGGLE: Sync auto-sign state from popup ----
+    // Only DISABLE auto-sign when sign module is turned off.
+    // Never enable it here — only 'enableAutoSign' from signing.js should do that.
     if (type === 'FEATURE_TOGGLE') {
         const features = message.features || {};
         const signEnabled = features.sign !== false;
         if (!signEnabled && autoSignEnabled) {
             autoSignEnabled = false;
             console.log('[Aladinn BG] Sign module disabled → auto-sign OFF');
-        } else if (signEnabled && !autoSignEnabled) {
-            autoSignEnabled = true;
-            console.log('[Aladinn BG] Sign module enabled → auto-sign ON');
         }
         // Don't sendResponse here — let content.js handler respond
         return false;

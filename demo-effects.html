@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>🧞 Aladinn — Desert Mystic Effects Preview</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1510;--bg2:#231c14;--accent:#d4a25a;--accent2:#c4883c;
+  --text:#e8dcc8;--muted:#a0937e;--dim:#7a6e5e;
+  --border:rgba(212,162,90,0.3);--glow:rgba(212,162,90,0.15);
+  --success:#22c55e;--danger:#f87171;--info:#60a5fa;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+
+/* === SAND PARTICLES === */
+.sand-field{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.sand-particle{position:absolute;width:2px;height:2px;border-radius:50%;opacity:0;animation:sandFloat linear infinite}
+@keyframes sandFloat{
+  0%{opacity:0;transform:translateY(100vh) translateX(0)}
+  10%{opacity:.6}
+  90%{opacity:.4}
+  100%{opacity:0;transform:translateY(-10vh) translateX(80px)}
+}
+
+/* === AUDIO WAVE LOADER === */
+.wave-loader{display:flex;align-items:center;gap:3px;height:32px;justify-content:center}
+.wave-loader span{display:block;width:4px;border-radius:4px;background:var(--accent);animation:waveBar 1.2s ease-in-out infinite}
+.wave-loader span:nth-child(1){animation-delay:0s}
+.wave-loader span:nth-child(2){animation-delay:.1s}
+.wave-loader span:nth-child(3){animation-delay:.2s}
+.wave-loader span:nth-child(4){animation-delay:.3s}
+.wave-loader span:nth-child(5){animation-delay:.4s}
+.wave-loader span:nth-child(6){animation-delay:.3s}
+.wave-loader span:nth-child(7){animation-delay:.2s}
+@keyframes waveBar{0%,100%{height:20%}50%{height:100%}}
+
+/* === GENIE PULSE === */
+.genie-pulse{position:relative;display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;font-size:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer;transition:transform .2s}
+.genie-pulse::before,.genie-pulse::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:pulseRing 2s ease-out infinite}
+.genie-pulse::after{animation-delay:1s}
+.genie-pulse:hover{transform:scale(1.1)}
+@keyframes pulseRing{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+
+/* === MAGIC SHIMMER (for cards) === */
+.shimmer-card{position:relative;overflow:hidden;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px}
+.shimmer-card::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(212,162,90,0.08),transparent);animation:shimmerSlide 3s ease-in-out infinite}
+@keyframes shimmerSlide{0%{left:-100%}100%{left:200%}}
+
+/* === STAGGER FADE IN === */
+.stagger-list .stagger-item{opacity:0;transform:translateY(12px);animation:staggerIn .4s ease forwards}
+@keyframes staggerIn{to{opacity:1;transform:translateY(0)}}
+
+/* === GOLDEN RIPPLE BUTTON === */
+.btn-gold{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--bg);border:none;padding:12px 24px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(212,162,90,0.4)}
+.btn-gold:active{transform:translateY(0)}
+.btn-gold .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.4);transform:scale(0);animation:rippleOut .6s ease-out forwards;pointer-events:none}
+@keyframes rippleOut{to{transform:scale(4);opacity:0}}
+
+/* === TOAST SLIDE === */
+.toast-demo{padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;animation:toastSlide .4s cubic-bezier(.2,0,0,1)}
+.toast-success{background:rgba(34,197,94,0.15);color:var(--success);border:1px solid rgba(34,197,94,0.3)}
+.toast-danger{background:rgba(248,113,113,0.15);color:var(--danger);border:1px solid rgba(248,113,113,0.3)}
+.toast-info{background:rgba(96,165,250,0.15);color:var(--info);border:1px solid rgba(96,165,250,0.3)}
+@keyframes toastSlide{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* === GLOW ALERT BORDER === */
+.glow-alert{border-radius:12px;padding:16px;position:relative;border:1px solid transparent}
+.glow-alert.high{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.4);animation:glowPulseRed 2s ease-in-out infinite}
+.glow-alert.medium{background:rgba(212,162,90,0.08);border-color:rgba(212,162,90,0.4);animation:glowPulseGold 2s ease-in-out infinite}
+@keyframes glowPulseRed{0%,100%{box-shadow:0 0 8px rgba(248,113,113,0.2)}50%{box-shadow:0 0 20px rgba(248,113,113,0.4)}}
+@keyframes glowPulseGold{0%,100%{box-shadow:0 0 8px rgba(212,162,90,0.15)}50%{box-shadow:0 0 20px rgba(212,162,90,0.3)}}
+
+/* === ICD PILL HOVER === */
+.icd-pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(212,162,90,0.15);color:var(--accent);border:1px solid rgba(212,162,90,0.3);cursor:pointer;transition:all .2s;margin:3px}
+.icd-pill:hover{background:rgba(212,162,90,0.3);transform:translateY(-2px);box-shadow:0 4px 12px rgba(212,162,90,0.2)}
+
+/* === FAB BOUNCE IN === */
+.fab-demo{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border:2px solid rgba(255,255,255,0.3);animation:fabBounce .6s cubic-bezier(.36,1.2,.6,1);transition:all .2s}
+.fab-demo:hover{transform:scale(1.12);box-shadow:0 8px 24px rgba(212,162,90,0.5)}
+@keyframes fabBounce{0%{opacity:0;transform:scale(0) rotate(-180deg)}60%{transform:scale(1.15) rotate(10deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+
+/* === PROGRESS GLOW BAR === */
+.progress-bar{height:4px;border-radius:4px;background:rgba(212,162,90,0.1);overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent),#f59e0b);background-size:200% 100%;animation:progressShimmer 2s linear infinite;transition:width .4s ease}
+@keyframes progressShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* === LAYOUT === */
+.container{max-width:900px;margin:0 auto;padding:40px 20px;position:relative;z-index:1}
+h1{font-size:28px;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,var(--accent),#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{text-align:center;color:var(--muted);margin-bottom:40px;font-size:14px}
+.section{margin-bottom:40px}
+.section-title{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid rgba(212,162,90,0.15)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.demo-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.demo-label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+
+/* === MAGIC LAMP SMOKE === */
+.lamp-smoke{position:relative;width:60px;height:80px;display:flex;align-items:flex-end;justify-content:center}
+.lamp-smoke .lamp{font-size:32px;position:relative;z-index:2}
+.smoke-trail{position:absolute;bottom:50px;left:50%;width:20px;height:40px}
+.smoke-trail i{position:absolute;bottom:0;left:50%;width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0;animation:smokePuff 2s ease-out infinite}
+.smoke-trail i:nth-child(2){animation-delay:.5s;left:30%}
+.smoke-trail i:nth-child(3){animation-delay:1s;left:70%}
+@keyframes smokePuff{0%{opacity:.5;transform:translateY(0) scale(.5)}100%{opacity:0;transform:translateY(-40px) scale(1.5)}}
+
+/* === SCANNING LINE === */
+.scan-line-box{width:100%;height:60px;position:relative;border-radius:8px;overflow:hidden;background:rgba(212,162,90,0.05);border:1px solid var(--border)}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanDown 2s ease-in-out infinite}
+@keyframes scanDown{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+
+/* === COUNTER ANIMATE === */
+.counter{font-size:36px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* === INLINE BTN SPARKLE === */
+.sparkle-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:1px solid rgba(255,255,255,0.3);cursor:pointer;font-size:12px;transition:all .3s;position:relative}
+.sparkle-btn:hover{box-shadow:0 0 16px rgba(212,162,90,0.6);transform:scale(1.15)}
+.sparkle-btn:hover::before{content:'✦';position:absolute;top:-8px;right:-6px;font-size:10px;color:#f59e0b;animation:sparkleFloat .6s ease-out forwards}
+@keyframes sparkleFloat{0%{opacity:1;transform:translateY(0) scale(.5)}100%{opacity:0;transform:translateY(-12px) scale(1.2)}}
+
+/* Modal glass */
+.glass-panel{background:linear-gradient(145deg,rgba(26,21,16,0.95),rgba(15,13,10,0.98));border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(212,162,90,0.06);backdrop-filter:blur(12px)}
+
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="sand-field" id="sandField"></div>
+<div class="container">
+  <h1>🧞 Aladinn — Desert Mystic Effects</h1>
+  <p class="subtitle">Bộ hiệu ứng thị giác dành cho module Scanner • Tất cả pure CSS, 0 dependencies</p>
+
+  <!-- 1. LOADERS -->
+  <div class="section">
+    <div class="section-title">🎵 Audio Wave Loader (thay vòng xoay)</div>
+    <div class="grid">
+      <div class="demo-box">
+        <div class="wave-loader"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="demo-label">Loading State — Sóng âm</div>
+      </div>
+      <div class="demo-box">
+        <div class="lamp-smoke"><div class="smoke-trail"><i></i><i></i><i></i></div><div class="lamp">🧞</div></div>
+        <div class="demo-label">Genie Lamp — Khói phép</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. BUTTONS -->
+  <div class="section">
+    <div class="section-title">🔘 Nút bấm & FAB</div>
+    <div class="grid">
+      <div class="demo-box">
+        <button class="btn-gold" onclick="ripple(event)">📝 Làm Bệnh Án</button>
+        <button class="btn-gold" onclick="ripple(event)" style="background:linear-gradient(135deg,#22c55e,#16a34a)">🥗 Phiếu Dinh Dưỡng</button>
+        <button class="btn-gold" onclick="ripple(event)" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff">🏥 Chuyển Viện</button>
+        <div class="demo-label">Golden Ripple Buttons</div>
+      </div>
+      <div class="demo-box">
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="fab-demo" title="Điền diễn biến">📋</div>
+          <div class="fab-demo" title="CLS + Thuốc" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">✨</div>
+          <div class="genie-pulse">🧞</div>
+        </div>
+        <div class="demo-label">FAB Bounce + Genie Pulse Ring</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ALERTS & PILLS -->
+  <div class="section">
+    <div class="section-title">💊 ICD Pills & Cảnh báo Glow</div>
+    <div class="demo-box" style="width:100%">
+      <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">
+        <span class="icd-pill">I10</span><span class="icd-pill">I25.0</span><span class="icd-pill">K21.0</span>
+        <span class="icd-pill">M15</span><span class="icd-pill">N18.5</span><span class="icd-pill">E11.9</span>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+      <div class="glow-alert high">
+        <strong style="color:#f87171">⚠️ Nghiêm trọng:</strong>
+        <span style="color:#e8dcc8;font-size:13px"> Aspirin + Warfarin → Tăng nguy cơ xuất huyết</span>
+      </div>
+      <div class="glow-alert medium">
+        <strong style="color:#d4a25a">⚡ Cảnh báo:</strong>
+        <span style="color:#e8dcc8;font-size:13px"> Omeprazole + Clopidogrel → Giảm hiệu quả</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CARDS & SHIMMER -->
+  <div class="section">
+    <div class="section-title">✨ Shimmer Cards & Stagger List</div>
+    <div class="grid">
+      <div class="shimmer-card">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:8px">📊 Bảng CLS + Thuốc</div>
+        <div style="color:var(--muted);font-size:13px">Shimmer chạy ngang — hiệu ứng loading tinh tế khi đang tải dữ liệu</div>
+      </div>
+      <div class="demo-box stagger-list" id="staggerDemo">
+        <div class="demo-label">Click để xem Stagger Animation</div>
+        <button class="btn-gold" onclick="playStagger()" style="font-size:12px;padding:8px 16px">▶ Phát</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. SCANNING & PROGRESS -->
+  <div class="section">
+    <div class="section-title">🔍 Quét & Progress</div>
+    <div class="grid">
+      <div class="demo-box">
+        <div class="scan-line-box"><div class="scan-line"></div><div style="padding:20px;text-align:center;color:var(--dim);font-size:11px">Scanning patient data...</div></div>
+        <div class="demo-label">Scan Line Effect</div>
+      </div>
+      <div class="demo-box">
+        <div style="width:100%">
+          <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:30%"></div></div>
+          <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--dim)">Đang quét 15/50 BN...</div>
+        </div>
+        <button class="btn-gold" onclick="animateProgress()" style="font-size:11px;padding:6px 14px">▶ Animate</button>
+        <div class="demo-label">Shimmer Progress Bar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. TOASTS -->
+  <div class="section">
+    <div class="section-title">🔔 Toast Notifications</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="toast-demo toast-success">✅ Đã ký số thành công — NGUYỄN VĂN A</div>
+      <div class="toast-demo toast-danger">❌ Lỗi tương tác thuốc: Aspirin × Warfarin</div>
+      <div class="toast-demo toast-info">🪄 Đang tải CLS + Thuốc từ VNPT HIS...</div>
+    </div>
+  </div>
+
+  <!-- 7. INLINE SPARKLE -->
+  <div class="section">
+    <div class="section-title">⭐ Inline Summary Button</div>
+    <div class="demo-box" style="width:100%">
+      <div style="display:flex;align-items:center;gap:10px;font-size:14px">
+        <span style="color:var(--text)">NGUYỄN VĂN A</span>
+        <span class="sparkle-btn">✨</span>
+        <span style="color:var(--dim);font-size:11px">← Hover để thấy sparkle</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:8px">
+        <span style="color:var(--text)">TRẦN THỊ B</span>
+        <span class="sparkle-btn">✨</span>
+        <span class="icd-pill" style="font-size:10px">💊</span>
+        <span class="icd-pill" style="font-size:10px;background:rgba(34,197,94,0.15);color:#22c55e;border-color:rgba(34,197,94,0.3)">🛡️ OK</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. GLASS MODAL PREVIEW -->
+  <div class="section">
+    <div class="section-title">🪟 Glass Panel Preview</div>
+    <div class="glass-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-weight:700;font-size:15px;color:var(--accent)">🛡️ Quét Lỗi BHYT</div>
+        <div style="display:flex;gap:8px">
+          <div style="background:rgba(212,162,90,0.1);padding:6px 12px;border-radius:8px;text-align:center">
+            <div class="counter" style="font-size:20px" id="c1">0</div>
+            <div style="font-size:8px;color:var(--dim);text-transform:uppercase">Đã quét</div>
+          </div>
+          <div style="background:rgba(248,113,113,0.1);padding:6px 12px;border-radius:8px;text-align:center">
+            <div class="counter" style="font-size:20px;color:#f87171" id="c2">0</div>
+            <div style="font-size:8px;color:var(--dim);text-transform:uppercase">Lỗi</div>
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-bottom:12px"><div class="progress-fill" style="width:65%"></div></div>
+      <div style="font-size:12px;color:var(--muted)">Mô phỏng Glass Panel kết hợp tất cả hiệu ứng</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px;color:var(--dim);font-size:11px">
+    🧞 Aladinn v1.1.9 • Pure CSS Effects • Zero Dependencies • GPU Accelerated
+  </div>
+</div>
+
+<script>
+// Sand particles
+(function(){
+  const field=document.getElementById('sandField');
+  const colors=['#d4a25a','#c4883c','#a18764','#e8bc6a','#f5d89a'];
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div');
+    p.className='sand-particle';
+    p.style.cssText=`left:${Math.random()*100}%;bottom:${Math.random()*20-10}%;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;background:${colors[i%colors.length]};animation-duration:${8+Math.random()*12}s;animation-delay:${Math.random()*10}s;opacity:0;`;
+    field.appendChild(p);
+  }
+})();
+
+// Ripple effect
+function ripple(e){
+  const btn=e.currentTarget;const r=document.createElement('span');r.className='ripple';
+  const rect=btn.getBoundingClientRect();
+  r.style.cssText=`left:${e.clientX-rect.left}px;top:${e.clientY-rect.top}px;width:20px;height:20px;margin-left:-10px;margin-top:-10px;`;
+  btn.appendChild(r);setTimeout(()=>r.remove(),600);
+}
+
+// Stagger demo
+function playStagger(){
+  const box=document.getElementById('staggerDemo');
+  box.innerHTML='';
+  const items=['📋 Bệnh Án','🥗 Dinh Dưỡng','🏥 Chuyển Viện','🩺 Hội Chẩn','📊 CLS + Thuốc'];
+  items.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='stagger-item';
+    d.style.cssText=`animation-delay:${i*0.1}s;padding:8px 16px;background:rgba(212,162,90,0.08);border-radius:8px;font-size:13px;width:100%;text-align:center;color:var(--text)`;
+    d.textContent=t;box.appendChild(d);
+  });
+  box.classList.add('stagger-list');
+}
+
+// Progress animation
+function animateProgress(){
+  const f=document.getElementById('progFill');let w=0;
+  const iv=setInterval(()=>{w+=2;f.style.width=w+'%';if(w>=100)clearInterval(iv)},50);
+}
+
+// Counter animation
+function animCount(id,target){
+  const el=document.getElementById(id);let n=0;
+  const iv=setInterval(()=>{n++;el.textContent=n;if(n>=target)clearInterval(iv)},40);
+}
+setTimeout(()=>animCount('c1',24),500);
+setTimeout(()=>animCount('c2',3),800);
+</script>
+</body>
+</html>

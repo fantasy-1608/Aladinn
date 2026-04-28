@@ -122,9 +122,27 @@
             var name = textCols.length >= 1 ? textCols[0] : '';
             var generic = textCols.length >= 2 ? textCols[1] : '';
 
-            // Loại tên giống mã ICD hoặc tên bệnh nhân (toàn uppercase dài > 10)
+            // Loại bỏ nếu tên chứa mã ICD
             if (name && ICD_PATTERN.test(name)) name = '';
-            if (name && /^[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+$/.test(name) && name.length > 10) name = '';
+            
+            // Detect patient names: All UPPERCASE (>= 2 words) OR Title Case
+            if (name && name.length > 6 && !/\d/.test(name)) {
+                var words = name.trim().split(/\s+/);
+                if (words.length >= 2 && words.length <= 6) {
+                    var isAllUpper = name === name.toUpperCase();
+                    var isTitleCase = true;
+                    for (var w = 0; w < words.length; w++) {
+                        var word = words[w];
+                        if (word.length === 0 || word.charAt(0) !== word.charAt(0).toUpperCase() || word.slice(1) !== word.slice(1).toLowerCase()) {
+                            isTitleCase = false;
+                            break;
+                        }
+                    }
+                    if (isAllUpper || isTitleCase) {
+                        name = ''; // Là tên người -> loại bỏ
+                    }
+                }
+            }
 
             // Loại vật tư y tế
             if (name) {

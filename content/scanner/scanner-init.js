@@ -629,7 +629,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 <div class="bhyt-header">
                     <div>
                         <div class="bhyt-title">
-                            <span class="bhyt-scanning-dot" id="bhyt-scan-dot"></span>
+                            <div class="aladinn-wave-loader" id="bhyt-scan-dot" style="height:16px;gap:2px"><span style="width:3px"></span><span style="width:3px"></span><span style="width:3px"></span><span style="width:3px"></span><span style="width:3px"></span></div>
                             🛡️ Quét Lỗi Thời Gian BHYT
                         </div>
                         <div class="bhyt-subtitle" id="bhyt-status-text">Đang quét...</div>
@@ -804,7 +804,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // Finalize the report modal
     function finalizeBhytReport() {
         const dot = document.getElementById('bhyt-scan-dot');
-        if (dot) { dot.classList.add('done'); }
+        if (dot) { dot.innerHTML = '✅'; dot.className = ''; dot.style.cssText = 'font-size:14px;'; }
 
         const totalErrors = _bhytScanResults.reduce((s, r) => s + r.errors.length, 0);
         const statusEl = document.getElementById('bhyt-status-text');
@@ -1500,23 +1500,58 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const patientAgeHtml = patientInfo.age ? `<span style="font-weight: 500; color:#e8dcc8; opacity:0.9; margin-top:4px; display:inline-block;">- Năm sinh: ${patientInfo.age}</span>` : '';
         let patientDiagHtml = '';
         if (patientInfo.diagnosis) {
+            const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            
+            // Parse ICD codes from the diagnosis string (e.g. "A09, I10, K35, A09 - Viêm dạ dày...")
+            const icdRegex = /\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g;
+            const rawDiag = patientInfo.diagnosis;
+            const icdMatches = [...new Set((rawDiag.match(icdRegex) || []))]; // unique codes
+            
+            // Build pills for ICD codes
+            const pillsHtml = icdMatches.length > 0
+                ? icdMatches.map((code, i) => {
+                    const isPrimary = i === 0;
+                    const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
+                    const border = isPrimary ? 'rgba(212,162,90,0.4)' : 'rgba(255,255,255,0.1)';
+                    const color = isPrimary ? '#f0d78c' : '#c8b89a';
+                    return `<span style="display:inline-block; padding:2px 8px; border-radius:5px; font-size:12px; font-weight:700; font-family:'SF Mono','Menlo','Consolas',monospace; color:${color}; background:${bg}; border:1px solid ${border}; letter-spacing:0.3px; line-height:1.4;" title="${isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${code}</span>`;
+                }).join(' ')
+                : '';
+            
+            // Strip ICD codes and leading separators from the description text
+            let descText = rawDiag.replace(icdRegex, '').replace(/^[\s,;-]+/, '').replace(/[\s,;-]+$/, '').trim();
+            // Clean up internal separators from removed codes
+            descText = descText.replace(/\s*[,;]\s*[,;]\s*/g, ', ').replace(/^\s*[,;-]\s*/, '').trim();
+            
             if (patientInfo.diagHistory && patientInfo.diagHistory.length > 1) {
-                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                const historyList = patientInfo.diagHistory.map(d => `<li style="margin-bottom:2px;">${escapeHtml(d)}</li>`).join('');
+                const historyList = patientInfo.diagHistory.map(d => `<li style="margin-bottom:3px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(d)}</li>`).join('');
                 patientDiagHtml = `
-                    <details style="margin-top:6px;">
-                        <summary style="font-size:13px; color:#d4a25a; cursor:pointer; font-weight:500; outline:none; user-select:none; display:inline-block; background:rgba(212,162,90,0.1); padding:4px 8px; border-radius:4px; transition:0.2s;">
-                            Chẩn đoán (Mới nhất): <span style="color:#e8dcc8; font-weight:400;">${escapeHtml(patientInfo.diagnosis)}</span> <span style="font-size:11px; opacity:0.7; margin-left:4px;">▼ (${patientInfo.diagHistory.length})</span>
-                        </summary>
-                        <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.2); border-radius:6px; font-size:12px; color:#e8dcc8; max-height:100px; overflow-y:auto;">
-                            <div style="color:#a18764; margin-bottom:4px; font-weight:600;">Lịch sử chẩn đoán (Từ khi vào viện):</div>
-                            <ul style="margin:0; padding-left:16px; line-height:1.5;">${historyList}</ul>
+                    <div style="margin-top:6px;">
+                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
+                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
+                            ${pillsHtml}
                         </div>
-                    </details>
+                        ${descText ? `<details style="margin-top:2px;">
+                            <summary style="font-size:12px; color:#8B8579; cursor:pointer; outline:none; user-select:none; transition:0.2s;">
+                                ${escapeHtml(descText.length > 60 ? descText.substring(0, 60) + '...' : descText)} <span style="font-size:10px; opacity:0.6;">▾ chi tiết (${patientInfo.diagHistory.length})</span>
+                            </summary>
+                            <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.15); border-radius:6px; font-size:12px; color:#e8dcc8; max-height:120px; overflow-y:auto;">
+                                <div style="color:#a18764; margin-bottom:6px; font-weight:600; font-size:11px;">Lịch sử chẩn đoán:</div>
+                                <ul style="margin:0; padding-left:16px; line-height:1.6; list-style-type:'›  '; color:#c8b89a;">${historyList}</ul>
+                            </div>
+                        </details>` : ''}
+                    </div>
                 `;
             } else {
-                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                patientDiagHtml = `<div style="font-size:13px; color:#d4a25a; margin-top:6px; background:rgba(212,162,90,0.1); padding:4px 8px; border-radius:4px; display:inline-block;">Chẩn đoán: <span style="color:#e8dcc8; font-weight:400;">${escapeHtml(patientInfo.diagnosis)}</span></div>`;
+                patientDiagHtml = `
+                    <div style="margin-top:6px;">
+                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px;">
+                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
+                            ${pillsHtml}
+                        </div>
+                        ${descText ? `<div style="font-size:12px; color:#8B8579; margin-top:4px; line-height:1.4; max-height:36px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(descText)}">${escapeHtml(descText)}</div>` : ''}
+                    </div>
+                `;
             }
         }
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml ? `<div style="margin-top:2px;">${patientAgeHtml}${patientDiagHtml}</div>` : '';

@@ -205,7 +205,7 @@ const VNPTClinicalFill = (function () {
                     font-size: 22px !important;
                     border: 2px solid rgba(255,255,255,0.4) !important;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                    animation: fab-pulse-clinical 2.5s ease-in-out infinite !important;
+                    animation: aladinn-fabBounce 0.6s cubic-bezier(.36,1.2,.6,1) !important;
                 }
                 #vnpt-clinical-fab:hover { transform: scale(1.12) !important; }
                 #vnpt-clinical-fab:active { transform: scale(0.95) !important; }

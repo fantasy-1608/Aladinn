@@ -285,6 +285,50 @@ export const CDSUI = {
                 font-size: 11px !important;
                 color: #8B8579 !important;
                 line-height: 1.4 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 6px !important;
+            }
+            .cds-diag-label {
+                font-size: 10px !important;
+                color: #8B8579 !important;
+                font-weight: 600 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+            }
+            .cds-diag-pills {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+            }
+            .cds-diag-pill {
+                display: inline-block !important;
+                padding: 2px 7px !important;
+                border-radius: 5px !important;
+                font-size: 11px !important;
+                font-weight: 600 !important;
+                font-family: 'SF Mono', 'Menlo', 'Consolas', monospace !important;
+                color: #c8b89a !important;
+                background: rgba(255,255,255,0.06) !important;
+                border: 1px solid rgba(255,255,255,0.08) !important;
+                letter-spacing: 0.3px !important;
+                line-height: 1.4 !important;
+                transition: all 0.2s ease !important;
+                cursor: pointer !important;
+            }
+            .cds-diag-pill:hover {
+                background: rgba(255,255,255,0.1) !important;
+                border-color: rgba(255,255,255,0.15) !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 4px 12px rgba(212, 162, 90, 0.15) !important;
+            }
+            .cds-diag-pill.primary {
+                color: #f0d78c !important;
+                background: rgba(212,162,90,0.15) !important;
+                border-color: rgba(212,162,90,0.3) !important;
+            }
+            .cds-diag-pill.primary:hover {
+                background: rgba(212,162,90,0.22) !important;
             }
             
             /* Alert Cards — Dark */
@@ -298,8 +342,8 @@ export const CDSUI = {
                 border-left: 4px solid #475569 !important;
                 text-align: left !important;
             }
-            .cds-alert-card.high { border-left-color: #E85454 !important; background: rgba(232, 84, 84, 0.06) !important; }
-            .cds-alert-card.medium { border-left-color: #E8A838 !important; background: rgba(232, 168, 56, 0.06) !important; }
+            .cds-alert-card.high { border-left-color: #E85454 !important; background: rgba(232, 84, 84, 0.06) !important; animation: aladinn-glowPulseRed 2s ease-in-out infinite; }
+            .cds-alert-card.medium { border-left-color: #E8A838 !important; background: rgba(232, 168, 56, 0.06) !important; animation: aladinn-glowPulseGold 2s ease-in-out infinite; }
             .cds-alert-card.low, .cds-alert-card.info { border-left-color: #3b82f6 !important; }
             
             .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #E8E0D4 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
@@ -386,15 +430,73 @@ export const CDSUI = {
 
         // Render Patient Info
         if (context && context.patient && context.patient.id) {
-            const diagCodes = context.encounter.diagnoses.map(d => d.code).filter(Boolean);
-            const diagStr = diagCodes.length > 0 ? `Chẩn đoán: ${diagCodes.join(', ')}` : 'Chưa có chẩn đoán ICD';
+            const diagnoses = context.encounter.diagnoses || [];
+            const icdRegex = /\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g;
+            
+            // Parse clean ICD codes from d.code (which may contain full text like "N18.5 - Suy thận mạn...")
+            const parsedCodes = [];
+            const seenCodes = new Set();
+            const descParts = [];
+            for (const d of diagnoses) {
+                if (!d.code) continue;
+                const matches = d.code.match(icdRegex);
+                if (matches) {
+                    for (const m of matches) {
+                        if (!seenCodes.has(m)) {
+                            seenCodes.add(m);
+                            parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0 });
+                        }
+                    }
+                    // Collect description text (strip ICD codes)
+                    const desc = d.code.replace(icdRegex, '').replace(/^[\s,;=-]+/, '').replace(/[\s,;=-]+$/, '').trim();
+                    if (desc && desc.length > 2) descParts.push(desc);
+                } else {
+                    // d.code is already a clean code
+                    if (!seenCodes.has(d.code)) {
+                        seenCodes.add(d.code);
+                        parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0 });
+                    }
+                }
+            }
+            
+            let diagHtml;
+            if (parsedCodes.length > 0) {
+                const pills = parsedCodes.map(p => {
+                    const cls = p.isPrimary ? 'cds-diag-pill primary' : 'cds-diag-pill';
+                    return `<span class="${cls}" title="${p.isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${p.code}</span>`;
+                }).join('');
+                
+                let descHtml = '';
+                if (descParts.length > 0) {
+                    const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const descList = descParts.map(desc => `<li style="margin-bottom:3px; padding-bottom:3px; border-bottom:1px solid rgba(255,255,255,0.05);">${escapeHtml(desc)}</li>`).join('');
+                    descHtml = `
+                        <details style="margin-top:4px;">
+                            <summary style="font-size:10px; color:#8B8579; cursor:pointer; outline:none; user-select:none; opacity:0.8;">
+                                Xem chi tiết mô tả ▾
+                            </summary>
+                            <div style="margin-top:6px; padding:6px 8px; background:rgba(0,0,0,0.15); border-radius:4px; font-size:11px; color:#c8b89a; max-height:80px; overflow-y:auto;">
+                                <ul style="margin:0; padding-left:12px; line-height:1.4; list-style-type:'›  ';">${descList}</ul>
+                            </div>
+                        </details>
+                    `;
+                }
+
+                diagHtml = `<div class="cds-patient-diag">
+                                <span class="cds-diag-label">Chẩn đoán:</span>
+                                <div class="cds-diag-pills">${pills}</div>
+                                ${descHtml}
+                            </div>`;
+            } else {
+                diagHtml = '<div class="cds-patient-diag"><span class="cds-diag-label" style="opacity:0.5">Chưa có chẩn đoán ICD</span></div>';
+            }
             
             patientInfo.innerHTML = `
                 <div class="cds-patient-name">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     ${context.patient.name || context.patient.id}
                 </div>
-                <div class="cds-patient-diag">${diagStr}</div>
+                ${diagHtml}
             `;
             patientInfo.style.display = 'block';
         } else {
@@ -430,9 +532,13 @@ export const CDSUI = {
 
         // 1. Render Alerts (nếu có)
         if (alerts.length > 0) {
-            alerts.forEach(alert => {
+            alerts.forEach((alert, idx) => {
                 const card = document.createElement('div');
                 card.className = `cds-alert-card ${alert.severity}`;
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(12px)';
+                card.style.animation = `aladinn-staggerIn .4s ease forwards`;
+                card.style.animationDelay = `${idx * 0.08}s`;
                 
                 let matchedHtml = '';
                 let linkHtml = '';

@@ -107,7 +107,8 @@
                 "content/scanner/*-iframe-helper.js",
                 "styles/aladinn-scanner.css",
                 "styles/aladinn-voice.css",
-                "assets/icons/*"
+                "assets/icons/*",
+                "cds-data/*.json"
             ],
             "matches": [
                 "https://*.vncare.vn/*"

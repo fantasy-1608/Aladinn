@@ -858,3 +858,285 @@ body.vnpt-native-active #vnpt-scanner-ui {
     animation: vnpt-spin 0.8s linear infinite;
     display: inline-block;
 }
+
+/* ========================================
+   🧞 Desert Mystic Animation System v1.0
+   Pure CSS • GPU Accelerated • Zero Dependencies
+======================================== */
+
+/* --- Audio Wave Loader (replaces spinner) --- */
+.aladinn-wave-loader {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 32px;
+    justify-content: center;
+}
+
+.aladinn-wave-loader span {
+    display: block;
+    width: 4px;
+    border-radius: 4px;
+    background: var(--vnpt-primary);
+    animation: aladinn-waveBar 1.2s ease-in-out infinite;
+}
+
+.aladinn-wave-loader span:nth-child(1) { animation-delay: 0s; }
+.aladinn-wave-loader span:nth-child(2) { animation-delay: .1s; }
+.aladinn-wave-loader span:nth-child(3) { animation-delay: .2s; }
+.aladinn-wave-loader span:nth-child(4) { animation-delay: .3s; }
+.aladinn-wave-loader span:nth-child(5) { animation-delay: .4s; }
+.aladinn-wave-loader span:nth-child(6) { animation-delay: .3s; }
+.aladinn-wave-loader span:nth-child(7) { animation-delay: .2s; }
+
+@keyframes aladinn-waveBar {
+    0%, 100% { height: 20%; }
+    50% { height: 100%; }
+}
+
+/* --- Genie Pulse Ring (icon highlight) --- */
+.aladinn-pulse-ring {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aladinn-pulse-ring::before,
+.aladinn-pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--vnpt-primary);
+    opacity: 0;
+    animation: aladinn-pulseRing 2s ease-out infinite;
+    pointer-events: none;
+}
+
+.aladinn-pulse-ring::after {
+    animation-delay: 1s;
+}
+
+@keyframes aladinn-pulseRing {
+    0% { opacity: .6; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.6); }
+}
+
+/* --- Golden Ripple (button click) --- */
+.aladinn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    animation: aladinn-rippleOut .6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes aladinn-rippleOut {
+    to { transform: scale(4); opacity: 0; }
+}
+
+/* --- FAB Bounce-In --- */
+.aladinn-fab-bounce {
+    animation: aladinn-fabBounce .6s cubic-bezier(.36, 1.2, .6, 1);
+}
+
+@keyframes aladinn-fabBounce {
+    0% { opacity: 0; transform: scale(0) rotate(-180deg); }
+    60% { transform: scale(1.15) rotate(10deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* --- Stagger Fade-In (lists) --- */
+.aladinn-stagger .aladinn-stagger-item {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: aladinn-staggerIn .4s ease forwards;
+}
+
+@keyframes aladinn-staggerIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Shimmer Loading (cards) --- */
+.aladinn-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.aladinn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 162, 90, 0.08), transparent);
+    animation: aladinn-shimmerSlide 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes aladinn-shimmerSlide {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+/* --- Glow Alert Borders --- */
+.aladinn-glow-high {
+    border-radius: 12px;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    animation: aladinn-glowPulseRed 2s ease-in-out infinite;
+}
+
+.aladinn-glow-medium {
+    border-radius: 12px;
+    border: 1px solid rgba(212, 162, 90, 0.4);
+    animation: aladinn-glowPulseGold 2s ease-in-out infinite;
+}
+
+@keyframes aladinn-glowPulseRed {
+    0%, 100% { box-shadow: 0 0 8px rgba(248, 113, 113, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(248, 113, 113, 0.4); }
+}
+
+@keyframes aladinn-glowPulseGold {
+    0%, 100% { box-shadow: 0 0 8px rgba(212, 162, 90, 0.15); }
+    50% { box-shadow: 0 0 20px rgba(212, 162, 90, 0.3); }
+}
+
+/* --- Scan Line Effect --- */
+.aladinn-scan-line-box {
+    position: relative;
+    overflow: hidden;
+}
+
+.aladinn-scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--vnpt-primary), transparent);
+    animation: aladinn-scanDown 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes aladinn-scanDown {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* --- Progress Shimmer Bar --- */
+.aladinn-progress-bar {
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(212, 162, 90, 0.1);
+    overflow: hidden;
+}
+
+.aladinn-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--vnpt-secondary), var(--vnpt-primary), #f59e0b);
+    background-size: 200% 100%;
+    animation: aladinn-progressShimmer 2s linear infinite;
+    transition: width .4s ease;
+}
+
+@keyframes aladinn-progressShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* --- Enhanced Toast Notifications --- */
+.vnpt-toast {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid transparent;
+}
+
+.vnpt-toast-info {
+    background: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+.vnpt-toast-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.vnpt-toast-warning {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* --- Sparkle Inline Button Enhancement --- */
+.his-inline-summary-btn:hover::before {
+    content: '✦';
+    position: absolute;
+    top: -8px;
+    right: -6px;
+    font-size: 10px;
+    color: #f59e0b;
+    animation: aladinn-sparkleFloat .6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes aladinn-sparkleFloat {
+    0% { opacity: 1; transform: translateY(0) scale(.5); }
+    100% { opacity: 0; transform: translateY(-12px) scale(1.2); }
+}
+
+/* --- ICD Pill Hover Enhancement --- */
+.cds-icd-pill {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.cds-icd-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 162, 90, 0.2);
+    filter: brightness(1.15);
+}
+
+/* --- Smooth Slide-Down for Details/Accordion --- */
+details.aladinn-details summary {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+details.aladinn-details summary:hover {
+    color: var(--vnpt-primary);
+}
+
+details.aladinn-details[open] summary ~ * {
+    animation: aladinn-staggerIn 0.3s ease forwards;
+}
+
+/* --- Enhanced Button Hover (all scanner buttons) --- */
+.vnpt-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- Slow Pulse for minimized icon --- */
+@keyframes vnpt-pulse-slow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.85; }
+}
+
+/* --- Reduced Motion (accessibility) --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

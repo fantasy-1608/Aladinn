@@ -299,6 +299,9 @@ export const CDSExtractor = {
             // Không xét phần header
             if (row.querySelector('th')) continue;
 
+            // Bỏ qua hẳn lưới Danh sách bệnh nhân để tránh quét nhầm tên người
+            if (row.closest && (row.closest('#grdBenhNhan') || row.closest('#gridBenhNhan') || row.closest('#gbox_grdBenhNhan'))) continue;
+
             let cells = Array.from(row.querySelectorAll('td'));
             if (cells.length === 0) {
                 cells = Array.from(row.querySelectorAll(':scope > div'));
@@ -357,9 +360,20 @@ export const CDSExtractor = {
                 name = textCols[0].value;
             }
 
-            // Loại bỏ nếu tên chứa mã ICD hoặc quá giống tên bệnh nhân (toàn uppercase có dấu cách, > 15 ký tự)
+            // Loại bỏ nếu tên chứa mã ICD
             if (name && ICD_PATTERN.test(name)) { name = ''; }
-            if (name && /^[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+$/.test(name) && name.length > 10) { name = ''; }
+            
+            // Detect patient names: All UPPERCASE (>= 2 words) OR Title Case (Phan Thanh Duy)
+            if (name && name.length > 6 && !/\d/.test(name)) {
+                const words = name.trim().split(/\s+/);
+                if (words.length >= 2 && words.length <= 6) {
+                    const isAllUpper = name === name.toUpperCase();
+                    const isTitleCase = words.every(w => w.length > 0 && w[0] === w[0].toUpperCase() && w.slice(1) === w.slice(1).toLowerCase());
+                    if (isAllUpper || isTitleCase) {
+                        name = ''; // Là tên người -> loại bỏ
+                    }
+                }
+            }
 
             // Loại trừ dung môi, vật tư y tế (nước cất, cồn, kim tiêm...)
             if (name) {
