@@ -1581,7 +1581,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         <!-- AI Result: collapsible panel -->
                         <div id="ai-summary-wrapper-modal" style="display:none; margin-top:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px;">🤖 Phân tích lâm sàng (AI)</span>
+                                <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                        <path d="M2 17l10 5 10-5"/>
+                                        <path d="M2 12l10 5 10-5"/>
+                                    </svg>
+                                    Phân tích lâm sàng (AI)
+                                </span>
                                 <button id="btn-ai-collapse" title="Thu gọn" style="background:none; border:none; color:#5a5450; font-size:16px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d4a25a'" onmouseout="this.style.color='#5a5450'">▲</button>
                             </div>
                             <div id="ai-summary-result-modal" style="padding: 14px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(212,168,83,0.15); font-size: 13px; color: #cbd5e1; line-height: 1.6; max-width: 100%;"></div>
@@ -1690,7 +1697,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     } catch (_) { /* fallback */ }
 
                     if (!promptTemplate.trim()) {
-                        promptTemplate = `Bạn là bác sĩ đang trình bệnh tại buổi hội chẩn. Dưới đây là dữ liệu lâm sàng (mã bệnh nhân: {{patientRef}}, năm sinh: {{birthYear}}):
+                        promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}).
+Dữ liệu lâm sàng:
 - Chẩn đoán (ICD): {{diagnosis}}
 - Đơn thuốc: {{drugs}}
 {{abnormal}}
@@ -1698,7 +1706,7 @@ Trình bày ngắn gọn theo cấu trúc:
 1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
 2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
 3. Hướng xử trí đề xuất (nếu đủ dữ kiến)
-Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌAN. Không giải thích thừa.`;
+Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`;
                     }
 
                     // Điền biến vào template
@@ -1729,11 +1737,56 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌAN. Không giải thích t
                             .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
                             .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
 
-                        // Render kết quả + cost badge
-                        const costBadge = window.HIS?.AICost
-                            ? window.HIS.AICost.renderCostBadge(model, data.usageMetadata)
+                        // Render kết quả
+                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
+
+                        // Cost badge: hiển thị toast thay vì nằm trong panel
+                        if (window.HIS?.AICost && data.usageMetadata) {
+                            const est = window.HIS.AICost.record(
+                                model,
+                                data.usageMetadata.promptTokenCount || 0,
+                                data.usageMetadata.candidatesTokenCount || 0
+                            );
+                            if (est) {
+                                const modelShort = model.replace('gemini-', '');
+                                window.VNPTRealtime?.showToast(
+                                    `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${modelShort}`,
+                                    'info',
+                                    3000
+                                );
+                            }
+                        }
+
+                        // Link tra cứu phác đồ / hướng dẫn BYT
+                        const icdCodes = contextDiag
+                            .split(/[,;]+/)
+                            .map(s => s.trim().split(' ')[0])
+                            .filter(s => /^[A-Z]\d/.test(s))
+                            .slice(0, 3);
+                        const searchQuery = icdCodes.length > 0
+                            ? icdCodes.join(' ') + ' phác đồ điều trị BYT Việt Nam'
+                            : contextDiag.split('\n')[0].trim().slice(0, 60) + ' phác đồ BYT';
+                        const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchQuery);
+                        const vncardUrl = icdCodes.length > 0
+                            ? 'https://www.google.com/search?q=site:moh.gov.vn+' + encodeURIComponent(icdCodes.join('+'))
                             : '';
-                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>' + costBadge;
+
+                        resAIModal.innerHTML += `<div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(212,168,83,0.1); display:flex; gap:8px; flex-wrap:wrap;">
+                            <span style="font-size:10px; color:#5a5450; align-self:center;">Tra cứu:</span>
+                            <a href="${googleUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
+                                Phác đồ điều trị
+                            </a>
+                            <a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery.replace('phác đồ điều trị BYT Việt Nam', 'hướng dẫn chẩn đoán điều trị Bộ Y tế'))}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
+                                Hướng dẫn BYT
+                            </a>
+                            ${vncardUrl ? `<a href="${vncardUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
+                                MOH.GOV.VN
+                            </a>` : ''}
+                        </div>`;
+
                     } else {
                         throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
                     }
