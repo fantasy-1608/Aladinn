@@ -123,18 +123,21 @@
                         }
 
                         // 2. Thuốc (Medications)
-                        // Heuristic: Có TENDICHVU / TENTHUOC nhưng không phải Xét nghiệm và phải là dữ liệu của Bệnh nhân (không phải từ điển)
-                        if (isPatientSpecific && (item.TENDICHVU || item.TENTHUOC) && (item.DUONGDUNG || item.TENDUONGDUNG || item.SUDUNG || item.LIEUDUNG) && !item.GIATRI_KETQUA) {
+                        // Heuristic mở rộng: Detect thuốc từ nhiều field API khác nhau
+                        // Cần: TENTHUOC/TENDICHVU + (DUONGDUNG/SUDUNG/LIEUDUNG/SOLUONG/DONVI/DONGIA)
+                        const hasDrugName = isPatientSpecific && (item.TENDICHVU || item.TENTHUOC);
+                        const hasDrugMeta = item.DUONGDUNG || item.TENDUONGDUNG || item.SUDUNG || item.LIEUDUNG || item.SOLUONG || item.DONVITINH || item.DONGIA;
+                        if (hasDrugName && hasDrugMeta && !item.GIATRI_KETQUA && !item.KETQUACLS) {
                             let nameAttr = item.TENDICHVU || item.TENTHUOC;
-                            let generic = '';
-                            if (nameAttr.includes('(') && nameAttr.includes(')')) {
+                            let generic = item.HOATCHAT || item.TENHOATCHAT || '';
+                            if (!generic && nameAttr.includes('(') && nameAttr.includes(')')) {
                                 const match = nameAttr.match(/\((.*?)\)/);
                                 if (match) generic = match[1].trim();
                                 nameAttr = nameAttr.split('(')[0].trim();
                             }
                             // Filter nhiễu
                             const lowerName = nameAttr.toLowerCase();
-                            const isNoise = ['nước cất', 'nước muối', 'nacl 0.9', 'kim tiêm', 'bơm tiêm', 'glucose 5%', 'oxy y tế', 'dây truyền', 'găng tay'].some(nd => lowerName.includes(nd));
+                            const isNoise = ['nước cất', 'nước muối', 'nacl 0.9', 'natri clorid', 'kim tiêm', 'bơm tiêm', 'glucose 5%', 'oxy y tế', 'dây truyền', 'găng tay', 'gạc', 'bông'].some(nd => lowerName.includes(nd));
                             if (!isNoise && nameAttr.length > 2) {
                                 payload.medications.push({
                                     display_name: nameAttr,

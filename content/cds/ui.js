@@ -537,7 +537,7 @@ export const CDSUI = {
                 card.className = `cds-alert-card ${alert.severity}`;
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(12px)';
-                card.style.animation = `aladinn-staggerIn .4s ease forwards`;
+                card.style.animation = 'aladinn-staggerIn .4s ease forwards';
                 card.style.animationDelay = `${idx * 0.08}s`;
                 
                 let matchedHtml = '';

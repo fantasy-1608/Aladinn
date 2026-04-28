@@ -10,7 +10,7 @@
 
     // Chỉ chạy trong iframe CapThuoc / PhieuThuoc
     var url = window.location.href || '';
-    if (!url.includes('CapThuoc') && !url.includes('PhieuThuoc') && !url.includes('02D010')) {
+    if (!url.includes('CapThuoc') && !url.includes('PhieuThuoc') && !url.includes('02D010') && !url.includes('02D021') && !url.includes('BuongDieuTri')) {
         return;
     }
 
