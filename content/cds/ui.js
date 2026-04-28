@@ -458,56 +458,38 @@ export const CDSUI = {
             // Parse clean ICD codes from d.code (which may contain full text like "N18.5 - Suy thận mạn...")
             const parsedCodes = [];
             const seenCodes = new Set();
-            const descParts = [];
             for (const d of diagnoses) {
                 if (!d.code) continue;
                 const matches = d.code.match(icdRegex);
+                const desc = (d.name || d.code.replace(icdRegex, '').replace(/^[\s,;=\-\|]+/, '').replace(/[\s,;=\-\|]+$/, '').trim()) || (d.is_primary ? 'Chẩn đoán chính' : 'Bệnh kèm theo');
+
                 if (matches) {
                     for (const m of matches) {
                         if (!seenCodes.has(m)) {
                             seenCodes.add(m);
-                            parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0 });
+                            parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0, desc: desc });
                         }
                     }
-                    // Collect description text (strip ICD codes)
-                    const desc = d.code.replace(icdRegex, '').replace(/^[\s,;=-]+/, '').replace(/[\s,;=-]+$/, '').trim();
-                    if (desc && desc.length > 2) descParts.push(desc);
                 } else {
                     // d.code is already a clean code
                     if (!seenCodes.has(d.code)) {
                         seenCodes.add(d.code);
-                        parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0 });
+                        parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0, desc: desc });
                     }
                 }
             }
             
             let diagHtml;
             if (parsedCodes.length > 0) {
+                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 const pills = parsedCodes.map(p => {
                     const cls = p.isPrimary ? 'cds-diag-pill primary' : 'cds-diag-pill';
-                    return `<span class="${cls}" title="${p.isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${p.code}</span>`;
+                    return `<span class="${cls}" title="${escapeHtml(p.desc)}">${p.code}</span>`;
                 }).join('');
-                
-                let descHtml = '';
-                if (descParts.length > 0) {
-                    const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                    const descList = descParts.map(desc => `<li style="margin-bottom:3px; padding-bottom:3px; border-bottom:1px solid rgba(255,255,255,0.05);">${escapeHtml(desc)}</li>`).join('');
-                    descHtml = `
-                        <details style="margin-top:4px;">
-                            <summary style="font-size:10px; color:#8B8579; cursor:pointer; outline:none; user-select:none; opacity:0.8;">
-                                Xem chi tiết mô tả ▾
-                            </summary>
-                            <div style="margin-top:6px; padding:6px 8px; background:rgba(0,0,0,0.15); border-radius:4px; font-size:11px; color:#c8b89a; max-height:80px; overflow-y:auto;">
-                                <ul style="margin:0; padding-left:12px; line-height:1.4; list-style-type:'›  ';">${descList}</ul>
-                            </div>
-                        </details>
-                    `;
-                }
 
                 diagHtml = `<div class="cds-patient-diag">
                                 <span class="cds-diag-label">Chẩn đoán:</span>
                                 <div class="cds-diag-pills">${pills}</div>
-                                ${descHtml}
                             </div>`;
             } else {
                 diagHtml = '<div class="cds-patient-diag"><span class="cds-diag-label" style="opacity:0.5">Chưa có chẩn đoán ICD</span></div>';
