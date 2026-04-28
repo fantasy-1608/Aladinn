@@ -710,4 +710,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialization
     loadSettings();
+
+    // --- AI Config Section ---
+    function loadAIConfig() {
+        // Load daily stats from localStorage
+        try {
+            const today = new Date().toDateString();
+            const raw = localStorage.getItem('aladinn_ai_usage');
+            const data = raw ? JSON.parse(raw) : {};
+            if (data.date === today) {
+                const tokenEl = document.getElementById('stat-tokens');
+                const costEl = document.getElementById('stat-cost');
+                const callEl = document.getElementById('stat-calls');
+                if (tokenEl) tokenEl.textContent = (data.totalTokens || 0).toLocaleString('vi-VN');
+                if (costEl) {
+                    const vnd = data.totalVnd || 0;
+                    costEl.textContent = vnd < 1 ? '<1đ' : vnd < 1000
+                        ? `≈${Math.round(vnd)}đ`
+                        : `≈${(vnd / 1000).toFixed(1)}kđ`;
+                }
+                if (callEl) callEl.textContent = (data.callCount || 0);
+            }
+        } catch (_) { /* ignore */ }
+
+        // Load USD rate
+        const rateEl = document.getElementById('opt-usd-rate');
+        if (rateEl) {
+            const saved = localStorage.getItem('aladinn_usd_rate');
+            rateEl.value = saved || '25500';
+        }
+
+        // Load custom prompt
+        chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
+            const promptEl = document.getElementById('opt-prompt-cls');
+            if (promptEl && res.aladinn_ai_prompts?.cls_summary) {
+                promptEl.value = res.aladinn_ai_prompts.cls_summary;
+            }
+        });
+    }
+
+    // Save AI config when save-all button is clicked
+    const origSaveHandler = document.getElementById('save-all-btn');
+    if (origSaveHandler) {
+        origSaveHandler.addEventListener('click', () => {
+            // Save USD rate
+            const rateEl = document.getElementById('opt-usd-rate');
+            if (rateEl) {
+                const rate = parseFloat(rateEl.value);
+                if (!isNaN(rate) && rate > 1000) {
+                    localStorage.setItem('aladinn_usd_rate', rate.toString());
+                }
+            }
+
+            // Save custom prompt
+            const promptEl = document.getElementById('opt-prompt-cls');
+            if (promptEl) {
+                const promptVal = promptEl.value.trim();
+                chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
+                    const current = res.aladinn_ai_prompts || {};
+                    current.cls_summary = promptVal;
+                    chrome.storage.local.set({ aladinn_ai_prompts: current });
+                });
+            }
+        });
+    }
+
+    // Reset prompt button
+    const btnResetPrompt = document.getElementById('btn-reset-prompt-cls');
+    if (btnResetPrompt) {
+        btnResetPrompt.addEventListener('click', () => {
+            const promptEl = document.getElementById('opt-prompt-cls');
+            if (promptEl) promptEl.value = '';
+            chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
+                const current = res.aladinn_ai_prompts || {};
+                current.cls_summary = '';
+                chrome.storage.local.set({ aladinn_ai_prompts: current }, () => {
+                    showToast('✅ Đã reset về prompt mặc định!');
+                });
+            });
+        });
+    }
+
+    loadAIConfig();
 });

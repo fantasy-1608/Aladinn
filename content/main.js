@@ -6,6 +6,7 @@ import '../shared/utils.js';
 import '../shared/storage.js';
 import '../shared/crypto.js';
 import '../shared/api-key-service.js';
+import '../shared/ai-cost.js';
 import '../shared/his-core.js';
 import '../shared/his-selectors.js';
 import '../shared/event-bus.js';

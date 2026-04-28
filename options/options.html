@@ -582,6 +582,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
                     <span>Quản lý Tính năng</span>
                 </div>
+                <div class="nav-item" data-target="sec-ai-config">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.536 1.57 4.778 4 6.115V20l3.5-2.5c.477.069.976.1 1.5.1 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
+                    <span>Tùy chỉnh AI</span>
+                </div>
             </nav>
             
             <div style="margin-top: 40px;">
@@ -824,6 +828,60 @@
                     </label>
                 </div>
 
+            </section>
+
+            <!-- AI CONFIG -->
+            <section id="sec-ai-config" class="section">
+                <h2>
+                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.536 1.57 4.778 4 6.115V20l3.5-2.5c.477.069.976.1 1.5.1 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
+                    Tùy chỉnh AI
+                </h2>
+
+                <!-- Thống kê sử dụng -->
+                <h3 class="group-title">📊 Thống kê sử dụng hôm nay</h3>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px;">
+                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:22px; font-weight:700; color:var(--primary); font-family:var(--font-title);" id="stat-tokens">—</div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Tổng Token</div>
+                    </div>
+                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:22px; font-weight:700; color:var(--success); font-family:var(--font-title);" id="stat-cost">—</div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Chi phí (đ)</div>
+                    </div>
+                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:22px; font-weight:700; color:var(--accent); font-family:var(--font-title);" id="stat-calls">—</div>
+                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Lần gọi AI</div>
+                    </div>
+                </div>
+
+                <!-- Tỷ giá -->
+                <div class="form-group">
+                    <label>Tỷ giá USD/VNĐ (dùng để tính chi phí)</label>
+                    <input type="text" id="opt-usd-rate" placeholder="25500" style="max-width:200px;">
+                    <div class="help-text">Mặc định: 25.500 VNĐ/USD. Cập nhật nếu tỷ giá thay đổi.</div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 28px 0;">
+
+                <!-- Prompt tùy chỉnh -->
+                <h3 class="group-title">📝 Prompt Tóm tắt CLS + Thuốc</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
+                    Prompt dưới đây sử dụng các biến: <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>, 
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>, 
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>, 
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>, 
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>.
+                    Để trống để dùng prompt mặc định.
+                </p>
+                <div class="form-group">
+                    <textarea id="opt-prompt-cls" placeholder="Để trống để dùng prompt mặc định của Aladinn..." style="width:100%; height:200px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:13px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <button id="btn-reset-prompt-cls" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                        Reset về mặc định
+                    </button>
+                </div>
             </section>
 
         </main>

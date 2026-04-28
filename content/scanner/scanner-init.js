@@ -1573,12 +1573,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
                                 CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
                             </h3>
-                            <button id="btn-ai-summary-modal" title="Nhờ AI phân tích hồ sơ" style="background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02)); border: 1px solid rgba(212,168,83,0.25); color: #D4A853; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,168,83,0.2)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02))'">
+                            <button id="btn-ai-summary-modal" title="Nhờ AI tóm tắt bệnh án" style="background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02)); border: 1px solid rgba(212,168,83,0.25); color: #D4A853; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,168,83,0.2)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02))'">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI
                             </button>
                         </div>
                         ${headerSubtitleHtml}
-                        <div id="ai-summary-result-modal" style="display: none; margin-top: 12px; padding: 14px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(212,168,83,0.15); font-size: 13px; color: #cbd5e1; line-height: 1.6; max-width: 100%;"></div>
+                        <!-- AI Result: collapsible panel -->
+                        <div id="ai-summary-wrapper-modal" style="display:none; margin-top:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px;">🤖 Phân tích lâm sàng (AI)</span>
+                                <button id="btn-ai-collapse" title="Thu gọn" style="background:none; border:none; color:#5a5450; font-size:16px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d4a25a'" onmouseout="this.style.color='#5a5450'">▲</button>
+                            </div>
+                            <div id="ai-summary-result-modal" style="padding: 14px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(212,168,83,0.15); font-size: 13px; color: #cbd5e1; line-height: 1.6; max-width: 100%;"></div>
+                        </div>
                     </div>
                     <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;" title="Đóng">&times;</button>
                 </div>
@@ -1604,10 +1611,24 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         document.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
 
-        // --- AI Summary Button ---
+        // --- AI Summary Button (modal CLS + Thuốc) ---
         const btnAIModal = modal.querySelector('#btn-ai-summary-modal');
         const resAIModal = modal.querySelector('#ai-summary-result-modal');
-        if (btnAIModal && resAIModal) {
+        const wrapperAIModal = modal.querySelector('#ai-summary-wrapper-modal');
+        const btnCollapse = modal.querySelector('#btn-ai-collapse');
+
+        // Nút thu gọn / mở rộng kết quả AI
+        if (btnCollapse && resAIModal && wrapperAIModal) {
+            let _collapsed = false;
+            btnCollapse.addEventListener('click', () => {
+                _collapsed = !_collapsed;
+                resAIModal.style.display = _collapsed ? 'none' : 'block';
+                btnCollapse.textContent = _collapsed ? '▼' : '▲';
+                btnCollapse.title = _collapsed ? 'Mở rộng' : 'Thu gọn';
+            });
+        }
+
+        if (btnAIModal && resAIModal && wrapperAIModal) {
             btnAIModal.addEventListener('click', async () => {
                 let apiKey = await window.HIS.ApiKeyService.getKey();
                 if (!apiKey) {
@@ -1618,38 +1639,101 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
 
                 if (!apiKey) {
-                    resAIModal.style.display = 'block';
+                    wrapperAIModal.style.display = 'block';
                     resAIModal.innerHTML = '<span style="color:#E85454">⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.</span>';
                     return;
                 }
-                
+
                 btnAIModal.disabled = true;
                 btnAIModal.innerHTML = '<span style="animation: pulse-warning 1s infinite;">✨ Đang xử lý...</span>';
+                wrapperAIModal.style.display = 'block';
                 resAIModal.style.display = 'block';
-                resAIModal.innerHTML = '<div style="display:flex; gap:8px; align-items:center; color: #D4A853;"><div class="cds-spinner" style="width:14px;height:14px;border:2px solid rgba(212,168,83,0.3);border-top-color:#D4A853;border-radius:50%;animation:spin 1s linear infinite;"></div> Đang tóm tắt dữ liệu...</div>';
-                
+                // Đặt lại nút thu gọn về trạng thái mở rộng
+                if (btnCollapse) { btnCollapse.textContent = '▲'; btnCollapse.title = 'Thu gọn'; }
+                resAIModal.innerHTML = '<div style="display:flex; gap:8px; align-items:center; color: #D4A853;"><div class="cds-spinner" style="width:14px;height:14px;border:2px solid rgba(212,168,83,0.3);border-top-color:#D4A853;border-radius:50%;animation:spin 1s linear infinite;"></div> Đang phân tích hồ sơ...</div>';
+
                 try {
-                    // Collect context for Gemini
-                    const contextDrugs = drugs.map(d => `${d.TENTHUOC} (${d.SOLUONG || ''})`).join(', ');
-                    const contextDiag = patientInfo.diagnosis || 'Không rõ';
-                    const contextAge = patientInfo.age || 'Không rõ';
-                    const prompt = `Bạn là bác sĩ chuyên khoa. Thông tin bệnh nhân:\n- Tên: ${patientName}\n- Tuổi/Năm sinh: ${contextAge}\n- Chẩn đoán: ${contextDiag}\n- Đơn thuốc: ${contextDrugs}\n\nHãy tóm tắt ngắn gọn tình trạng bệnh nhân và lưu ý quan trọng (tối đa 3 gạch đầu dòng, ngôn từ chuyên ngành, KHÔNG DÀI DÒNG).`;
-                    
+                    // --- Ẩn danh thông tin cá nhân bệnh nhân (bảo mật y khoa) ---
+                    // Chỉ dùng mã bệnh án + năm sinh, không gửi tên thật lên API
+                    const patientRef = patientInfo.id
+                        ? `BN-${String(patientInfo.id).slice(-4).padStart(4,'0')}`
+                        : 'BN-XXXX';
+                    const birthYear = patientInfo.age
+                        ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
+                        : 'không rõ';
+
+                    // --- Context lâm sàng ---
+                    const contextDiag = patientInfo.diagnosis || 'Chưa rõ chẩn đoán';
+
+                    // Thuốc: chỉ lấy tên thuốc + liều, không gửi mã vạch hay số lô
+                    const uniqueDrugs = [...new Map(
+                        drugs.map(d => [d.TENTHUOC, d])
+                    ).values()];
+                    const contextDrugs = uniqueDrugs
+                        .map(d => `${d.TENTHUOC || ''}${d.SOLUONG ? ' (' + d.SOLUONG + (d.DONVITINH ? ' ' + d.DONVITINH : '') + '/ngày)' : ''}`)
+                        .filter(Boolean)
+                        .join('; ');
+
+                    // XN bất thường mới nhất (từ grouped data nếu có)
+                    const abnItems = window._aladinn_last_abnormals || [];
+                    const contextAbn = abnItems.length > 0
+                        ? abnItems.slice(0, 5).map(a => `${a.code || a.testName}: ${a.value} ${a.unit || ''}`).join('; ')
+                        : '';
+
+                    // Lấy custom prompt từ Options (nếu có), fallback về mặc định
+                    let promptTemplate = '';
+                    try {
+                        const stored = await new Promise(r =>
+                            chrome.storage.local.get(['aladinn_ai_prompts'], r)
+                        );
+                        promptTemplate = stored?.aladinn_ai_prompts?.cls_summary || '';
+                    } catch (_) { /* fallback */ }
+
+                    if (!promptTemplate.trim()) {
+                        promptTemplate = `Bạn là bác sĩ đang trình bệnh tại buổi hội chẩn. Dưới đây là dữ liệu lâm sàng (mã bệnh nhân: {{patientRef}}, năm sinh: {{birthYear}}):
+- Chẩn đoán (ICD): {{diagnosis}}
+- Đơn thuốc: {{drugs}}
+{{abnormal}}
+Trình bày ngắn gọn theo cấu trúc:
+1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
+2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
+3. Hướng xử trí đề xuất (nếu đủ dữ kiến)
+Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌAN. Không giải thích thừa.`;
+                    }
+
+                    // Điền biến vào template
+                    const abnLine = contextAbn ? `- XN bất thường: ${contextAbn}` : '';
+                    const prompt = promptTemplate
+                        .replace('{{patientRef}}', patientRef)
+                        .replace('{{birthYear}}', birthYear)
+                        .replace('{{diagnosis}}', contextDiag)
+                        .replace('{{drugs}}', contextDrugs || 'Không rõ')
+                        .replace('{{abnormal}}', abnLine);
+
                     const model = await window.HIS.getAiModel();
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        }
+                    );
+
                     const data = await response.json();
-                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                         let text = data.candidates[0].content.parts[0].text;
-                        text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                                   .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                   .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
-                                   .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
-                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
+                        text = text
+                            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                            .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
+                            .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
+
+                        // Render kết quả + cost badge
+                        const costBadge = window.HIS?.AICost
+                            ? window.HIS.AICost.renderCostBadge(model, data.usageMetadata)
+                            : '';
+                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>' + costBadge;
                     } else {
                         throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
                     }

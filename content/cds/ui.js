@@ -524,74 +524,15 @@ export const CDSUI = {
             }
             
             patientInfo.innerHTML = `
-                <div class="cds-patient-name" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        ${context.patient.name || context.patient.id}
-                    </div>
-                    <button id="btn-ai-summary" title="Nhờ AI phân tích hồ sơ" style="background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02)); border: 1px solid rgba(212,168,83,0.25); color: #D4A853; border-radius: 6px; padding: 4px 8px; font-size: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; white-space: nowrap;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
-                        Tóm tắt AI
-                    </button>
+                <div class="cds-patient-name" style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    ${context.patient.name || context.patient.id}
                 </div>
                 ${diagHtml}
-                <div id="ai-summary-result" style="display: none; margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(212,168,83,0.15); font-size: 12px; color: #cbd5e1; line-height: 1.5; font-family: 'Inter', sans-serif;"></div>
             `;
             patientInfo.style.display = 'block';
 
-            const btnAI = document.getElementById('btn-ai-summary');
-            const resAI = document.getElementById('ai-summary-result');
-            if (btnAI) {
-                btnAI.addEventListener('click', async () => {
-                    let apiKey = await HIS.ApiKeyService.getKey();
-                    if (!apiKey) {
-                        const needsPin = await HIS.ApiKeyService.needsPin();
-                        if (needsPin) {
-                            apiKey = await HIS.ApiKeyService.promptAndUnlock();
-                        }
-                    }
-
-                    if (!apiKey) {
-                        resAI.style.display = 'block';
-                        resAI.innerHTML = '<span style="color:#E85454">⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.</span>';
-                        return;
-                    }
-                    
-                    btnAI.disabled = true;
-                    btnAI.innerHTML = '<span style="animation: pulse-warning 1s infinite;">✨ Đang xử lý...</span>';
-                    resAI.style.display = 'block';
-                    resAI.innerHTML = '<div style="display:flex; gap:8px; align-items:center; color: #D4A853;"><div class="cds-spinner" style="width:14px;height:14px;border:2px solid rgba(212,168,83,0.3);border-top-color:#D4A853;border-radius:50%;animation:spin 1s linear infinite;"></div> Đang tóm tắt dữ liệu lâm sàng...</div>';
-                    
-                    try {
-                        const prompt = `Bạn là trợ lý bác sĩ chuyên khoa (Aladinn). Dưới đây là thông tin bệnh nhân đang khám:\n- Tên: ${context.patient.name}\n- Tuổi: ${context.patient.age}\n- Chẩn đoán ICD: ${parsedCodes.map(c => c.code + ' ' + c.desc).join('; ')}\n- Đơn thuốc dự kiến: ${debug.normalized_drugs.map(d => d.name + ' (' + d.qty + ')').join(', ')}\n\nHãy tóm tắt ngắn gọn tình trạng bệnh nhân và các lưu ý quan trọng (tối đa 3 gạch đầu dòng, viết bằng tiếng Việt, dùng từ ngữ y khoa chuyên nghiệp). Đi thẳng vào vấn đề, KHÔNG DÀI DÒNG.`;
-                        
-                        const model = await HIS.getAiModel();
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-                        
-                        const data = await response.json();
-                        if (data.candidates && data.candidates[0].content.parts[0].text) {
-                            let text = data.candidates[0].content.parts[0].text;
-                            // Convert markdown list to html
-                            text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                                       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                       .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
-                                       .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
-                            resAI.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
-                        } else {
-                            throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
-                        }
-                    } catch (e) {
-                        resAI.innerHTML = '<span style="color:#E85454">Lỗi AI: ' + e.message + '</span>';
-                    } finally {
-                        btnAI.disabled = false;
-                        btnAI.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI';
-                    }
-                });
-            }
+            // AI Summary đã được chuyển sang modal CLS + Thuốc (scanner-init.js)
         } else {
             patientInfo.style.display = 'none';
         }

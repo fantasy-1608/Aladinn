@@ -132,7 +132,7 @@ HIS.ApiKeyService = (function () {
                         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
                         background: rgba(11, 17, 33, 0.7); backdrop-filter: blur(4px);
                         display: flex; align-items: center; justify-content: center;
-                        z-index: 999999; animation: hisPinFadeIn 0.25s ease;
+                        z-index: 2147483647; animation: hisPinFadeIn 0.25s ease;
                     }
                     @keyframes hisPinFadeIn { from { opacity: 0; } to { opacity: 1; } }
                     .his-pin-dialog {
@@ -205,7 +205,7 @@ HIS.ApiKeyService = (function () {
                     <div class="his-pin-error-msg"></div>
                 </div>
             `;
-            document.body.appendChild(overlay);
+            document.documentElement.appendChild(overlay);
 
             const inputs = overlay.querySelectorAll('.his-pin-input');
             const submitBtn = overlay.querySelector('.his-pin-submit');
