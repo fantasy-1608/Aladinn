@@ -397,7 +397,7 @@ export const CDSExtractor = {
         const NOISE_WORDS = ['page', 'trang', 'total', 'tổng', 'chọn', 'đóng', 'lưu', 'hủy', 'xóa', 'sửa', 'in ', 'print'];
         const ICD_PATTERN = /[A-Z]\d{2,3}(?:\.\d{1,2})?/;
         const DRUG_UNITS = ['viên', 'viên.', 'viên ', 'vên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm', 'đơn vị', 'đv'];
-        const DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'ngoài da', 'tiêm bắp', 'tiêm tĩnh mạch', 'pha', 'súc miệng'];
+        const DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'ngoài da', 'tiêm bắp', 'tiêm tĩnh mạch', 'pha tiêm', 'súc miệng'];
 
         const rows = this.getElementsAcrossIframes('tr');
 
@@ -485,7 +485,7 @@ export const CDSExtractor = {
         const nameLower = name.toLowerCase();
         if (NOT_DRUGS.some(nd => nameLower.includes(nd))) return '';
         
-        // Detect patient names: Title Case / ALL UPPER nhưng có dấu VN → tên người
+        // Detect patient/doctor names: Title Case / ALL UPPER
         if (name.length > 6 && !/\d/.test(name)) {
             const words = name.trim().split(/\s+/);
             if (words.length >= 2 && words.length <= 6) {
@@ -494,9 +494,14 @@ export const CDSExtractor = {
                 if (isAllUpper || isTitleCase) {
                     const hasVnDiacritics = /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/i.test(name);
                     const hasMedKeyword = /injection|solution|cream|tablet|capsule|sodium|chloride|acid|hydro|amine|oxacin|mycin|azole|prazole|statin|sartan|dipine|olol|cillin|mab|nib|parin|phylline|cortis|predniso|metro|pharm/i.test(name);
+                    
+                    const firstWord = words[0].toLowerCase();
+                    const commonVnSurnames = ['nguyen', 'nguyễn', 'tran', 'trần', 'le', 'lê', 'pham', 'phạm', 'hoang', 'hoàng', 'huynh', 'huỳnh', 'phan', 'vu', 'vũ', 'vo', 'võ', 'dang', 'đặng', 'bui', 'bùi', 'do', 'đỗ', 'ho', 'hồ', 'ngo', 'ngô', 'duong', 'dương', 'ly', 'lý'];
+                    const hasVnSurname = commonVnSurnames.includes(firstWord);
+
                     if (hasMedKeyword) {
                         // Giữ — đây là thuốc
-                    } else if (hasVnDiacritics) {
+                    } else if (hasVnDiacritics || hasVnSurname) {
                         return ''; // Tên người VN
                     }
                 }
