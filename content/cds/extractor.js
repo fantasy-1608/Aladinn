@@ -331,10 +331,15 @@ export const CDSExtractor = {
             if (processedGrids.has(grid)) continue;
             processedGrids.add(grid);
 
-            const headers = grid.querySelectorAll('th');
+            // Lấy dòng header chính xác nhất
+            let headerRow = grid.querySelector('tr.ui-jqgrid-labels');
+            if (!headerRow) headerRow = grid.querySelector('thead tr');
+            if (!headerRow) continue;
+            
+            const headers = headerRow.querySelectorAll('th');
             if (headers.length < 3) continue;
             
-            // Detect column indices
+            // Detect column indices based ONLY on the actual header row
             let nameCol = -1, dosageCol = -1;
             headers.forEach((th, i) => {
                 const text = (th.innerText || th.textContent || '').trim().toLowerCase();
