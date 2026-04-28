@@ -548,7 +548,7 @@
                                 const extractMatches = (icdStr, nameStr, isPrimary) => {
                                     const matches = icdStr.toUpperCase().match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
                                     if (matches) {
-                                        const names = nameStr.split(/;\-?/).map(s => s.trim()).filter(s => s);
+                                        const names = nameStr.split(/;-?/).map(s => s.trim()).filter(s => s);
                                         matches.forEach((code, idx) => {
                                             if (!allDiagnoses.some(d => d.code === code)) {
                                                 allDiagnoses.push({
