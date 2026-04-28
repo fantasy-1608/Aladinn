@@ -542,19 +542,26 @@
                             rows.forEach(item => {
                                 const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
                                 const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
-                                const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                                const rawName = item.CHANDOAN || item.TENBENH || '';
+                                const rawNameSub = item.CHANDOAN_KEMTHEO || item.TENBENHKEMTHEO || '';
                                 
-                                const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
-                                if (matches) {
-                                    matches.forEach(code => {
-                                        if (!allDiagnoses.some(d => d.code === code)) {
-                                            allDiagnoses.push({
-                                                code: code,
-                                                is_primary: allDiagnoses.length === 0
-                                            });
-                                        }
-                                    });
-                                }
+                                const extractMatches = (icdStr, nameStr, isPrimary) => {
+                                    const matches = icdStr.toUpperCase().match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                                    if (matches) {
+                                        matches.forEach(code => {
+                                            if (!allDiagnoses.some(d => d.code === code)) {
+                                                allDiagnoses.push({
+                                                    code: code,
+                                                    name: nameStr,
+                                                    is_primary: isPrimary && allDiagnoses.length === 0
+                                                });
+                                            }
+                                        });
+                                    }
+                                };
+                                
+                                extractMatches(rawIcd, rawName, true);
+                                extractMatches(rawIcdSub, rawNameSub, false);
                             });
 
                             sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: allDiagnoses }, requestId);
