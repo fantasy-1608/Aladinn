@@ -321,29 +321,43 @@ export const CDSExtractor = {
     _scanDrugGrids() {
         const meds = [];
         
-        // Tìm tất cả table có header chứa "Tên thuốc" hoặc "Tên dịch vụ"
-        const allTables = this.getElementsAcrossIframes('table');
+        // Cải tiến: Hỗ trợ cả bảng HTML thường và jqGrid (tách header/data riêng)
+        const grids = this.getElementsAcrossIframes('.ui-jqgrid, table');
+        const processedGrids = new Set();
         
-        for (const table of allTables) {
-            const headers = table.querySelectorAll('th');
+        for (const grid of grids) {
+            // Tránh xử lý trùng table con nằm trong jqGrid
+            if (grid.tagName.toLowerCase() === 'table' && grid.closest && grid.closest('.ui-jqgrid')) continue;
+            if (processedGrids.has(grid)) continue;
+            processedGrids.add(grid);
+
+            const headers = grid.querySelectorAll('th');
             if (headers.length < 3) continue;
             
             // Detect column indices
             let nameCol = -1, dosageCol = -1;
-            const headerTexts = [];
             headers.forEach((th, i) => {
                 const text = (th.innerText || th.textContent || '').trim().toLowerCase();
-                headerTexts.push(text);
                 if (text.includes('tên thuốc') || text.includes('tên dịch vụ')) nameCol = i;
                 if (text.includes('nồng độ') || text.includes('hàm lượng') || text.includes('hoạt chất')) dosageCol = i;
             });
             
             if (nameCol === -1) continue; // Không phải bảng thuốc
             
-            // Quét data rows
-            const rows = table.querySelectorAll('tr');
+            // Quét data rows (với jqGrid, rows nằm trong .ui-jqgrid-bdiv)
+            let dataContainer = grid;
+            if (grid.classList && grid.classList.contains('ui-jqgrid')) {
+                const bdiv = grid.querySelector('.ui-jqgrid-bdiv');
+                if (bdiv) dataContainer = bdiv;
+            }
+            
+            const rows = dataContainer.querySelectorAll('tr');
             for (const row of rows) {
                 if (row.querySelector('th')) continue;
+                
+                // jqGrid thường có 1 dòng giả jqgfirstrow để định dạng chiều rộng
+                if (row.classList && row.classList.contains('jqgfirstrow')) continue;
+                
                 const cells = row.querySelectorAll('td');
                 if (cells.length <= nameCol) continue;
                 
@@ -459,7 +473,7 @@ export const CDSExtractor = {
         // Loại dung môi / vật tư
         const NOT_DRUGS = [
             'nước cất', 'nuoc cat', 'water for injection',
-            'nước muối', 'natri clorid 0,9', 'nacl 0.9', 'nacl 0,9', 'normal saline',
+            'nước muối', 'natri clorid', 'nacl', 'normal saline', 'sodium chloride', 'natriclorid',
             'glucose 5%', 'dextrose 5%',
             'cồn 70', 'cồn 90', 'alcool 70', 'alcool 90', 'alcohol',
             'oxy y tế', 'oxy lỏng', 'oxygen',
