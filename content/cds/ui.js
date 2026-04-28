@@ -568,9 +568,10 @@ export const CDSUI = {
                 if (alert.matched_items) {
                     const items = [];
                     if (alert.matched_items.drug) items.push(...alert.matched_items.drug);
-                    if (alert.matched_items.icd) items.push(...alert.matched_items.icd);
-                    if (alert.matched_items.condition) items.push(...alert.matched_items.condition);
-                    matchedHtml = `<div class="alert-match-list">${items.map(i => `<span>${i}</span>`).join('')}</div>`;
+                    
+                    if (items.length > 0) {
+                        matchedHtml = `<div class="alert-match-list">${items.map(i => `<span>${i}</span>`).join('')}</div>`;
+                    }
 
                     if (alert.domain === 'interaction' && alert.matched_items.drug && alert.matched_items.drug.length >= 2) {
                         const VN_QUERY = `tương tác thuốc giữa ${alert.matched_items.drug.join(' và ')}`;
