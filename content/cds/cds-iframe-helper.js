@@ -126,6 +126,7 @@
             if (name && ICD_PATTERN.test(name)) name = '';
             
             // Detect patient names: All UPPERCASE (>= 2 words) OR Title Case
+            // Nhưng KHÔNG loại tên thuốc Latin (không dấu) hoặc chứa keyword y khoa
             if (name && name.length > 6 && !/\d/.test(name)) {
                 var words = name.trim().split(/\s+/);
                 if (words.length >= 2 && words.length <= 6) {
@@ -139,7 +140,13 @@
                         }
                     }
                     if (isAllUpper || isTitleCase) {
-                        name = ''; // Là tên người -> loại bỏ
+                        var hasVnDiacritics = /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/i.test(name);
+                        var hasMedKeyword = /injection|solution|cream|tablet|capsule|sodium|chloride|acid|hydro|amine|oxacin|mycin|azole|prazole|statin|sartan|dipine|olol|cillin|mab|nib|parin|phylline|cortis|predniso|metro|pharm/i.test(name);
+                        if (hasMedKeyword) {
+                            // Giữ lại — đây là thuốc
+                        } else if (hasVnDiacritics) {
+                            name = ''; // Có dấu VN + Title Case → tên người
+                        }
                     }
                 }
             }

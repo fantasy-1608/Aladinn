@@ -43,8 +43,15 @@ export const CDSUI = {
             <div id="cds-patient-info" style="display:none" class="cds-patient-info"></div>
             <div class="cds-body">
                 <div id="cds-alerts-container">
-                    <div class="cds-empty-state">
+                    <div class="cds-empty-state" id="cds-empty-state">
+                        <div style="opacity:0.6; margin-bottom:8px">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+                        </div>
                         Chưa có dữ liệu thuốc
+                        <button id="cds-manual-rescan" style="margin-top:12px; padding:6px 16px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.05); color:inherit; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px; transition:all .2s">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            Quét lại
+                        </button>
                     </div>
                 </div>
             </div>
@@ -122,6 +129,21 @@ export const CDSUI = {
                 btn.style.pointerEvents = 'auto';
             }, 2000);
         });
+
+        // Nút Quét lại (trong empty state)
+        const rescanBtn = document.getElementById('cds-manual-rescan');
+        if (rescanBtn) {
+            rescanBtn.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('ALADINN_FORCE_RESET_CACHE'));
+                window.dispatchEvent(new CustomEvent('ALADINN_MANUAL_SCAN'));
+                rescanBtn.textContent = 'Đang quét...';
+                rescanBtn.style.opacity = '0.5';
+                setTimeout(() => {
+                    rescanBtn.textContent = 'Quét lại';
+                    rescanBtn.style.opacity = '1';
+                }, 2000);
+            });
+        }
 
         // Kéo thả dọc (Vertical drag)
         let isDown = false;

@@ -262,17 +262,201 @@ export const CDSExtractor = {
 
     getMedications() {
         const meds = [];
+        const debugPipeline = []; // Track extraction pipeline for console
         
-        // Nâng cấp: Đọc từ Data Snooping Cache trước, sau đó GỘP với dữ liệu trên DOM
+        // ===== SOURCE 1: CDSCache (API Snooping — fastest, most reliable) =====
         const cache = CDSCache.get();
-        if (cache.medications && cache.medications.length > 0) {
+        const cacheFresh = cache._medsTimestamp && (Date.now() - cache._medsTimestamp < 300000); // 5 min TTL
+        if (cache.medications && cache.medications.length > 0 && cacheFresh) {
             meds.push(...cache.medications);
+            debugPipeline.push(`[Cache] ${cache.medications.length} drugs (fresh)`);
+        } else if (cache.medications && cache.medications.length > 0) {
+            meds.push(...cache.medications);
+            debugPipeline.push(`[Cache] ${cache.medications.length} drugs (stale → will merge DOM)`);
         }
 
+        // ===== SOURCE 2: Targeted Grid Scanner (column-header aware) =====
+        const gridMeds = this._scanDrugGrids();
+        if (gridMeds.length > 0) {
+            debugPipeline.push(`[Grid] ${gridMeds.length} drugs`);
+            for (const m of gridMeds) {
+                meds.push(m);
+            }
+        }
+
+        // ===== SOURCE 3: Generic DOM Scanner (fallback — quét mọi <tr>) =====
+        if (meds.length === 0) {
+            const domMeds = this._scanGenericRows();
+            if (domMeds.length > 0) {
+                debugPipeline.push(`[DOM] ${domMeds.length} drugs`);
+                for (const m of domMeds) {
+                    meds.push(m);
+                }
+            }
+        }
+
+        // Unique filter by name
+        const uniqueMeds = [];
+        const seen = new Set();
+        for (const m of meds) {
+            const k = m.display_name.toLowerCase();
+            if (!seen.has(k)) {
+                seen.add(k);
+                uniqueMeds.push(m);
+            }
+        }
         
-        // Từ khóa loại trừ (không phải thuốc)
+        console.log(`[Aladinn CDS] 💊 Pipeline: ${debugPipeline.join(' → ')} | Final: ${uniqueMeds.length} unique drugs`);
+        if (uniqueMeds.length > 0) {
+            console.log('[Aladinn CDS] 💊 Drugs:', uniqueMeds.map(m => m.display_name).join(', '));
+        }
+        
+        return uniqueMeds;
+    },
+
+    /**
+     * Phase 2: Targeted Grid Scanner — quét bảng thuốc cụ thể theo header columns.
+     * Tự động phát hiện cột "Tên thuốc", "Nồng độ", "ĐVT" từ <th> row.
+     */
+    _scanDrugGrids() {
+        const meds = [];
+        
+        // Tìm tất cả table có header chứa "Tên thuốc" hoặc "Tên dịch vụ"
+        const allTables = this.getElementsAcrossIframes('table');
+        
+        for (const table of allTables) {
+            const headers = table.querySelectorAll('th');
+            if (headers.length < 3) continue;
+            
+            // Detect column indices
+            let nameCol = -1, dosageCol = -1;
+            const headerTexts = [];
+            headers.forEach((th, i) => {
+                const text = (th.innerText || th.textContent || '').trim().toLowerCase();
+                headerTexts.push(text);
+                if (text.includes('tên thuốc') || text.includes('tên dịch vụ')) nameCol = i;
+                if (text.includes('nồng độ') || text.includes('hàm lượng') || text.includes('hoạt chất')) dosageCol = i;
+            });
+            
+            if (nameCol === -1) continue; // Không phải bảng thuốc
+            
+            // Quét data rows
+            const rows = table.querySelectorAll('tr');
+            for (const row of rows) {
+                if (row.querySelector('th')) continue;
+                const cells = row.querySelectorAll('td');
+                if (cells.length <= nameCol) continue;
+                
+                let name = (cells[nameCol]?.innerText || '').trim();
+                let generic = dosageCol >= 0 && cells[dosageCol] ? (cells[dosageCol]?.innerText || '').trim() : '';
+                
+                if (!name || name.length < 2 || name === '-') continue;
+                
+                // Filter dung môi / vật tư
+                name = this._filterDrugName(name, generic);
+                if (!name) continue;
+                
+                // Clean up ngoặc
+                if (name.includes('(') && name.includes(')')) {
+                    const match = name.match(/\((.*?)\)/);
+                    if (match && !generic) generic = match[1].trim();
+                    name = name.split('(')[0].trim();
+                }
+                
+                if (name.length > 1) {
+                    meds.push({
+                        display_name: name,
+                        generic_candidate: (generic && generic !== '-') ? generic : null
+                    });
+                }
+            }
+        }
+        
+        return meds;
+    },
+
+    /**
+     * Generic DOM Scanner (fallback) — logic cũ, cải tiến.
+     */
+    _scanGenericRows() {
+        const meds = [];
         const NOISE_WORDS = ['page', 'trang', 'total', 'tổng', 'chọn', 'đóng', 'lưu', 'hủy', 'xóa', 'sửa', 'in ', 'print'];
-        // Dung môi, vật tư y tế KHÔNG PHẢI THUỐC — loại trừ khỏi phân tích tương tác
+        const ICD_PATTERN = /[A-Z]\d{2,3}(?:\.\d{1,2})?/;
+        const DRUG_UNITS = ['viên', 'viên.', 'viên ', 'vên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm', 'đơn vị', 'đv'];
+        const DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'ngoài da', 'tiêm bắp', 'tiêm tĩnh mạch', 'pha', 'súc miệng'];
+
+        const rows = this.getElementsAcrossIframes('tr');
+
+        for (const row of rows) {
+            if (row.querySelector('th')) continue;
+            
+            // Bỏ qua lưới Danh sách bệnh nhân
+            if (row.closest) {
+                const parentGrid = row.closest('[id*="grdBenhNhan"], [id*="gridBenhNhan"], [id*="gbox_grdBenhNhan"], [id*="grdDanhSachBN"]');
+                if (parentGrid) continue;
+            }
+
+            let cells = Array.from(row.querySelectorAll('td'));
+            if (cells.length === 0) cells = Array.from(row.querySelectorAll(':scope > div'));
+            
+            const cols = cells.map(td => (td.innerText || td.textContent || '').trim());
+            if (cols.length < 3) continue;
+
+            const hasDrugUnit = DRUG_UNITS.some(u => cols.some(c => c.length > 0 && c.length < 15 && c.toLowerCase().includes(u)));
+            const hasDrugRoute = DRUG_ROUTES.some(r => cols.some(c => c.length > 0 && c.length < 20 && c.toLowerCase().includes(r)));
+            if (!hasDrugUnit && !hasDrugRoute) continue;
+
+            const rowText = cols.join(' ').toLowerCase();
+            if (NOISE_WORDS.some(w => rowText.includes(w))) continue;
+
+            // SMART COLUMN SCANNER
+            const textCols = [];
+            for (let i = 0; i < cols.length; i++) {
+                const val = cols[i];
+                if (!val || val === '-' || val.length < 2) continue;
+                if (/^\d[\d.,]*$/.test(val)) continue;
+                if (/^\d{2}\/\d{2}\/\d{4}/.test(val)) continue;
+                if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(val)) continue;
+                const valLower = val.toLowerCase();
+                if (DRUG_UNITS.some(u => valLower === u)) continue;
+                if (['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'thu phí', 'viện phí', 'bhyt', 'kho nội trú', 'kho ngoại trú', 'nam', 'nữ', 'không có'].some(k => valLower === k || valLower.startsWith(k))) continue;
+                if (ICD_PATTERN.test(val)) continue;
+                if (!val.includes(' ') && /^[A-Z0-9_-]+$/.test(val)) continue;
+                textCols.push({ index: i, value: val });
+            }
+
+            let name = textCols.length >= 1 ? textCols[0].value : '';
+            let generic = textCols.length >= 2 ? textCols[1].value : '';
+
+            if (name && ICD_PATTERN.test(name)) name = '';
+            
+            name = this._filterDrugName(name, generic);
+            if (!name) continue;
+
+            // Clean up
+            if (name.includes('(') && name.includes(')')) {
+                const match = name.match(/\((.*?)\)/);
+                if (match && !generic) generic = match[1].trim();
+                name = name.split('(')[0].trim();
+            }
+            if (name.length > 1 && name !== '-') {
+                meds.push({
+                    display_name: name,
+                    generic_candidate: (generic && generic !== '-') ? generic : null
+                });
+            }
+        }
+        return meds;
+    },
+
+    /**
+     * Filter: loại tên người, dung môi, vật tư y tế.
+     * Trả về name đã clean hoặc '' nếu bị loại.
+     */
+    _filterDrugName(name, _generic) {
+        if (!name) return '';
+        
+        // Loại dung môi / vật tư
         const NOT_DRUGS = [
             'nước cất', 'nuoc cat', 'water for injection',
             'nước muối', 'natri clorid 0,9', 'nacl 0.9', 'nacl 0,9', 'normal saline',
@@ -284,132 +468,28 @@ export const CDSExtractor = {
             'băng keo', 'gạc', 'bông', 'găng tay',
             'dung dịch rửa', 'nước rửa tay', 'povidone', 'betadine',
         ];
-        // Pattern nhận diện mã ICD (VD: S61.0, T42.4, J18.9)
-        const ICD_PATTERN = /[A-Z]\d{2,3}(?:\.\d{1,2})?/;
-
-        const rows = this.getElementsAcrossIframes('tr');
+        const nameLower = name.toLowerCase();
+        if (NOT_DRUGS.some(nd => nameLower.includes(nd))) return '';
         
-        let _candidateCount = 0;
-        let debugLog = [];
-        
-        const DRUG_UNITS = ['viên', 'viên.', 'viên ', 'vên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm', 'đơn vị', 'đv'];
-        const DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'ngoài da', 'tiêm bắp', 'tiêm tĩnh mạch', 'pha', 'súc miệng'];
-
-        for (const row of rows) {
-            // Không xét phần header
-            if (row.querySelector('th')) continue;
-
-            // Bỏ qua hẳn lưới Danh sách bệnh nhân để tránh quét nhầm tên người
-            if (row.closest && (row.closest('#grdBenhNhan') || row.closest('#gridBenhNhan') || row.closest('#gbox_grdBenhNhan'))) continue;
-
-            let cells = Array.from(row.querySelectorAll('td'));
-            if (cells.length === 0) {
-                cells = Array.from(row.querySelectorAll(':scope > div'));
-            }
-            
-            const cols = cells.map(td => (td.innerText || td.textContent || '').trim());
-            if (cols.length < 3) continue;
-
-            // Dòng thuốc PHẢI có ít nhất Đơn vị tính (Viên, Lọ...) HOẶC Đường dùng (Uống, Tiêm...)
-            const hasDrugUnit = DRUG_UNITS.some(u => {
-                return cols.some(c => c.length > 0 && c.length < 15 && c.toLowerCase().includes(u));
-            });
-            
-            const hasDrugRoute = DRUG_ROUTES.some(r => {
-                return cols.some(c => c.length > 0 && c.length < 20 && c.toLowerCase().includes(r));
-            });
-            
-            const looksLikeDrugRow = hasDrugUnit || hasDrugRoute;
-            
-            if (!looksLikeDrugRow) continue;
-
-            const rowText = cols.join(' ').toLowerCase();
-            if (NOISE_WORDS.some(w => rowText.includes(w))) continue;
-            
-            _candidateCount++;
-
-            // SMART COLUMN SCANNER:
-            // B\u1ecf qua to\u00e0n b\u1ed9 c\u1ed9t s\u1ed1 \u1ea9n (m\u00e3 n\u1ed9i b\u1ed9 VNPT HIS nh\u01b0 667024, 666862...)
-            // Bỏ qua toàn bộ cột số ẩn (mã nội bộ VNPT HIS như 667024, 666862...)
-            // Tìm CỘT VĂN BẢN ĐẦU TIÊN có độ dài > 2, không phải số, không phải đơn vị dược
-            const textCols = [];
-            for (let i = 0; i < cols.length; i++) {
-                const val = cols[i];
-                if (!val || val === '-' || val.length < 2) continue;
-                if (/^\d[\d.,]*$/.test(val)) continue; // Số thuần / giá tiền
-                if (/^\d{2}\/\d{2}\/\d{4}/.test(val)) continue; // Ngày tháng
-                if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(val)) continue; // Giờ giấc (VD: 13:00, 08:30:15)
-                const valLower = val.toLowerCase();
-                if (DRUG_UNITS.some(u => valLower === u)) continue; // Đơn vị
-                if (['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền', 'thu phí', 'viện phí', 'bhyt', 'kho nội trú', 'kho ngoại trú', 'nam', 'nữ', 'không có'].some(k => valLower === k || valLower.startsWith(k))) continue; // Đường dùng / thanh toán / demographic
-                if (ICD_PATTERN.test(val)) continue; // Bỏ qua ô chứa mã ICD (VD: S61.0 - Vết thương...)
-                
-                // Bỏ qua Mã Thuốc nội bộ (thường viết liền KHÔNG DẤU CÁCH, CHỮ IN HOA hoặc Số. VD: CEFOP, TH4577, THUOC2915)
-                if (!val.includes(' ') && /^[A-Z0-9_-]+$/.test(val)) continue;
-
-                textCols.push({ index: i, value: val });
-            }
-
-            let name = '';
-            let generic = '';
-
-            if (textCols.length >= 2) {
-                name = textCols[0].value;
-                generic = textCols[1].value;
-            } else if (textCols.length === 1) {
-                name = textCols[0].value;
-            }
-
-            // Loại bỏ nếu tên chứa mã ICD
-            if (name && ICD_PATTERN.test(name)) { name = ''; }
-            
-            // Detect patient names: All UPPERCASE (>= 2 words) OR Title Case (Phan Thanh Duy)
-            if (name && name.length > 6 && !/\d/.test(name)) {
-                const words = name.trim().split(/\s+/);
-                if (words.length >= 2 && words.length <= 6) {
-                    const isAllUpper = name === name.toUpperCase();
-                    const isTitleCase = words.every(w => w.length > 0 && w[0] === w[0].toUpperCase() && w.slice(1) === w.slice(1).toLowerCase());
-                    if (isAllUpper || isTitleCase) {
-                        name = ''; // Là tên người -> loại bỏ
+        // Detect patient names: Title Case / ALL UPPER nhưng có dấu VN → tên người
+        if (name.length > 6 && !/\d/.test(name)) {
+            const words = name.trim().split(/\s+/);
+            if (words.length >= 2 && words.length <= 6) {
+                const isAllUpper = name === name.toUpperCase();
+                const isTitleCase = words.every(w => w.length > 0 && w[0] === w[0].toUpperCase() && w.slice(1) === w.slice(1).toLowerCase());
+                if (isAllUpper || isTitleCase) {
+                    const hasVnDiacritics = /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/i.test(name);
+                    const hasMedKeyword = /injection|solution|cream|tablet|capsule|sodium|chloride|acid|hydro|amine|oxacin|mycin|azole|prazole|statin|sartan|dipine|olol|cillin|mab|nib|parin|phylline|cortis|predniso|metro|pharm/i.test(name);
+                    if (hasMedKeyword) {
+                        // Giữ — đây là thuốc
+                    } else if (hasVnDiacritics) {
+                        return ''; // Tên người VN
                     }
                 }
             }
-
-            // Loại trừ dung môi, vật tư y tế (nước cất, cồn, kim tiêm...)
-            if (name) {
-                const nameLower = name.toLowerCase();
-                if (NOT_DRUGS.some(nd => nameLower.includes(nd))) { name = ''; }
-            }
-
-            // Clean up
-            if (name) {
-                if (name.includes('(') && name.includes(')')) {
-                    const match = name.match(/\((.*?)\)/);
-                    if (match && !generic) generic = match[1].trim();
-                    name = name.split('(')[0].trim();
-                }
-                if (name.length > 1 && name !== '-') {
-                    meds.push({
-                        display_name: name,
-                        generic_candidate: (generic && generic !== '-') ? generic : null
-                    });
-                    if (debugLog.length < 5) debugLog.push(`[${name}] → generic: [${generic || '?'}]`);
-                }
-            }
-        } // Khép vòng lặp for (const row of rows)
-
-        // Unique filter by name in case of duplicates
-        const uniqueMeds = [];
-        const seen = new Set();
-        for (const m of meds) {
-            const k = m.display_name.toLowerCase();
-            if (!seen.has(k)) {
-                seen.add(k);
-                uniqueMeds.push(m);
-            }
         }
         
-        return uniqueMeds;
+        return name;
     },
 
     getLabs() {

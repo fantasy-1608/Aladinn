@@ -20,6 +20,7 @@ let lastScanHash = '';
 let lastScanResultString = '';
 let isModalOpen = false;
 let currentScanMode = ''; // 'realtime' | 'oneshot' | ''
+let drugTableObserver = null; // Phase 3: MutationObserver on active drug table
 
 // Dữ liệu được gửi từ iframe helper
 let iframeDrugs = [];
@@ -140,6 +141,9 @@ function startScanning(mode = 'oneshot') {
         } else {
             console.log('[Aladinn CDS] 🛡️ Oneshot Mode (no polling)');
         }
+        
+        // Phase 3: Observe drug table DOM changes for real-time detection
+        _observeDrugTables();
     }, 1500);
 }
 
@@ -155,9 +159,62 @@ function stopScanning() {
         clearInterval(scanTimer);
         scanTimer = null;
     }
+    if (drugTableObserver) {
+        drugTableObserver.disconnect();
+        drugTableObserver = null;
+    }
     lastScanHash = '';
     lastScanResultString = '';
     CDSUI.hide();
+}
+
+/**
+ * Phase 3: Observe DOM mutations on drug tables.
+ * When rows are added/removed in the active prescription grid,
+ * trigger an immediate rescan for real-time feedback.
+ */
+function _observeDrugTables() {
+    if (drugTableObserver) drugTableObserver.disconnect();
+    
+    // Find drug tables in main frame and iframes
+    const targets = [];
+    
+    // Main frame: look for drug grids
+    const mainGrids = document.querySelectorAll(
+        'table[id*="Thuoc"], table[id*="thuoc"], [id*="grdChiTiet"], [id*="grd_DSThuoc"]'
+    );
+    mainGrids.forEach(g => targets.push(g));
+    
+    // Also check any visible table that has "Tên thuốc" header
+    document.querySelectorAll('table').forEach(table => {
+        const ths = table.querySelectorAll('th');
+        for (const th of ths) {
+            const text = (th.innerText || '').toLowerCase();
+            if (text.includes('tên thuốc') || text.includes('tên dịch vụ')) {
+                targets.push(table);
+                break;
+            }
+        }
+    });
+    
+    if (targets.length === 0) return;
+    
+    let debounceTimer = null;
+    drugTableObserver = new MutationObserver(() => {
+        // Debounce: chờ 500ms sau mutation cuối cùng để quét
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (!isModalOpen) return;
+            console.log('[Aladinn CDS] ⚡ Drug table mutation detected — rescanning...');
+            lastScanHash = '';
+            runScan();
+        }, 500);
+    });
+    
+    for (const target of targets) {
+        drugTableObserver.observe(target, { childList: true, subtree: true });
+    }
+    console.log(`[Aladinn CDS] 👁️ Observing ${targets.length} drug table(s) for real-time changes`);
 }
 
 // Helper: gửi message đệ quy đến mọi iframe visible (bao gồm iframe lồng)
