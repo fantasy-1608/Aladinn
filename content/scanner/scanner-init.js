@@ -1497,7 +1497,23 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         const defaultActiveTab = hasLamsangData ? 0 : 1;
 
-        const patientAgeHtml = patientInfo.age ? `<span style="font-weight: 500; color:#e8dcc8; opacity:0.9; margin-top:4px; display:inline-block;">- Năm sinh: ${patientInfo.age}</span>` : '';
+        // Giới tính từ DOM (đọc sớm để dùng trong header)
+        let headerGender = '';
+        try {
+            const pid = patientInfo.id ? String(patientInfo.id) : null;
+            const gTd = pid
+                ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
+                   document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
+                   document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
+                : null;
+            if (gTd) {
+                const gt = gTd.textContent.trim().toLowerCase();
+                if (gt === '1' || gt === 'nam' || gt === 'male') headerGender = 'Nam';
+                else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') headerGender = 'Nữ';
+                else headerGender = gTd.textContent.trim();
+            }
+        } catch (_) { /* ignore */ }
+        const patientAgeHtml = ''; // age now inline in h3
         let patientDiagHtml = '';
         if (patientInfo.diagnosis) {
             const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -1608,7 +1624,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
             </style>
             <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:3px;">
-                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
+                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
                 <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
                 <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
                 <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">
@@ -1619,13 +1635,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         `;
 
         modal.innerHTML = `
-            <div style="max-width:960px; width:92%; max-height:92vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
+            <div style="max-width:960px; width:92%; max-height:92vh; min-height:60vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                             <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
-                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
+                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>${headerGender || patientInfo.age ? `<span style="color:#9a8e7e; font-size:13px; font-weight:400;">${[headerGender, patientInfo.age].filter(Boolean).join(', ')}</span>` : ''}
                             </h3>
                         </div>
                         ${headerSubtitleHtml}
