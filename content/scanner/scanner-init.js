@@ -1670,7 +1670,16 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         : 'không rõ';
 
                     // --- Context lâm sàng ---
-                    const contextDiag = patientInfo.diagnosis || 'Chưa rõ chẩn đoán';
+                    // Ưu tiên diagHistory (chứa tên đầy đủ: "Gãy cổ xương đùi... ; Suy thận mạn...")
+                    // Fallback: patientInfo.diagnosis (có thể chỉ là ICD codes từ grid)
+                    let contextDiag = '';
+                    if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                        // Dùng tất cả chẩn đoán (tối đa 5), giữ nguyên tên lâm sàng đầy đủ
+                        contextDiag = patientInfo.diagHistory.slice(0, 5).join('; ');
+                    } else if (patientInfo.diagnosis) {
+                        contextDiag = patientInfo.diagnosis;
+                    }
+                    if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
 
                     // Thuốc: chỉ lấy tên thuốc + liều, không gửi mã vạch hay số lô
                     const uniqueDrugs = [...new Map(
@@ -1726,13 +1735,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     if (!promptTemplate.trim()) {
                         promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}).
 Dữ liệu lâm sàng:
-- Chẩn đoán (ICD): {{diagnosis}}
+- Chẩn đoán: {{diagnosis}}
 - Đơn thuốc: {{drugs}}
 {{abnormal}}
+{{keylabs}}
 Trình bày ngắn gọn theo cấu trúc:
 1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
 2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
-3. Hướng xử trí đề xuất (nếu đủ dữ kiến)
+3. Hướng xử trí đề xuất (tối đa 3 ý, mỗi ý 1 can thiệp cụ thể)
 Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`;
                     }
 
