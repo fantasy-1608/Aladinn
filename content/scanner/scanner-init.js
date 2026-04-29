@@ -1644,7 +1644,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
                 </div>
                 <!-- AI Result: flex-item riêng, có thể thu nhỏ, không đẩy tabs ra ngoài -->
-                <div id="ai-summary-wrapper-modal" style="display:none; flex-shrink:1; min-height:0; margin-bottom:10px;">
+                <div id="ai-summary-wrapper-modal" style="display:none; flex-shrink:1; min-height:0; margin-bottom:8px; flex-direction:column;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-top:1px solid rgba(212,168,83,0.12); padding-top:10px;">
                         <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1659,7 +1659,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     <div id="ai-summary-result-modal" style="padding:12px 14px; background:rgba(0,0,0,0.22); border-radius:8px; border:1px solid rgba(212,168,83,0.12); font-size:13px; color:#cbd5e1; line-height:1.65; max-height:36vh; overflow-y:auto;"></div>
                 </div>
                 ${tabsHeaderHtml}
-                <div style="flex:1; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
+                <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
                     <div id="aladinn-content-lamsang" style="display:none;">
                         ${lamsangHtml}
                     </div>
@@ -1708,14 +1708,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
 
                 if (!apiKey) {
-                    wrapperAIModal.style.display = 'block';
+                    wrapperAIModal.style.display = 'flex';
                     resAIModal.innerHTML = '<span style="color:#E85454">⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.</span>';
                     return;
                 }
 
                 btnAIModal.disabled = true;
                 btnAIModal.innerHTML = '<div class="ais-loading-dots"><span></span><span></span><span></span></div> Đang xử lý...';
-                wrapperAIModal.style.display = 'block';
+                wrapperAIModal.style.display = 'flex';
                 resAIModal.style.display = 'block';
                 // Đặt lại nút thu gọn về trạng thái mở rộng
                 if (btnCollapse) { btnCollapse.textContent = '▲'; btnCollapse.title = 'Thu gọn'; }
