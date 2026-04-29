@@ -1053,7 +1053,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const imgList = imaging || [];
 
         // ─── Helper: Lấy PACS URL qua bridge (getHashRIS trong HIS tab) ───
-        function fetchPacsUrlFromBridge(pacsConfig) {
+        function _fetchPacsUrlFromBridge(pacsConfig) {
             return new Promise((resolve) => {
                 const requestId = 'pacs_' + Date.now() + Math.random().toString(36).slice(2);
                 const listener = (event) => {
@@ -1460,7 +1460,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- Khám vào viện (admission exam only) ---
         let khamVaoVienHtml = '';
         const historyData = patientInfo?.clinicalData?.history || {};
-        let hasLamsangData = allDates.length > 0 || Object.keys(historyData).length > 0;
+        const _hasLamsangData = allDates.length > 0 || Object.keys(historyData).length > 0; void _hasLamsangData;
 
         if (Object.keys(historyData).length > 0) {
             khamVaoVienHtml += `<div style="background:rgba(212,162,90,0.05); border:1px solid rgba(212,162,90,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
@@ -1550,7 +1550,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const icdMatches = [...new Set((rawDiag.match(icdRegex) || []))]; // unique codes
             
             // Build pills for ICD codes
-            const pillsHtml = icdMatches.length > 0
+            const _pillsHtml = icdMatches.length > 0
                 ? icdMatches.map((code, i) => {
                     const isPrimary = i === 0;
                     const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
@@ -1568,7 +1568,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             // Hiển thị chẩn đoán: pills tên bệnh (kiểu cũ), ICD vào chi tiết
             if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
                 // Build pills đơn giản — chỉ text, không background vàng
-                const namePillsHtml = patientInfo.diagHistory.map((d, i) => {
+                const _namePillsHtml = patientInfo.diagHistory.map((d, i) => {
                     const isPrimary = i === 0;
                     const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
                     const color = isPrimary ? '#e8dcc8' : '#9a8e7e';
@@ -1871,48 +1871,102 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     }
                 } catch (_) { /* ignore */ }
 
-                // ── Context lâm sàng ─────────────────────────────────────
+                // ── Context lâm sàng (Rich prompt v1.2.0) ──────────────────
+                // [BẢO MẬT] Mã BN ẩn danh, không gửi tên/địa chỉ thật
+
+                // 1. Chẩn đoán (tên đầy đủ, ưu tiên diagHistory)
                 let contextDiag = '';
                 if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
-                    contextDiag = patientInfo.diagHistory.slice(0, 5).join('; ');
+                    contextDiag = patientInfo.diagHistory.join('; ');
                 } else if (patientInfo.diagnosis) {
                     contextDiag = patientInfo.diagnosis;
                 }
                 if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
 
+                // 2. Thuốc (đầy đủ, loại trùng theo tên)
                 const uniqueDrugs = [...new Map(drugs.map(d => [d.TENTHUOC, d])).values()];
                 const contextDrugs = uniqueDrugs
                     .map(d => `${d.TENTHUOC || ''}${d.SOLUONG ? ' (' + d.SOLUONG + (d.DONVITINH ? ' ' + d.DONVITINH : '') + '/ngày)' : ''}`)
                     .filter(Boolean).join('; ');
 
+                // 3. XN bất thường
                 const contextAbn = abnormals.length > 0
-                    ? abnormals.slice(0, 8).map(a => {
+                    ? abnormals.slice(0, 12).map(a => {
                         const ref = a.refDisplay ? ` [BT: ${a.refDisplay}]` : '';
-                        return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (⇑⇑)`;
+                        return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (!)`;
                     }).join('; ')
                     : '';
 
-                const KEY_LABS = ['glucose','ure','creatinine','hba1c','k','na','cl','hco3',
-                    'hgb','hb','wbc','plt','inr','pt','aptt','alt','ast',
-                    'pro-bnp','troponin','crp','procalcitonin','lactate','ph','pao2','paco2'];
+                // 4. Toàn bộ panel XN ngày gần nhất (ưu tiên bất thường trước)
                 const latestLabDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
-                const keyLabLines = [];
+                const fullLabLines = [];
                 if (latestLabDate) {
-                    for (const [_cat, tests] of Object.entries(grouped)) {
+                    // Bất thường trước
+                    for (const [_c1, tests] of Object.entries(grouped)) {
                         for (const [code, info] of Object.entries(tests)) {
-                            const codeLC = code.toLowerCase();
-                            if (!KEY_LABS.some(k => codeLC.includes(k))) continue;
                             const entry = info.values[latestLabDate];
-                            if (!entry) continue;
+                            if (!entry || !_isAbnormal(entry.status)) continue;
                             const ref = info.refDisplay ? ` [BT: ${info.refDisplay}]` : '';
-                            const flag = _isAbnormal(entry.status) ? ' (!)' : '';
-                            keyLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref}${flag}`);
+                            fullLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref} (!)`);
+                        }
+                    }
+                    // Bình thường sau
+                    for (const [_c2, tests] of Object.entries(grouped)) {
+                        for (const [code, info] of Object.entries(tests)) {
+                            const entry = info.values[latestLabDate];
+                            if (!entry || _isAbnormal(entry.status)) continue;
+                            const ref = info.refDisplay ? ` [BT: ${info.refDisplay}]` : '';
+                            fullLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref}`);
                         }
                     }
                 }
-                const contextKeyLabs = keyLabLines.length > 0 ? keyLabLines.slice(0, 10).join('; ') : '';
+                const contextFullLabs = fullLabLines.length > 0
+                    ? `Ngày ${latestLabDate} — ${fullLabLines.slice(0, 60).join('; ')}`
+                    : '';
 
-                // ── Prompt ─────────────────────────────────────────────────
+                // 5. Khám vào viện (admissionExam) — ẩn danh: không gửi tên/CMND
+                const historyDataForAI = patientInfo?.clinicalData?.history || {};
+                const admFields = [
+                    { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
+                    { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
+                    { key: 'TIENSUBENH_BANTHAN', label: 'Tiền sử' },
+                    { key: 'KHAMBENH_TOANTHAN', label: 'Khám toàn thân' },
+                    { key: 'KHAMBENH_BOPHAN', label: 'Khám bộ phận' },
+                ];
+                const admLines = admFields
+                    .filter(f => historyDataForAI[f.key])
+                    .map(f => `${f.label}: ${String(historyDataForAI[f.key]).slice(0, 300)}`);
+                const contextAdmission = admLines.join('\n');
+
+                // 6. Diễn tiến 3 ngày gần nhất
+                const recentDates = sortedDates.slice(-3).reverse(); // mới nhất trước
+                const progressLines = [];
+                for (const d of recentDates) {
+                    const dayTreatments = treatmentsByDate?.[d] || [];
+                    if (dayTreatments.length === 0) continue;
+                    const dayText = dayTreatments
+                        .slice(0, 5)
+                        .map(t => {
+                            const txt = t.DIENBIEN || t.NOIDUNG || t.CHANDOAN || t.GHI_CHU || '';
+                            return txt.slice(0, 200);
+                        })
+                        .filter(Boolean)
+                        .join(' | ');
+                    if (dayText) progressLines.push(`[${d}] ${dayText}`);
+                }
+                const contextProgress = progressLines.join('\n');
+
+                // 7. CĐHA (mô tả kết quả)
+                const imagingLines = (imgList || []).slice(0, 5).map(img => {
+                    const name = img.TENLOAI || img.TENKQ || img.TENXN || '';
+                    const desc = img.KETQUA || img.MOTA || img.NOIDUNG || '';
+                    const date = img.NGAYKQ || img.NGAYTRA || '';
+                    if (!desc) return null;
+                    return `- ${name}${date ? ' (' + date + ')' : ''}: ${String(desc).slice(0, 200)}`;
+                }).filter(Boolean);
+                const contextImaging = imagingLines.join('\n');
+
+                // ── Prompt template ────────────────────────────────────────
                 let promptTemplate = '';
                 try {
                     const stored = await new Promise(r => chrome.storage.local.get(['aladinn_ai_prompts'], r));
@@ -1920,12 +1974,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 } catch (_) { /* fallback */ }
 
                 if (!promptTemplate.trim()) {
-                    promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}, giới tính: {{gender}}).
-Dữ liệu lâm sàng:
-- Chẩn đoán: {{diagnosis}}
-- Đơn thuốc: {{drugs}}
-{{abnormal}}
-{{keylabs}}
+                    promptTemplate = `Bạn là bác sĩ đang hội chẩn nội bộ (mã BN: {{patientRef}}, SN: {{birthYear}}, giới tính: {{gender}}).
+Dữ liệu lâm sàng (đã ẩn danh):
+
+CHẨN ĐOÁN: {{diagnosis}}
+
+{{admissionExam}}
+
+{{recentProgress}}
+
+XÉT NGHIỆM ({{labDate}}):
+{{fullLabs}}
+
+{{imaging}}
+
+THUỐC: {{drugs}}
+
 Trình bày ngắn gọn theo cấu trúc:
 1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
 2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
@@ -1933,16 +1997,25 @@ Trình bày ngắn gọn theo cấu trúc:
 Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`;
                 }
 
-                const abnLine    = contextAbn      ? `- XN bất thường: ${contextAbn}` : '';
-                const keyLabLine = contextKeyLabs   ? `- XN chính (ngày gần nhất): ${contextKeyLabs}` : '';
+                const admSection      = contextAdmission ? `KHÁM VÀO VIỆN:\n${contextAdmission}` : '';
+                const progressSection = contextProgress  ? `DIỄN TIẾN GẦN ĐÂY:\n${contextProgress}` : '';
+                const imagingSection  = contextImaging   ? `CĐHA:\n${contextImaging}` : '';
+                const abnSection      = contextAbn       ? `XN BẤT THƯỜNG: ${contextAbn}` : '';
+
                 const prompt = promptTemplate
-                    .replace('{{patientRef}}', patientRef)
-                    .replace('{{birthYear}}',  birthYear)
-                    .replace('{{gender}}',     patientGender)
-                    .replace('{{diagnosis}}',  contextDiag)
-                    .replace('{{drugs}}',      contextDrugs || 'Không rõ')
-                    .replace('{{abnormal}}',   abnLine)
-                    .replace('{{keylabs}}',    keyLabLine);
+                    .replace('{{patientRef}}',    patientRef)
+                    .replace('{{birthYear}}',     birthYear)
+                    .replace('{{gender}}',        patientGender)
+                    .replace('{{diagnosis}}',     contextDiag)
+                    .replace('{{admissionExam}}', admSection)
+                    .replace('{{recentProgress}}',progressSection)
+                    .replace('{{labDate}}',       latestLabDate || 'không rõ')
+                    .replace('{{fullLabs}}',      contextFullLabs || abnSection || 'Không có dữ liệu XN')
+                    .replace('{{imaging}}',       imagingSection)
+                    .replace('{{drugs}}',         contextDrugs || 'Không rõ')
+                    // backward compat với template cũ
+                    .replace('{{abnormal}}',      abnSection)
+                    .replace('{{keylabs}}',       '');
 
                 const model = await window.HIS.getAiModel();
                 const response = await fetch(
@@ -1967,10 +2040,10 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         const contentHtml = contentRaw
                             .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
                             .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
-                        return `<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">` +
+                        return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
                             `<span style="min-width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>` +
                             `<span style="font-size:13px;line-height:1.55;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
-                            `</div>`;
+                            '</div>';
                     });
                     // Bước 2: bold/italic còn lại (trong bullet points, đoạn thường)
                     text = text
