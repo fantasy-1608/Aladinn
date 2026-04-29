@@ -1525,15 +1525,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             
             // Hiển thị chẩn đoán: pills tên bệnh (kiểu cũ), ICD vào chi tiết
             if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
-                // Build pills dùng tên bệnh (thay mã ICD)
+                // Build pills đơn giản — chỉ text, không background vàng
                 const namePillsHtml = patientInfo.diagHistory.map((d, i) => {
                     const isPrimary = i === 0;
                     const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
-                    const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
-                    const border = isPrimary ? 'rgba(212,162,90,0.4)' : 'rgba(255,255,255,0.1)';
-                    const color = isPrimary ? '#f0d78c' : '#c8b89a';
+                    const color = isPrimary ? '#e8dcc8' : '#9a8e7e';
+                    const weight = isPrimary ? '600' : '400';
                     const title = isPrimary ? 'Chẩn đoán chính' : 'Chẩn đoán kèm';
-                    return `<span style="display:inline-block; padding:2px 9px; border-radius:5px; font-size:12px; font-weight:${isPrimary?'700':'500'}; color:${color}; background:${bg}; border:1px solid ${border}; line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
+                    return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:${weight}; color:${color}; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
                 }).join(' ');
 
                 // Tạo danh sách ICD cho phần chi tiết
@@ -1586,8 +1585,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         modal.innerHTML = `
             <div style="max-width:960px; width:92%; max-height:92vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; flex-shrink:0;">
-                    <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
+                    <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                             <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
@@ -1641,23 +1640,23 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             </button>
                         </div>
                         ${headerSubtitleHtml}
-                        <!-- AI Result: collapsible panel -->
-                        <div id="ai-summary-wrapper-modal" style="display:none; margin-top:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                        <path d="M2 17l10 5 10-5"/>
-                                        <path d="M2 12l10 5 10-5"/>
-                                    </svg>
-                                    Phân tích lâm sàng (AI)
-                                </span>
-                                <button id="btn-ai-collapse" title="Thu gọn" style="background:none; border:none; color:#5a5450; font-size:16px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d4a25a'" onmouseout="this.style.color='#5a5450'">▲</button>
-                            </div>
-                            <div id="ai-summary-result-modal" style="padding: 14px 16px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(212,168,83,0.15); font-size: 13px; color: #cbd5e1; line-height: 1.6; max-width: 100%;"></div>
-                        </div>
                     </div>
-                    <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;" title="Đóng">&times;</button>
+                    <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
+                </div>
+                <!-- AI Result: flex-item riêng, có thể thu nhỏ, không đẩy tabs ra ngoài -->
+                <div id="ai-summary-wrapper-modal" style="display:none; flex-shrink:1; min-height:0; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-top:1px solid rgba(212,168,83,0.12); padding-top:10px;">
+                        <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Phân tích lâm sàng (AI)
+                        </span>
+                        <button id="btn-ai-collapse" title="Thu gọn" style="background:none; border:none; color:#5a5450; font-size:16px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d4a25a'" onmouseout="this.style.color='#5a5450'">▲</button>
+                    </div>
+                    <div id="ai-summary-result-modal" style="padding:12px 14px; background:rgba(0,0,0,0.22); border-radius:8px; border:1px solid rgba(212,168,83,0.12); font-size:13px; color:#cbd5e1; line-height:1.65; max-height:36vh; overflow-y:auto;"></div>
                 </div>
                 ${tabsHeaderHtml}
                 <div style="flex:1; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
