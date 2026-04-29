@@ -1523,36 +1523,47 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             // Clean up internal separators from removed codes
             descText = descText.replace(/\s*[,;]\s*[,;]\s*/g, ', ').replace(/^\s*[,;-]\s*/, '').trim();
             
-            if (patientInfo.diagHistory && patientInfo.diagHistory.length > 1) {
-                const historyList = patientInfo.diagHistory.map(d => `<li style="margin-bottom:3px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(d)}</li>`).join('');
-                patientDiagHtml = `
-                    <div style="margin-top:6px;">
-                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
-                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
-                            ${pillsHtml}
-                        </div>
-                        ${descText ? `<details style="margin-top:2px;">
-                            <summary style="font-size:12px; color:#8B8579; cursor:pointer; outline:none; user-select:none; transition:0.2s;">
-                                ${escapeHtml(descText.length > 60 ? descText.substring(0, 60) + '...' : descText)} <span style="font-size:10px; opacity:0.6;">▾ chi tiết (${patientInfo.diagHistory.length})</span>
-                            </summary>
-                            <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.15); border-radius:6px; font-size:12px; color:#e8dcc8; max-height:120px; overflow-y:auto;">
-                                <div style="color:#a18764; margin-bottom:6px; font-weight:600; font-size:11px;">Lịch sử chẩn đoán:</div>
-                                <ul style="margin:0; padding-left:16px; line-height:1.6; list-style-type:'›  '; color:#c8b89a;">${historyList}</ul>
+            // Hiển thị danh sách chẩn đoán (Ưu tiên Tên bệnh tiếng Việt)
+            if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                const diagItems = patientInfo.diagHistory.map((d, i) => {
+                    const isPrimary = i === 0;
+                    // Tách ICD ra khỏi tên bệnh nếu có để format lại (ví dụ "S72.00 - Gãy cổ...")
+                    const codeMatch = d.match(icdRegex);
+                    const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim();
+                    const codes = codeMatch ? codeMatch.map(c => `<span style="font-size:10px; font-family:monospace; background:rgba(212,168,83,0.1); padding:1px 4px; border-radius:3px; color:#a18764; margin-right:4px; border:1px solid rgba(212,168,83,0.15);">${c}</span>`).join('') : '';
+                    
+                    return `
+                        <div style="margin-bottom:6px; display:flex; align-items:flex-start; gap:6px;">
+                            <span style="color:${isPrimary ? '#d4a853' : '#8B8579'}; font-size:14px; margin-top:2px;">${isPrimary ? '◈' : '◇'}</span>
+                            <div style="flex:1;">
+                                <div style="font-size:13px; color:${isPrimary ? '#E8E0D4' : '#c8b89a'}; font-weight:${isPrimary ? '700' : '500'}; line-height:1.4;">
+                                    ${escapeHtml(cleanName)}
+                                </div>
+                                ${codes ? `<div style="margin-top:2px;">${codes}</div>` : ''}
                             </div>
-                        </details>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                patientDiagHtml = `
+                    <div style="margin-top:12px; padding:12px; background:rgba(212,168,83,0.03); border:1px solid rgba(212,168,83,0.1); border-radius:10px;">
+                        <div style="font-size:10px; color:#a18764; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            Chẩn đoán lâm sàng
+                        </div>
+                        <div style="max-height:180px; overflow-y:auto; padding-right:4px;">
+                            ${diagItems}
+                        </div>
                     </div>
                 `;
             } else {
                 patientDiagHtml = `
-                    <div style="margin-top:6px;">
-                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px;">
-                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
-                            ${pillsHtml}
-                        </div>
-                        ${descText ? `<div style="font-size:12px; color:#8B8579; margin-top:4px; line-height:1.4; max-height:36px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(descText)}">${escapeHtml(descText)}</div>` : ''}
+                    <div style="margin-top:10px; font-size:13px; color:#c8b89a;">
+                        <span style="color:#a18764; font-weight:700;">CHẨN ĐOÁN:</span> ${escapeHtml(rawDiag)}
                     </div>
                 `;
             }
+
         }
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml ? `<div style="margin-top:2px;">${patientAgeHtml}${patientDiagHtml}</div>` : '';
 
