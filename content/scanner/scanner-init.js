@@ -1457,15 +1457,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             combinedTimelineHtml = '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
         }
 
-        // --- Khám bệnh án ---
-        let lamsangHtml = '';
+        // --- Khám vào viện (admission exam only) ---
+        let khamVaoVienHtml = '';
         const historyData = patientInfo?.clinicalData?.history || {};
         let hasLamsangData = allDates.length > 0 || Object.keys(historyData).length > 0;
 
         if (Object.keys(historyData).length > 0) {
-            lamsangHtml += `<div style="background:rgba(212,162,90,0.05); border:1px solid rgba(212,162,90,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
-                <h4 style="color:#d4a25a; margin:0 0 12px 0; font-size:14px; display:flex; align-items:center; gap:6px;">📋 Khám bệnh án</h4>`;
-            
+            khamVaoVienHtml += `<div style="background:rgba(212,162,90,0.05); border:1px solid rgba(212,162,90,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
+                <h4 style="color:#d4a25a; margin:0 0 12px 0; font-size:14px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
             const fields = [
                 { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
                 { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
@@ -1474,20 +1473,21 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 { key: 'KHAMBENH_BOPHAN', label: 'Khám bộ phận' },
                 { key: 'TOMTATKQCANLAMSANG', label: 'Tóm tắt CLS' }
             ];
-
             for (const f of fields) {
                 if (historyData[f.key]) {
-                    lamsangHtml += `<div style="margin-bottom:10px;">
+                    khamVaoVienHtml += `<div style="margin-bottom:10px;">
                         <span style="color:#a18764; font-weight:600; font-size:12px; display:block; margin-bottom:2px;">${f.label}:</span>
                         <div style="color:#e8dcc8; font-size:13px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
                     </div>`;
                 }
             }
-            lamsangHtml += '</div>';
+            khamVaoVienHtml += '</div>';
+        } else {
+            khamVaoVienHtml = '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu khám vào viện.</div>';
         }
-        
-        // Append Combined Timeline to lamsangHtml
-        lamsangHtml += combinedTimelineHtml;
+
+        // --- Lâm sàng & Thuốc: diễn tiến + thuốc (combined timeline) ---
+        const lamsangHtml = combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>';
 
         // --- Modal ---
         const modal = document.createElement('div');
@@ -1495,22 +1495,48 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         modal.className = 'vnpt-glass-overlay';
         modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;';
 
-        const defaultActiveTab = hasLamsangData ? 0 : 1;
+        const defaultActiveTab = 0;
 
-        // Giới tính từ DOM (đọc sớm để dùng trong header)
+        // Giới tính từ nhiều nguồn (DOM + patientInfo)
         let headerGender = '';
         try {
-            const pid = patientInfo.id ? String(patientInfo.id) : null;
-            const gTd = pid
-                ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
-                   document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
-                   document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
-                : null;
-            if (gTd) {
-                const gt = gTd.textContent.trim().toLowerCase();
-                if (gt === '1' || gt === 'nam' || gt === 'male') headerGender = 'Nam';
-                else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') headerGender = 'Nữ';
-                else headerGender = gTd.textContent.trim();
+            // Nguồn 1: patientInfo trực tiếp
+            const gi = patientInfo.gender || patientInfo.GIOITINH || patientInfo.GT || patientInfo.PHAI || '';
+            if (gi) {
+                const g = String(gi).trim().toLowerCase();
+                if (g === '1' || g === 'nam' || g === 'male') headerGender = 'Nam';
+                else if (g === '2' || g === 'nữ' || g === 'nu' || g === 'female') headerGender = 'Nữ';
+                else if (gi.trim()) headerGender = gi.trim();
+            }
+            // Nguồn 2: DOM query theo row id
+            if (!headerGender) {
+                const pid = patientInfo.id ? String(patientInfo.id) : null;
+                const gTd = pid
+                    ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
+                       document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
+                       document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
+                    : null;
+                if (gTd) {
+                    const gt = gTd.textContent.trim().toLowerCase();
+                    if (gt === '1' || gt === 'nam' || gt === 'male') headerGender = 'Nam';
+                    else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') headerGender = 'Nữ';
+                    else if (gTd.textContent.trim()) headerGender = gTd.textContent.trim();
+                }
+            }
+            // Nguồn 3: hàng đang được chọn (selected row) trong grid
+            if (!headerGender) {
+                const selRow = document.querySelector('tr.jqgrow.ui-state-highlight, tr.ui-state-highlight');
+                const gTd2 = selRow
+                    ? (selRow.querySelector('td[aria-describedby$="_GIOITINH"]') ||
+                       selRow.querySelector('td[aria-describedby$="_GT"]') ||
+                       selRow.querySelector('td[aria-describedby$="_PHAI"]'))
+                    : null;
+                if (gTd2) {
+                    const gt2 = gTd2.textContent.trim().toLowerCase();
+                    if (gt2 === '1' || gt2 === 'nam' || gt2 === 'male') headerGender = 'Nam';
+                    else if (gt2 === '2' || gt2 === 'nữ' || gt2 === 'nu' || gt2 === 'female') headerGender = 'Nữ';
+                    else if (gTd2.textContent.trim()) headerGender = gTd2.textContent.trim();
+                }
             }
         } catch (_) { /* ignore */ }
         const patientAgeHtml = ''; // age now inline in h3
@@ -1624,7 +1650,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
             </style>
             <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:3px;">
-                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
+                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
+                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
                 <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
                 <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
                 <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">
@@ -1650,6 +1677,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 </div>
                 ${tabsHeaderHtml}
                 <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
+                    <div id="aladinn-content-khamvaovien" style="display:none;">
+                        ${khamVaoVienHtml}
+                    </div>
                     <div id="aladinn-content-lamsang" style="display:none;">
                         ${lamsangHtml}
                     </div>
@@ -1716,32 +1746,36 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
 
         // ── Tab logic (4 tabs: Lâm sàng, XN, CĐHA, AI) ─────────────────────
-        const tabLamsang   = modal.querySelector('#aladinn-tab-lamsang');
-        const tabXn        = modal.querySelector('#aladinn-tab-xn');
-        const tabCdha      = modal.querySelector('#aladinn-tab-cdha');
-        const tabAI        = modal.querySelector('#aladinn-tab-ai');
+        const tabKhamVaoVien = modal.querySelector('#aladinn-tab-khamvaovien');
+        const tabLamsang     = modal.querySelector('#aladinn-tab-lamsang');
+        const tabXn          = modal.querySelector('#aladinn-tab-xn');
+        const tabCdha        = modal.querySelector('#aladinn-tab-cdha');
+        const tabAI          = modal.querySelector('#aladinn-tab-ai');
 
-        const contentLamsang = modal.querySelector('#aladinn-content-lamsang');
-        const contentXn      = modal.querySelector('#aladinn-content-xn');
-        const contentCdha    = modal.querySelector('#aladinn-content-cdha');
-        const contentAI      = modal.querySelector('#aladinn-content-ai');
+        const contentKhamVaoVien = modal.querySelector('#aladinn-content-khamvaovien');
+        const contentLamsang     = modal.querySelector('#aladinn-content-lamsang');
+        const contentXn          = modal.querySelector('#aladinn-content-xn');
+        const contentCdha        = modal.querySelector('#aladinn-content-cdha');
+        const contentAI          = modal.querySelector('#aladinn-content-ai');
 
-        const allTabs     = [tabLamsang, tabXn, tabCdha, tabAI];
-        const allContents = [contentLamsang, contentXn, contentCdha, contentAI];
+        const allTabs     = [tabKhamVaoVien, tabLamsang, tabXn, tabCdha, tabAI];
+        const allContents = [contentKhamVaoVien, contentLamsang, contentXn, contentCdha, contentAI];
 
         function activateTab(idx) {
             allTabs.forEach((t, i) => {
                 if (!t) return;
-                const isAI = (i === 3);
+                const isAI = (i === 4);
+                // CDHA tab = index 3 (blue), others gold
+                const col = i === 3 ? '96,165,250' : '212,162,90';
+                const activeColor = i === 3 ? '#60a5fa' : '#d4a25a';
                 if (i === idx) {
                     if (isAI) {
                         t.classList.add('ai-tab-active');
                     } else {
-                        const col = i === 2 ? '96,165,250' : '212,162,90';
                         t.style.background = `rgba(${col},0.1)`;
                         t.style.borderColor = `rgba(${col},0.3)`;
-                        t.style.borderBottomColor = i === 2 ? '#60a5fa' : '#d4a25a';
-                        t.style.color = i === 2 ? '#60a5fa' : '#d4a25a';
+                        t.style.borderBottomColor = activeColor;
+                        t.style.color = activeColor;
                         t.style.fontWeight = '700';
                     }
                 } else {
@@ -1762,10 +1796,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             });
         }
 
-        tabLamsang?.addEventListener('click', () => activateTab(0));
-        tabXn?.addEventListener('click', () => activateTab(1));
-        tabCdha?.addEventListener('click', () => activateTab(2));
-        tabAI?.addEventListener('click', () => { activateTab(3); triggerAIIfNeeded(); });
+        tabKhamVaoVien?.addEventListener('click', () => activateTab(0));
+        tabLamsang?.addEventListener('click', () => activateTab(1));
+        tabXn?.addEventListener('click', () => activateTab(2));
+        tabCdha?.addEventListener('click', () => activateTab(3));
+        tabAI?.addEventListener('click', () => { activateTab(4); triggerAIIfNeeded(); });
 
         activateTab(defaultActiveTab);
 
@@ -1924,12 +1959,15 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     text = text
                         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>')
-                        .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) =>
-                            `<div style="display:flex;align-items:center;gap:7px;margin:16px 0 7px;">
-                                <span style="width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;">${num.trim().replace('.','')}</span>
-                                <strong style="color:#D4A853;font-size:13px;">${title}</strong>
-                            </div>`
-                        )
+                        .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) => {
+                            const colonIdx = title.indexOf(':');
+                            const labelPart = colonIdx !== -1 ? title.slice(0, colonIdx + 1) : title;
+                            const contentPart = colonIdx !== -1 ? title.slice(colonIdx + 1).trim() : '';
+                            return `<div style="display:flex;align-items:flex-start;gap:7px;margin:16px 0 7px;">
+                                <span style="width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>
+                                <span style="font-size:13px;line-height:1.5;"><strong style="color:#D4A853;">${labelPart}</strong>${contentPart ? ' <span style="color:#e8dcc8;font-weight:400;">' + contentPart + '</span>' : ''}</span>
+                            </div>`;
+                        })
                         .replace(/^[-*] (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;line-height:1.6;">$1</li>');
 
                     if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;"><ul style="margin:0;padding-left:18px;">${text}</ul></div>`;
