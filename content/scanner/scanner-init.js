@@ -1662,7 +1662,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         `;
 
         modal.innerHTML = `
-            <div style="max-width:960px; width:92%; max-height:92vh; min-height:60vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
+            <div style="max-width:960px; width:92%; height:85vh; max-height:85vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
