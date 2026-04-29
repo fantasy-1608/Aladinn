@@ -1544,36 +1544,35 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }).join('');
 
                 patientDiagHtml = `
-                    <div style="margin-top:6px;">
-                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
-                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
-                            ${namePillsHtml}
+                    <div style="margin-top:5px;">
+                        <div style="display:flex; align-items:baseline; gap:6px; flex-wrap:nowrap;">
+                            <span style="font-size:10px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                            <div style="font-size:12px; color:#e8dcc8; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(patientInfo.diagHistory.map(d => d.replace(icdRegex,'').replace(/^[\s,;-]+/,'').trim()).filter(Boolean).join(' · '))}</div>
                         </div>
-                        <details style="margin-top:4px;">
-                            <summary style="font-size:11px; color:#6b7280; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:4px;">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        <details style="margin-top:3px;">
+                            <summary style="font-size:11px; color:#5a5450; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:3px;">
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 Chi tiết (${patientInfo.diagHistory.length} chẩn đoán, kèm mã ICD)
                             </summary>
-                            <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.12); border-radius:6px; max-height:140px; overflow-y:auto;">
-                                <ul style="margin:0; padding-left:14px; line-height:1.6;">${icdDetailList}</ul>
+                            <div style="margin-top:4px; padding:6px 10px; background:rgba(0,0,0,0.18); border:1px solid rgba(212,162,90,0.1); border-radius:5px; max-height:110px; overflow-y:auto;">
+                                <ul style="margin:0; padding-left:12px; line-height:1.5;">${icdDetailList}</ul>
                             </div>
                         </details>
                     </div>
                 `;
             } else {
                 patientDiagHtml = `
-                    <div style="margin-top:6px;">
-                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
-                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
-                            ${pillsHtml}
-                        </div>
-                        ${descText ? `<div style="font-size:12px; color:#8B8579; margin-top:4px; line-height:1.4;">${escapeHtml(descText)}</div>` : ''}
+                    <div style="margin-top:5px; display:flex; align-items:baseline; gap:6px;">
+                        <span style="font-size:10px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                        <div style="font-size:12px; color:#e8dcc8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(descText || rawDiag)}</div>
                     </div>
                 `;
             }
 
         }
-        const headerSubtitleHtml = patientAgeHtml || patientDiagHtml ? `<div style="margin-top:2px;">${patientAgeHtml}${patientDiagHtml}</div>` : '';
+        const headerSubtitleHtml = patientAgeHtml || patientDiagHtml
+            ? `<div style="margin-top:3px; font-size:12px; color:#9a8e7e;">${patientAgeHtml}${patientDiagHtml}</div>`
+            : '';
 
         const tabsHeaderHtml = `
             <style>
