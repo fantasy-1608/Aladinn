@@ -1981,20 +1981,58 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
 
                     if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;">${text}</div>`;
 
-                    // ── Token cost toast ────────────────────────────────
-                    if (window.HIS?.AICost && data.usageMetadata) {
-                        window.HIS.AICost.record(
-                            model,
-                            data.usageMetadata.promptTokenCount || 0,
-                            data.usageMetadata.candidatesTokenCount || 0
-                        ).then(est => {
-                            if (est) {
-                                window.VNPTRealtime?.showToast(
-                                    `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${model.replace('gemini-','')}`,
-                                    'info', 3000
-                                );
-                            }
-                        });
+                    // ── Token cost toast (in-modal, same z-index as overlay) ─────────
+                    const _showCostToast = (msg) => {
+                        const existingToast = document.getElementById('ald-cost-toast');
+                        if (existingToast) existingToast.remove();
+                        const toast = document.createElement('div');
+                        toast.id = 'ald-cost-toast';
+                        toast.style.cssText = [
+                            'position:fixed', 'bottom:24px', 'right:28px',
+                            'z-index:2147483648',
+                            'background:rgba(18,14,10,0.92)',
+                            'border:1px solid rgba(212,168,83,0.35)',
+                            'border-radius:10px',
+                            'padding:8px 14px',
+                            'display:flex', 'align-items:center', 'gap:8px',
+                            'font-family:Outfit,system-ui,sans-serif',
+                            'font-size:12px', 'color:#c8a455',
+                            'box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 12px rgba(212,168,83,0.1)',
+                            'backdrop-filter:blur(8px)',
+                            'animation:ald-toast-in 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                            'pointer-events:none',
+                        ].join(';');
+                        toast.innerHTML = `
+                            <style>
+                                @keyframes ald-toast-in{from{opacity:0;transform:translateY(10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+                                @keyframes ald-toast-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(6px)}}
+                            </style>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                            <span>${msg}</span>`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => {
+                            toast.style.animation = 'ald-toast-out 0.3s ease forwards';
+                            setTimeout(() => toast.remove(), 320);
+                        }, 5000);
+                    };
+
+                    if (data.usageMetadata) {
+                        const prompt    = data.usageMetadata.promptTokenCount || 0;
+                        const candidate = data.usageMetadata.candidatesTokenCount || 0;
+                        const total     = prompt + candidate;
+                        if (window.HIS?.AICost) {
+                            window.HIS.AICost.record(model, prompt, candidate).then(est => {
+                                const costStr = est?.vndDisplay || '';
+                                _showCostToast(`💰 ${total.toLocaleString()} tokens${costStr ? ' · ' + costStr : ''} · ${model.replace('gemini-','')}`);
+                            });
+                        } else {
+                            // Ước tính thủ công nếu AICost chưa sẵn sàng
+                            // gemini-2.0-flash: ~$0.075/1M input, $0.30/1M output → ~0.075*prompt+0.30*cand tokens /1e6 USD * 25000 VNĐ
+                            const usd = (prompt * 0.075 + candidate * 0.30) / 1_000_000;
+                            const vnd = usd * 25_000;
+                            const costStr = vnd > 0 ? `~${vnd.toFixed(2).replace('.', ',')} VNĐ` : '';
+                            _showCostToast(`💰 ${total.toLocaleString()} tokens${costStr ? ' · ' + costStr : ''} · ${model.replace('gemini-','')}`);
+                        }
                     }
 
                     // ── Search links (per ICD) ──────────────────────────
