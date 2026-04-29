@@ -1523,43 +1523,52 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             // Clean up internal separators from removed codes
             descText = descText.replace(/\s*[,;]\s*[,;]\s*/g, ', ').replace(/^\s*[,;-]\s*/, '').trim();
             
-            // Hiển thị danh sách chẩn đoán (Ưu tiên Tên bệnh tiếng Việt)
+            // Hiển thị chẩn đoán: pills tên bệnh (kiểu cũ), ICD vào chi tiết
             if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
-                const diagItems = patientInfo.diagHistory.map((d, i) => {
+                // Build pills dùng tên bệnh (thay mã ICD)
+                const namePillsHtml = patientInfo.diagHistory.map((d, i) => {
                     const isPrimary = i === 0;
-                    // Tách ICD ra khỏi tên bệnh nếu có để format lại (ví dụ "S72.00 - Gãy cổ...")
-                    const codeMatch = d.match(icdRegex);
-                    const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim();
-                    const codes = codeMatch ? codeMatch.map(c => `<span style="font-size:10px; font-family:monospace; background:rgba(212,168,83,0.1); padding:1px 4px; border-radius:3px; color:#a18764; margin-right:4px; border:1px solid rgba(212,168,83,0.15);">${c}</span>`).join('') : '';
-                    
-                    return `
-                        <div style="margin-bottom:6px; display:flex; align-items:flex-start; gap:6px;">
-                            <span style="color:${isPrimary ? '#d4a853' : '#8B8579'}; font-size:14px; margin-top:2px;">${isPrimary ? '◈' : '◇'}</span>
-                            <div style="flex:1;">
-                                <div style="font-size:13px; color:${isPrimary ? '#E8E0D4' : '#c8b89a'}; font-weight:${isPrimary ? '700' : '500'}; line-height:1.4;">
-                                    ${escapeHtml(cleanName)}
-                                </div>
-                                ${codes ? `<div style="margin-top:2px;">${codes}</div>` : ''}
-                            </div>
-                        </div>
-                    `;
+                    const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
+                    const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
+                    const border = isPrimary ? 'rgba(212,162,90,0.4)' : 'rgba(255,255,255,0.1)';
+                    const color = isPrimary ? '#f0d78c' : '#c8b89a';
+                    const title = isPrimary ? 'Chẩn đoán chính' : 'Chẩn đoán kèm';
+                    return `<span style="display:inline-block; padding:2px 9px; border-radius:5px; font-size:12px; font-weight:${isPrimary?'700':'500'}; color:${color}; background:${bg}; border:1px solid ${border}; line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
+                }).join(' ');
+
+                // Tạo danh sách ICD cho phần chi tiết
+                const icdDetailList = patientInfo.diagHistory.map(d => {
+                    const codes = (d.match(icdRegex) || []);
+                    const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
+                    const codeStr = codes.length > 0 ? codes.map(c => `<code style="font-size:10px;background:rgba(212,162,90,0.12);padding:1px 4px;border-radius:3px;color:#a18764;">${c}</code>`).join(' ') : '';
+                    return `<li style="margin-bottom:4px; color:#c8b89a; font-size:12px; line-height:1.5;">${escapeHtml(cleanName)}${codeStr ? ' ' + codeStr : ''}</li>`;
                 }).join('');
 
                 patientDiagHtml = `
-                    <div style="margin-top:12px; padding:12px; background:rgba(212,168,83,0.03); border:1px solid rgba(212,168,83,0.1); border-radius:10px;">
-                        <div style="font-size:10px; color:#a18764; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                            <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                            Chẩn đoán lâm sàng
+                    <div style="margin-top:6px;">
+                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
+                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
+                            ${namePillsHtml}
                         </div>
-                        <div style="max-height:180px; overflow-y:auto; padding-right:4px;">
-                            ${diagItems}
-                        </div>
+                        <details style="margin-top:4px;">
+                            <summary style="font-size:11px; color:#6b7280; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:4px;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                Chi tiết (${patientInfo.diagHistory.length} chẩn đoán, kèm mã ICD)
+                            </summary>
+                            <div style="margin-top:6px; padding:8px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,162,90,0.12); border-radius:6px; max-height:140px; overflow-y:auto;">
+                                <ul style="margin:0; padding-left:14px; line-height:1.6;">${icdDetailList}</ul>
+                            </div>
+                        </details>
                     </div>
                 `;
             } else {
                 patientDiagHtml = `
-                    <div style="margin-top:10px; font-size:13px; color:#c8b89a;">
-                        <span style="color:#a18764; font-weight:700;">CHẨN ĐOÁN:</span> ${escapeHtml(rawDiag)}
+                    <div style="margin-top:6px;">
+                        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-bottom:4px;">
+                            <span style="font-size:10px; color:#a18764; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">Chẩn đoán</span>
+                            ${pillsHtml}
+                        </div>
+                        ${descText ? `<div style="font-size:12px; color:#8B8579; margin-top:4px; line-height:1.4;">${escapeHtml(descText)}</div>` : ''}
                     </div>
                 `;
             }
@@ -1584,8 +1593,51 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
                                 CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
                             </h3>
-                            <button id="btn-ai-summary-modal" title="Nhờ AI tóm tắt bệnh án" style="background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02)); border: 1px solid rgba(212,168,83,0.25); color: #D4A853; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,168,83,0.2)'" onmouseout="this.style.background='linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.02))'">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI
+                            <style>
+                                @keyframes aisBtn-shimmer { 0%{left:-60%} 100%{left:130%} }
+                                @keyframes aisBtn-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,0.4)} 50%{box-shadow:0 0 0 6px rgba(212,168,83,0)} }
+                                @keyframes aisBtn-spin { to{transform:rotate(360deg)} }
+                                @keyframes aisDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+                                #btn-ai-summary-modal {
+                                    position:relative; overflow:hidden;
+                                    background: linear-gradient(135deg, #c8922a 0%, #d4a853 50%, #e8c27a 100%);
+                                    border: none; color: #0b0f1e;
+                                    border-radius: 8px; padding: 6px 14px;
+                                    font-size: 12px; font-weight: 800; cursor: pointer;
+                                    display: flex; align-items: center; gap: 6px;
+                                    transition: all 0.25s; font-family: Outfit, sans-serif;
+                                    letter-spacing: 0.3px;
+                                    box-shadow: 0 2px 12px rgba(212,168,83,0.35), 0 1px 3px rgba(0,0,0,0.3);
+                                    animation: aisBtn-pulse 2.5s infinite;
+                                }
+                                #btn-ai-summary-modal::after {
+                                    content:''; position:absolute; top:-50%; left:-60%;
+                                    width:35%; height:200%;
+                                    background:rgba(255,255,255,0.3);
+                                    transform:skewX(-20deg);
+                                    animation:aisBtn-shimmer 2.8s infinite;
+                                }
+                                #btn-ai-summary-modal:hover:not(:disabled) {
+                                    transform:translateY(-1px);
+                                    box-shadow:0 4px 20px rgba(212,168,83,0.5);
+                                    filter:brightness(1.08);
+                                }
+                                #btn-ai-summary-modal:disabled {
+                                    opacity:0.8; cursor:not-allowed;
+                                    animation:none; transform:none;
+                                }
+                                .ais-loading-dots { display:flex; gap:4px; align-items:center; }
+                                .ais-loading-dots span {
+                                    width:5px; height:5px; border-radius:50%;
+                                    background:#D4A853; display:inline-block;
+                                    animation:aisDot 1.2s infinite ease-in-out;
+                                }
+                                .ais-loading-dots span:nth-child(2){animation-delay:0.15s}
+                                .ais-loading-dots span:nth-child(3){animation-delay:0.3s}
+                            </style>
+                            <button id="btn-ai-summary-modal" title="Nhờ AI tóm tắt hồ sơ bệnh án">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                Tóm tắt AI
                             </button>
                         </div>
                         ${headerSubtitleHtml}
@@ -1663,12 +1715,32 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
 
                 btnAIModal.disabled = true;
-                btnAIModal.innerHTML = '<span style="animation: pulse-warning 1s infinite;">✨ Đang xử lý...</span>';
+                btnAIModal.innerHTML = '<div class="ais-loading-dots"><span></span><span></span><span></span></div> Đang xử lý...';
                 wrapperAIModal.style.display = 'block';
                 resAIModal.style.display = 'block';
                 // Đặt lại nút thu gọn về trạng thái mở rộng
                 if (btnCollapse) { btnCollapse.textContent = '▲'; btnCollapse.title = 'Thu gọn'; }
-                resAIModal.innerHTML = '<div style="display:flex; gap:8px; align-items:center; color: #D4A853;"><div class="cds-spinner" style="width:14px;height:14px;border:2px solid rgba(212,168,83,0.3);border-top-color:#D4A853;border-radius:50%;animation:spin 1s linear infinite;"></div> Đang phân tích hồ sơ...</div>';
+                resAIModal.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px; padding:8px 0;">
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div style="position:relative; width:20px; height:20px; flex-shrink:0;">
+                                <div style="position:absolute; inset:0; border-radius:50%; border:2px solid rgba(212,168,83,0.15);"></div>
+                                <div style="position:absolute; inset:0; border-radius:50%; border:2px solid transparent; border-top-color:#D4A853; animation:aisBtn-spin 0.9s linear infinite;"></div>
+                            </div>
+                            <span style="color:#D4A853; font-weight:600; font-size:13px;">Đang phân tích hồ sơ lâm sàng...</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; padding-left:30px;">
+                            <div style="height:8px; background:rgba(212,168,83,0.1); border-radius:4px; width:85%; animation:aisSkel 1.5s ease-in-out infinite;"></div>
+                            <div style="height:8px; background:rgba(212,168,83,0.07); border-radius:4px; width:65%; animation:aisSkel 1.5s ease-in-out 0.2s infinite;"></div>
+                            <div style="height:8px; background:rgba(212,168,83,0.05); border-radius:4px; width:75%; animation:aisSkel 1.5s ease-in-out 0.4s infinite;"></div>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes aisSkel {
+                            0%,100%{opacity:0.4} 50%{opacity:1}
+                        }
+                    </style>
+                `;
 
                 try {
                     // --- Ẩn danh thông tin cá nhân bệnh nhân (bảo mật y khoa) ---
@@ -1679,6 +1751,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const birthYear = patientInfo.age
                         ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
                         : 'không rõ';
+                    // Giới tính: đọc từ DOM (aria-describedby *_GIOITINH hoặc *_GT)
+                    let patientGender = 'không rõ';
+                    try {
+                        const pid = patientInfo.id ? String(patientInfo.id) : null;
+                        const genderTd = pid
+                            ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
+                               document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
+                               document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
+                            : null;
+                        if (genderTd) {
+                            const gt = genderTd.textContent.trim().toLowerCase();
+                            if (gt === '1' || gt === 'nam' || gt === 'male') patientGender = 'Nam';
+                            else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') patientGender = 'Nữ';
+                            else patientGender = genderTd.textContent.trim() || 'không rõ';
+                        }
+                    } catch (_) { /* ignore */ }
 
                     // --- Context lâm sàng ---
                     // Ưu tiên diagHistory (chứa tên đầy đủ: "Gãy cổ xương đùi... ; Suy thận mạn...")
@@ -1744,7 +1832,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     } catch (_) { /* fallback */ }
 
                     if (!promptTemplate.trim()) {
-                        promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}).
+                        promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}, giới tính: {{gender}}).
 Dữ liệu lâm sàng:
 - Chẩn đoán: {{diagnosis}}
 - Đơn thuốc: {{drugs}}
@@ -1763,6 +1851,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     const prompt = promptTemplate
                         .replace('{{patientRef}}', patientRef)
                         .replace('{{birthYear}}', birthYear)
+                        .replace('{{gender}}', patientGender)
                         .replace('{{diagnosis}}', contextDiag)
                         .replace('{{drugs}}', contextDrugs || 'Không rõ')
                         .replace('{{abnormal}}', abnLine)
@@ -1781,14 +1870,22 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     const data = await response.json();
                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                         let text = data.candidates[0].content.parts[0].text;
+                        // Render markdown → HTML với section headers màu vàng
                         text = text
                             .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                            .replace(/^- (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>')
-                            .replace(/^\* (.*)$/gm, '<li style="margin-bottom:6px;">$1</li>');
+                            .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>')
+                            // Numbered section headers (1. / 2. / 3.)
+                            .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) =>
+                                `<div style="display:flex;align-items:center;gap:6px;margin:14px 0 6px;">
+                                    <span style="width:20px;height:20px;border-radius:50%;background:rgba(212,168,83,0.2);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;">${num.trim().replace('.','')}</span>
+                                    <strong style="color:#D4A853;font-size:13px;">${title}</strong>
+                                </div>`
+                            )
+                            .replace(/^- (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;">$1</li>')
+                            .replace(/^\* (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;">$1</li>');
 
                         // Render kết quả
-                        resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
+                        resAIModal.innerHTML = `<div style="font-size:13px;line-height:1.7;"><ul style="margin:0;padding-left:18px;">${text}</ul></div>`;
 
                         // Cost: ghi lại và hiển thị toast (async, không block render)
                         if (window.HIS?.AICost && data.usageMetadata) {
@@ -1808,62 +1905,82 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                             });
                         }
 
-                        // Link tra cứu — kết hợp ICD + keywords từ hướng xử trí AI trả về
-                        const icdCodes = contextDiag
-                            .split(/[,;]+/)
-                            .map(s => s.trim().split(' ')[0])
-                            .filter(s => /^[A-Z]\d/.test(s))
-                            .slice(0, 3);
+                        // ─── Link tra cứu ───────────────────────────────────────
+                        // Lấy ICD trực tiếp từ diagHistory (source of truth)
+                        const allIcdCodes = [];
+                        if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                            for (const d of patientInfo.diagHistory) {
+                                const matches = d.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [];
+                                for (const c of matches) {
+                                    if (!allIcdCodes.includes(c)) allIcdCodes.push(c);
+                                }
+                            }
+                        }
+                        // Fallback: parse từ contextDiag
+                        if (allIcdCodes.length === 0) {
+                            const fallbackCodes = contextDiag.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [];
+                            allIcdCodes.push(...[...new Set(fallbackCodes)].slice(0, 5));
+                        }
 
-                        // Parse section 3 "Hướng xử trí" từ text AI
+                        // Parse keywords từ section "Hướng xử trí" của AI
                         const rawText = data.candidates[0].content.parts[0].text;
                         const treatMatch = rawText.match(/3\..*?([\s\S]*?)(?:\n4\.|$)/i);
                         const treatRaw = treatMatch ? treatMatch[1] : '';
-                        // Lấy các từ khóa y khoa từ section 3 (loại bỏ stop words)
                         const treatKeywords = treatRaw
                             .replace(/<[^>]+>/g, ' ')
                             .split(/\s+/)
                             .map(w => w.replace(/[^a-zà-ỹA-ZÀ-ỹ]/g, ''))
                             .filter(w => w.length > 4)
-                            .filter(w => !['không','được','để','theo','cần','nếu','và','các','trong','nên','tiếp','đang','bỏi','hoặc','của','với','mọi','thì','phải','mọt','này','bẵng','khi','sau','trước'].includes(w.toLowerCase()))
-                            .slice(0, 4);
-
-                        const baseQuery = icdCodes.length > 0
-                            ? icdCodes.join(' ')
-                            : contextDiag.split('\n')[0].trim().slice(0, 50);
-
-                        const searchLinks = [
-                            {
-                                label: 'Phác đồ điều trị',
-                                q: baseQuery + ' phác đồ điều trị BYT Việt Nam'
-                            },
-                            {
-                                label: 'Hướng dẫn BYT',
-                                q: baseQuery + ' hướng dẫn chẩn đoán điều trị Bộ Y tế'
-                            },
-                            ...(treatKeywords.length > 1 ? [{
-                                label: treatKeywords.slice(0, 2).join(' '),
-                                q: treatKeywords.join(' ') + ' điều trị hướng dẫn y khoa'
-                            }] : []),
-                            ...(icdCodes.length > 0 ? [{
-                                label: 'MOH.GOV.VN',
-                                q: 'site:moh.gov.vn ' + icdCodes.join(' ')
-                            }] : [])
-                        ];
+                            .filter(w => !['không','được','để','theo','cần','nếu','các','trong','nên','hoặc','với','phải','này','bằng','khi','sau','trước','bệnh','nhân','điều','trị'].includes(w.toLowerCase()))
+                            .slice(0, 3);
 
                         const linkIconSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>';
-                        const linksHtml = searchLinks.map(l =>
-                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank"
-                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#60a5fa;font-weight:600;text-decoration:none;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:5px;padding:3px 8px;">
+
+                        // Mỗi ICD → 2 link riêng: Phác đồ + BYT
+                        const perIcdLinks = allIcdCodes.slice(0, 4).flatMap(code => {
+                            // Lấy tên bệnh tương ứng với ICD này từ diagHistory
+                            const matchedDiag = (patientInfo.diagHistory || []).find(d => d.includes(code)) || '';
+                            const cleanName = matchedDiag.replace(/\b[A-Z]\d{2}(?:\.\d{1,2})?\b/g, '').replace(/^[\s,;-]+/, '').trim().slice(0, 40);
+                            const label = cleanName || code;
+                            return [
+                                {
+                                    label: `${code} – Phác đồ`,
+                                    q: `${code} ${cleanName} phác đồ điều trị Bộ Y tế Việt Nam`,
+                                    color: '#D4A853'
+                                },
+                                {
+                                    label: `${code} – BYT`,
+                                    q: `site:moh.gov.vn OR site:bvdktrunguong.vn ${code} ${cleanName} hướng dẫn điều trị`,
+                                    color: '#60a5fa',
+                                    title: label
+                                }
+                            ];
+                        });
+
+                        // Link AI keyword từ hướng xử trí
+                        const extraLinks = treatKeywords.length > 0 ? [{
+                            label: '🔍 ' + treatKeywords.slice(0, 2).join(' '),
+                            q: treatKeywords.join(' ') + ' điều trị phác đồ hướng dẫn y khoa',
+                            color: '#a78bfa'
+                        }] : [];
+
+                        const allLinks = [...perIcdLinks, ...extraLinks];
+
+                        const linksHtml = allLinks.map(l =>
+                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank" title="${l.title || l.label}"
+                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${l.color || '#60a5fa'};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;white-space:nowrap;transition:0.15s;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.09)'"
+                                onmouseout="this.style.background='rgba(255,255,255,0.04)'">
                                 ${linkIconSvg} ${l.label}
                             </a>`
                         ).join('');
 
-                        resAIModal.innerHTML += `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(212,168,83,0.1);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                            <span style="font-size:10px;color:#5a5450;">Tra cứu:</span>
-                            ${linksHtml}
-                        </div>`;
-
+                        if (allLinks.length > 0) {
+                            resAIModal.innerHTML += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);">
+                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tra cứu phác đồ &amp; hướng dẫn điều trị</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">${linksHtml}</div>
+                            </div>`;
+                        }
 
                     } else {
                         throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
@@ -1872,8 +1989,9 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     resAIModal.innerHTML = '<span style="color:#E85454">Lỗi AI: ' + e.message + '</span>';
                 } finally {
                     btnAIModal.disabled = false;
-                    btnAIModal.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg> Tóm tắt AI';
+                    btnAIModal.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Tóm tắt AI';
                 }
+
             });
         }
 
