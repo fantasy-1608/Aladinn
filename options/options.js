@@ -711,79 +711,126 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialization
     loadSettings();
 
-    // --- AI Config Section ---
+    // === AI Config Section ===
+
+    // Default prompts (hiển thị trong textarea như gợi ý)
+    const DEFAULT_PROMPTS = {
+        cls_summary: `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}).
+Dữ liệu lâm sàng:
+- Chẩn đoán (ICD): {{diagnosis}}
+- Đơn thuốc: {{drugs}}
+{{abnormal}}
+{{keylabs}}
+Trình bày ngắn gọn theo cấu trúc:
+1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
+2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
+3. Hướng xử trí đề xuất (tối đa 3 ý, mỗi ý 1 can thiệp cụ thể)
+Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`,
+
+        voice_system: `Bạn là trợ lý y khoa chuyên nghiệp tại Bệnh viện Việt Nam. Nhiệm vụ: trích xuất thông tin từ văn bản y khoa (được nhập bằng giọng nói, có nhiều lỗi nhận dạng) và trả về **CHỈ JSON** — không kèm giải thích.
+
+## QUY TẮC QUAN TRỌNG:
+### 1. SỬA LỖI GIỌNG NÓI (Speech-to-text):
+- "sin hiệu" / "xin hiệu" → "sinh hiệu"
+- "trận đấu" / "chẩn đấu" → "chẩn đoán"
+- "bên sở" / "bệnh xử" → "bệnh sử"
+- Số đọc dạng "150 trên 80" → HA 150/80 mmHg
+### 2. PHÂN LOẠI đúng các field: lyDoVaoVien, quaTrinhBenhLy, khamToanThan, khamBoPhan, chanDoanBanDau, tienSuBanThan, tienSuGiaDinh, sinhHieu, icd10Suggest
+### 3. VĂN PHONG: Telegraphic style, chuyên nghiệp y khoa, lược bỏ từ thừa.
+### 4. OUTPUT: Trả về ĐÚNG JSON, KHÔNG kèm text giải thích.`,
+
+        medical_summary: '(Chức năng này sẽ được triển khai trong phiên bản tới. Để trống để dùng prompt mặc định của hệ thống.)'
+    };
+
+    function formatVnd(vnd) {
+        if (vnd < 1) return '<1đ';
+        if (vnd < 1000) return `≈${Math.round(vnd)}đ`;
+        return `≈${(vnd / 1000).toFixed(1)}kđ`;
+    }
+
     function loadAIConfig() {
-        // Load daily stats from localStorage
-        try {
+        // Load daily stats từ chrome.storage.local (đồng bộ với content script)
+        chrome.storage.local.get(['aladinn_ai_usage', 'aladinn_usd_rate'], (res) => {
             const today = new Date().toDateString();
-            const raw = localStorage.getItem('aladinn_ai_usage');
-            const data = raw ? JSON.parse(raw) : {};
-            if (data.date === today) {
-                const tokenEl = document.getElementById('stat-tokens');
-                const costEl = document.getElementById('stat-cost');
-                const callEl = document.getElementById('stat-calls');
+            const data = res.aladinn_ai_usage || {};
+
+            const tokenEl = document.getElementById('stat-tokens');
+            const costEl  = document.getElementById('stat-cost');
+            const callEl  = document.getElementById('stat-calls');
+
+            if (data.date === today && (data.totalTokens || 0) > 0) {
                 if (tokenEl) tokenEl.textContent = (data.totalTokens || 0).toLocaleString('vi-VN');
-                if (costEl) {
-                    const vnd = data.totalVnd || 0;
-                    costEl.textContent = vnd < 1 ? '<1đ' : vnd < 1000
-                        ? `≈${Math.round(vnd)}đ`
-                        : `≈${(vnd / 1000).toFixed(1)}kđ`;
-                }
-                if (callEl) callEl.textContent = (data.callCount || 0);
+                if (costEl)  costEl.textContent  = formatVnd(data.totalVnd || 0);
+                if (callEl)  callEl.textContent  = (data.callCount || 0);
+            } else {
+                if (tokenEl) tokenEl.textContent = '—';
+                if (costEl)  costEl.textContent  = '—';
+                if (callEl)  callEl.textContent  = '—';
             }
-        } catch (_) { /* ignore */ }
 
-        // Load USD rate
-        const rateEl = document.getElementById('opt-usd-rate');
-        if (rateEl) {
-            const saved = localStorage.getItem('aladinn_usd_rate');
-            rateEl.value = saved || '25500';
-        }
+            // Load USD rate
+            const rateEl = document.getElementById('opt-usd-rate');
+            if (rateEl) rateEl.value = res.aladinn_usd_rate || '25500';
+        });
 
-        // Load custom prompt
+        // Load custom prompts — nếu chưa có thì điền sẵn default làm placeholder
         chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
-            const promptEl = document.getElementById('opt-prompt-cls');
-            if (promptEl && res.aladinn_ai_prompts?.cls_summary) {
-                promptEl.value = res.aladinn_ai_prompts.cls_summary;
+            const saved = res.aladinn_ai_prompts || {};
+            const promptClsEl   = document.getElementById('opt-prompt-cls');
+            const promptVoiceEl = document.getElementById('opt-prompt-voice');
+            const promptSumEl   = document.getElementById('opt-prompt-medical');
+
+            if (promptClsEl) {
+                // Điền giá trị đã lưu hoặc để trống (placeholder hiển thị default)
+                promptClsEl.value = saved.cls_summary || '';
+                promptClsEl.placeholder = DEFAULT_PROMPTS.cls_summary;
+            }
+            if (promptVoiceEl) {
+                promptVoiceEl.value = saved.voice_system || '';
+                promptVoiceEl.placeholder = DEFAULT_PROMPTS.voice_system;
+            }
+            if (promptSumEl) {
+                promptSumEl.value = saved.medical_summary || '';
+                promptSumEl.placeholder = DEFAULT_PROMPTS.medical_summary;
             }
         });
     }
 
-    // Save AI config when save-all button is clicked
+    // Save AI config khi bấm Lưu Cấu Hình
     const origSaveHandler = document.getElementById('save-all-btn');
     if (origSaveHandler) {
         origSaveHandler.addEventListener('click', () => {
-            // Save USD rate
             const rateEl = document.getElementById('opt-usd-rate');
             if (rateEl) {
                 const rate = parseFloat(rateEl.value);
                 if (!isNaN(rate) && rate > 1000) {
-                    localStorage.setItem('aladinn_usd_rate', rate.toString());
+                    chrome.storage.local.set({ aladinn_usd_rate: rate.toString() });
                 }
             }
 
-            // Save custom prompt
-            const promptEl = document.getElementById('opt-prompt-cls');
-            if (promptEl) {
-                const promptVal = promptEl.value.trim();
-                chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
-                    const current = res.aladinn_ai_prompts || {};
-                    current.cls_summary = promptVal;
-                    chrome.storage.local.set({ aladinn_ai_prompts: current });
-                });
-            }
+            chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
+                const current = res.aladinn_ai_prompts || {};
+                const clsEl   = document.getElementById('opt-prompt-cls');
+                const voiceEl = document.getElementById('opt-prompt-voice');
+                const sumEl   = document.getElementById('opt-prompt-medical');
+                if (clsEl)   current.cls_summary     = clsEl.value.trim();
+                if (voiceEl) current.voice_system     = voiceEl.value.trim();
+                if (sumEl)   current.medical_summary  = sumEl.value.trim();
+                chrome.storage.local.set({ aladinn_ai_prompts: current });
+            });
         });
     }
 
-    // Reset prompt button
-    const btnResetPrompt = document.getElementById('btn-reset-prompt-cls');
-    if (btnResetPrompt) {
-        btnResetPrompt.addEventListener('click', () => {
-            const promptEl = document.getElementById('opt-prompt-cls');
-            if (promptEl) promptEl.value = '';
+    // Reset buttons cho từng prompt
+    function setupResetBtn(btnId, promptKey, promptElId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const el = document.getElementById(promptElId);
+            if (el) el.value = '';
             chrome.storage.local.get(['aladinn_ai_prompts'], (res) => {
                 const current = res.aladinn_ai_prompts || {};
-                current.cls_summary = '';
+                current[promptKey] = '';
                 chrome.storage.local.set({ aladinn_ai_prompts: current }, () => {
                     showToast('✅ Đã reset về prompt mặc định!');
                 });
@@ -791,5 +838,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    setupResetBtn('btn-reset-prompt-cls',   'cls_summary',    'opt-prompt-cls');
+    setupResetBtn('btn-reset-prompt-voice', 'voice_system',   'opt-prompt-voice');
+    setupResetBtn('btn-reset-prompt-medical','medical_summary','opt-prompt-medical');
+
     loadAIConfig();
 });
+

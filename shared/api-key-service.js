@@ -130,66 +130,166 @@ HIS.ApiKeyService = (function () {
                 <style>
                     #his-pin-overlay {
                         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                        background: rgba(11, 17, 33, 0.7); backdrop-filter: blur(4px);
+                        background: rgba(5, 8, 18, 0.82);
+                        backdrop-filter: blur(8px) saturate(1.5);
                         display: flex; align-items: center; justify-content: center;
-                        z-index: 2147483647; animation: hisPinFadeIn 0.25s ease;
+                        z-index: 2147483647;
+                        animation: hisPinFadeIn 0.3s ease;
                     }
                     @keyframes hisPinFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
                     .his-pin-dialog {
-                        background: rgba(20, 27, 45, 0.95); border-radius: 16px; padding: 32px;
-                        border: 1px solid rgba(212, 168, 83, 0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-                        text-align: center; min-width: 340px;
-                        animation: hisPinSlideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+                        position: relative; overflow: hidden;
+                        background: linear-gradient(145deg, rgba(20,27,50,0.98) 0%, rgba(14,19,38,0.98) 100%);
+                        border-radius: 20px; padding: 36px 32px 28px;
+                        border: 1px solid rgba(212,168,83,0.25);
+                        box-shadow: 0 0 0 1px rgba(212,168,83,0.06),
+                                    0 24px 80px rgba(0,0,0,0.7),
+                                    0 0 60px rgba(212,168,83,0.06) inset;
+                        text-align: center; min-width: 360px;
+                        animation: hisPinSlideUp 0.35s cubic-bezier(0.34,1.2,0.64,1);
                     }
-                    @keyframes hisPinSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+                    /* Ambient glow corners */
+                    .his-pin-dialog::before {
+                        content: ''; position: absolute; top: -60px; right: -60px;
+                        width: 180px; height: 180px;
+                        background: radial-gradient(circle, rgba(212,168,83,0.12) 0%, transparent 70%);
+                        pointer-events: none;
+                    }
+                    .his-pin-dialog::after {
+                        content: ''; position: absolute; bottom: -40px; left: -40px;
+                        width: 140px; height: 140px;
+                        background: radial-gradient(circle, rgba(212,168,83,0.07) 0%, transparent 70%);
+                        pointer-events: none;
+                    }
+
+                    @keyframes hisPinSlideUp {
+                        from { transform: translateY(24px) scale(0.96); opacity: 0; }
+                        to   { transform: translateY(0)   scale(1);    opacity: 1; }
+                    }
+
+                    /* Gold crown icon */
+                    .his-pin-crown {
+                        font-size: 32px; margin-bottom: 10px; display: block;
+                        animation: hisCrownBounce 0.6s cubic-bezier(0.34,1.4,0.64,1) 0.2s both;
+                        filter: drop-shadow(0 0 8px rgba(212,168,83,0.6));
+                    }
+                    @keyframes hisCrownBounce {
+                        from { transform: translateY(-12px) scale(0.8); opacity: 0; }
+                        to   { transform: translateY(0)      scale(1);   opacity: 1; }
+                    }
+
                     .his-pin-dialog h3 {
-                        margin: 0 0 8px 0; color: #d4a853; font-size: 18px; font-weight: 700; font-family: Outfit, sans-serif;
+                        margin: 0 0 6px 0;
+                        background: linear-gradient(135deg, #f5d78e 0%, #d4a853 50%, #b8860b 100%);
+                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        font-size: 17px; font-weight: 800; font-family: Outfit, sans-serif;
+                        letter-spacing: 0.3px;
                     }
                     .his-pin-dialog p {
-                        margin: 0 0 20px 0; color: #8B8579; font-size: 13px; line-height: 1.5;
+                        margin: 0 0 22px 0; color: #6b7280; font-size: 12.5px; line-height: 1.6;
                     }
+
+                    /* PIN boxes */
                     .his-pin-boxes {
-                        display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;
+                        display: flex; gap: 9px; justify-content: center; margin-bottom: 22px;
                     }
                     .his-pin-input {
-                        width: 42px; height: 50px; background: rgba(212, 168, 83, 0.03); border: 1px solid rgba(212, 168, 83, 0.12);
-                        border-radius: 10px; font-size: 22px; text-align: center; color: #E8E0D4;
+                        width: 44px; height: 52px;
+                        background: rgba(212,168,83,0.04);
+                        border: 1.5px solid rgba(212,168,83,0.15);
+                        border-radius: 12px; font-size: 24px; text-align: center; color: #f5d78e;
                         outline: none; transition: all 0.2s;
                         -webkit-text-security: disc;
+                        font-family: monospace;
                     }
                     .his-pin-input:focus {
-                        border-color: #d4a853; box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.15); background: rgba(212, 168, 83, 0.08);
+                        border-color: #d4a853;
+                        box-shadow: 0 0 0 3px rgba(212,168,83,0.18), 0 0 12px rgba(212,168,83,0.15);
+                        background: rgba(212,168,83,0.09);
+                        transform: scale(1.05);
+                    }
+                    .his-pin-input.filled {
+                        border-color: rgba(212,168,83,0.5);
+                        background: rgba(212,168,83,0.07);
                     }
                     .his-pin-input.error {
-                        border-color: #E85454; animation: hisPinShake 0.4s; box-shadow: 0 0 0 3px rgba(232, 84, 84, 0.15);
+                        border-color: #ef4444;
+                        animation: hisPinShake 0.4s;
+                        box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+                        background: rgba(239,68,68,0.06);
                     }
                     @keyframes hisPinShake {
                         0%,100% { transform: translateX(0); }
-                        25% { transform: translateX(-5px); }
-                        75% { transform: translateX(5px); }
+                        20%     { transform: translateX(-6px); }
+                        60%     { transform: translateX(6px); }
+                        80%     { transform: translateX(-3px); }
                     }
-                    .his-pin-actions { display: flex; gap: 10px; justify-content: center; }
+
+                    /* Buttons row */
+                    .his-pin-actions {
+                        display: flex; gap: 10px; justify-content: center; align-items: stretch;
+                    }
                     .his-pin-btn {
-                        padding: 10px 24px; border-radius: 8px; border: none;
-                        font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;
+                        flex: 1;
+                        padding: 11px 16px; border-radius: 10px; border: none;
+                        font-size: 13.5px; font-weight: 700; cursor: pointer;
+                        transition: all 0.2s; font-family: Outfit, sans-serif;
+                        line-height: 1.2; display: flex; align-items: center; justify-content: center;
                     }
                     .his-pin-submit {
-                        background: #d4a853; color: #0b1121;
+                        background: linear-gradient(135deg, #d4a853, #b8860b);
+                        color: #0b0f1e;
+                        box-shadow: 0 4px 16px rgba(212,168,83,0.3);
+                        position: relative; overflow: hidden;
                     }
-                    .his-pin-submit:hover { filter: brightness(1.1); }
-                    .his-pin-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+                    .his-pin-submit::after {
+                        content: '';
+                        position: absolute; top: -50%; left: -60%;
+                        width: 40%; height: 200%;
+                        background: rgba(255,255,255,0.25);
+                        transform: skewX(-20deg);
+                        animation: hisShimmer 2.5s infinite;
+                    }
+                    @keyframes hisShimmer {
+                        0%   { left: -60%; }
+                        100% { left: 130%; }
+                    }
+                    .his-pin-submit:hover:not(:disabled) {
+                        filter: brightness(1.12);
+                        box-shadow: 0 6px 24px rgba(212,168,83,0.45);
+                        transform: translateY(-1px);
+                    }
+                    .his-pin-submit:disabled {
+                        opacity: 0.45; cursor: not-allowed; transform: none;
+                        box-shadow: none;
+                    }
                     .his-pin-cancel {
-                        background: rgba(212, 168, 83, 0.05); color: #8B8579; border: 1px solid rgba(212, 168, 83, 0.2);
+                        background: rgba(255,255,255,0.04);
+                        color: #6b7280; border: 1.5px solid rgba(255,255,255,0.08);
                     }
-                    .his-pin-cancel:hover { background: rgba(212, 168, 83, 0.1); color: #E8E0D4; }
+                    .his-pin-cancel:hover {
+                        background: rgba(255,255,255,0.08); color: #9ca3af;
+                        border-color: rgba(255,255,255,0.15);
+                    }
                     .his-pin-error-msg {
-                        color: #E85454; font-size: 12px; margin-top: 12px;
-                        min-height: 18px; font-weight: 500;
+                        color: #f87171; font-size: 12px; margin-top: 12px;
+                        min-height: 18px; font-weight: 500; letter-spacing: 0.2px;
+                    }
+                    /* Divider line */
+                    .his-pin-divider {
+                        height: 1px;
+                        background: linear-gradient(90deg, transparent, rgba(212,168,83,0.15), transparent);
+                        margin-bottom: 18px;
                     }
                 </style>
                 <div class="his-pin-dialog">
-                    <h3>🔐 Nhập mã PIN để mở khóa AI VIP</h3>
-                    <p>API Key đã được mã hóa. Nhập PIN 6 số để giải mã.<br>Sai PIN sẽ tự động chuyển về chế độ Bình thường.</p>
+                    <span class="his-pin-crown">👑</span>
+                    <h3>Nhập mã PIN để mở khóa AI VIP</h3>
+                    <p>API Key đã được mã hóa bảo mật.<br>Nhập PIN 6 số để tiếp tục.</p>
+                    <div class="his-pin-divider"></div>
                     <div class="his-pin-boxes">
                         <input type="tel" maxlength="1" class="his-pin-input" data-idx="0" autocomplete="off">
                         <input type="tel" maxlength="1" class="his-pin-input" data-idx="1" autocomplete="off">
@@ -200,11 +300,12 @@ HIS.ApiKeyService = (function () {
                     </div>
                     <div class="his-pin-actions">
                         <button class="his-pin-btn his-pin-submit" disabled>🔓 Xác nhận</button>
-                        <button class="his-pin-btn his-pin-cancel">Hủy (Dùng BASE)</button>
+                        <button class="his-pin-btn his-pin-cancel">Hủy</button>
                     </div>
                     <div class="his-pin-error-msg"></div>
                 </div>
             `;
+
             document.documentElement.appendChild(overlay);
 
             const inputs = overlay.querySelectorAll('.his-pin-input');
@@ -225,6 +326,7 @@ HIS.ApiKeyService = (function () {
             inputs.forEach((input, idx) => {
                 input.addEventListener('input', () => {
                     input.value = input.value.replace(/\D/g, ''); // Only digits
+                    input.classList.toggle('filled', input.value.length > 0);
                     if (input.value && idx < 5) inputs[idx + 1].focus();
                     const pin = getPin();
                     submitBtn.disabled = pin.length < 6;

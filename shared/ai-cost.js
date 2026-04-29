@@ -5,8 +5,8 @@
  *
  * Cách dùng:
  *   const est = HIS.AICost.estimate(model, inputTokens, outputTokens);
- *   HIS.AICost.record(model, inputTokens, outputTokens);
- *   const stats = HIS.AICost.getDailyStats();
+ *   await HIS.AICost.record(model, inputTokens, outputTokens);
+ *   const stats = await HIS.AICost.getDailyStats();
  */
 
 window.HIS = window.HIS || {};
@@ -15,7 +15,7 @@ HIS.AICost = (function () {
     'use strict';
 
     const STORAGE_KEY = 'aladinn_ai_usage';
-    const RATE_KEY = 'aladinn_usd_rate';
+    const RATE_KEY    = 'aladinn_usd_rate';
 
     // Giá theo USD / 1 triệu token (Input / Output)
     // Nguồn: Google AI Studio Pricing (tháng 4/2026)
@@ -27,15 +27,15 @@ HIS.AICost = (function () {
         'gemini-2.0-flash-lite': { input: 0.075, output: 0.30  },
     };
 
-    const DEFAULT_USD_RATE = 25500; // VNĐ / 1 USD
+    const DEFAULT_USD_RATE = 25500;
 
     /**
-     * Lấy tỷ giá USD→VNĐ từ localStorage (người dùng có thể tuỳ chỉnh trong Options).
+     * Lấy tỷ giá từ chrome.storage.local (đồng bộ giữa content và options page).
      */
-    function getUsdRate() {
+    async function getUsdRate() {
         try {
-            const raw = localStorage.getItem(RATE_KEY);
-            const rate = raw ? parseFloat(raw) : NaN;
+            const res = await chrome.storage.local.get([RATE_KEY]);
+            const rate = res[RATE_KEY] ? parseFloat(res[RATE_KEY]) : NaN;
             return (!isNaN(rate) && rate > 1000) ? rate : DEFAULT_USD_RATE;
         } catch (_) {
             return DEFAULT_USD_RATE;
@@ -44,22 +44,15 @@ HIS.AICost = (function () {
 
     /**
      * Ước tính chi phí một lần gọi AI.
-     * @param {string} model - Tên model (vd: 'gemini-2.5-flash')
-     * @param {number} inputTokens
-     * @param {number} outputTokens
-     * @returns {{ totalTokens: number, usd: number, vnd: number, vndDisplay: string }}
      */
-    function estimate(model, inputTokens = 0, outputTokens = 0) {
+    function estimateSync(model, inputTokens = 0, outputTokens = 0, usdRate = DEFAULT_USD_RATE) {
         const price = PRICING[model] || PRICING['gemini-2.0-flash'];
-        const usdRate = getUsdRate();
-
         const inputCost  = (inputTokens  / 1_000_000) * price.input;
         const outputCost = (outputTokens / 1_000_000) * price.output;
         const totalUsd   = inputCost + outputCost;
         const totalVnd   = totalUsd * usdRate;
         const totalTokens = inputTokens + outputTokens;
 
-        // Format VNĐ cho dễ đọc
         let vndDisplay;
         if (totalVnd < 1) {
             vndDisplay = '<1đ';
@@ -72,25 +65,28 @@ HIS.AICost = (function () {
         return { totalTokens, usd: totalUsd, vnd: totalVnd, vndDisplay };
     }
 
+    async function estimate(model, inputTokens = 0, outputTokens = 0) {
+        const usdRate = await getUsdRate();
+        return estimateSync(model, inputTokens, outputTokens, usdRate);
+    }
+
     /**
-     * Ghi nhận một lần gọi AI vào localStorage (cộng dồn theo ngày).
+     * Ghi nhận một lần gọi AI vào chrome.storage.local (cộng dồn theo ngày).
+     * Dùng async vì chrome.storage.local là async API.
      */
-    function record(model, inputTokens = 0, outputTokens = 0) {
+    async function record(model, inputTokens = 0, outputTokens = 0) {
         try {
             const today = new Date().toDateString();
-            const raw = localStorage.getItem(STORAGE_KEY);
-            const data = raw ? JSON.parse(raw) : {};
+            const usdRate = await getUsdRate();
+            const est = estimateSync(model, inputTokens, outputTokens, usdRate);
+
+            const stored = await chrome.storage.local.get([STORAGE_KEY]);
+            let data = stored[STORAGE_KEY] || {};
 
             if (data.date !== today) {
-                // Reset theo ngày
-                data.date = today;
-                data.totalTokens = 0;
-                data.totalVnd = 0;
-                data.callCount = 0;
-                data.byModel = {};
+                data = { date: today, totalTokens: 0, totalVnd: 0, callCount: 0, byModel: {} };
             }
 
-            const est = estimate(model, inputTokens, outputTokens);
             data.totalTokens = (data.totalTokens || 0) + est.totalTokens;
             data.totalVnd    = (data.totalVnd || 0)    + est.vnd;
             data.callCount   = (data.callCount || 0)   + 1;
@@ -101,7 +97,7 @@ HIS.AICost = (function () {
             data.byModel[model].vnd    += est.vnd;
             data.byModel[model].calls  += 1;
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            await chrome.storage.local.set({ [STORAGE_KEY]: data });
             return est;
         } catch (_) {
             return null;
@@ -109,15 +105,13 @@ HIS.AICost = (function () {
     }
 
     /**
-     * Lấy thống kê sử dụng AI trong ngày hôm nay.
-     * @returns {{ date, totalTokens, totalVnd, callCount, byModel }}
+     * Lấy thống kê sử dụng AI hôm nay từ chrome.storage.local.
      */
-    function getDailyStats() {
+    async function getDailyStats() {
         try {
             const today = new Date().toDateString();
-            const raw = localStorage.getItem(STORAGE_KEY);
-            const data = raw ? JSON.parse(raw) : {};
-
+            const stored = await chrome.storage.local.get([STORAGE_KEY]);
+            const data = stored[STORAGE_KEY] || {};
             if (data.date !== today) {
                 return { date: today, totalTokens: 0, totalVnd: 0, callCount: 0, byModel: {} };
             }
@@ -128,27 +122,11 @@ HIS.AICost = (function () {
     }
 
     /**
-     * Render dòng chi phí nhỏ hiển thị dưới kết quả AI.
-     * @param {string} model
-     * @param {object} usageMetadata - Từ Gemini API response.usageMetadata
-     * @returns {string} HTML string
+     * Render badge chi phí (vẫn giữ để tương thích backward, nhưng không dùng inline nữa).
      */
-    function renderCostBadge(model, usageMetadata) {
-        if (!usageMetadata) return '';
-        const inputTokens  = usageMetadata.promptTokenCount      || 0;
-        const outputTokens = usageMetadata.candidatesTokenCount   || 0;
-        if (inputTokens + outputTokens === 0) return '';
-
-        const est = record(model, inputTokens, outputTokens);
-        if (!est) return '';
-
-        const modelShort = model.replace('gemini-', '');
-        return `<div style="margin-top:8px; font-size:10px; color:#5a5450; display:flex; align-items:center; gap:6px;">
-            <span>💰</span>
-            <span>~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay}</span>
-            <span style="opacity:0.5">· ${modelShort}</span>
-        </div>`;
+    function renderCostBadge(_model, _usageMetadata) {
+        return '';
     }
 
-    return { estimate, record, getDailyStats, renderCostBadge, getUsdRate };
+    return { estimate, estimateSync, record, getDailyStats, renderCostBadge, getUsdRate };
 })();

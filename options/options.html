@@ -863,26 +863,64 @@
 
                 <hr style="border: 0; border-top: 1px dashed var(--border); margin: 28px 0;">
 
-                <!-- Prompt tùy chỉnh -->
-                <h3 class="group-title">📝 Prompt Tóm tắt CLS + Thuốc</h3>
+                <!-- Prompt tùy chỉnh CLS -->
+                <h3 class="group-title">📝 Prompt: Tóm tắt CLS + Thuốc</h3>
                 <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    Prompt dưới đây sử dụng các biến: <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>, 
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>, 
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>, 
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>, 
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>.
-                    Để trống để dùng prompt mặc định.
+                    Biến: <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>
+                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{keylabs}}</code>.
+                    Để trống = dùng prompt mặc định (hiển thị qua placeholder).
                 </p>
                 <div class="form-group">
-                    <textarea id="opt-prompt-cls" placeholder="Để trống để dùng prompt mặc định của Aladinn..." style="width:100%; height:200px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:13px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
+                    <textarea id="opt-prompt-cls" style="width:100%; height:180px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
                 </div>
-                <div style="display:flex; gap:12px;">
+                <div style="display:flex; gap:12px; margin-bottom:32px;">
                     <button id="btn-reset-prompt-cls" class="btn btn-secondary">
                         <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
                         Reset về mặc định
                     </button>
                 </div>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0 0 28px 0;">
+
+                <!-- Prompt AI Voice -->
+                <h3 class="group-title">🎙️ Prompt: AI Voice (Nhập liệu giọng nói)</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
+                    System prompt cho tính năng nhập liệu bằng giọng nói. AI sẽ trích xuất dữ liệu lâm sàng từ văn bản giọng nói và trả về JSON.
+                    Để trống = dùng prompt hệ thống mặc định.
+                </p>
+                <div class="form-group">
+                    <textarea id="opt-prompt-voice" style="width:100%; height:180px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
+                </div>
+                <div style="display:flex; gap:12px; margin-bottom:32px;">
+                    <button id="btn-reset-prompt-voice" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                        Reset về mặc định
+                    </button>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0 0 28px 0;">
+
+                <!-- Prompt Tổng kết bệnh án -->
+                <h3 class="group-title">📋 Prompt: Tổng kết bệnh án (sắp ra mắt)</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
+                    Prompt dành cho tính năng tóm tắt bệnh án toàn diện (AI VIP). Chức năng đang được phát triển.
+                    Để trống = dùng prompt mặc định khi tính năng ra mắt.
+                </p>
+                <div class="form-group">
+                    <textarea id="opt-prompt-medical" style="width:100%; height:120px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-dim); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6; opacity:0.7;"></textarea>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <button id="btn-reset-prompt-medical" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                        Reset về mặc định
+                    </button>
+                </div>
             </section>
+
 
         </main>
     </div>

@@ -1681,10 +1681,37 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         .filter(Boolean)
                         .join('; ');
 
-                    // XN bất thường mới nhất (từ grouped data nếu có)
-                    const abnItems = window._aladinn_last_abnormals || [];
-                    const contextAbn = abnItems.length > 0
-                        ? abnItems.slice(0, 5).map(a => `${a.code || a.testName}: ${a.value} ${a.unit || ''}`).join('; ')
+                    // --- CLS (cận lâm sàng) context ---
+                    // 1. XN bất thường: lấy từ local abnormals (scope của showLabTimelineModal)
+                    const contextAbn = abnormals.length > 0
+                        ? abnormals.slice(0, 8).map(a => {
+                            const ref = a.refDisplay ? ` [BT: ${a.refDisplay}]` : '';
+                            return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (⇑⇑)`;
+                        }).join('; ')
+                        : '';
+
+                    // 2. XN chính có giá trị (bình thường hoặc bất thường) — chỉ lấy ngày gần nhất
+                    const KEY_LABS = ['glucose','ure','creatinine','hba1c','k','na','cl','hco3',
+                        'hgb','hb','wbc','plt','inr','pt','aptt','alt','ast',
+                        'pro-bnp','troponin','crp','procalcitonin','lactate','ph','pao2','paco2'];
+                    const latestLabDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
+                    const keyLabLines = [];
+                    if (latestLabDate) {
+                        for (const [_cat, tests] of Object.entries(grouped)) {
+                            for (const [code, info] of Object.entries(tests)) {
+                                const codeLC = code.toLowerCase();
+                                const isKey = KEY_LABS.some(k => codeLC.includes(k));
+                                if (!isKey) continue;
+                                const entry = info.values[latestLabDate];
+                                if (!entry) continue;
+                                const ref = info.refDisplay ? ` [BT: ${info.refDisplay}]` : '';
+                                const flag = _isAbnormal(entry.status) ? ' (!)' : '';
+                                keyLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref}${flag}`);
+                            }
+                        }
+                    }
+                    const contextKeyLabs = keyLabLines.length > 0
+                        ? keyLabLines.slice(0, 10).join('; ')
                         : '';
 
                     // Lấy custom prompt từ Options (nếu có), fallback về mặc định
@@ -1711,12 +1738,14 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
 
                     // Điền biến vào template
                     const abnLine = contextAbn ? `- XN bất thường: ${contextAbn}` : '';
+                    const keyLabLine = contextKeyLabs ? `- XN chính (ngày gần nhất): ${contextKeyLabs}` : '';
                     const prompt = promptTemplate
                         .replace('{{patientRef}}', patientRef)
                         .replace('{{birthYear}}', birthYear)
                         .replace('{{diagnosis}}', contextDiag)
                         .replace('{{drugs}}', contextDrugs || 'Không rõ')
-                        .replace('{{abnormal}}', abnLine);
+                        .replace('{{abnormal}}', abnLine)
+                        .replace('{{keylabs}}', keyLabLine);
 
                     const model = await window.HIS.getAiModel();
                     const response = await fetch(
@@ -1740,52 +1769,80 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         // Render kết quả
                         resAIModal.innerHTML = '<ul style="margin:0; padding-left:16px;">' + text + '</ul>';
 
-                        // Cost badge: hiển thị toast thay vì nằm trong panel
+                        // Cost: ghi lại và hiển thị toast (async, không block render)
                         if (window.HIS?.AICost && data.usageMetadata) {
-                            const est = window.HIS.AICost.record(
+                            window.HIS.AICost.record(
                                 model,
                                 data.usageMetadata.promptTokenCount || 0,
                                 data.usageMetadata.candidatesTokenCount || 0
-                            );
-                            if (est) {
-                                const modelShort = model.replace('gemini-', '');
-                                window.VNPTRealtime?.showToast(
-                                    `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${modelShort}`,
-                                    'info',
-                                    3000
-                                );
-                            }
+                            ).then(est => {
+                                if (est) {
+                                    const modelShort = model.replace('gemini-', '');
+                                    window.VNPTRealtime?.showToast(
+                                        `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${modelShort}`,
+                                        'info',
+                                        3000
+                                    );
+                                }
+                            });
                         }
 
-                        // Link tra cứu phác đồ / hướng dẫn BYT
+                        // Link tra cứu — kết hợp ICD + keywords từ hướng xử trí AI trả về
                         const icdCodes = contextDiag
                             .split(/[,;]+/)
                             .map(s => s.trim().split(' ')[0])
                             .filter(s => /^[A-Z]\d/.test(s))
                             .slice(0, 3);
-                        const searchQuery = icdCodes.length > 0
-                            ? icdCodes.join(' ') + ' phác đồ điều trị BYT Việt Nam'
-                            : contextDiag.split('\n')[0].trim().slice(0, 60) + ' phác đồ BYT';
-                        const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchQuery);
-                        const vncardUrl = icdCodes.length > 0
-                            ? 'https://www.google.com/search?q=site:moh.gov.vn+' + encodeURIComponent(icdCodes.join('+'))
-                            : '';
 
-                        resAIModal.innerHTML += `<div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(212,168,83,0.1); display:flex; gap:8px; flex-wrap:wrap;">
-                            <span style="font-size:10px; color:#5a5450; align-self:center;">Tra cứu:</span>
-                            <a href="${googleUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
-                                Phác đồ điều trị
-                            </a>
-                            <a href="https://www.google.com/search?q=${encodeURIComponent(searchQuery.replace('phác đồ điều trị BYT Việt Nam', 'hướng dẫn chẩn đoán điều trị Bộ Y tế'))}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
-                                Hướng dẫn BYT
-                            </a>
-                            ${vncardUrl ? `<a href="${vncardUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; color:#60a5fa; font-weight:600; text-decoration:none; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:5px; padding:3px 8px;">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>
-                                MOH.GOV.VN
-                            </a>` : ''}
+                        // Parse section 3 "Hướng xử trí" từ text AI
+                        const rawText = data.candidates[0].content.parts[0].text;
+                        const treatMatch = rawText.match(/3\..*?([\s\S]*?)(?:\n4\.|$)/i);
+                        const treatRaw = treatMatch ? treatMatch[1] : '';
+                        // Lấy các từ khóa y khoa từ section 3 (loại bỏ stop words)
+                        const treatKeywords = treatRaw
+                            .replace(/<[^>]+>/g, ' ')
+                            .split(/\s+/)
+                            .map(w => w.replace(/[^a-zà-ỹA-ZÀ-ỹ]/g, ''))
+                            .filter(w => w.length > 4)
+                            .filter(w => !['không','được','để','theo','cần','nếu','và','các','trong','nên','tiếp','đang','bỏi','hoặc','của','với','mọi','thì','phải','mọt','này','bẵng','khi','sau','trước'].includes(w.toLowerCase()))
+                            .slice(0, 4);
+
+                        const baseQuery = icdCodes.length > 0
+                            ? icdCodes.join(' ')
+                            : contextDiag.split('\n')[0].trim().slice(0, 50);
+
+                        const searchLinks = [
+                            {
+                                label: 'Phác đồ điều trị',
+                                q: baseQuery + ' phác đồ điều trị BYT Việt Nam'
+                            },
+                            {
+                                label: 'Hướng dẫn BYT',
+                                q: baseQuery + ' hướng dẫn chẩn đoán điều trị Bộ Y tế'
+                            },
+                            ...(treatKeywords.length > 1 ? [{
+                                label: treatKeywords.slice(0, 2).join(' '),
+                                q: treatKeywords.join(' ') + ' điều trị hướng dẫn y khoa'
+                            }] : []),
+                            ...(icdCodes.length > 0 ? [{
+                                label: 'MOH.GOV.VN',
+                                q: 'site:moh.gov.vn ' + icdCodes.join(' ')
+                            }] : [])
+                        ];
+
+                        const linkIconSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>';
+                        const linksHtml = searchLinks.map(l =>
+                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank"
+                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#60a5fa;font-weight:600;text-decoration:none;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:5px;padding:3px 8px;">
+                                ${linkIconSvg} ${l.label}
+                            </a>`
+                        ).join('');
+
+                        resAIModal.innerHTML += `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(212,168,83,0.1);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            <span style="font-size:10px;color:#5a5450;">Tra cứu:</span>
+                            ${linksHtml}
                         </div>`;
+
 
                     } else {
                         throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
