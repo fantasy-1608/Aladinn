@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Demo — Lâm sàng & Thuốc</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0e0b08;
+  font-family: 'Outfit', system-ui, sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 24px;
+  color: #e8dcc8;
+}
+.modal {
+  width: 92%; max-width: 960px; height: 85vh;
+  background: linear-gradient(145deg, #1a1410 0%, #120e0a 100%);
+  border: 1px solid rgba(212,162,90,0.25); border-radius: 16px;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+}
+.modal-header { padding: 14px 20px 10px; border-bottom: 1px solid rgba(212,162,90,0.15); flex-shrink: 0; }
+.modal-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.modal-title h2 { color: #a18764; font-size: 13px; font-weight: 600; }
+.patient-name { color: #d4a25a; font-weight: 700; font-size: 15px; }
+.patient-meta { color: #9a8e7e; font-size: 13px; }
+.diag-row { font-size: 11px; color: #7a6e5e; }
+.tab-bar { display: flex; gap: 4px; padding: 8px 16px 0; border-bottom: 1px solid rgba(212,162,90,0.1); flex-shrink: 0; }
+.tab-btn { padding: 7px 13px; border: none; border-radius: 8px 8px 0 0; background: transparent; color: #7a6e5e; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-btn.active { background: rgba(212,162,90,0.1); color: #d4a25a; border-bottom-color: #d4a25a; }
+
+/* Main scroll area */
+.tab-content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.tab-content::-webkit-scrollbar { width: 4px; }
+.tab-content::-webkit-scrollbar-thumb { background: rgba(212,162,90,0.2); border-radius: 4px; }
+
+/* Day card */
+.day-card { border: 1px solid rgba(212,162,90,0.1); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.012); }
+
+/* Date strip */
+.day-strip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px;
+  background: rgba(212,162,90,0.07);
+  border-bottom: 1px solid rgba(212,162,90,0.1);
+}
+.day-num { font-size: 18px; font-weight: 800; color: #d4a25a; line-height: 1; min-width: 28px; text-align: center; }
+.day-mon { font-size: 9px; color: #a18764; font-weight: 600; text-align: center; }
+.day-sep { width: 1px; height: 28px; background: rgba(212,162,90,0.15); flex-shrink: 0; }
+.day-meta { flex: 1; }
+.day-full { color: #d4a25a; font-weight: 600; font-size: 12.5px; }
+.day-sub { color: #6a5e4e; font-size: 10.5px; margin-top: 1px; }
+.day-tags { display: flex; gap: 5px; }
+.dtag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 12px; }
+.dtag-prog { background: rgba(96,165,250,0.12); color: #7ab8f5; border: 1px solid rgba(96,165,250,0.2); }
+.dtag-drug { background: rgba(212,162,90,0.1); color: #c49a52; border: 1px solid rgba(212,162,90,0.2); }
+.dtag-diag { background: rgba(167,139,250,0.1); color: #b79bfa; border: 1px solid rgba(167,139,250,0.2); }
+
+/* Two-column body — expands naturally, no scroll */
+.day-body { display: grid; grid-template-columns: 1fr 1fr; }
+
+.col-left { padding: 10px 12px; border-right: 1px solid rgba(255,255,255,0.04); }
+.col-right { padding: 10px 12px; }
+
+/* Progress note */
+.prog-block { margin-bottom: 8px; }
+.prog-text {
+  font-size: 12px; color: #c8d4e0; line-height: 1.65;
+  white-space: pre-wrap;
+  padding: 7px 10px 7px 10px;
+  border-left: 2px solid rgba(96,165,250,0.3);
+  background: rgba(96,165,250,0.03);
+  border-radius: 0 5px 5px 0;
+}
+
+/* Ghi chú */
+.ghichu-block {
+  margin-top: 6px; padding: 6px 10px;
+  border-left: 2px solid rgba(212,162,90,0.3);
+  background: rgba(212,162,90,0.03);
+  border-radius: 0 5px 5px 0;
+}
+.ghichu-label { font-size: 9.5px; color: #a18764; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+.ghichu-text { font-size: 11.5px; color: #b89a70; line-height: 1.5; font-style: italic; }
+
+/* Diagnosis comparison */
+.diag-block { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.04); }
+.diag-label-row { font-size: 9.5px; color: #8b7cf8; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+.diag-item { display: flex; align-items: flex-start; gap: 6px; padding: 3px 6px 3px 8px; border-radius: 4px; margin-bottom: 3px; font-size: 11.5px; line-height: 1.45; }
+.diag-item.new { background: rgba(52,211,153,.06); border-left: 2px solid #34d399; color: #6ee7b7; }
+.diag-item.kept { background: rgba(107,114,128,.04); border-left: 2px solid #4b5563; color: #9ca3af; }
+.diag-item.gone { background: rgba(239,68,68,.04); border-left: 2px solid #f87171; color: #fca5a5; text-decoration: line-through; opacity: .75; }
+.diag-disp { flex: 1; }
+.dbadge { font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; flex-shrink: 0; margin-top: 3px; }
+.dbadge.new { background: rgba(52,211,153,.15); color: #34d399; }
+.dbadge.gone { background: rgba(239,68,68,.15); color: #f87171; }
+.dbadge.init { background: rgba(245,158,11,.15); color: #f59e0b; }
+.no-diag { font-size: 11px; color: #4a4540; font-style: italic; padding: 2px 4px; }
+
+/* Drug list */
+.drug-legend { display: flex; gap: 8px; margin-bottom: 6px; font-size: 10px; }
+.leg { display: flex; align-items: center; gap: 3px; color: #6a5e4e; }
+.leg-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.drug-item { display: flex; align-items: baseline; gap: 7px; padding: 5px 8px; border-radius: 6px; margin-bottom: 4px; }
+.drug-item.d-new { background: rgba(52,211,153,.05); border: 1px solid rgba(52,211,153,.12); }
+.drug-item.d-stop { background: rgba(239,68,68,.04); border: 1px solid rgba(239,68,68,.1); opacity: .75; }
+.drug-item.d-cont { background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.04); opacity: .7; }
+.d-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.d-dot.new { background: #34d399; } .d-dot.stop { background: #f87171; } .d-dot.cont { background: #6b7280; }
+.d-name { font-size: 12px; flex: 1; line-height: 1.4; }
+.d-new .d-name { color: #d0f0e4; }
+.d-stop .d-name { color: #fca5a5; text-decoration: line-through; text-decoration-color: rgba(248,113,113,.4); }
+.d-cont .d-name { color: #9ca3af; }
+.d-dose { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.d-new .d-dose { background: rgba(52,211,153,.12); color: #34d399; }
+.d-stop .d-dose { background: rgba(239,68,68,.1); color: #f87171; }
+.d-cont .d-dose { background: rgba(107,114,128,.1); color: #9ca3af; }
+.mbadge { font-size: 8.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px; vertical-align: middle; margin-left: 4px; }
+.mbadge.new { background: rgba(52,211,153,.15); color: #34d399; }
+.mbadge.stop { background: rgba(239,68,68,.15); color: #f87171; }
+.empty { font-size: 11px; color: #4a4540; font-style: italic; padding: 4px 2px; }
+
+.modal-footer { padding: 10px 20px; border-top: 1px solid rgba(212,162,90,0.1); display: flex; justify-content: flex-end; flex-shrink: 0; }
+.btn-close { padding: 8px 22px; border-radius: 8px; background: linear-gradient(135deg,rgba(212,162,90,.25),rgba(212,162,90,.1)); border: 1px solid rgba(212,162,90,.3); color: #d4a25a; font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="modal">
+  <div class="modal-header">
+    <div class="modal-title">
+      <span>🏺</span><h2>CLS + Thuốc</h2>
+      <span style="color:#a18764;margin:0 4px">—</span>
+      <span class="patient-name">LÊ THỊ BẢY</span>
+      <span class="patient-meta">Nữ, 1935</span>
+    </div>
+    <div class="diag-row">CĐ: Nhiễm trùng huyết do E.coli; Viêm phổi, tắc nhân không xác định; Bệnh lý tăng huyết áp...</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn">🏥 Khám vào viện</button>
+    <button class="tab-btn active">📋 Lâm sàng &amp; Thuốc</button>
+    <button class="tab-btn">🧪 XN (47)</button>
+    <button class="tab-btn">🩻 CĐHA (2)</button>
+    <button class="tab-btn">✦ AI</button>
+  </div>
+
+  <div class="tab-content">
+
+    <!-- 23/04 -->
+    <div class="day-card">
+      <div class="day-strip">
+        <div><div class="day-num">23</div><div class="day-mon">04</div></div>
+        <div class="day-sep"></div>
+        <div class="day-meta">
+          <div class="day-full">Thứ Năm, 23/04/2026</div>
+          <div class="day-sub">Ngày điều trị thứ 14 · BS Nguyễn Văn A</div>
+        </div>
+        <div class="day-tags">
+          <span class="dtag dtag-prog">● Diễn tiến</span>
+          <span class="dtag dtag-diag">↕ CĐ thay đổi</span>
+          <span class="dtag dtag-drug">💊 7 thuốc</span>
+        </div>
+      </div>
+      <div class="day-body">
+        <!-- LEFT -->
+        <div class="col-left">
+          <div class="prog-block">
+            <div class="prog-text">Bệnh tỉnh, tiếp xúc được
+Thở đều - đầu thấp
+Thể trạng già yếu
+Ngủ được, không sốt
+Sonde tiểu vàng trong
+Tim đều, phổi thô
+Bụng mềm, không chướng
+Tứ chi không phù
+HA: 130/80 mmHg</div>
+          </div>
+          <div class="ghichu-block">
+            <div class="ghichu-label">📝 Ghi chú</div>
+            <div class="ghichu-text">Tiếp tục theo dõi, hẹn tái khám sau 3 ngày nếu không cải thiện.</div>
+          </div>
+          <div class="diag-block">
+            <div class="diag-label-row">▸ Chẩn đoán</div>
+            <div class="diag-item new"><div class="diag-disp">Nhiễm trùng huyết do E.coli</div><div class="dbadge new">MỚI</div></div>
+            <div class="diag-item kept"><div class="diag-disp">Bệnh lý tăng huyết áp</div></div>
+            <div class="diag-item gone"><div class="diag-disp">Viêm phổi không xác định</div><div class="dbadge gone">NGƯNG</div></div>
+          </div>
+        </div>
+        <!-- RIGHT -->
+        <div class="col-right">
+          <div class="drug-legend">
+            <span class="leg"><span class="leg-dot" style="background:#34d399"></span>Mới</span>
+            <span class="leg"><span class="leg-dot" style="background:#6b7280"></span>Tiếp tục</span>
+            <span class="leg"><span class="leg-dot" style="background:#f87171"></span>Ngưng</span>
+          </div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Ertapenem VCP (1g)<span class="mbadge new">MỚI</span></div><div class="d-dose">1 Lọ/ngày</div></div>
+          <div class="drug-item d-stop"><div class="d-dot stop"></div><div class="d-name">Rotundin 60 (60mg)<span class="mbadge stop">NGƯNG</span></div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Vinxium (40mg)</div><div class="d-dose">1 Lọ/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Vixcar (75mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Atorhasan 20 (20mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Simethicon (80mg)</div><div class="d-dose">3 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Biosubtyl-II</div><div class="d-dose">2 Viên/ngày</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13/04 -->
+    <div class="day-card">
+      <div class="day-strip">
+        <div><div class="day-num">13</div><div class="day-mon">04</div></div>
+        <div class="day-sep"></div>
+        <div class="day-meta">
+          <div class="day-full">Thứ Hai, 13/04/2026</div>
+          <div class="day-sub">Ngày điều trị thứ 4 · BS Trần Thị B</div>
+        </div>
+        <div class="day-tags">
+          <span class="dtag dtag-prog">● Diễn tiến</span>
+          <span class="dtag dtag-drug">💊 7 thuốc</span>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="col-left">
+          <div class="prog-block">
+            <div class="prog-text">Bệnh tỉnh, thở đều
+Thể trạng suy kiệt
+Ăn uống kém
+Sonde tiểu 200ml/8h vàng trong
+Phù nhẹ toàn thân
+Tim đều, phổi thô, bụng mềm
+SpO₂ 96%</div>
+          </div>
+          <div class="diag-block">
+            <div class="diag-label-row">▸ Chẩn đoán — không đổi</div>
+            <div class="diag-item kept"><div class="diag-disp">Bệnh lý tăng huyết áp</div></div>
+            <div class="diag-item kept"><div class="diag-disp">Viêm phổi không xác định</div></div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="drug-legend">
+            <span class="leg"><span class="leg-dot" style="background:#34d399"></span>Mới</span>
+            <span class="leg"><span class="leg-dot" style="background:#6b7280"></span>Tiếp tục</span>
+          </div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Rotundin 60 (60mg)<span class="mbadge new">MỚI</span></div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Vinxium (40mg)</div><div class="d-dose">1 Lọ/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Vixcar (75mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Atorhasan 20 (20mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Simethicon (80mg)</div><div class="d-dose">3 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Imidu 30mg</div><div class="d-dose">0.5 Viên/ngày</div></div>
+          <div class="drug-item d-cont"><div class="d-dot cont"></div><div class="d-name">Natri clorid 0.9% (100ml)</div><div class="d-dose">1 Túi/ngày</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10/04 -->
+    <div class="day-card">
+      <div class="day-strip" style="background:rgba(245,158,11,0.06)">
+        <div><div class="day-num" style="color:#f59e0b">10</div><div class="day-mon">04</div></div>
+        <div class="day-sep" style="background:rgba(245,158,11,0.2)"></div>
+        <div class="day-meta">
+          <div class="day-full" style="color:#f59e0b">Thứ Sáu, 10/04/2026 — Ngày nhập viện</div>
+          <div class="day-sub">2 chẩn đoán ban đầu · 4 thuốc khởi đầu</div>
+        </div>
+        <div class="day-tags">
+          <span class="dtag dtag-diag">📋 2 CĐ</span>
+          <span class="dtag dtag-drug">💊 4 thuốc</span>
+        </div>
+      </div>
+      <div class="day-body">
+        <div class="col-left">
+          <div class="empty">Không có ghi chú diễn tiến.</div>
+          <div class="diag-block">
+            <div class="diag-label-row">▸ Chẩn đoán nhập viện</div>
+            <div class="diag-item new"><div class="diag-disp">Bệnh lý tăng huyết áp</div><div class="dbadge init">BĐ</div></div>
+            <div class="diag-item new"><div class="diag-disp">Viêm phổi không xác định</div><div class="dbadge init">BĐ</div></div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="drug-legend"><span class="leg"><span class="leg-dot" style="background:#34d399"></span>Ngày đầu</span></div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Vinxium (40mg)</div><div class="d-dose">1 Lọ/ngày</div></div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Vixcar (75mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Atorhasan 20 (20mg)</div><div class="d-dose">1 Viên/ngày</div></div>
+          <div class="drug-item d-new"><div class="d-dot new"></div><div class="d-name">Imidu 30mg</div><div class="d-dose">0.5 Viên/ngày</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-close">Đóng</button>
+  </div>
+</div>
+</body>
+</html>

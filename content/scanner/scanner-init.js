@@ -1018,32 +1018,66 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
     // Clinical category mapping
     const LAB_CATEGORIES = {
-        'Huyết học (Tế bào máu)': ['WBC','NEU','NEU%','RBC','HGB','HCT','PLT','MCV','MCH','MCHC','RDW','RDW-CV','RDW-SD','MPV','PDW','PDW-SD','PCT','LYM','LYM%','MONO','MONO%','EOS','EOS%','BASO','BASO%','P-LCR','NLR'],
-        'Huyết học (Đông máu)': ['PT','PT%','PT INR','PT s','PT Mean','PT Rate','APTT','APTT s','APTT Mean','APTT Rate','APTT ratio','Fibrinogen','INR','TT','D-Dimer'],
-        'Huyết học (Nhóm máu)': ['ABO','Rh'],
-        'Sinh hóa': ['Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT','Bilirubin','Protein','Albumin','CRP','LDH','CK','Amylase','Lipase','Acid Uric','Cholesterol','Triglycerid','HDL','LDL','HbA1c','Cortisol','Procalcitonin','Troponin','BNP','NT-proBNP','Na','K','Cl','Ca','Mg','Phospho'],
-        'Nước tiểu': ['pH','Protein niệu','Glucose niệu','Hồng cầu niệu','Bạch cầu niệu','Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng','GLU','BIL','KET','SG','BLD','PRO','UBG','NIT','LEU']
+        'Huyết học': [
+            'WBC','NEU','NEU%','RBC','HGB','HCT','PLT','MCV','MCH','MCHC',
+            'RDW','RDW-CV','RDW-SD','MPV','PDW','PDW-SD','PCT',
+            'LYM','LYM%','MONO','MONO%','EOS','EOS%','BASO','BASO%',
+            'P-LCR','NLR',
+            'PT','PT%','PT INR','APTT','APTT ratio','Fibrinogen','INR','TT','D-Dimer',
+            'ABO','Rh'
+        ],
+        'Nước tiểu': [
+            'SG','pH','LEU','BLD','NIT','PRO','UBG',
+            'GLU niệu','BIL niệu','KET niệu',
+            'Protein niệu','Glucose niệu','Hồng cầu niệu','Bạch cầu niệu',
+            'Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng'
+        ],
+        'Sinh hóa': [
+            'Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT',
+            'Bilirubin','Protein','Albumin','CRP','LDH','CK','Amylase','Lipase',
+            'Acid Uric','Cholesterol','Triglycerid','HDL','LDL','HbA1c',
+            'Cortisol','Procalcitonin','Troponin','BNP','NT-proBNP',
+            'Na','K','Cl','Ca','Mg','Phospho'
+        ]
     };
 
+    // Urine-specific short codes — distinguish from biochem (GLU, BIL, KET, PRO)
+    const URINE_CODES = new Set(['SG','LEU','BLD','NIT','UBG']);
+    // These short codes overlap — must check testName for "nước tiểu" context
+    const AMBIGUOUS_URINE = new Set(['GLU','BIL','KET','PRO']);
+
     function _classifyLab(code, testName) {
-        const combined = (code + ' ' + testName).toUpperCase();
+        const cUp = (code || '').toUpperCase().trim();
+        const tUp = (testName || '').toUpperCase();
+        const combined = cUp + ' ' + tUp;
+
+        // 1. Explicit urine short codes
+        if (URINE_CODES.has(cUp)) return 'Nước tiểu';
+
+        // 2. Ambiguous codes — decide by test name context
+        if (AMBIGUOUS_URINE.has(cUp)) {
+            if (tUp.includes('NƯỚC TIỂU') || tUp.includes('NIỆU') || tUp.includes('URIN')) return 'Nước tiểu';
+            return 'Sinh hóa';
+        }
+
+        // 3. Vietnamese keyword matching
+        if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
+        if (combined.includes('HUYẾT ĐỒ') || combined.includes('TẾ BÀO MÁU') || combined.includes('CÔNG THỨC MÁU') ||
+            combined.includes('ĐÔNG MÁU') || combined.includes('NHÓM MÁU') || combined.includes('HUYẾT HỌC')) return 'Huyết học';
+        if (combined.includes('SINH HÓA') || combined.includes('HÓA SINH') || combined.includes('HOẠT ĐỘ') ||
+            combined.includes('ĐỊNH LƯỢNG') || combined.includes('ĐỘ LỌC') || combined.includes('ĐIỆN GIẢI')) return 'Sinh hóa';
+
+        // 4. Keyword list matching
         for (const [cat, keywords] of Object.entries(LAB_CATEGORIES)) {
             for (const kw of keywords) {
-                const kwUpper = kw.toUpperCase();
-                if (/^[A-Z0-9]+$/.test(kwUpper)) {
-                    const regex = new RegExp(`\\b${kwUpper}\\b`);
-                    if (regex.test(combined)) return cat;
+                const kwU = kw.toUpperCase();
+                if (/^[A-Z0-9%-]+$/.test(kwU)) {
+                    if (new RegExp(`\\b${kwU.replace('%','\\%')}\\b`).test(combined)) return cat;
                 } else {
-                    if (combined.includes(kwUpper)) return cat;
+                    if (combined.includes(kwU)) return cat;
                 }
             }
         }
-        // Fallback heuristics
-        if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.match(/\b(GLU|BIL|KET|SG|BLD|PRO|UBG|NIT|LEU)\b/)) return 'Nước tiểu';
-        if (combined.includes('ĐÔNG MÁU') || combined.includes('PROTHROMBIN') || combined.includes('THROMBOPLASTIN')) return 'Huyết học (Đông máu)';
-        if (combined.includes('NHÓM MÁU')) return 'Huyết học (Nhóm máu)';
-        if (combined.includes('HUYẾT ĐỒ') || combined.includes('TẾ BÀO MÁU') || combined.includes('CÔNG THỨC MÁU') || combined.includes('HUYẾT HỌC')) return 'Huyết học (Tế bào máu)';
-        if (combined.includes('SINH HÓA') || combined.includes('HÓA SINH') || combined.includes('HOẠT ĐỘ') || combined.includes('ĐỊNH LƯỢNG') || combined.includes('ĐỘ LỌC') || combined.includes('ĐIỆN GIẢI')) return 'Sinh hóa';
         return 'Sinh hóa';
     }
 
@@ -1097,17 +1131,16 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         // Category display order & Grouping into Master Categories
         const catOrder = ['Huyết học (Tế bào máu)', 'Huyết học (Đông máu)', 'Huyết học (Nhóm máu)', 'Sinh hóa', 'Nước tiểu'];
+        // Category display order — merge all Huyết học sub-groups into 'Huyết học'
         const masterGrouped = {};
         for (const cat of Object.keys(grouped)) {
-             let mCat = cat;
-             if (cat.startsWith('Huyết học')) mCat = 'Huyết học';
-             if (!masterGrouped[mCat]) masterGrouped[mCat] = {};
-             masterGrouped[mCat][cat] = grouped[cat];
+            const mCat = cat.startsWith('Huyết học') ? 'Huyết học' : cat;
+            if (!masterGrouped[mCat]) masterGrouped[mCat] = {};
+            masterGrouped[mCat][cat] = grouped[cat];
         }
 
         const mCatOrder = ['Huyết học', 'Sinh hóa', 'Nước tiểu'];
-        const sortedMCats = Object.keys(masterGrouped).sort((a,b) => mCatOrder.indexOf(a) - mCatOrder.indexOf(b));
-        
+        const sortedMCats = Object.keys(masterGrouped).sort((a,b) => mCatOrder.indexOf(a) === -1 ? 1 : mCatOrder.indexOf(b) === -1 ? -1 : mCatOrder.indexOf(a) - mCatOrder.indexOf(b));
         const catIcons = { 'Huyết học':'🩸', 'Sinh hóa':'🧪', 'Nước tiểu':'💧' };
 
         // --- Summary Cards ---
@@ -1314,7 +1347,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             return pb.localeCompare(pa);
         });
         const uniqueDrugNames = new Set(drugList.map(d => d.TENTHUOC).filter(Boolean));
-        const totalUniqueDrugs = uniqueDrugNames.size;
+        const _totalUniqueDrugs = uniqueDrugNames.size;
         let _totalAdded = 0, _totalStopped = 0;
 
         // --- Combined Timeline (Diễn tiến & Thuốc) ---
@@ -1338,123 +1371,188 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         let combinedTimelineHtml = '';
         if (allDates.length > 0) {
             const todayStr = (() => { const n = new Date(); return String(n.getDate()).padStart(2,'0') + '/' + String(n.getMonth()+1).padStart(2,'0') + '/' + n.getFullYear(); })();
-            
-            // Add summary cards for drugs
-            if (drugDates.length > 0) {
-                combinedTimelineHtml += `<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:16px;">
-                  <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
-                    <div style="font-size:10px; color:#34d399; text-transform:uppercase; letter-spacing:1px; font-weight:700;">💊 Tổng thuốc</div>
-                    <div style="font-size:22px; font-weight:800; color:#34d399; margin-top:4px;">${totalUniqueDrugs}</div>
-                    <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">loại thuốc khác nhau</div>
-                  </div>
-                  <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
-                    <div style="font-size:10px; color:#d4a25a; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Số ngày dùng thuốc</div>
-                    <div style="font-size:22px; font-weight:800; color:#d4a25a; margin-top:4px;">${drugDates.length}</div>
-                    <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">${drugDates[drugDates.length-1]} → ${drugDates[0]}</div>
-                  </div>
-                </div>`;
+            const dowMap = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+            const getDiags = (trs) => {
+                const s = new Set();
+                for (const tr of trs) {
+                    if (tr.CHANDOAN?.trim()) tr.CHANDOAN.split(';').forEach(d => { const v=d.trim(); if(v) s.add(v); });
+                    if (tr.CHANDOANKEMTHEO?.trim()) tr.CHANDOANKEMTHEO.split(';').forEach(d => { const v=d.trim(); if(v) s.add(v); });
+                }
+                return s;
+            };
+            // Pre-build running diagnosis state oldest→newest
+            const diagByDate = {};
+            let _runDiags = new Set();
+            for (const dt of [...allDates].reverse()) {
+                const d = getDiags(treatmentsByDate[dt] || []);
+                if (d.size > 0) _runDiags = d;
+                diagByDate[dt] = new Set(_runDiags);
+            }
+            // Fallback: nếu không trích được CHANDOAN từ phiếu điều trị,
+            // dùng chẩn đoán CDS (patientInfo.diagnosis / diagHistory) cho tất cả ngày
+            const allDiagsEmpty = Object.values(diagByDate).every(s => s.size === 0);
+            if (allDiagsEmpty) {
+                const fbSet = new Set();
+                if (patientInfo?.diagHistory?.length > 0) {
+                    for (const d of patientInfo.diagHistory) { if (d?.trim()) fbSet.add(d.trim()); }
+                } else if (patientInfo?.diagnosis?.trim()) {
+                    patientInfo.diagnosis.split(';').forEach(d => { const v=d.trim(); if(v) fbSet.add(v); });
+                }
+                if (fbSet.size > 0) {
+                    for (const dt of allDates) diagByDate[dt] = new Set(fbSet);
+                }
             }
 
             for (let di = 0; di < allDates.length; di++) {
                 const dt = allDates[di];
                 const isToday = dt === todayStr;
-                
+                const isFirst = di === allDates.length - 1;
                 const dayDrugs = drugsByDate[dt] || [];
                 const dayTreatments = treatmentsByDate[dt] || [];
 
+                // Drug comparison
                 let prevDrugs = [];
                 for (let pi = di + 1; pi < allDates.length; pi++) {
-                    if (drugsByDate[allDates[pi]]) {
-                        prevDrugs = drugsByDate[allDates[pi]];
-                        break;
-                    }
+                    if (drugsByDate[allDates[pi]]) { prevDrugs = drugsByDate[allDates[pi]]; break; }
                 }
-                const prevNames = new Set((prevDrugs || []).map(d => d.TENTHUOC));
-                const currNames = new Set(dayDrugs.map(d => d.TENTHUOC));
+                const prevDrugNames = new Set(prevDrugs.map(d => d.TENTHUOC));
+                const currDrugNames = new Set(dayDrugs.map(d => d.TENTHUOC));
 
-                combinedTimelineHtml += `<div style="margin-bottom:16px;">
-                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid rgba(212,162,90,0.15);">
-                    <div style="width:36px; height:36px; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:800; ${isToday ? 'background:linear-gradient(135deg,#10b981,#059669); color:#fff;' : 'background:rgba(100,100,100,0.2); color:#7a6e5e;'}">
-                      <span style="font-size:13px; line-height:1;">${dt.substring(0,2)}</span>
-                      <span style="font-size:8px; opacity:0.7;">${dt.substring(3,5)}</span>
-                    </div>
-                    <div>
-                      <span style="font-size:12px; font-weight:700; color:${isToday ? '#34d399' : '#a18764'};">${isToday ? 'Hôm nay' : dt}</span>
-                      <span style="font-size:10px; color:#7a6e5e; margin-left:6px;">${dayTreatments.length ? 'Có diễn tiến' : 'Chưa ghi nhận diễn tiến'} • ${dayDrugs.length} thuốc</span>
-                    </div>
-                  </div>`;
-
-                if (dayTreatments.length > 0) {
-                    combinedTimelineHtml += '<div style="margin-bottom:10px; display:flex; flex-direction:column; gap:6px;">';
-                    for (const tr of dayTreatments) {
-                        if (tr.DIENBIEN) {
-                            combinedTimelineHtml += `<div style="padding:10px; border-radius:8px; background:rgba(59,130,246,0.05); border-left:3px solid #3b82f6;">
-                                <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:600;">${tr.NGAYMAUBENHPHAM || ''}</div>
-                                <div style="font-size:13px; color:#e2e8f0; line-height:1.4; white-space:pre-wrap;">${tr.DIENBIEN}</div>
-                            </div>`;
-                        }
-                    }
-                    combinedTimelineHtml += '</div>';
+                // Diagnosis comparison
+                const currDiags = diagByDate[dt] || new Set();
+                let prevDiags = new Set();
+                for (let pi = di + 1; pi < allDates.length; pi++) {
+                    if (diagByDate[allDates[pi]]?.size > 0) { prevDiags = diagByDate[allDates[pi]]; break; }
                 }
+                const diagChanged = isFirst || [...currDiags].some(d => !prevDiags.has(d)) || [...prevDiags].some(d => !currDiags.has(d));
 
-                if (dayDrugs.length > 0) {
-                    for (const drug of dayDrugs) {
-                        const name = drug.TENTHUOC || '—';
-                        const isNew = prevDrugs.length > 0 && !prevNames.has(name);
-                        if (isNew) _totalAdded++;
-                        
-                        let fullDrugName = drug.TENTHUOC || '—';
-                        if (drug.HOATCHAT && drug.HOATCHAT.trim().toLowerCase() !== fullDrugName.trim().toLowerCase()) {
-                            fullDrugName += ` (${drug.HOATCHAT.trim()})`;
-                        }
-                        if (drug.HAMLUONG && drug.HAMLUONG.trim()) {
-                            // Only add parentheses if it's not already wrapped in parentheses
-                            const hl = drug.HAMLUONG.trim();
-                            if (hl.startsWith('(') && hl.endsWith(')')) {
-                                fullDrugName += ` ${hl}`;
-                            } else {
-                                fullDrugName += ` (${hl})`;
-                            }
-                        }
-                        
-                        let totalDose;
-                        const doseMatch = (drug.LIEUDUNG || '').match(/\[(.*?)\]/);
-                        if (doseMatch && doseMatch[1]) {
-                            totalDose = doseMatch[1];
-                        } else if (drug.SOLUONG) {
-                            totalDose = `${drug.SOLUONG} ${drug.DONVITINH || ''}/ngày`.trim();
-                        } else {
-                            totalDose = drug.LIEUDUNG || '';
-                        }
-                        
-                        const dotColor = isNew ? '#34d399' : '#a78bfa';
-                        const badge = isNew ? '<span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(16,185,129,0.15); color:#34d399; font-weight:700; border:1px solid rgba(16,185,129,0.3); margin-left:6px;">MỚI</span>' : '';
-                        combinedTimelineHtml += `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:4px; border-radius:8px; background:rgba(30,30,30,0.3); border:1px solid rgba(100,100,100,0.15); transition:background 0.2s;" onmouseover="this.style.background='rgba(50,50,50,0.4)'" onmouseout="this.style.background='rgba(30,30,30,0.3)'">
-                          <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; flex-shrink:0; box-shadow:0 0 6px ${dotColor}40;"></span>
-                          <span style="flex:1; font-size:12px; font-weight:600; color:#e8dcc8; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${fullDrugName}">${fullDrugName}${badge}</span>
-                          ${totalDose ? `<span style="font-size:10px; color:#a78bfa; font-weight:600; background:rgba(167,139,250,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(167,139,250,0.2); flex-shrink:0;">${totalDose}</span>` : ''}
+                // Date strip meta
+                const parts = dt.split('/');
+                const dateObj = parts.length === 3 ? new Date(+parts[2], +parts[1]-1, +parts[0]) : null;
+                const dowStr = dateObj ? dowMap[dateObj.getDay()] : '';
+                const doctorName = dayTreatments[0]?.NGUOITAO || '';
+                const numColor = isFirst ? '#f59e0b' : isToday ? '#34d399' : '#d4a25a';
+                const stripBg = isFirst ? 'rgba(245,158,11,0.06)' : isToday ? 'rgba(16,185,129,0.07)' : 'rgba(212,162,90,0.05)';
+
+                // Tag pills
+                const hasProgress = dayTreatments.some(t => t.DIENBIEN?.trim());
+                let pills = '';
+                if (hasProgress) pills += '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(96,165,250,0.12);color:#7ab8f5;border:1px solid rgba(96,165,250,0.2);">● Diễn tiến</span>';
+                if (diagChanged && !isFirst) pills += '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(167,139,250,0.1);color:#b79bfa;border:1px solid rgba(167,139,250,0.2);">↕ CĐ thay đổi</span>';
+                if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">📋 ${currDiags.size} CĐ</span>`;
+                if (dayDrugs.length > 0) pills += `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(212,162,90,0.1);color:#c49a52;border:1px solid rgba(212,162,90,0.2);">💊 ${dayDrugs.length} thuốc</span>`;
+
+                // ── Day card ──
+                combinedTimelineHtml += `<div style="border:1px solid rgba(212,162,90,0.1);border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.012);margin-bottom:8px;">
+                  <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid rgba(212,162,90,0.1);">
+                    <div style="text-align:center;min-width:28px;">
+                      <div style="font-size:18px;font-weight:800;color:${numColor};line-height:1;">${dt.substring(0,2)}</div>
+                      <div style="font-size:9px;color:#a18764;font-weight:600;">${dt.substring(3,5)}</div>
+                    </div>
+                    <div style="width:1px;height:28px;background:rgba(212,162,90,0.15);flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="color:${numColor};font-weight:600;font-size:12.5px;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
+                      <div style="color:#6a5e4e;font-size:10.5px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
+                    </div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;">`;
+
+                // ── LEFT: Progress + Ghi chú + Diagnosis ──
+                combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04);">';
+                const progNotes = dayTreatments.filter(t => t.DIENBIEN?.trim());
+                if (progNotes.length > 0) {
+                    for (const tr of progNotes) {
+                        const timePart = (tr.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
+                        const timeTag = timePart ? `<span style="font-size:10px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${timePart}</span>` : '';
+                        combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${timePart?'<br>':''}<span style="font-size:12px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span></div>`;
+                    }
+                } else {
+                    combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có ghi chú diễn tiến.</div>';
+                }
+                const ghichus = dayTreatments.filter(t => t.GHICHU?.trim());
+                if (ghichus.length > 0) {
+                    combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
+                      <div style="font-size:9.5px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
+                      <div style="font-size:11.5px;color:#b89a70;line-height:1.5;font-style:italic;">${ghichus[0].GHICHU}</div>
+                    </div>`;
+                }
+                // Diagnosis
+                combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">
+                  <div style="font-size:9.5px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
+                if (currDiags.size > 0) {
+                    for (const d of currDiags) {
+                        const isNewD = !isFirst && !prevDiags.has(d);
+                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:11.5px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
+                          <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
                         </div>`;
                     }
+                    if (!isFirst) {
+                        for (const d of prevDiags) {
+                            if (!currDiags.has(d)) {
+                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:11.5px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
+                                  <span style="flex:1;">${d}</span>
+                                  <span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                </div>`;
+                            }
+                        }
+                    }
+                } else {
+                    combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
                 }
+                combinedTimelineHtml += '</div></div>';
 
-                if (prevDrugs.length > 0) {
-                    const prevNamesSet = new Set((prevDrugs || []).map(d => d.TENTHUOC));
-                    for (const name of prevNamesSet) {
-                        if (!currNames.has(name)) {
+                // ── RIGHT: Drugs ──
+                combinedTimelineHtml += '<div style="padding:10px 12px;">';
+                if (dayDrugs.length > 0 || prevDrugs.length > 0) {
+                    combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:10px;">
+                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;"></span>Mới</span>
+                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#6b7280;display:inline-block;"></span>Tiếp tục</span>
+                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;"></span>Ngưng</span>
+                    </div>`;
+                }
+                // Stopped drugs
+                if (!isFirst) {
+                    for (const pd of prevDrugs) {
+                        if (!currDrugNames.has(pd.TENTHUOC)) {
                             _totalStopped++;
-                            combinedTimelineHtml += `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:4px; border-radius:8px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15);">
-                              <span style="width:6px; height:6px; border-radius:50%; background:#f87171; flex-shrink:0;"></span>
-                              <span style="flex:1; font-size:12px; color:#f87171; text-decoration:line-through; opacity:0.7;">${name}</span>
-                              <span style="font-size:9px; padding:1px 5px; border-radius:4px; background:rgba(239,68,68,0.15); color:#f87171; font-weight:700; border:1px solid rgba(239,68,68,0.3);">NGƯNG</span>
+                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);opacity:.75;">
+                              <span style="width:6px;height:6px;border-radius:50%;background:#f87171;flex-shrink:0;margin-top:5px;"></span>
+                              <span style="flex:1;font-size:12px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
+                              <span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
                             </div>`;
                         }
                     }
                 }
-
-                combinedTimelineHtml += '</div>';
+                // Current drugs
+                for (const drug of dayDrugs) {
+                    const name = drug.TENTHUOC || '—';
+                    const isNew = !isFirst && prevDrugs.length > 0 && !prevDrugNames.has(name);
+                    if (isNew) _totalAdded++;
+                    let fullName = name;
+                    if (drug.HOATCHAT && drug.HOATCHAT.trim().toLowerCase() !== fullName.trim().toLowerCase()) fullName += ` (${drug.HOATCHAT.trim()})`;
+                    if (drug.HAMLUONG?.trim()) { const hl = drug.HAMLUONG.trim(); fullName += hl.startsWith('(')&&hl.endsWith(')')?` ${hl}`:`  (${hl})`; }
+                    let totalDose;
+                    const dm = (drug.LIEUDUNG||'').match(/\[(.*?)\]/);
+                    if (dm?.[1]) totalDose = dm[1];
+                    else if (drug.SOLUONG) totalDose = `${drug.SOLUONG} ${drug.DONVITINH||''}/ngày`.trim();
+                    else totalDose = drug.LIEUDUNG || '';
+                    const dotC = (isNew||isFirst)?'#34d399':'#6b7280';
+                    const nameC = (isNew||isFirst)?'#d0f0e4':'#9ca3af';
+                    const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
+                    const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
+                    const newBadge = (isNew&&!isFirst)?'<span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
+                    combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
+                      <span style="flex:1;font-size:12px;color:${nameC};line-height:1.4;" title="${fullName}">${fullName}${newBadge}</span>
+                      ${totalDose?`<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
+                    </div>`;
+                }
+                if (dayDrugs.length === 0) combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có y lệnh thuốc.</div>';
+                combinedTimelineHtml += '</div></div></div>';
             }
         } else {
-            combinedTimelineHtml = '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
+            combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#7a6e5e;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
         }
 
         // --- Khám vào viện (admission exam only) ---
@@ -1493,7 +1591,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const modal = document.createElement('div');
         modal.id = 'vnpt-lab-timeline-modal';
         modal.className = 'vnpt-glass-overlay';
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147480000;';
 
         const defaultActiveTab = 0;
 
@@ -1804,6 +1902,43 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         activateTab(defaultActiveTab);
 
+        // ── PACS Button click handler (delegated) ────────────────────────────
+        modal.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.aladinn-pacs-btn');
+            if (!btn) return;
+            e.stopPropagation();
+
+            const sheetId      = btn.dataset.sheetId || '';
+            const maubenhphamid = btn.dataset.maubenhphamid || '';
+            const sophieu      = btn.dataset.sophieu || '';
+            const madichvu     = btn.dataset.madichvu || '';
+            const linkDicom    = btn.dataset.linkdicom || '';
+
+            if (!sheetId && !maubenhphamid) {
+                window.VNPTRealtime?.showToast('⚠️ Không có mã ca chụp PACS.', 'warning');
+                return;
+            }
+
+            const origText = btn.innerHTML;
+            btn.innerHTML = '⏳ Đang lấy link...';
+            btn.disabled = true;
+
+            try {
+                const pacsConfig = { sheetId, maubenhphamid, sophieu, madichvu, linkDicom };
+                const url = await _fetchPacsUrlFromBridge(pacsConfig);
+                if (url) {
+                    window.open(url, '_blank');
+                } else {
+                    window.VNPTRealtime?.showToast('⚠️ Không lấy được link ảnh PACS. Kiểm tra tab HIS đang mở.', 'warning');
+                }
+            } catch (_err) {
+                window.VNPTRealtime?.showToast('❌ Lỗi khi lấy link PACS.', 'warning');
+            } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        });
+
         // ── AI Tab Logic ───────────────────────────────────────────────────
         const aiPlaceholder = modal.querySelector('#ai-tab-placeholder');
         const aiLoading     = modal.querySelector('#ai-tab-loading');
@@ -2062,7 +2197,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         toast.id = 'ald-cost-toast';
                         toast.style.cssText = [
                             'position:fixed', 'bottom:24px', 'right:28px',
-                            'z-index:2147483648',
+                            'z-index:2147483647',
                             'background:rgba(18,14,10,0.92)',
                             'border:1px solid rgba(212,168,83,0.35)',
                             'border-radius:10px',

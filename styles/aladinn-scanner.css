@@ -55,7 +55,7 @@ body.vnpt-dark-mode {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 99999;
+    z-index: 2147483647 !important;
     width: 260px;
 
     /* Glassmorphism Logic */
@@ -717,7 +717,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 99999;
+    z-index: 2147483647 !important;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -798,7 +798,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
     background: rgba(15, 23, 42, 0.6) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
-    z-index: 2147483647 !important;
+    z-index: 2147480000 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;

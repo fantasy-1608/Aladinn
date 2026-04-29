@@ -9,6 +9,7 @@ Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhan
 ## ✨ Tính năng nổi bật (v1.2.0)
 
 ### 🏥 Bảng CLS + Thuốc (5 Tab)
+
 | Tab | Nội dung |
 |-----|----------|
 | 🏥 Khám vào viện | Lý do nhập viện, bệnh sử, tiền sử, khám lâm sàng |
@@ -18,18 +19,21 @@ Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhan
 | 🤖 AI | Phân tích lâm sàng tự động bằng Gemini AI |
 
 ### 🤖 Phân tích AI (Rich Context)
+
 - **Prompt đầy đủ**: gửi khám vào viện + diễn tiến 3 ngày + toàn bộ XN ngày gần nhất + CĐHA + thuốc
 - **Ẩn danh y tế**: mã BN ẩn danh (BN-XXXX), không gửi tên/địa chỉ thật
 - **Token cost toast**: hiển thị số tokens và chi phí ước tính sau mỗi lần gọi API (z-index cao, không bị che bởi modal)
 - **Lazy load**: AI chỉ phân tích khi bấm vào tab AI
 
 ### 🎨 Giao diện Desert Mystic
+
 - Modal cố định **85vh** — không co giãn khi chuyển tab
 - Header compact: `Tên bệnh nhân — Giới tính, Năm sinh`
 - Chẩn đoán hiển thị tên đầy đủ, mã ICD ẩn trong accordion "Chi tiết"
 - Nút Phân tích AI với hiệu ứng shimmer/sparkle
 
 ### 📝 Slash Command Templates
+
 - Gõ `/` trong textarea của HIS để chèn nhanh mẫu câu lâm sàng
 - Tuỳ chỉnh templates trong popup Cài đặt
 
@@ -50,22 +54,26 @@ Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhan
 ## 🚀 Cài đặt
 
 ### Yêu cầu
+
 - Chrome / Chromium ≥ 120
 - Tài khoản VNPT HIS nội trú
 - Google AI Studio API Key (Gemini)
 
 ### Từ source code
+
 ```bash
 git clone https://github.com/fantasy-1608/Aladinn.git
 cd Aladinn
 npm install
 npm run build
 ```
+
 1. Mở Chrome → `chrome://extensions`
 2. Bật **Developer mode**
 3. Click **Load unpacked** → chọn thư mục `dist/`
 
 ### Cấu hình
+
 1. Click icon Aladinn trên thanh công cụ
 2. Nhập **API Key** (Gemini) và đặt **PIN** bảo vệ
 3. Vào trang bệnh nhân VNPT HIS → click nút **CLS + Thuốc** / **Tóm tắt AI**
@@ -74,7 +82,7 @@ npm run build
 
 ## 🏗️ Kiến trúc
 
-```
+```text
 Aladinn/
 ├── content/
 │   ├── scanner/
@@ -95,6 +103,7 @@ Aladinn/
 ## 📦 Changelog
 
 ### v1.2.0 (29/04/2026) — Rich AI Context
+
 - **Rich Prompt**: Bổ sung 4 nguồn dữ liệu mới vào AI: khám vào viện, diễn tiến 3 ngày gần nhất, toàn bộ panel XN, mô tả CĐHA
 - **Prompt template cải tiến**: cấu trúc section rõ ràng, backward compatible với template tùy chỉnh
 - **AI render fix**: sửa lỗi `#D4A853">Tóm tắt bệnh:` lộ ra text do thứ tự xử lý markdown sai
@@ -105,11 +114,13 @@ Aladinn/
 - **Linter clean**: 0 errors, 0 warnings — fix `fetchPacsUrlFromBridge`, `hasLamsangData`, `pillsHtml`, `namePillsHtml`
 
 ### v1.1.9 (27/04/2026) — Stability Upgrade
+
 - `resolveActiveGrid()` hỗ trợ cả nội trú lẫn ngoại trú
 - Composite patient key ngăn data leak giữa các bệnh nhân
 - Linting cleanup toàn bộ codebase
 
 ### v1.1.7 (25/04/2026) — BHYT Glucose Scanner
+
 - Fix API field mapping cho glucose mao mạch
 - HTML sanitization input bệnh nhân
 
@@ -125,6 +136,7 @@ npm run release  # Build + zip + GitHub Release
 ```
 
 **Quy tắc code:**
+
 - Không commit API key hay dữ liệu bệnh nhân thật
 - Chạy `npm run build` trước khi yêu cầu kiểm tra
 - Mọi animation dùng `transform`/`opacity` (GPU-accelerated)
@@ -138,4 +150,4 @@ Private — Dành riêng cho nội bộ bệnh viện. Không phân phối công
 
 ---
 
-*Built with ❤️ for Vietnamese clinicians · Powered by Gemini AI*
+*Built with ❤️ for Vietnamese clinicians · Tác giả: **Bác sĩ Huỳnh Trung Anh** · Powered by Gemini AI*

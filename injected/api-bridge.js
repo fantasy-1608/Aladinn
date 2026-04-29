@@ -412,6 +412,8 @@
                                     const treatments = rows.map(r => {
                                         const t = {
                                             DIENBIEN: r.DIENBIENBENH || r.NOIDUNG || '',
+                                            GHICHU: r.GHICHUPDT || r.GHICHU || r.CHITIETGHICHU || '',
+                                            NGUOITAO: r.NGUOITAO || '',
                                             NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || r.NGAY_Y_LENH || '',
                                             MAUBENHPHAMID: r.MAUBENHPHAMID || '',
                                             CHANDOAN: '',
@@ -1523,7 +1525,13 @@
 
             const requestsToTry = [];
             
-            // PRIORITY 1: MAUBENHPHAMID + MADICHVU (Proven to be the correct format for VNPT Dong Thap)
+            // PRIORITY 1 (NEW PACS API): Gọi API dicomViewer với studyInstanceUID = GHICHU2 (sheetId)
+            // Hệ thống mới sẽ trả về JSON chứa link study/summary kèm token UUID hợp lệ
+            if (sheetId && String(sheetId).trim() !== '') {
+                requestsToTry.push({ url: domain + getDicom + '?studyInstanceUID=' + sheetId, identifyCode: sheetId });
+            }
+            
+            // PRIORITY 2: MAUBENHPHAMID + MADICHVU (Fallback cho VNPT Đồng Tháp cũ)
             const targetId = maubenhphamid || sheetId;
             
             if (madichvu) {
@@ -1587,9 +1595,13 @@
                             }
                         } else {
                             let finalUrl = req.url;
-                            if (hash && !finalUrl.includes('Ris-Access-Hash')) {
-                                finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
-                                finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                            if (hash && !finalUrl.includes('Ris-Access-Hash') && !finalUrl.includes('token=')) {
+                                if (finalUrl.includes('study/summary')) {
+                                    finalUrl += '&token=' + encodeURIComponent(hash);
+                                } else {
+                                    finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
+                                    finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                                }
                             }
                             sendResult('PACS_URL_RESULT', null, { pacsUrl: finalUrl }, requestId);
                             return;
@@ -1611,9 +1623,13 @@
                                 hash = window.getHashRIS(String(req.identifyCode));
                                 window.RIS_SECRET_KEY = originalSecret;
                             }
-                            if (hash && !finalUrl.includes('Ris-Access-Hash')) {
-                                finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
-                                finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                            if (hash && !finalUrl.includes('Ris-Access-Hash') && !finalUrl.includes('token=')) {
+                                if (finalUrl.includes('study/summary')) {
+                                    finalUrl += '&token=' + encodeURIComponent(hash);
+                                } else {
+                                    finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'Ris-Access-Hash=' + encodeURIComponent(hash);
+                                    finalUrl += '&Identify-Code=' + encodeURIComponent(String(req.identifyCode));
+                                }
                             }
                             corsBlockedUrl = finalUrl;
                         }
@@ -1936,8 +1952,9 @@
                     const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
                     if (rows.length > 0) {
                         for (const item of rows) {
+                            const pacsItemId = item.GHICHU2 || item.MACACHUP || pacsId;
                             imagingData.push({
-                                sheetId: pacsId,
+                                sheetId: pacsItemId,
                                 maubenhphamid: sheetId,
                                 sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
                                 madichvu: item.MADICHVU || item.MA || '',
@@ -1946,7 +1963,7 @@
                                 name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
                                 code: item.MADICHVU || item.MA || '',
                                 conclusion: item.KETLUAN || item.KETQUA || item.GIATRI_KETQUA || item.KETQUACLS || '',
-                                status: item.TRANGTHAI || sheet.TRANGTHAI || '',
+                                status: item.TRANGTHAI || item.TRANGTHAIKETQUA || sheet.TRANGTHAI || '',
                                 department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
                             });
                         }
