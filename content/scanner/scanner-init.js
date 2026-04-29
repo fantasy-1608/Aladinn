@@ -1576,10 +1576,46 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml ? `<div style="margin-top:2px;">${patientAgeHtml}${patientDiagHtml}</div>` : '';
 
         const tabsHeaderHtml = `
-            <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:6px;">
-                <button id="aladinn-tab-lamsang" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">📋 Lâm sàng & Thuốc</button>
-                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">🧪 Xét nghiệm (${totalIndicators})</button>
-                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:10px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:13px; transition:0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+            <style>
+                @keyframes aisTab-shimmer { 0%{left:-80%} 100%{left:120%} }
+                @keyframes aisTab-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,0.3)} 60%{box-shadow:0 0 0 5px rgba(212,168,83,0)} }
+                @keyframes aisSkel { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
+                @keyframes aisSpinRing { to{transform:rotate(360deg)} }
+                @keyframes aisDot { 0%,80%,100%{transform:scale(0.55);opacity:0.35} 40%{transform:scale(1);opacity:1} }
+                @keyframes aisTabFadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+                #aladinn-tab-ai {
+                    position:relative; overflow:hidden;
+                    background:linear-gradient(135deg,rgba(200,146,42,0.15),rgba(212,168,83,0.07));
+                    border:1px solid rgba(212,168,83,0.3) !important;
+                    border-bottom:2px solid rgba(212,168,83,0.15) !important;
+                    color:#c8a455 !important; font-weight:700 !important;
+                    animation:aisTab-pulse 3s ease-in-out infinite;
+                }
+                #aladinn-tab-ai::after {
+                    content:''; position:absolute; top:0; left:-80%; width:40%; height:100%;
+                    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
+                    transform:skewX(-18deg); animation:aisTab-shimmer 3.5s ease-in-out infinite;
+                }
+                #aladinn-tab-ai.ai-tab-active {
+                    background:linear-gradient(135deg,rgba(212,168,83,0.2),rgba(200,146,42,0.1)) !important;
+                    border-bottom-color:#D4A853 !important; color:#D4A853 !important;
+                    animation:none;
+                }
+                #aladinn-tab-ai.ai-tab-active::after { display:none; }
+                .ais-dot-wrap{display:inline-flex;gap:3px;align-items:center;vertical-align:middle;}
+                .ais-dot-wrap span{width:5px;height:5px;border-radius:50%;background:#D4A853;display:inline-block;animation:aisDot 1.2s infinite ease-in-out;}
+                .ais-dot-wrap span:nth-child(2){animation-delay:0.15s}
+                .ais-dot-wrap span:nth-child(3){animation-delay:0.3s}
+                #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
+            </style>
+            <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:3px;">
+                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
+                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
+                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+                <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    AI
+                </button>
             </div>
         `;
 
@@ -1592,71 +1628,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
                                 CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>
                             </h3>
-                            <style>
-                                @keyframes aisBtn-shimmer { 0%{left:-60%} 100%{left:130%} }
-                                @keyframes aisBtn-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,0.4)} 50%{box-shadow:0 0 0 6px rgba(212,168,83,0)} }
-                                @keyframes aisBtn-spin { to{transform:rotate(360deg)} }
-                                @keyframes aisDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
-                                #btn-ai-summary-modal {
-                                    position:relative; overflow:hidden;
-                                    background: linear-gradient(135deg, #c8922a 0%, #d4a853 50%, #e8c27a 100%);
-                                    border: none; color: #0b0f1e;
-                                    border-radius: 8px; padding: 6px 14px;
-                                    font-size: 12px; font-weight: 800; cursor: pointer;
-                                    display: flex; align-items: center; gap: 6px;
-                                    transition: all 0.25s; font-family: Outfit, sans-serif;
-                                    letter-spacing: 0.3px;
-                                    box-shadow: 0 2px 12px rgba(212,168,83,0.35), 0 1px 3px rgba(0,0,0,0.3);
-                                    animation: aisBtn-pulse 2.5s infinite;
-                                }
-                                #btn-ai-summary-modal::after {
-                                    content:''; position:absolute; top:-50%; left:-60%;
-                                    width:35%; height:200%;
-                                    background:rgba(255,255,255,0.3);
-                                    transform:skewX(-20deg);
-                                    animation:aisBtn-shimmer 2.8s infinite;
-                                }
-                                #btn-ai-summary-modal:hover:not(:disabled) {
-                                    transform:translateY(-1px);
-                                    box-shadow:0 4px 20px rgba(212,168,83,0.5);
-                                    filter:brightness(1.08);
-                                }
-                                #btn-ai-summary-modal:disabled {
-                                    opacity:0.8; cursor:not-allowed;
-                                    animation:none; transform:none;
-                                }
-                                .ais-loading-dots { display:flex; gap:4px; align-items:center; }
-                                .ais-loading-dots span {
-                                    width:5px; height:5px; border-radius:50%;
-                                    background:#D4A853; display:inline-block;
-                                    animation:aisDot 1.2s infinite ease-in-out;
-                                }
-                                .ais-loading-dots span:nth-child(2){animation-delay:0.15s}
-                                .ais-loading-dots span:nth-child(3){animation-delay:0.3s}
-                            </style>
-                            <button id="btn-ai-summary-modal" title="Nhờ AI tóm tắt hồ sơ bệnh án">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                                Tóm tắt AI
-                            </button>
                         </div>
                         ${headerSubtitleHtml}
                     </div>
                     <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
-                </div>
-                <!-- AI Result: flex-item riêng, có thể thu nhỏ, không đẩy tabs ra ngoài -->
-                <div id="ai-summary-wrapper-modal" style="display:none; flex-shrink:1; min-height:0; margin-bottom:8px; flex-direction:column;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-top:1px solid rgba(212,168,83,0.12); padding-top:10px;">
-                        <span style="font-size:11px; font-weight:700; color:#a18764; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                <path d="M2 17l10 5 10-5"/>
-                                <path d="M2 12l10 5 10-5"/>
-                            </svg>
-                            Phân tích lâm sàng (AI)
-                        </span>
-                        <button id="btn-ai-collapse" title="Thu gọn" style="background:none; border:none; color:#5a5450; font-size:16px; cursor:pointer; line-height:1; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d4a25a'" onmouseout="this.style.color='#5a5450'">▲</button>
-                    </div>
-                    <div id="ai-summary-result-modal" style="padding:12px 14px; background:rgba(0,0,0,0.22); border-radius:8px; border:1px solid rgba(212,168,83,0.12); font-size:13px; color:#cbd5e1; line-height:1.65; max-height:36vh; overflow-y:auto;"></div>
                 </div>
                 ${tabsHeaderHtml}
                 <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
@@ -1671,6 +1646,51 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     <div id="aladinn-content-cdha" style="display:none;">
                         ${cdhaHtml || '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>'}
                     </div>
+                    <div id="aladinn-content-ai" style="display:none; padding:4px 2px;">
+                        <div id="ai-tab-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:14px; text-align:center;">
+                            <div style="width:52px;height:52px;border-radius:50%;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);display:flex;align-items:center;justify-content:center;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                            </div>
+                            <div>
+                                <div style="color:#D4A853;font-weight:700;font-size:14px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
+                                <div style="color:#6b7280;font-size:12px;line-height:1.5;">Nhấn <strong style="color:#c8a455;">Phân tích</strong> để AI tóm tắt hồ sơ bệnh nhân</div>
+                            </div>
+                            <button id="btn-ai-start" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:13px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                Phân tích ngay
+                            </button>
+                        </div>
+                        <div id="ai-tab-loading" style="display:none; padding:20px 10px;">
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+                                <div style="position:relative;width:22px;height:22px;flex-shrink:0;">
+                                    <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(212,168,83,0.15);"></div>
+                                    <div style="position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:#D4A853;animation:aisSpinRing 0.9s linear infinite;"></div>
+                                </div>
+                                <span style="color:#D4A853;font-weight:600;font-size:13px;">Đang phân tích hồ sơ lâm sàng...</span>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;padding-left:32px;">
+                                <div style="height:9px;background:rgba(212,168,83,0.12);border-radius:5px;width:88%;animation:aisSkel 1.6s ease-in-out infinite;"></div>
+                                <div style="height:9px;background:rgba(212,168,83,0.08);border-radius:5px;width:70%;animation:aisSkel 1.6s ease-in-out 0.2s infinite;"></div>
+                                <div style="height:9px;background:rgba(212,168,83,0.05);border-radius:5px;width:78%;animation:aisSkel 1.6s ease-in-out 0.4s infinite;"></div>
+                                <div style="height:9px;background:rgba(212,168,83,0.04);border-radius:5px;width:55%;animation:aisSkel 1.6s ease-in-out 0.6s infinite;"></div>
+                            </div>
+                        </div>
+                        <div id="ai-tab-result" style="display:none;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(212,168,83,0.12);">
+                                <span style="font-size:11px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Kết quả phân tích</span>
+                                <button id="btn-ai-rerun" style="display:flex;align-items:center;gap:5px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);color:#c8a455;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:0.2s;" title="Phân tích lại">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                                    Phân tích lại
+                                </button>
+                            </div>
+                            <div id="ai-summary-result-modal" style="font-size:13px;color:#cbd5e1;line-height:1.7;"></div>
+                            <div id="ai-search-links" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);display:none;">
+                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tra cứu phác đồ &amp; hướng dẫn điều trị</div>
+                                <div id="ai-links-wrap" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                            </div>
+                        </div>
+                        <div id="ai-tab-error" style="display:none;padding:16px;background:rgba(232,84,84,0.06);border:1px solid rgba(232,84,84,0.2);border-radius:8px;color:#E85454;font-size:13px;"></div>
+                    </div>
                 </div>
                 <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid rgba(212,162,90,0.2); padding-top:12px;">
                     <button style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); color:#d4a25a; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(212,162,90,0.2)'" onmouseout="this.style.background='rgba(212,162,90,0.1)'" onclick="document.getElementById('vnpt-lab-timeline-modal').remove()">Đóng</button>
@@ -1680,158 +1700,177 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         document.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
 
-        // --- AI Summary Button (modal CLS + Thuốc) ---
-        const btnAIModal = modal.querySelector('#btn-ai-summary-modal');
-        const resAIModal = modal.querySelector('#ai-summary-result-modal');
-        const wrapperAIModal = modal.querySelector('#ai-summary-wrapper-modal');
-        const btnCollapse = modal.querySelector('#btn-ai-collapse');
+        // ── Tab logic (4 tabs: Lâm sàng, XN, CĐHA, AI) ─────────────────────
+        const tabLamsang   = modal.querySelector('#aladinn-tab-lamsang');
+        const tabXn        = modal.querySelector('#aladinn-tab-xn');
+        const tabCdha      = modal.querySelector('#aladinn-tab-cdha');
+        const tabAI        = modal.querySelector('#aladinn-tab-ai');
 
-        // Nút thu gọn / mở rộng kết quả AI
-        if (btnCollapse && resAIModal && wrapperAIModal) {
-            let _collapsed = false;
-            btnCollapse.addEventListener('click', () => {
-                _collapsed = !_collapsed;
-                resAIModal.style.display = _collapsed ? 'none' : 'block';
-                btnCollapse.textContent = _collapsed ? '▼' : '▲';
-                btnCollapse.title = _collapsed ? 'Mở rộng' : 'Thu gọn';
+        const contentLamsang = modal.querySelector('#aladinn-content-lamsang');
+        const contentXn      = modal.querySelector('#aladinn-content-xn');
+        const contentCdha    = modal.querySelector('#aladinn-content-cdha');
+        const contentAI      = modal.querySelector('#aladinn-content-ai');
+
+        const allTabs     = [tabLamsang, tabXn, tabCdha, tabAI];
+        const allContents = [contentLamsang, contentXn, contentCdha, contentAI];
+
+        function activateTab(idx) {
+            allTabs.forEach((t, i) => {
+                if (!t) return;
+                const isAI = (i === 3);
+                if (i === idx) {
+                    if (isAI) {
+                        t.classList.add('ai-tab-active');
+                    } else {
+                        const col = i === 2 ? '96,165,250' : '212,162,90';
+                        t.style.background = `rgba(${col},0.1)`;
+                        t.style.borderColor = `rgba(${col},0.3)`;
+                        t.style.borderBottomColor = i === 2 ? '#60a5fa' : '#d4a25a';
+                        t.style.color = i === 2 ? '#60a5fa' : '#d4a25a';
+                        t.style.fontWeight = '700';
+                    }
+                } else {
+                    if (isAI) {
+                        t.classList.remove('ai-tab-active');
+                    } else {
+                        t.style.background = 'transparent';
+                        t.style.borderColor = 'transparent';
+                        t.style.borderBottomColor = 'transparent';
+                        t.style.color = '#7a6e5e';
+                        t.style.fontWeight = '600';
+                    }
+                }
+            });
+            allContents.forEach((c, i) => {
+                if (!c) return;
+                c.style.display = i === idx ? 'block' : 'none';
             });
         }
 
-        if (btnAIModal && resAIModal && wrapperAIModal) {
-            btnAIModal.addEventListener('click', async () => {
-                let apiKey = await window.HIS.ApiKeyService.getKey();
-                if (!apiKey) {
-                    const needsPin = await window.HIS.ApiKeyService.needsPin();
-                    if (needsPin) {
-                        apiKey = await window.HIS.ApiKeyService.promptAndUnlock();
-                    }
-                }
+        tabLamsang?.addEventListener('click', () => activateTab(0));
+        tabXn?.addEventListener('click', () => activateTab(1));
+        tabCdha?.addEventListener('click', () => activateTab(2));
+        tabAI?.addEventListener('click', () => { activateTab(3); triggerAIIfNeeded(); });
 
-                if (!apiKey) {
-                    wrapperAIModal.style.display = 'flex';
-                    resAIModal.innerHTML = '<span style="color:#E85454">⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.</span>';
-                    return;
-                }
+        activateTab(defaultActiveTab);
 
-                btnAIModal.disabled = true;
-                btnAIModal.innerHTML = '<div class="ais-loading-dots"><span></span><span></span><span></span></div> Đang xử lý...';
-                wrapperAIModal.style.display = 'flex';
-                resAIModal.style.display = 'block';
-                // Đặt lại nút thu gọn về trạng thái mở rộng
-                if (btnCollapse) { btnCollapse.textContent = '▲'; btnCollapse.title = 'Thu gọn'; }
-                resAIModal.innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:12px; padding:8px 0;">
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <div style="position:relative; width:20px; height:20px; flex-shrink:0;">
-                                <div style="position:absolute; inset:0; border-radius:50%; border:2px solid rgba(212,168,83,0.15);"></div>
-                                <div style="position:absolute; inset:0; border-radius:50%; border:2px solid transparent; border-top-color:#D4A853; animation:aisBtn-spin 0.9s linear infinite;"></div>
-                            </div>
-                            <span style="color:#D4A853; font-weight:600; font-size:13px;">Đang phân tích hồ sơ lâm sàng...</span>
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:6px; padding-left:30px;">
-                            <div style="height:8px; background:rgba(212,168,83,0.1); border-radius:4px; width:85%; animation:aisSkel 1.5s ease-in-out infinite;"></div>
-                            <div style="height:8px; background:rgba(212,168,83,0.07); border-radius:4px; width:65%; animation:aisSkel 1.5s ease-in-out 0.2s infinite;"></div>
-                            <div style="height:8px; background:rgba(212,168,83,0.05); border-radius:4px; width:75%; animation:aisSkel 1.5s ease-in-out 0.4s infinite;"></div>
-                        </div>
-                    </div>
-                    <style>
-                        @keyframes aisSkel {
-                            0%,100%{opacity:0.4} 50%{opacity:1}
-                        }
-                    </style>
-                `;
+        // ── AI Tab Logic ───────────────────────────────────────────────────
+        const aiPlaceholder = modal.querySelector('#ai-tab-placeholder');
+        const aiLoading     = modal.querySelector('#ai-tab-loading');
+        const aiResult      = modal.querySelector('#ai-tab-result');
+        const aiError       = modal.querySelector('#ai-tab-error');
+        const aiResultBody  = modal.querySelector('#ai-summary-result-modal');
+        const aiSearchWrap  = modal.querySelector('#ai-search-links');
+        const aiLinksWrap   = modal.querySelector('#ai-links-wrap');
+        const btnStart      = modal.querySelector('#btn-ai-start');
+        const btnRerun      = modal.querySelector('#btn-ai-rerun');
 
+        let aiResultLoaded = false;
+
+        function showAIState(state) {
+            // state: 'placeholder' | 'loading' | 'result' | 'error'
+            if (aiPlaceholder) aiPlaceholder.style.display = state === 'placeholder' ? 'flex' : 'none';
+            if (aiLoading)     aiLoading.style.display     = state === 'loading'     ? 'block' : 'none';
+            if (aiResult)      aiResult.style.display      = state === 'result'      ? 'block' : 'none';
+            if (aiError)       aiError.style.display       = state === 'error'       ? 'block' : 'none';
+        }
+
+        async function triggerAIIfNeeded() {
+            if (aiResultLoaded) return; // cached
+            await runAIAnalysis();
+        }
+
+        async function runAIAnalysis() {
+            let apiKey = await window.HIS.ApiKeyService.getKey();
+            if (!apiKey) {
+                const needsPin = await window.HIS.ApiKeyService.needsPin();
+                if (needsPin) apiKey = await window.HIS.ApiKeyService.promptAndUnlock();
+            }
+            if (!apiKey) {
+                showAIState('error');
+                if (aiError) aiError.innerHTML = '⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào <strong>Cài đặt Aladinn</strong> để thiết lập.';
+                return;
+            }
+
+            showAIState('loading');
+            if (btnStart) btnStart.disabled = true;
+
+            try {
+                // ── Ẩn danh hoá ─────────────────────────────────────────
+                const patientRef = patientInfo.id
+                    ? `BN-${String(patientInfo.id).slice(-4).padStart(4,'0')}`
+                    : 'BN-XXXX';
+                const birthYear = patientInfo.age
+                    ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
+                    : 'không rõ';
+
+                // Giới tính từ DOM
+                let patientGender = 'không rõ';
                 try {
-                    // --- Ẩn danh thông tin cá nhân bệnh nhân (bảo mật y khoa) ---
-                    // Chỉ dùng mã bệnh án + năm sinh, không gửi tên thật lên API
-                    const patientRef = patientInfo.id
-                        ? `BN-${String(patientInfo.id).slice(-4).padStart(4,'0')}`
-                        : 'BN-XXXX';
-                    const birthYear = patientInfo.age
-                        ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
-                        : 'không rõ';
-                    // Giới tính: đọc từ DOM (aria-describedby *_GIOITINH hoặc *_GT)
-                    let patientGender = 'không rõ';
-                    try {
-                        const pid = patientInfo.id ? String(patientInfo.id) : null;
-                        const genderTd = pid
-                            ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
-                               document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
-                               document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
-                            : null;
-                        if (genderTd) {
-                            const gt = genderTd.textContent.trim().toLowerCase();
-                            if (gt === '1' || gt === 'nam' || gt === 'male') patientGender = 'Nam';
-                            else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') patientGender = 'Nữ';
-                            else patientGender = genderTd.textContent.trim() || 'không rõ';
-                        }
-                    } catch (_) { /* ignore */ }
-
-                    // --- Context lâm sàng ---
-                    // Ưu tiên diagHistory (chứa tên đầy đủ: "Gãy cổ xương đùi... ; Suy thận mạn...")
-                    // Fallback: patientInfo.diagnosis (có thể chỉ là ICD codes từ grid)
-                    let contextDiag = '';
-                    if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
-                        // Dùng tất cả chẩn đoán (tối đa 5), giữ nguyên tên lâm sàng đầy đủ
-                        contextDiag = patientInfo.diagHistory.slice(0, 5).join('; ');
-                    } else if (patientInfo.diagnosis) {
-                        contextDiag = patientInfo.diagnosis;
+                    const pid = patientInfo.id ? String(patientInfo.id) : null;
+                    const genderTd = pid
+                        ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
+                           document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
+                           document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
+                        : null;
+                    if (genderTd) {
+                        const gt = genderTd.textContent.trim().toLowerCase();
+                        if (gt === '1' || gt === 'nam' || gt === 'male') patientGender = 'Nam';
+                        else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') patientGender = 'Nữ';
+                        else patientGender = genderTd.textContent.trim() || 'không rõ';
                     }
-                    if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
+                } catch (_) { /* ignore */ }
 
-                    // Thuốc: chỉ lấy tên thuốc + liều, không gửi mã vạch hay số lô
-                    const uniqueDrugs = [...new Map(
-                        drugs.map(d => [d.TENTHUOC, d])
-                    ).values()];
-                    const contextDrugs = uniqueDrugs
-                        .map(d => `${d.TENTHUOC || ''}${d.SOLUONG ? ' (' + d.SOLUONG + (d.DONVITINH ? ' ' + d.DONVITINH : '') + '/ngày)' : ''}`)
-                        .filter(Boolean)
-                        .join('; ');
+                // ── Context lâm sàng ─────────────────────────────────────
+                let contextDiag = '';
+                if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                    contextDiag = patientInfo.diagHistory.slice(0, 5).join('; ');
+                } else if (patientInfo.diagnosis) {
+                    contextDiag = patientInfo.diagnosis;
+                }
+                if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
 
-                    // --- CLS (cận lâm sàng) context ---
-                    // 1. XN bất thường: lấy từ local abnormals (scope của showLabTimelineModal)
-                    const contextAbn = abnormals.length > 0
-                        ? abnormals.slice(0, 8).map(a => {
-                            const ref = a.refDisplay ? ` [BT: ${a.refDisplay}]` : '';
-                            return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (⇑⇑)`;
-                        }).join('; ')
-                        : '';
+                const uniqueDrugs = [...new Map(drugs.map(d => [d.TENTHUOC, d])).values()];
+                const contextDrugs = uniqueDrugs
+                    .map(d => `${d.TENTHUOC || ''}${d.SOLUONG ? ' (' + d.SOLUONG + (d.DONVITINH ? ' ' + d.DONVITINH : '') + '/ngày)' : ''}`)
+                    .filter(Boolean).join('; ');
 
-                    // 2. XN chính có giá trị (bình thường hoặc bất thường) — chỉ lấy ngày gần nhất
-                    const KEY_LABS = ['glucose','ure','creatinine','hba1c','k','na','cl','hco3',
-                        'hgb','hb','wbc','plt','inr','pt','aptt','alt','ast',
-                        'pro-bnp','troponin','crp','procalcitonin','lactate','ph','pao2','paco2'];
-                    const latestLabDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
-                    const keyLabLines = [];
-                    if (latestLabDate) {
-                        for (const [_cat, tests] of Object.entries(grouped)) {
-                            for (const [code, info] of Object.entries(tests)) {
-                                const codeLC = code.toLowerCase();
-                                const isKey = KEY_LABS.some(k => codeLC.includes(k));
-                                if (!isKey) continue;
-                                const entry = info.values[latestLabDate];
-                                if (!entry) continue;
-                                const ref = info.refDisplay ? ` [BT: ${info.refDisplay}]` : '';
-                                const flag = _isAbnormal(entry.status) ? ' (!)' : '';
-                                keyLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref}${flag}`);
-                            }
+                const contextAbn = abnormals.length > 0
+                    ? abnormals.slice(0, 8).map(a => {
+                        const ref = a.refDisplay ? ` [BT: ${a.refDisplay}]` : '';
+                        return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (⇑⇑)`;
+                    }).join('; ')
+                    : '';
+
+                const KEY_LABS = ['glucose','ure','creatinine','hba1c','k','na','cl','hco3',
+                    'hgb','hb','wbc','plt','inr','pt','aptt','alt','ast',
+                    'pro-bnp','troponin','crp','procalcitonin','lactate','ph','pao2','paco2'];
+                const latestLabDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
+                const keyLabLines = [];
+                if (latestLabDate) {
+                    for (const [_cat, tests] of Object.entries(grouped)) {
+                        for (const [code, info] of Object.entries(tests)) {
+                            const codeLC = code.toLowerCase();
+                            if (!KEY_LABS.some(k => codeLC.includes(k))) continue;
+                            const entry = info.values[latestLabDate];
+                            if (!entry) continue;
+                            const ref = info.refDisplay ? ` [BT: ${info.refDisplay}]` : '';
+                            const flag = _isAbnormal(entry.status) ? ' (!)' : '';
+                            keyLabLines.push(`${code}: ${entry.value}${info.unit ? ' ' + info.unit : ''}${ref}${flag}`);
                         }
                     }
-                    const contextKeyLabs = keyLabLines.length > 0
-                        ? keyLabLines.slice(0, 10).join('; ')
-                        : '';
+                }
+                const contextKeyLabs = keyLabLines.length > 0 ? keyLabLines.slice(0, 10).join('; ') : '';
 
-                    // Lấy custom prompt từ Options (nếu có), fallback về mặc định
-                    let promptTemplate = '';
-                    try {
-                        const stored = await new Promise(r =>
-                            chrome.storage.local.get(['aladinn_ai_prompts'], r)
-                        );
-                        promptTemplate = stored?.aladinn_ai_prompts?.cls_summary || '';
-                    } catch (_) { /* fallback */ }
+                // ── Prompt ─────────────────────────────────────────────────
+                let promptTemplate = '';
+                try {
+                    const stored = await new Promise(r => chrome.storage.local.get(['aladinn_ai_prompts'], r));
+                    promptTemplate = stored?.aladinn_ai_prompts?.cls_summary || '';
+                } catch (_) { /* fallback */ }
 
-                    if (!promptTemplate.trim()) {
-                        promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}, giới tính: {{gender}}).
+                if (!promptTemplate.trim()) {
+                    promptTemplate = `Bạn là bác sĩ đang hội chẩn (mã BN: {{patientRef}}, SN: {{birthYear}}, giới tính: {{gender}}).
 Dữ liệu lâm sàng:
 - Chẩn đoán: {{diagnosis}}
 - Đơn thuốc: {{drugs}}
@@ -1842,238 +1881,124 @@ Trình bày ngắn gọn theo cấu trúc:
 2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
 3. Hướng xử trí đề xuất (tối đa 3 ý, mỗi ý 1 can thiệp cụ thể)
 Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`;
+                }
+
+                const abnLine    = contextAbn      ? `- XN bất thường: ${contextAbn}` : '';
+                const keyLabLine = contextKeyLabs   ? `- XN chính (ngày gần nhất): ${contextKeyLabs}` : '';
+                const prompt = promptTemplate
+                    .replace('{{patientRef}}', patientRef)
+                    .replace('{{birthYear}}',  birthYear)
+                    .replace('{{gender}}',     patientGender)
+                    .replace('{{diagnosis}}',  contextDiag)
+                    .replace('{{drugs}}',      contextDrugs || 'Không rõ')
+                    .replace('{{abnormal}}',   abnLine)
+                    .replace('{{keylabs}}',    keyLabLine);
+
+                const model = await window.HIS.getAiModel();
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                    { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+                );
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    let text = data.candidates[0].content.parts[0].text;
+
+                    // ── Markdown → HTML ─────────────────────────────────
+                    text = text
+                        .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>')
+                        .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) =>
+                            `<div style="display:flex;align-items:center;gap:7px;margin:16px 0 7px;">
+                                <span style="width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;">${num.trim().replace('.','')}</span>
+                                <strong style="color:#D4A853;font-size:13px;">${title}</strong>
+                            </div>`
+                        )
+                        .replace(/^[-*] (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;line-height:1.6;">$1</li>');
+
+                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;"><ul style="margin:0;padding-left:18px;">${text}</ul></div>`;
+
+                    // ── Token cost toast ────────────────────────────────
+                    if (window.HIS?.AICost && data.usageMetadata) {
+                        window.HIS.AICost.record(
+                            model,
+                            data.usageMetadata.promptTokenCount || 0,
+                            data.usageMetadata.candidatesTokenCount || 0
+                        ).then(est => {
+                            if (est) {
+                                window.VNPTRealtime?.showToast(
+                                    `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${model.replace('gemini-','')}`,
+                                    'info', 3000
+                                );
+                            }
+                        });
                     }
 
-                    // Điền biến vào template
-                    const abnLine = contextAbn ? `- XN bất thường: ${contextAbn}` : '';
-                    const keyLabLine = contextKeyLabs ? `- XN chính (ngày gần nhất): ${contextKeyLabs}` : '';
-                    const prompt = promptTemplate
-                        .replace('{{patientRef}}', patientRef)
-                        .replace('{{birthYear}}', birthYear)
-                        .replace('{{gender}}', patientGender)
-                        .replace('{{diagnosis}}', contextDiag)
-                        .replace('{{drugs}}', contextDrugs || 'Không rõ')
-                        .replace('{{abnormal}}', abnLine)
-                        .replace('{{keylabs}}', keyLabLine);
-
-                    const model = await window.HIS.getAiModel();
-                    const response = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        }
-                    );
-
-                    const data = await response.json();
-                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                        let text = data.candidates[0].content.parts[0].text;
-                        // Render markdown → HTML với section headers màu vàng
-                        text = text
-                            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                            .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>')
-                            // Numbered section headers (1. / 2. / 3.)
-                            .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) =>
-                                `<div style="display:flex;align-items:center;gap:6px;margin:14px 0 6px;">
-                                    <span style="width:20px;height:20px;border-radius:50%;background:rgba(212,168,83,0.2);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;">${num.trim().replace('.','')}</span>
-                                    <strong style="color:#D4A853;font-size:13px;">${title}</strong>
-                                </div>`
-                            )
-                            .replace(/^- (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;">$1</li>')
-                            .replace(/^\* (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;">$1</li>');
-
-                        // Render kết quả
-                        resAIModal.innerHTML = `<div style="font-size:13px;line-height:1.7;"><ul style="margin:0;padding-left:18px;">${text}</ul></div>`;
-
-                        // Cost: ghi lại và hiển thị toast (async, không block render)
-                        if (window.HIS?.AICost && data.usageMetadata) {
-                            window.HIS.AICost.record(
-                                model,
-                                data.usageMetadata.promptTokenCount || 0,
-                                data.usageMetadata.candidatesTokenCount || 0
-                            ).then(est => {
-                                if (est) {
-                                    const modelShort = model.replace('gemini-', '');
-                                    window.VNPTRealtime?.showToast(
-                                        `💰 ~${est.totalTokens.toLocaleString()} token · ${est.vndDisplay} · ${modelShort}`,
-                                        'info',
-                                        3000
-                                    );
-                                }
-                            });
-                        }
-
-                        // ─── Link tra cứu ───────────────────────────────────────
-                        // Lấy ICD trực tiếp từ diagHistory (source of truth)
-                        const allIcdCodes = [];
-                        if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
-                            for (const d of patientInfo.diagHistory) {
-                                const matches = d.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [];
-                                for (const c of matches) {
-                                    if (!allIcdCodes.includes(c)) allIcdCodes.push(c);
-                                }
+                    // ── Search links (per ICD) ──────────────────────────
+                    const allIcdCodes = [];
+                    if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                        for (const d of patientInfo.diagHistory) {
+                            for (const c of (d.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [])) {
+                                if (!allIcdCodes.includes(c)) allIcdCodes.push(c);
                             }
                         }
-                        // Fallback: parse từ contextDiag
-                        if (allIcdCodes.length === 0) {
-                            const fallbackCodes = contextDiag.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [];
-                            allIcdCodes.push(...[...new Set(fallbackCodes)].slice(0, 5));
-                        }
-
-                        // Parse keywords từ section "Hướng xử trí" của AI
-                        const rawText = data.candidates[0].content.parts[0].text;
-                        const treatMatch = rawText.match(/3\..*?([\s\S]*?)(?:\n4\.|$)/i);
-                        const treatRaw = treatMatch ? treatMatch[1] : '';
-                        const treatKeywords = treatRaw
-                            .replace(/<[^>]+>/g, ' ')
-                            .split(/\s+/)
-                            .map(w => w.replace(/[^a-zà-ỹA-ZÀ-ỹ]/g, ''))
-                            .filter(w => w.length > 4)
-                            .filter(w => !['không','được','để','theo','cần','nếu','các','trong','nên','hoặc','với','phải','này','bằng','khi','sau','trước','bệnh','nhân','điều','trị'].includes(w.toLowerCase()))
-                            .slice(0, 3);
-
-                        const linkIconSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>';
-
-                        // Mỗi ICD → 2 link riêng: Phác đồ + BYT
-                        const perIcdLinks = allIcdCodes.slice(0, 4).flatMap(code => {
-                            // Lấy tên bệnh tương ứng với ICD này từ diagHistory
-                            const matchedDiag = (patientInfo.diagHistory || []).find(d => d.includes(code)) || '';
-                            const cleanName = matchedDiag.replace(/\b[A-Z]\d{2}(?:\.\d{1,2})?\b/g, '').replace(/^[\s,;-]+/, '').trim().slice(0, 40);
-                            const label = cleanName || code;
-                            return [
-                                {
-                                    label: `${code} – Phác đồ`,
-                                    q: `${code} ${cleanName} phác đồ điều trị Bộ Y tế Việt Nam`,
-                                    color: '#D4A853'
-                                },
-                                {
-                                    label: `${code} – BYT`,
-                                    q: `site:moh.gov.vn OR site:bvdktrunguong.vn ${code} ${cleanName} hướng dẫn điều trị`,
-                                    color: '#60a5fa',
-                                    title: label
-                                }
-                            ];
-                        });
-
-                        // Link AI keyword từ hướng xử trí
-                        const extraLinks = treatKeywords.length > 0 ? [{
-                            label: '🔍 ' + treatKeywords.slice(0, 2).join(' '),
-                            q: treatKeywords.join(' ') + ' điều trị phác đồ hướng dẫn y khoa',
-                            color: '#a78bfa'
-                        }] : [];
-
-                        const allLinks = [...perIcdLinks, ...extraLinks];
-
-                        const linksHtml = allLinks.map(l =>
-                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank" title="${l.title || l.label}"
-                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${l.color || '#60a5fa'};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;white-space:nowrap;transition:0.15s;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.09)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.04)'">
-                                ${linkIconSvg} ${l.label}
-                            </a>`
-                        ).join('');
-
-                        if (allLinks.length > 0) {
-                            resAIModal.innerHTML += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);">
-                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tra cứu phác đồ &amp; hướng dẫn điều trị</div>
-                                <div style="display:flex;gap:6px;flex-wrap:wrap;">${linksHtml}</div>
-                            </div>`;
-                        }
-
-                    } else {
-                        throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
                     }
-                } catch (e) {
-                    resAIModal.innerHTML = '<span style="color:#E85454">Lỗi AI: ' + e.message + '</span>';
-                } finally {
-                    btnAIModal.disabled = false;
-                    btnAIModal.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Tóm tắt AI';
-                }
+                    if (allIcdCodes.length === 0) {
+                        const fb = contextDiag.match(/\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g) || [];
+                        allIcdCodes.push(...[...new Set(fb)].slice(0, 5));
+                    }
 
-            });
-        }
+                    const rawText    = data.candidates[0].content.parts[0].text;
+                    const treatMatch = rawText.match(/3\..*?([\s\S]*?)(?:\n4\.|$)/i);
+                    const treatRaw   = treatMatch ? treatMatch[1] : '';
+                    const stopWords  = ['không','được','để','theo','cần','nếu','các','trong','nên','hoặc','với','phải','này','bằng','khi','sau','trước','bệnh','nhân','điều','trị'];
+                    const treatKw    = treatRaw.replace(/<[^>]+>/g,' ').split(/\s+/)
+                        .map(w => w.replace(/[^a-zà-ỹA-ZÀ-ỹ]/g,''))
+                        .filter(w => w.length > 4 && !stopWords.includes(w.toLowerCase()))
+                        .slice(0, 3);
 
-        // Block clicks from bubbling to HIS background (e.g., jqGrid row selection)
-        modal.addEventListener('mousedown', e => e.stopPropagation());
-        modal.addEventListener('mouseup', e => e.stopPropagation());
-        modal.addEventListener('dblclick', e => e.stopPropagation());
+                    const linkSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>';
 
-        // ─── PACS Button handler (event delegation) ───
-        modal.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.aladinn-pacs-btn');
-            if (!btn) return;
-            const sheetId = btn.dataset.sheetId;
-            if (!sheetId) return;
+                    const perIcdLinks = allIcdCodes.slice(0, 4).flatMap(code => {
+                        const matched  = (patientInfo.diagHistory || []).find(d => d.includes(code)) || '';
+                        const name = matched.replace(/\b[A-Z]\d{2}(?:\.\d{1,2})?\b/g,'').replace(/^[\s,;-]+/,'').trim().slice(0, 40);
+                        return [
+                            { label:`${code} – Phác đồ`, q:`${code} ${name} phác đồ điều trị Bộ Y tế Việt Nam`, color:'#D4A853' },
+                            { label:`${code} – BYT`, q:`site:moh.gov.vn OR site:kcb.vn ${code} ${name} hướng dẫn điều trị`, color:'#60a5fa', title: name || code }
+                        ];
+                    });
+                    const extraLinks = treatKw.length > 0
+                        ? [{ label:'🔍 ' + treatKw.slice(0,2).join(' '), q: treatKw.join(' ') + ' điều trị phác đồ y khoa', color:'#a78bfa' }]
+                        : [];
 
-            const pacsConfig = {
-                sheetId: sheetId,
-                maubenhphamid: btn.dataset.maubenhphamid,
-                sophieu: btn.dataset.sophieu,
-                linkDicom: btn.dataset.linkdicom,
-                madichvu: btn.dataset.madichvu
-            };
+                    const allLinks = [...perIcdLinks, ...extraLinks];
+                    if (allLinks.length > 0 && aiLinksWrap && aiSearchWrap) {
+                        aiLinksWrap.innerHTML = allLinks.map(l =>
+                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank" title="${l.title || l.label}"
+                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${l.color||'#60a5fa'};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;white-space:nowrap;transition:0.15s;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.09)'"
+                                onmouseout="this.style.background='rgba(255,255,255,0.04)'">${linkSvg} ${l.label}</a>`
+                        ).join('');
+                        aiSearchWrap.style.display = 'block';
+                    }
 
-            const origText = btn.textContent;
-            btn.textContent = '⏳ Đang lấy...';
-            btn.disabled = true;
-            btn.style.opacity = '0.7';
-
-            const url = await fetchPacsUrlFromBridge(pacsConfig);
-
-            if (url === 'NATIVE_TRIGGERED') {
-                window.VNPTRealtime?.showToast('✅ Đã mở trình xem DICOM!', 'success');
-            } else if (url) {
-                window.open(url, '_blank');
-                window.VNPTRealtime?.showToast('✅ Đã mở trình xem DICOM!', 'success');
-            } else {
-                window.VNPTRealtime?.showToast('❌ Không tìm thấy ảnh DICOM. Kiểm tra mô-đun RIS.', 'warning');
-            }
-
-            btn.textContent = origText;
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        });
-
-
-        // Tab logic
-        const tabLamsang = modal.querySelector('#aladinn-tab-lamsang');
-        const tabXn = modal.querySelector('#aladinn-tab-xn');
-        const tabCdha = modal.querySelector('#aladinn-tab-cdha');
-        
-        const contentLamsang = modal.querySelector('#aladinn-content-lamsang');
-        const contentXn = modal.querySelector('#aladinn-content-xn');
-        const contentCdha = modal.querySelector('#aladinn-content-cdha');
-
-        const allTabs = [tabLamsang, tabXn, tabCdha];
-        const allContents = [contentLamsang, contentXn, contentCdha];
-        const tabColors = ['#d4a25a', '#d4a25a', '#60a5fa'];
-
-        function activateTab(idx) {
-            allTabs.forEach((t, i) => {
-                if (!t) return;
-                if (i === idx) {
-                    t.style.background = `rgba(${i === 0 || i === 1 ? '212,162,90' : '96,165,250'},0.1)`;
-                    t.style.borderColor = `rgba(${i === 0 || i === 1 ? '212,162,90' : '96,165,250'},0.3)`;
-                    t.style.borderBottomColor = tabColors[i];
-                    t.style.color = tabColors[i];
-                    t.style.fontWeight = '700';
+                    showAIState('result');
+                    aiResultLoaded = true;
                 } else {
-                    t.style.background = 'transparent';
-                    t.style.borderColor = 'transparent';
-                    t.style.borderBottomColor = 'transparent';
-                    t.style.color = '#7a6e5e';
-                    t.style.fontWeight = '600';
+                    throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
                 }
-            });
-            allContents.forEach((c, i) => { if (c) c.style.display = i === idx ? 'block' : 'none'; });
+            } catch (e) {
+                showAIState('error');
+                if (aiError) aiError.innerHTML = '❌ Lỗi AI: ' + e.message;
+            } finally {
+                if (btnStart)  btnStart.disabled  = false;
+                if (btnRerun)  btnRerun.disabled  = false;
+            }
         }
 
-        tabLamsang?.addEventListener('click', () => activateTab(0));
-        tabXn?.addEventListener('click', () => activateTab(1));
-        tabCdha?.addEventListener('click', () => activateTab(2));
-
-        activateTab(defaultActiveTab);
+        btnStart?.addEventListener('click', runAIAnalysis);
+        btnRerun?.addEventListener('click', () => { aiResultLoaded = false; runAIAnalysis(); });
     }
 
 })();
