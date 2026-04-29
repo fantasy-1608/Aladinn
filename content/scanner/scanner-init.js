@@ -1955,22 +1955,31 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                 if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                     let text = data.candidates[0].content.parts[0].text;
 
-                    // ── Markdown → HTML ─────────────────────────────────
+                    // ── Markdown → HTML (thứ tự: numbered trước, bold/italic sau) ─────
+                    // Bước 1: xử lý numbered sections TRƯỚC khi replace **bold**
+                    // → tránh colon trong style="color:#D4A853" bị nhầm là dấu phân cách label:content
+                    text = text.replace(/^(\d+\.\s+)(.+)$/gm, (_, num, rawTitle) => {
+                        // rawTitle vẫn là markdown thuần, chưa có HTML tags
+                        const colonIdx = rawTitle.indexOf(':');
+                        const labelRaw   = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
+                        const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
+                        // Apply inline bold/italic chỉ trong phần content
+                        const contentHtml = contentRaw
+                            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+                            .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
+                        return `<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">` +
+                            `<span style="min-width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>` +
+                            `<span style="font-size:13px;line-height:1.55;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
+                            `</div>`;
+                    });
+                    // Bước 2: bold/italic còn lại (trong bullet points, đoạn thường)
                     text = text
                         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>')
-                        .replace(/^(\d+\.\s+)(.+)$/gm, (_, num, title) => {
-                            const colonIdx = title.indexOf(':');
-                            const labelPart = colonIdx !== -1 ? title.slice(0, colonIdx + 1) : title;
-                            const contentPart = colonIdx !== -1 ? title.slice(colonIdx + 1).trim() : '';
-                            return `<div style="display:flex;align-items:flex-start;gap:7px;margin:16px 0 7px;">
-                                <span style="width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>
-                                <span style="font-size:13px;line-height:1.5;"><strong style="color:#D4A853;">${labelPart}</strong>${contentPart ? ' <span style="color:#e8dcc8;font-weight:400;">' + contentPart + '</span>' : ''}</span>
-                            </div>`;
-                        })
-                        .replace(/^[-*] (.*)$/gm, '<li style="margin-bottom:7px;color:#e8dcc8;line-height:1.6;">$1</li>');
+                        .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
+                    // Bước 3: bullet points
+                    text = text.replace(/^[-*] (.*)$/gm, '<li style="margin-bottom:6px;color:#cbd5e1;line-height:1.6;">$1</li>');
 
-                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;"><ul style="margin:0;padding-left:18px;">${text}</ul></div>`;
+                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;">${text}</div>`;
 
                     // ── Token cost toast ────────────────────────────────
                     if (window.HIS?.AICost && data.usageMetadata) {
