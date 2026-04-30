@@ -1004,7 +1004,7 @@
                         options: [
                             { name: '[0]', value: '' },
                             { name: '[1]', value: String(benhnhanId) },
-                            { name: '[2]', value: '3' }, 
+                            { name: '[2]', value: '' }, // Rỗng để lấy TẤT CẢ các loại phiếu thay vì chỉ phiếu loại 3
                             { name: '[3]', value: String(hsbaId) }
                         ]
                     };
@@ -1040,44 +1040,43 @@
 
             // --- Step 2: Fetch drug details for each sheet ---
             // --- Step 2: Fetch drug details for each sheet ---
-            // Thay vì cố gắng "dò tìm" query nào đúng (có thể bị sai lầm nếu phiếu trả về data rác),
-            // ta sẽ gọi ĐỒNG THỜI các API chắc chắn đúng cho cả Thuốc và Vật tư trên MỌI phiếu.
-            // Hệ thống deduplicate ở cuối sẽ tự động gộp dữ liệu nếu 2 API cùng trả về 1 thuốc.
-            const activeQueries = [
-                'NT.024.CTPHIEUTHUOC', // Thuốc (phổ biến nhất)
-                'NT.024.DSTHUOC',      // Thuốc (tuyến huyện thường dùng)
-                'NT.024.CHITIETTHUOC', // Thuốc (fallback)
-                'NT.034.1'             // Vật tư
-            ];
+            // Với mỗi phiếu, quét API Vật tư và API Thuốc SONG SONG.
+            // Tuy nhiên, với Thuốc, ta thử tuần tự các API phổ biến để tránh trùng lặp dữ liệu (nếu 2 API cùng trả về).
+            const DRUG_QUERIES = ['NT.024.CTPHIEUTHUOC', 'NT.024.DSTHUOC', 'NT.024.CHITIETTHUOC'];
+            const MATERIAL_QUERY = 'NT.034.1';
 
-            // Now fetch all sheets with ALL active queries
             let allDrugs = [];
             const detailPromises = sheets.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
                 const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYSD || sheet.NGAYSUDUNG || sheet.NGAYMAUBENHPHAM || '';
                 if (!sheetId) return;
 
-                const queryPromises = activeQueries.map(async (queryCode) => {
+                const fetchQuery = async (qCode) => {
                     try {
-                        const detailParams = {
-                            func: 'ajaxExecuteQueryPaging',
-                            uuid: uuid,
-                            params: [queryCode],
-                            options: [{ name: '[0]', value: String(sheetId) }]
-                        };
-                        const detailUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(detailParams))}`;
-                        const detailRes = await fetch(detailUrl, { credentials: 'include' });
-                        if (detailRes.ok) {
-                            const detailData = await detailRes.json();
-                            return detailData.rows || [];
+                        const detailUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify({
+                            func: 'ajaxExecuteQueryPaging', uuid: uuid, params: [qCode], options: [{ name: '[0]', value: String(sheetId) }]
+                        }))}`;
+                        const res = await fetch(detailUrl, { credentials: 'include' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            return data.rows || [];
                         }
                     } catch (_e) {}
                     return [];
-                });
+                };
+
+                const fetchMaterials = fetchQuery(MATERIAL_QUERY);
+                const fetchDrugs = async () => {
+                    for (const q of DRUG_QUERIES) {
+                        const rows = await fetchQuery(q);
+                        if (rows.length > 0) return rows; // Stop at the first API that returns data!
+                    }
+                    return [];
+                };
 
                 try {
-                    const resultsArray = await Promise.all(queryPromises);
-                    const items = resultsArray.flat();
+                    const [materialRows, drugRows] = await Promise.all([fetchMaterials, fetchDrugs()]);
+                    const items = [...materialRows, ...drugRows];
                     
                     for (const item of items) {
                         // Dynamic name resolution — try all possible keys
@@ -1099,7 +1098,7 @@
                             }
 
                             // Bỏ qua vật tư y tế (VTYT)
-                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu', 'băng bột', 'oxy lỏng', 'khí oxy', 'oxy thở'].some(v => lowerName.includes(v));
+                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'dây thở', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu', 'băng bột', 'oxy lỏng', 'khí oxy', 'oxy thở'].some(v => lowerName.includes(v));
                             if (isVTYT) continue;
                             
                             // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
@@ -1138,7 +1137,7 @@
             }
             allDrugs = uniqueDrugs;
 
-            console.log(`[Aladinn Drug] Step 2: Found ${allDrugs.length} drug items total from ${sheets.length} sheets (queries: ${activeQueries.join(', ')})`);
+            console.log(`[Aladinn Drug] Step 2: Processed ${sheets.length} sheets`);
             sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
 
         } catch (_e) {
