@@ -410,13 +410,13 @@ const VNPTClinicalFill = (function () {
         return new Promise((resolve) => {
             const isHC = type === 'hoichan';
             const labels = isHC ? {
+                'trichBienBan': 'Trích biên bản hội chẩn',
                 'tomTatTieuSuBenh': 'Tóm tắt tiểu sử bệnh',
                 'tomTatTTVaoVien': 'Tóm tắt TT vào viện',
                 'tomTatTTHienTai': 'Tóm tắt TT hiện tại',
                 'quaTrinhDieuTriCS': 'Quá trình điều trị',
                 'ketLuanChanDoan': 'Chẩn đoán, nguyên nhân, tiên lượng',
                 'huongDieuTri': 'Hướng điều trị',
-                'trichBienBan': 'Trích biên bản hội chẩn',
                 'ketLuan': 'Kết luận'
             } : {
                 'dauHieuLamSang': 'Dấu hiệu lâm sàng',
@@ -437,10 +437,10 @@ const VNPTClinicalFill = (function () {
             let html = `<h3>${title}</h3>`;
 
             for (const [key, label] of Object.entries(labels)) {
-                const val = formData[key] || '<em style="color:#666">Trống</em>';
+                const val = formData[key] || '';
                 html += `<div class="field-row">
                     <div class="field-label">${label}</div>
-                    <div class="field-value">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</div>
+                    <textarea id="cf-input-${key}" class="field-value-input" data-key="${key}" style="width:100%; min-height:40px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,168,83,0.3); color:#e0d5c1; border-radius:6px; padding:8px; font-family:inherit; font-size:13px; resize:vertical;">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                 </div>`;
             }
 
@@ -453,11 +453,50 @@ const VNPTClinicalFill = (function () {
             overlay.appendChild(dialog);
             document.body.appendChild(overlay);
 
+            // Auto-resize textareas based on content
+            const textareas = overlay.querySelectorAll('.field-value-input');
+            textareas.forEach(ta => {
+                // Initial resize
+                ta.style.height = (ta.scrollHeight > 40 ? ta.scrollHeight + 2 : 40) + 'px';
+                
+                ta.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                    
+                    // Sync logic
+                    const key = this.getAttribute('data-key');
+                    const val = this.value;
+                    
+                    if (isHC) {
+                        if (key === 'ketLuanChanDoan') {
+                            const target = overlay.querySelector('#cf-input-ketLuan');
+                            if (target) { target.value = val; target.style.height = 'auto'; target.style.height = target.scrollHeight + 'px'; }
+                        } else if (key === 'ketLuan') {
+                            const target = overlay.querySelector('#cf-input-ketLuanChanDoan');
+                            if (target) { target.value = val; target.style.height = 'auto'; target.style.height = target.scrollHeight + 'px'; }
+                        } else if (key === 'tomTatTieuSuBenh' || key === 'tomTatTTHienTai') {
+                            const ts = overlay.querySelector('#cf-input-tomTatTieuSuBenh')?.value || '';
+                            const ht = overlay.querySelector('#cf-input-tomTatTTHienTai')?.value || '';
+                            const target = overlay.querySelector('#cf-input-quaTrinhDieuTriCS');
+                            if (target) {
+                                target.value = [ts, ht].filter(Boolean).join('\\n');
+                                target.style.height = 'auto'; target.style.height = target.scrollHeight + 'px';
+                            }
+                        }
+                    }
+                });
+            });
+
             overlay.querySelector('#cfill-cancel').addEventListener('click', () => {
                 overlay.remove();
                 resolve(false);
             });
             overlay.querySelector('#cfill-confirm').addEventListener('click', () => {
+                // UPDATE formData with modified values
+                textareas.forEach(ta => {
+                    const key = ta.getAttribute('data-key');
+                    formData[key] = ta.value;
+                });
                 overlay.remove();
                 resolve(true);
             });

@@ -44,7 +44,7 @@
                 sendResponse(false, 0, 'Không tìm thấy trường nào để điền. Form có thể chưa load xong.');
             }
         } catch (e) {
-            console.error('[HoiChan Iframe] Error:', e);
+            console.log('[HoiChan Iframe] Error:', e);
             sendResponse(false, 0, e.message);
         }
     };
@@ -95,7 +95,7 @@
         var found = getFieldElement(fieldIdStr);
 
         if (!found) {
-            console.warn('[HoiChan Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
+            console.log('[HoiChan Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
             return false;
         }
 

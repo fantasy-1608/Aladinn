@@ -44,7 +44,7 @@
                 sendResponse(false, 0, 'Không tìm thấy trường nào để điền. Form có thể chưa load xong.');
             }
         } catch (e) {
-            console.error('[ChuyenVien Iframe] Error:', e);
+            console.log('[ChuyenVien Iframe] Error:', e);
             sendResponse(false, 0, e.message);
         }
     };
@@ -84,7 +84,7 @@
         var found = getFieldElement(fieldIdStr);
 
         if (!found) {
-            console.warn('[ChuyenVien Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
+            console.log('[ChuyenVien Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
             return false;
         }
 

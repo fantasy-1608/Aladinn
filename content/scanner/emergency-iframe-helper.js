@@ -274,7 +274,7 @@
             }
 
         } catch (e) {
-            console.error('[Emergency Iframe] Error DOM Fill:', e);
+            console.log('[Emergency Iframe] Error DOM Fill:', e);
             window.parent.postMessage({ type: 'EMERGENCY_FILL_RESULT', success: false, error: e.message }, PARENT_ORIGIN);
         }
     };

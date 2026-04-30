@@ -122,7 +122,7 @@
         var found = getFieldElement(fieldIdStr);
 
         if (!found) {
-            console.warn('[VNPT-Helper] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
+            console.log('[VNPT-Helper] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
             var tas = document.querySelectorAll('textarea');
             var idx = [];
             for (var j = 0; j < tas.length; j++) {
