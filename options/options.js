@@ -651,6 +651,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const inpTitle = document.getElementById('tpl-title');
         const inpContent = document.getElementById('tpl-content');
 
+        // Track edit mode
+        let editingId = null;
+
+        function setEditMode(tpl) {
+            editingId = tpl ? tpl.id : null;
+            inpShortcut.value = tpl ? tpl.shortcut : '';
+            inpTitle.value = tpl ? tpl.title : '';
+            inpContent.value = tpl ? tpl.content : '';
+            btnAdd.textContent = tpl ? '\u2705 C\u1eadp nh\u1eadt M\u1eabu' : '+ Th\u00eam M\u1eabu';
+            btnAdd.style.background = tpl ? 'linear-gradient(135deg, #2a7a4b, #3aa863)' : '';
+            if (tpl) {
+                inpShortcut.focus();
+                // Scroll form into view
+                inpShortcut.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
         async function renderTemplates() {
             const templates = await TemplateStore.getTemplates();
             listContainer.innerHTML = '';
@@ -664,26 +681,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;';
                 item.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             ${tpl.title}
                             <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">/${tpl.shortcut}</span>
                         </div>
                         <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${tpl.content}</div>
                     </div>
-                    <button class="btn-delete-tpl" data-id="${tpl.id}" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
+                        <button class="btn-edit-tpl" data-id="${tpl.id}" title="Ch\u1ec9nh s\u1eeda" style="background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px; opacity: 0.75; transition: 0.2s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="btn-delete-tpl" data-id="${tpl.id}" title="X\u00f3a" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
                 `;
                 listContainer.appendChild(item);
             });
 
+            // Hover effect for buttons
+            document.querySelectorAll('.btn-edit-tpl, .btn-delete-tpl').forEach(btn => {
+                btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; btn.style.transform = 'scale(1.15)'; });
+                btn.addEventListener('mouseleave', () => { btn.style.opacity = btn.classList.contains('btn-edit-tpl') ? '0.75' : '0.7'; btn.style.transform = 'scale(1)'; });
+            });
+
+            // Edit button handler
+            document.querySelectorAll('.btn-edit-tpl').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const templates = await TemplateStore.getTemplates();
+                    const tpl = templates.find(t => t.id === id);
+                    if (tpl) setEditMode(tpl);
+                });
+            });
+
+            // Delete button handler
             document.querySelectorAll('.btn-delete-tpl').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.currentTarget.getAttribute('data-id');
-                    if (confirm('Bạn có chắc muốn xóa mẫu này?')) {
+                    if (confirm('B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n x\u00f3a m\u1eabu n\u00e0y?')) {
                         await TemplateStore.removeTemplate(id);
-                        showToast('Đã xóa mẫu!');
+                        if (editingId === id) setEditMode(null); // Reset form if editing this item
+                        showToast('\u0110\u00e3 x\u00f3a m\u1eabu!');
                         renderTemplates();
                     }
                 });
@@ -696,21 +736,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const content = inpContent.value.trim();
 
             if (!shortcut || !title || !content) {
-                showToast('Vui lòng nhập đủ Phím tắt, Tiêu đề và Nội dung!', true);
+                showToast('Vui l\u00f2ng nh\u1eadp \u0111\u1ee7 Ph\u00edm t\u1eaft, Ti\u00eau \u0111\u1ec1 v\u00e0 N\u1ed9i dung!', true);
                 return;
             }
             if (shortcut.includes(' ')) {
-                showToast('Phím tắt không được chứa khoảng trắng!', true);
+                showToast('Ph\u00edm t\u1eaft kh\u00f4ng \u0111\u01b0\u1ee3c ch\u1ee9a kho\u1ea3ng tr\u1eafng!', true);
                 return;
             }
 
-            await TemplateStore.addTemplate(title, shortcut, content);
-            showToast('Đã thêm mẫu thành công!');
-            
+            if (editingId) {
+                // Update mode: remove old + add new with same id logic
+                await TemplateStore.removeTemplate(editingId);
+                await TemplateStore.addTemplate(title, shortcut, content);
+                showToast('\u0110\u00e3 c\u1eadp nh\u1eadt m\u1eabu th\u00e0nh c\u00f4ng!');
+                setEditMode(null);
+            } else {
+                await TemplateStore.addTemplate(title, shortcut, content);
+                showToast('\u0110\u00e3 th\u00eam m\u1eabu th\u00e0nh c\u00f4ng!');
+            }
+
             inpShortcut.value = '';
             inpTitle.value = '';
             inpContent.value = '';
-            
+
             renderTemplates();
         });
 
