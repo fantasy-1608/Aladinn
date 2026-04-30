@@ -178,11 +178,11 @@ const VNPTExport = (function () {
      */
     function confirmPhiExport(format) {
         return window.confirm(
-            `⚠️ CẢNH BÁO BẢO MẬT\n\n` +
-            `File ${format} này chứa thông tin bệnh nhân (Mã BN, Họ tên, Buồng).\n\n` +
-            `✅ Chỉ lưu trữ trên hệ thống nội bộ bệnh viện.\n` +
-            `❌ Không gửi qua email, tin nhắn, hoặc cloud cá nhân.\n\n` +
-            `Bạn có chắc chắn muốn tiếp tục?`
+            '\u26a0\ufe0f C\u1ea2NH B\u00c1O B\u1ea2O M\u1eacT\n\n' +
+            'File ' + format + ' n\u00e0y ch\u1ee9a th\u00f4ng tin b\u1ec7nh nh\u00e2n (M\u00e3 BN, H\u1ecd t\u00ean, Bu\u1ed3ng).\n\n' +
+            '\u2705 Ch\u1ec9 l\u01b0u tr\u1eef tr\u00ean h\u1ec7 th\u1ed1ng n\u1ed9i b\u1ed9 b\u1ec7nh vi\u1ec7n.\n' +
+            '\u274c Kh\u00f4ng g\u1eedi qua email, tin nh\u1eafn, ho\u1eb7c cloud c\u00e1 nh\u00e2n.\n\n' +
+            'B\u1ea1n c\u00f3 ch\u1eafc ch\u1eafn mu\u1ed1n ti\u1ebfp t\u1ee5c?'
         );
     }
 

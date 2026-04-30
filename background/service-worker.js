@@ -12,7 +12,7 @@
 
 // Import AI client
 import { requestAI, cancelRequest } from './ai-client.js';
-/* global deriveBgKeyFromPin, bgDecryptApiKey */ // defined in ai-client.js via globalThis
+/* global deriveBgKeyFromPin, bgDecryptApiKey, bgEncryptData, bgDecryptData */ // defined in ai-client.js via globalThis
 // Import self-update checker
 import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
 

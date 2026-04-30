@@ -19,7 +19,7 @@
  *     for removal. Service worker handles cleanup on logout.
  */
 
-/* global encryptData, decryptData */
+/* (crypto delegated to background via encryptViaBackground/decryptViaBackground) */
 /**
  * HIS Voice Assistant - Storage Module
  * Chrome storage operations with versioned schema and migration
