@@ -1039,49 +1039,74 @@
             }
 
             // --- Step 2: Fetch drug details for each sheet ---
-            const DRUG_DETAIL_QUERIES = [
-                'NT.034.1',
+            // --- Step 2: Fetch drug details for each sheet ---
+            const DRUG_QUERIES = [
                 'NT.024.CTPHIEUTHUOC',
                 'NT.024.DSTHUOC',
-                'NT.024.DSVTTHUOC',
+                'NT.024.CHITIETTHUOC',
                 'NT.024.3',
                 'NT.024.4',
-                'NT.024.CHITIETTHUOC',
                 'NT.024.2'  // fallback
             ];
+            const MATERIAL_QUERIES = [
+                'NT.034.1',
+                'NT.024.DSVTTHUOC'
+            ];
 
-            // Discover the correct query using the first sheet
-            const firstSheet = sheets[0];
-            const firstSheetId = firstSheet.MAUBENHPHAMID || firstSheet.IDPHIEU;
-            let workingQuery = null;
+            let workingDrugQuery = null;
+            let workingMaterialQuery = null;
 
-            for (const queryCode of DRUG_DETAIL_QUERIES) {
-                try {
-                    const testParams = {
-                        func: 'ajaxExecuteQueryPaging',
-                        uuid: uuid,
-                        params: [queryCode],
-                        options: [{ name: '[0]', value: String(firstSheetId) }]
-                    };
-                    const testUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(testParams))}`;
-                    const testRes = await fetch(testUrl, { credentials: 'include' });
-                    if (testRes.ok) {
-                        const testData = await testRes.json();
-                        const testRows = testData.rows || [];
-                        console.log(`[Aladinn Drug] Trying ${queryCode} for sheet ${firstSheetId}: ${testRows.length} rows`);
-                        if (testRows.length > 0) {
-                            console.log(`[Aladinn Drug] ✅ ${queryCode} WORKS! Sample:`, JSON.stringify(testRows[0], null, 2));
-                            workingQuery = queryCode;
-                            break;
-                        }
+            // Discover queries using the first few sheets (max 5)
+            for (let i = 0; i < Math.min(sheets.length, 5); i++) {
+                const sheetId = sheets[i].MAUBENHPHAMID || sheets[i].IDPHIEU;
+                
+                // Try to discover drug query
+                if (!workingDrugQuery) {
+                    for (const q of DRUG_QUERIES) {
+                        try {
+                            const testUrl = `${baseUrl}?_search=false&rows=10&page=1&postData=${encodeURIComponent(JSON.stringify({
+                                func: 'ajaxExecuteQueryPaging', uuid: uuid, params: [q], options: [{ name: '[0]', value: String(sheetId) }]
+                            }))}`;
+                            const res = await fetch(testUrl, { credentials: 'include' });
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.rows && data.rows.length > 0) {
+                                    console.log(`[Aladinn Drug] ✅ DRUG Query WORKS: ${q} on sheet ${sheetId}`);
+                                    workingDrugQuery = q;
+                                    break;
+                                }
+                            }
+                        } catch (_e) {}
                     }
-                } catch (_e) {
-                    console.log(`[Aladinn Drug] ${queryCode} failed:`, _e.message);
                 }
+
+                // Try to discover material query
+                if (!workingMaterialQuery) {
+                    for (const q of MATERIAL_QUERIES) {
+                        try {
+                            const testUrl = `${baseUrl}?_search=false&rows=10&page=1&postData=${encodeURIComponent(JSON.stringify({
+                                func: 'ajaxExecuteQueryPaging', uuid: uuid, params: [q], options: [{ name: '[0]', value: String(sheetId) }]
+                            }))}`;
+                            const res = await fetch(testUrl, { credentials: 'include' });
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.rows && data.rows.length > 0) {
+                                    console.log(`[Aladinn Drug] ✅ MATERIAL Query WORKS: ${q} on sheet ${sheetId}`);
+                                    workingMaterialQuery = q;
+                                    break;
+                                }
+                            }
+                        } catch (_e) {}
+                    }
+                }
+
+                if (workingDrugQuery && workingMaterialQuery) break;
             }
 
-            if (!workingQuery) {
-                console.warn('[Aladinn Drug] No drug detail query found. Falling back to sheet-level data.');
+            const activeQueries = [workingDrugQuery, workingMaterialQuery].filter(Boolean);
+
+            if (activeQueries.length === 0) {
+                console.warn('[Aladinn Drug] No drug or material detail query found. Falling back to sheet-level data.');
                 const fallbackDrugs = sheets.map(s => ({
                     NGAYMAUBENHPHAM_SUDUNG: s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYSD || s.NGAYSUDUNG || s.NGAYMAUBENHPHAM || '',
                     TENTHUOC: s.TEAKHO || s.LOAIPHIEU || `Phiếu ${s.SOPHIEU || ''}`,
@@ -1093,27 +1118,37 @@
                 return;
             }
 
-            // Now fetch all sheets with the working query
+            // Now fetch all sheets with ALL active queries
             const allDrugs = [];
             const detailPromises = sheets.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
                 const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYSD || sheet.NGAYSUDUNG || sheet.NGAYMAUBENHPHAM || '';
                 if (!sheetId) return;
 
+                const queryPromises = activeQueries.map(async (queryCode) => {
+                    try {
+                        const detailParams = {
+                            func: 'ajaxExecuteQueryPaging',
+                            uuid: uuid,
+                            params: [queryCode],
+                            options: [{ name: '[0]', value: String(sheetId) }]
+                        };
+                        const detailUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(detailParams))}`;
+                        const detailRes = await fetch(detailUrl, { credentials: 'include' });
+                        if (detailRes.ok) {
+                            const detailData = await detailRes.json();
+                            return detailData.rows || [];
+                        }
+                    } catch (_e) {}
+                    return [];
+                });
+
                 try {
-                    const detailParams = {
-                        func: 'ajaxExecuteQueryPaging',
-                        uuid: uuid,
-                        params: [workingQuery],
-                        options: [{ name: '[0]', value: String(sheetId) }]
-                    };
-                    const detailUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(detailParams))}`;
-                    const detailRes = await fetch(detailUrl, { credentials: 'include' });
-                    if (detailRes.ok) {
-                        const detailData = await detailRes.json();
-                        const items = detailData.rows || [];
-                        for (const item of items) {
-                            // Dynamic name resolution — try all possible keys
+                    const resultsArray = await Promise.all(queryPromises);
+                    const items = resultsArray.flat();
+                    
+                    for (const item of items) {
+                        // Dynamic name resolution — try all possible keys
                             const name = item.TEN || item.TENTHUOC || item.TENDICHVU ||
                                 item.TENCHISO || item.TENCHIDINH || item.TENTONGHOP ||
                                 item.TEN_THUOC || item.TENDICHVU_CHA ||
@@ -1154,12 +1189,11 @@
                                 HAMLUONG: item.HAMLUONG || item.NONGDO || item.HAM_LUONG || item.NONG_DO || item.NDHL || ''
                             });
                         }
-                    }
                 } catch (_e) { /* skip failed sheet */ }
             });
 
             await Promise.all(detailPromises);
-            console.log(`[Aladinn Drug] Step 2: Found ${allDrugs.length} drug items total from ${sheets.length} sheets (query: ${workingQuery})`);
+            console.log(`[Aladinn Drug] Step 2: Found ${allDrugs.length} drug items total from ${sheets.length} sheets (queries: ${activeQueries.join(', ')})`);
             sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
 
         } catch (_e) {
