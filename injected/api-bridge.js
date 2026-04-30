@@ -957,7 +957,7 @@
                 hsbaId,
                 rowData.TIEPNHANID,
                 '' // Thử case [0] rỗng để HIS tự resolve qua [3]=hsbaId
-            ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+            ].filter(v => v !== undefined && v !== null);
             candidates = Array.from(new Set(candidates));
             console.log(`[Aladinn Drug] Discovered ${candidates.length} candidate keys for fetching drug sheets:`, candidates);
 
