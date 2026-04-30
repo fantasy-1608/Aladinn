@@ -1040,86 +1040,18 @@
 
             // --- Step 2: Fetch drug details for each sheet ---
             // --- Step 2: Fetch drug details for each sheet ---
-            const DRUG_QUERIES = [
-                'NT.024.CTPHIEUTHUOC',
-                'NT.024.DSTHUOC',
-                'NT.024.CHITIETTHUOC',
-                'NT.024.3',
-                'NT.024.4',
-                'NT.024.2'  // fallback
+            // Thay vì cố gắng "dò tìm" query nào đúng (có thể bị sai lầm nếu phiếu trả về data rác),
+            // ta sẽ gọi ĐỒNG THỜI các API chắc chắn đúng cho cả Thuốc và Vật tư trên MỌI phiếu.
+            // Hệ thống deduplicate ở cuối sẽ tự động gộp dữ liệu nếu 2 API cùng trả về 1 thuốc.
+            const activeQueries = [
+                'NT.024.CTPHIEUTHUOC', // Thuốc (phổ biến nhất)
+                'NT.024.DSTHUOC',      // Thuốc (tuyến huyện thường dùng)
+                'NT.024.CHITIETTHUOC', // Thuốc (fallback)
+                'NT.034.1'             // Vật tư
             ];
-            const MATERIAL_QUERIES = [
-                'NT.034.1',
-                'NT.024.DSVTTHUOC'
-            ];
-
-            let workingDrugQuery = null;
-            let workingMaterialQuery = null;
-
-            // Discover queries using the first few sheets (max 5)
-            for (let i = 0; i < Math.min(sheets.length, 5); i++) {
-                const sheetId = sheets[i].MAUBENHPHAMID || sheets[i].IDPHIEU;
-                
-                // Try to discover drug query
-                if (!workingDrugQuery) {
-                    for (const q of DRUG_QUERIES) {
-                        try {
-                            const testUrl = `${baseUrl}?_search=false&rows=10&page=1&postData=${encodeURIComponent(JSON.stringify({
-                                func: 'ajaxExecuteQueryPaging', uuid: uuid, params: [q], options: [{ name: '[0]', value: String(sheetId) }]
-                            }))}`;
-                            const res = await fetch(testUrl, { credentials: 'include' });
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.rows && data.rows.length > 0) {
-                                    console.log(`[Aladinn Drug] ✅ DRUG Query WORKS: ${q} on sheet ${sheetId}`);
-                                    workingDrugQuery = q;
-                                    break;
-                                }
-                            }
-                        } catch (_e) {}
-                    }
-                }
-
-                // Try to discover material query
-                if (!workingMaterialQuery) {
-                    for (const q of MATERIAL_QUERIES) {
-                        try {
-                            const testUrl = `${baseUrl}?_search=false&rows=10&page=1&postData=${encodeURIComponent(JSON.stringify({
-                                func: 'ajaxExecuteQueryPaging', uuid: uuid, params: [q], options: [{ name: '[0]', value: String(sheetId) }]
-                            }))}`;
-                            const res = await fetch(testUrl, { credentials: 'include' });
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.rows && data.rows.length > 0) {
-                                    console.log(`[Aladinn Drug] ✅ MATERIAL Query WORKS: ${q} on sheet ${sheetId}`);
-                                    workingMaterialQuery = q;
-                                    break;
-                                }
-                            }
-                        } catch (_e) {}
-                    }
-                }
-
-                if (workingDrugQuery && workingMaterialQuery) break;
-            }
-
-            const activeQueries = [workingDrugQuery, workingMaterialQuery].filter(Boolean);
-
-            if (activeQueries.length === 0) {
-                console.warn('[Aladinn Drug] No drug or material detail query found. Falling back to sheet-level data.');
-                const fallbackDrugs = sheets.map(s => ({
-                    NGAYMAUBENHPHAM_SUDUNG: s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYSD || s.NGAYSUDUNG || s.NGAYMAUBENHPHAM || '',
-                    TENTHUOC: s.TEAKHO || s.LOAIPHIEU || `Phiếu ${s.SOPHIEU || ''}`,
-                    MAUBENHPHAMID: s.MAUBENHPHAMID || '',
-                    LIEUDUNG: '', DONVITINH: '', DUONGDUNG: '', CACHDUNG: '',
-                    SOLUONG: ''
-                }));
-                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: fallbackDrugs }, requestId);
-                return;
-            }
 
             // Now fetch all sheets with ALL active queries
-            const allDrugs = [];
+            let allDrugs = [];
             const detailPromises = sheets.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
                 const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYSD || sheet.NGAYSUDUNG || sheet.NGAYMAUBENHPHAM || '';
@@ -1167,11 +1099,11 @@
                             }
 
                             // Bỏ qua vật tư y tế (VTYT)
-                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu'].some(v => lowerName.includes(v));
+                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu', 'băng bột', 'oxy lỏng', 'khí oxy', 'oxy thở'].some(v => lowerName.includes(v));
                             if (isVTYT) continue;
                             
                             // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
-                            const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi'].some(u => donvitinh.includes(u));
+                            const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi', 'túi'].some(u => donvitinh.includes(u));
                             if (!lieudung && !duongdung && !isDrugUnit) {
                                 continue;
                             }
@@ -1193,6 +1125,19 @@
             });
 
             await Promise.all(detailPromises);
+
+            // Deduplicate drugs to prevent multiple queries from duplicating the same drug
+            const uniqueDrugs = [];
+            const seenDrugKeys = new Set();
+            for (const d of allDrugs) {
+                const key = `${d.TENTHUOC}_${d.NGAYMAUBENHPHAM_SUDUNG}_${d.SOLUONG}`;
+                if (!seenDrugKeys.has(key)) {
+                    seenDrugKeys.add(key);
+                    uniqueDrugs.push(d);
+                }
+            }
+            allDrugs = uniqueDrugs;
+
             console.log(`[Aladinn Drug] Step 2: Found ${allDrugs.length} drug items total from ${sheets.length} sheets (queries: ${activeQueries.join(', ')})`);
             sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
 
