@@ -1061,8 +1061,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (tUp.includes('NƯỚC TIỂU') || tUp.includes('NIỆU') || tUp.includes('URIN')
                 || tUp.includes('TỔNG PHÂN TÍCH') || tUp.includes('10 THÔNG SỐ')
                 || tUp.includes('DIPSTICK')) return 'Nước tiểu';
-            // 2b. Giá trị định tính (chỉ nước tiểu mới có, sinh hóa máu trả số)
-            if (vUp && /^(ÂM TÍNH|DƯƠNG TÍNH|TRACE|NEGATIVE|POSITIVE|NEG|POS|NORMAL|\d*\+{1,4})$/i.test(vUp)) return 'Nước tiểu';
+            // 2b. Giá trị định tính (chỉ nước tiểu mới có)
+            //     Mở rộng: SMALL, LARGE, MODERATE, TRACE, 1+ 2+ 3+ 4+, ÂM TÍNH, DƯƠNG TÍNH
+            if (vUp && /^(ÂM TÍNH|DƯƠNG TÍNH|TRACE|SMALL|LARGE|MODERATE|NEGATIVE|POSITIVE|NEG|POS|NORMAL|\d*\+{1,4})$/i.test(vUp)) return 'Nước tiểu';
+            // 2c. testName không chứa suffix máu/huyết/serum → hầu hết là dipstick nước tiểu
+            //     Ví dụ HIS trả code="PRO" testName="PRO" (≤5 ký tự, không có từ máu)
+            if (!tUp.includes('MÁU') && !tUp.includes('HUYẾT') && !tUp.includes('PLASMA') && !tUp.includes('SERUM')) {
+                if (tUp.trim() === cUp || tUp.trim().length <= 5) return 'Nước tiểu';
+            }
             return 'Sinh hóa';
         }
 
