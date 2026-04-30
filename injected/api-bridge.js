@@ -1042,7 +1042,15 @@
             // --- Step 2: Fetch drug details for each sheet ---
             // Với mỗi phiếu, quét API Vật tư và API Thuốc SONG SONG.
             // Tuy nhiên, với Thuốc, ta thử tuần tự các API phổ biến để tránh trùng lặp dữ liệu (nếu 2 API cùng trả về).
-            const DRUG_QUERIES = ['NT.024.CTPHIEUTHUOC', 'NT.024.DSTHUOC', 'NT.024.CHITIETTHUOC'];
+            // Các API NT.024.DSVTTHUOC, NT.024.3, NT.024.4 được thêm vào cuối để bắt các "Phiếu Nhận", "Tủ trực".
+            const DRUG_QUERIES = [
+                'NT.024.CTPHIEUTHUOC', 
+                'NT.024.DSTHUOC', 
+                'NT.024.CHITIETTHUOC', 
+                'NT.024.DSVTTHUOC',
+                'NT.024.3', 
+                'NT.024.4'
+            ];
             const MATERIAL_QUERY = 'NT.034.1';
 
             let allDrugs = [];
