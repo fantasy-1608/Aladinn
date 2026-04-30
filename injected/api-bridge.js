@@ -1132,7 +1132,7 @@
                             }
 
                             // Bỏ qua vật tư y tế (VTYT)
-                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực'].some(v => lowerName.includes(v));
+                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu'].some(v => lowerName.includes(v));
                             if (isVTYT) continue;
                             
                             // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
