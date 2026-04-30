@@ -1,54 +1,100 @@
-# 🏺 Aladinn – Trợ lý lâm sàng AI cho VNPT HIS
+# 🏺 Aladinn — Trợ lý Lâm sàng AI cho VNPT HIS
 
-> **v1.2.0** · Chrome Extension · Dành riêng cho hệ thống VNPT HIS nội trú
+<div align="center">
 
-Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhanh dữ liệu lâm sàng từ phần mềm VNPT HIS, kết hợp phân tích AI để hỗ trợ hội chẩn, ra quyết định và ghi chép y khoa.
+**v1.2.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-1.2.0-gold?style=flat-square)](#)
+[![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](#)
+
+*Tích hợp AI · Bảo mật y tế · Desert Mystic Design*
+
+</div>
 
 ---
 
-## ✨ Tính năng nổi bật (v1.2.0)
+## Giới thiệu
+
+**Aladinn** là tiện ích Chrome được xây dựng đặc thù cho hệ thống **VNPT HIS**, hỗ trợ bác sĩ và điều dưỡng khai thác nhanh dữ liệu lâm sàng, phân tích AI chuyên sâu, và tối ưu hoá quy trình ghi chép y khoa — tất cả chạy trực tiếp trong trình duyệt mà không cần server trung gian.
+
+---
+
+## ✨ Tính năng
 
 ### 🏥 Bảng CLS + Thuốc (5 Tab)
 
+Giao diện modal 5 tab hiển thị toàn bộ thông tin lâm sàng của bệnh nhân đang chọn:
+
 | Tab | Nội dung |
 |-----|----------|
-| 🏥 Khám vào viện | Lý do nhập viện, bệnh sử, tiền sử, khám lâm sàng |
-| 📋 Lâm sàng & Thuốc | Diễn tiến hàng ngày + danh sách thuốc theo ngày |
-| 🧪 XN | Bảng xét nghiệm tất cả ngày, highlight bất thường |
-| 🩻 CĐHA | Chẩn đoán hình ảnh, kết quả X-quang/ECG/siêu âm |
-| 🤖 AI | Phân tích lâm sàng tự động bằng Gemini AI |
+| 🏥 **Khám vào viện** | Lý do nhập viện, bệnh sử, tiền sử bản thân & gia đình, khám lâm sàng, chẩn đoán ban đầu |
+| 📋 **Lâm sàng & Thuốc** | Diễn tiến hàng ngày + danh sách thuốc (tên, liều, đường dùng) |
+| 🧪 **Xét nghiệm** | Bảng XN toàn bộ, highlight giá trị bất thường, timeline theo ngày |
+| 🩻 **CĐHA** | Chẩn đoán hình ảnh, kết quả X-quang / ECG / siêu âm / CT |
+| 🤖 **Phân tích AI** | Tóm tắt lâm sàng tự động bằng Gemini AI với context 360° |
 
-### 🤖 Phân tích AI (Rich Context v2.0)
+### 🤖 Voice AI Assistant
 
-- **Prompt toàn diện**: khám vào viện + **sinh hiệu** (M/HA/T°/NT/CN/CC) + tiền sử bản thân & gia đình + tóm tắt CLS + diễn tiến 3 ngày + toàn bộ XN + CĐHA + thuốc kèm **đường dùng** (IV/PO/IM) + số ngày điều trị
-- **4-point output**: (1) Tóm tắt bệnh → (2) Nguy cơ + tương tác thuốc → (3) Đánh giá đáp ứng điều trị → (4) Hướng xử trí
-- **Ẩn danh y tế**: mã BN ẩn danh (BN-XXXX), không gửi tên/địa chỉ thật
-- **Token cost toast**: hiển thị số tokens và chi phí ước tính sau mỗi lần gọi API
-- **Lazy load**: AI chỉ phân tích khi bấm vào tab AI
+Nhập liệu bằng giọng nói, AI trích xuất và điền tự động vào phiếu HIS:
 
-### 🎨 Giao diện Desert Mystic
-
-- Modal cố định **85vh** — không co giãn khi chuyển tab
-- Header compact: `Tên bệnh nhân — Giới tính, Năm sinh`
-- Chẩn đoán hiển thị tên đầy đủ, mã ICD ẩn trong accordion "Chi tiết"
-- Nút Phân tích AI với hiệu ứng shimmer/sparkle
+- **Speech-to-text** với tự động sửa lỗi nhận dạng y khoa (sinh hiệu, chẩn đoán, bộ phận cơ thể)
+- **De-identification**: tự động ẩn họ tên, CCCD, số điện thoại, ngày sinh trước khi gửi AI
+- **Auto-fill**: điền kết quả AI vào `lyDoVaoVien`, `quaTrinhBenhLy`, `khamToanThan`, `khamBoPhan`, `chanDoanBanDau`, sinh hiệu…
+- **ICD-10 gợi ý**: AI đề xuất mã ICD phù hợp với chẩn đoán
+- **Token cost**: hiển thị số tokens và chi phí VNĐ ước tính sau mỗi lần gọi
 
 ### 📝 Slash Command Templates
 
-- Gõ `/` trong textarea của HIS để chèn nhanh mẫu câu lâm sàng
-- Tuỳ chỉnh templates trong popup Cài đặt
+- Gõ `/` trong bất kỳ textarea nào của HIS để kích hoạt menu gợi ý
+- Tìm kiếm và chọn mẫu câu lâm sàng được định nghĩa sẵn
+- Tuỳ chỉnh đầy đủ trong tab **Mẫu Bệnh Án** (thêm / chỉnh sửa / xoá)
+
+### 📋 Phiếu Hội Chẩn (Preview & Edit)
+
+- Preview toàn bộ phiếu hội chẩn trong modal riêng trước khi import
+- **Chỉnh sửa trực tiếp** trên bảng preview — các trường liên quan tự đồng bộ nhau
+- Định dạng chẩn đoán: tự động loại bỏ mã ICD-10, chuẩn hoá dấu phân cách thành dấu phẩy
+- "Trích biên bản hội chẩn" hiển thị đầu tiên đúng theo form hội chẩn
+
+### 🧠 Clinical Decision Support (CDS)
+
+- Phát hiện **tương tác thuốc** (DDI) dựa trên database nội bộ
+- Cảnh báo **chống chỉ định thuốc – bệnh lý** (ví dụ: Trimetazidine + Parkinson)
+- Kiểm tra **trùng nhóm điều trị** (Duplicate therapy)
+- Cảnh báo **BHYT xuất toán** (mã ICD không khớp, thuốc ngoài danh mục)
+- Đánh giá **bất thường xét nghiệm + thuốc** (ví dụ: INR > 3 + Warfarin, eGFR < 30 + Metformin)
+
+### 🩻 Tích hợp PACS
+
+- Lấy URL ảnh DICOM qua `Ris-Access-Hash` của VNPT HIS
+- Xem trực tiếp hình ảnh PACS trong modal AI mà không cần mở tab mới
+
+### ✍️ Auto-Sign
+
+- Tự động ký duyệt phiếu thuốc / y lệnh với xác nhận bắt buộc
+- Nút dừng khẩn cấp — tự tắt khi rời khỏi phiên ký
+- Auto switch-back từ tab PDF preview về HIS
 
 ---
 
-## 🛡️ Bảo mật & Quyền riêng tư
+## 🛡️ Bảo mật & Quyền riêng tư (v1.2.0)
 
-| Nguyên tắc | Thực hiện |
+Aladinn được kiểm toán bảo mật toàn diện với 8 điểm được xử lý:
+
+| Lớp bảo mật | Triển khai |
 |---|---|
-| Ẩn danh dữ liệu | Mã BN dạng `BN-XXXX`, không gửi tên/CMND/địa chỉ |
-| API Key an toàn | Mã hóa PIN, không lưu plaintext, không log |
-| Không có server | Extension hoạt động cục bộ, gọi API trực tiếp từ browser |
-| Manifest V3 | Tuân thủ quy định Chrome Extension Store |
-| Không thu thập dữ liệu | Không analytics, không telemetry |
+| **Mã hoá API Key** | AES-256-GCM + PBKDF2 (310,000 iterations). CryptoKey không bao giờ rời background service worker |
+| **Crypto service** | Content script gửi plaintext → background mã hoá/giải mã → trả kết quả. Không có raw key nào trong content script |
+| **De-identification AI** | Họ tên, CCCD, số ĐT, ngày sinh, mã BN bị ẩn trước khi gửi Gemini |
+| **Nonce bắt buộc** | Tất cả postMessage đều yêu cầu nonce hợp lệ — không có message nào được chấp nhận nếu thiếu |
+| **Prompt injection** | Văn bản nhập được escape bằng `JSON.stringify()` trước khi nhúng vào system prompt |
+| **Endpoint allowlist** | `geminiBaseUrl` chỉ được phép trỏ đến `*.googleapis.com`, `*.vncare.vn`, hoặc `localhost` |
+| **PHI trong log** | Error log chỉ lưu short ID (`P-****`), không lưu họ tên/địa chỉ. TTL 24h tự xoá |
+| **Export PHI** | Cần xác nhận từ người dùng trước khi xuất CSV/JSON + ghi audit log |
+| **Legacy plaintext** | Tự động phát hiện dữ liệu cũ chưa mã hoá, cảnh báo người dùng nhập PIN. Tự xoá sau 24h |
+| **Session timeout** | Key tự xoá khỏi memory sau 30 phút không hoạt động |
+| **Logout detection** | Phát hiện logout VNPT HIS → xoá toàn bộ cache bệnh nhân khỏi storage |
 
 ---
 
@@ -57,8 +103,14 @@ Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhan
 ### Yêu cầu
 
 - Chrome / Chromium ≥ 120
-- Tài khoản VNPT HIS nội trú
-- Google AI Studio API Key (Gemini)
+- Tài khoản VNPT HIS
+- Google AI Studio API Key (Gemini Flash / Pro)
+
+### Từ GitHub Release (khuyến nghị)
+
+1. Tải file `.zip` từ [Releases](https://github.com/fantasy-1608/Aladinn/releases/latest)
+2. Giải nén → mở Chrome → `chrome://extensions`
+3. Bật **Developer mode** → **Load unpacked** → chọn thư mục vừa giải nén
 
 ### Từ source code
 
@@ -69,15 +121,13 @@ npm install
 npm run build
 ```
 
-1. Mở Chrome → `chrome://extensions`
-2. Bật **Developer mode**
-3. Click **Load unpacked** → chọn thư mục `dist/`
+Sau đó load thư mục `dist/` trong `chrome://extensions`.
 
-### Cấu hình
+### Cấu hình lần đầu
 
-1. Click icon Aladinn trên thanh công cụ
-2. Nhập **API Key** (Gemini) và đặt **PIN** bảo vệ
-3. Vào trang bệnh nhân VNPT HIS → click nút **CLS + Thuốc** / **Tóm tắt AI**
+1. Click icon Aladinn trên thanh công cụ Chrome
+2. Vào **Cài đặt** → nhập **Gemini API Key** và đặt **PIN 6 số** bảo vệ
+3. Vào trang bệnh nhân VNPT HIS → dùng các nút **CLS + Thuốc**, **Tóm tắt AI**, **Hội chẩn**
 
 ---
 
@@ -85,44 +135,90 @@ npm run build
 
 ```text
 Aladinn/
+├── background/
+│   ├── service-worker.js       # Message routing, sender validation, session management
+│   ├── ai-client.js            # Gemini API, background crypto service (AES-GCM)
+│   └── updater.js              # Auto-update checker
+│
 ├── content/
 │   ├── scanner/
-│   │   └── scanner-init.js     # Core: modal 5-tab, AI prompt, timeline
-│   ├── api-bridge.js           # VNPT HIS API interceptor & data extractor
-│   ├── cds/                    # Clinical Decision Support module
-│   └── auto-sign/              # Tự động ký duyệt (có xác nhận)
-├── background/
-│   └── service-worker.js       # Message routing, auth
+│   │   ├── scanner-init.js     # Modal 5-tab, UI orchestration
+│   │   ├── clinical-fill.js    # Phiếu hội chẩn preview & auto-fill
+│   │   ├── export.js           # CSV/JSON export + PHI consent
+│   │   ├── messaging.js        # postMessage bridge (nonce-mandatory)
+│   │   └── logger.js           # PHI-redacted error logger + TTL
+│   ├── voice/
+│   │   ├── storage.js          # Encrypted storage via background crypto service
+│   │   ├── ai.js               # Voice AI + display results + PIN unlock
+│   │   ├── speech.js           # Web Speech API wrapper
+│   │   └── autofill.js         # Form field auto-fill
+│   └── cds/
+│       ├── cds-cache.js        # Patient data cache (composite key)
+│       └── cds-engine.js       # DDI / Drug-Disease / Insurance rules
+│
+├── injected/
+│   ├── api-bridge.js           # HIS API interceptor (VNPT HIS jsonrpc)
+│   ├── ajax-interceptor.js     # XHR/Fetch snooping cho CDS data
+│   └── grid-hook.js            # jqGrid event hooks
+│
 ├── popup/
-│   └── popup.html              # Cài đặt API Key, PIN, templates
-├── manifest.json               # Chrome Extension Manifest V3
-└── vite.config.js              # Build config
+│   └── popup.html/js           # Popup: bật/tắt module, badge
+│
+├── options/
+│   └── options.html/js         # Cài đặt: API Key, PIN, Templates, CDS, AI Config
+│
+└── manifest.json               # Chrome Extension Manifest V3
+```
+
+### Luồng dữ liệu bảo mật
+
+```
+[User types PIN]
+      ↓
+[Content script] → CACHE_SESSION_PIN → [Background]
+                                            ↓
+                                     PBKDF2 derive CryptoKey
+                                     (non-extractable, memory only)
+                                            ↓
+[Content script] ←── {unlocked: true} ←───┘
+
+[Transcript saved]
+[Content script] → ENCRYPT_DATA(plaintext) → [Background: AES-GCM encrypt]
+                 ← {ciphertext} ←────────────────────────────────────────
+                       ↓
+               chrome.storage.local (encrypted blob only)
 ```
 
 ---
 
 ## 📦 Changelog
 
-### v1.2.0 (29/04/2026) — Rich AI Context
+### v1.2.0 (30/04/2026) — Security Hardening & Feature Polish
 
-- **Rich Prompt**: Bổ sung 4 nguồn dữ liệu mới vào AI: khám vào viện, diễn tiến 3 ngày gần nhất, toàn bộ panel XN, mô tả CĐHA
-- **Prompt template cải tiến**: cấu trúc section rõ ràng, backward compatible với template tùy chỉnh
-- **AI render fix**: sửa lỗi `#D4A853">Tóm tắt bệnh:` lộ ra text do thứ tự xử lý markdown sai
-- **Token cost toast**: thay VNPTRealtime.showToast bằng custom toast `z-index:2147483648` không bị che
-- **5-tab architecture**: tách "Khám vào viện" thành tab độc lập khỏi "Lâm sàng & Thuốc"
-- **Modal fixed height**: `height:85vh` — kích thước không đổi khi chuyển tab
-- **Gender extraction**: 3-source fallback (patientInfo → DOM by row ID → selected row)
-- **Linter clean**: 0 errors, 0 warnings — fix `fetchPacsUrlFromBridge`, `hasLamsangData`, `pillsHtml`, `namePillsHtml`
+**Bảo mật:**
+- `storageKey` không còn là raw API key string — background service là crypto authority duy nhất
+- Thêm `ENCRYPT_DATA` / `DECRYPT_DATA` message handler trong background
+- Nonce bắt buộc cho **tất cả** postMessage (từ optional → mandatory)
+- `JSON.stringify()` cho prompt text để ngăn prompt injection
+- Allowlist cho `geminiBaseUrl` — chặn endpoint không tin cậy
+- PHI redaction trong error logs + TTL 24h tự xoá
+- Export CSV/JSON yêu cầu xác nhận + ghi audit log
+- Legacy plaintext detection + warning banner + auto-purge 24h
+
+**Tính năng:**
+- Phiếu hội chẩn: chỉnh sửa trực tiếp trên bảng preview, đồng bộ các trường liên quan
+- Slash command templates: thêm nút **Chỉnh sửa** bên cạnh nút Xoá (inline edit form)
+- Định dạng chẩn đoán: tự động strip mã ICD-10, chuẩn hoá dấu phân cách
 
 ### v1.1.9 (27/04/2026) — Stability Upgrade
 
-- `resolveActiveGrid()` hỗ trợ cả nội trú lẫn ngoại trú
-- Composite patient key ngăn data leak giữa các bệnh nhân
-- Linting cleanup toàn bộ codebase
+- `resolveActiveGrid()` hỗ trợ cả nội trú và ngoại trú
+- Composite patient key (`benhnhanId_khambenhId`) ngăn data leak
+- Linting cleanup toàn bộ codebase — 0 errors, 0 warnings
 
 ### v1.1.7 (25/04/2026) — BHYT Glucose Scanner
 
-- Fix API field mapping cho glucose mao mạch
+- Fix API field mapping cho glucose mao mạch (hybrid timestamp strategy)
 - HTML sanitization input bệnh nhân
 
 ---
@@ -130,25 +226,32 @@ Aladinn/
 ## 🔧 Development
 
 ```bash
-npm run dev      # Watch mode (no HMR, extension reload thủ công)
+npm run dev      # Vite watch mode (reload extension thủ công)
 npm run build    # Production build → dist/
 npm run lint     # ESLint check
-npm run release  # Build + zip + GitHub Release
+npm run release  # Build + đóng gói zip + tạo GitHub Release
 ```
 
-**Quy tắc code:**
+**Quy tắc bắt buộc:**
 
 - Không commit API key hay dữ liệu bệnh nhân thật
-- Chạy `npm run build` trước khi yêu cầu kiểm tra
-- Mọi animation dùng `transform`/`opacity` (GPU-accelerated)
-- Palette: Desert Mystic — `#d4a25a` gold, `#1a1410` dark, `#e8dcc8` text
+- Chạy `npm run build` sau mỗi thay đổi source trước khi test
+- Animation chỉ dùng `transform` / `opacity` (GPU-accelerated)
+- Palette: Desert Mystic — `#d4a25a` gold · `#1a1410` dark · `#e8dcc8` text
+- Mọi component mới phải tham chiếu `design_tokens.md` và `animation_tokens.md`
 
 ---
 
 ## 📄 License
 
-Private — Dành riêng cho nội bộ bệnh viện. Không phân phối công khai.
+**Private** — Dành riêng cho sử dụng nội bộ bệnh viện. Không phân phối công khai.
 
 ---
 
-*Built with ❤️ for Vietnamese clinicians · Tác giả: **Bác sĩ Huỳnh Trung Anh** · Powered by Gemini AI*
+<div align="center">
+
+*Built with ❤️ for Vietnamese clinicians*
+
+**Tác giả: Bác sĩ Huỳnh Trung Anh** · Powered by Gemini AI · Desert Mystic Design
+
+</div>
