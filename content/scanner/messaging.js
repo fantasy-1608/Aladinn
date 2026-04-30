@@ -32,10 +32,11 @@ const VNPTMessaging = (function () {
         if (event.origin !== getAllowedOrigin() && event.origin !== window.location.origin) return false;
         if (!event.data || typeof event.data !== 'object') return false;
         if (typeof event.data.type !== 'string') return false;
-        // SECURITY: Verify nonce for messages from injected scripts
-        if (event.data.nonce && event.data.nonce !== window.__ALADINN_NONCE__) return false;
-        return true;
-    }
+    // [P1-SEC-006] SECURITY: Nonce is now MANDATORY for all messages.
+    // Reject messages without a nonce OR with wrong nonce to prevent spoofing.
+    if (!event.data.nonce || event.data.nonce !== window.__ALADINN_NONCE__) return false;
+    return true;
+}
 
     /**
      * Listen for messages from Page (Injected Script)

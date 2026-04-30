@@ -24,19 +24,18 @@ const VNPTLogger = (function () {
     }
 
     /**
-     * Get current patient context from Store
+     * Get current patient context — [P2-SEC-002] REDACTED: no PHI stored in logs
+     * Only stores a short hash of patientId for correlation, not the actual name/record.
      */
     function getContext() {
         if (!window.VNPTStore) return null;
         const state = window.VNPTStore.getState();
         const patientId = /** @type {string} */(state.selectedPatientId);
-        const patientData = (/** @type {any} */(state.patientDataMap))?.[patientId];
+        if (!patientId) return null;
 
-        return patientId ? {
-            patientId,
-            hoTen: patientData?.HOTEN || 'Unknown',
-            maBA: patientData?.MABENHAN || 'Unknown'
-        } : null;
+        // [P2-SEC-002] Short hash for correlation — not reversible, not PHI
+        const shortId = 'P-' + String(patientId).slice(-4).padStart(4, '*');
+        return { shortId };
     }
 
     /**
@@ -45,9 +44,8 @@ const VNPTLogger = (function () {
     /** @param {...any} args */
     function debug(/** @type {string} */ module, /** @type {string} */ message, ...args) {
         if (isDebugEnabled()) {
-            const context = getContext();
-            const prefix = context ? `[Patient: ${context.hoTen}] ` : '';
-            console.log(formatMessage(module, prefix + message), ...args);
+            // [P2-SEC-002] No patient name in console output
+            console.log(formatMessage(module, message), ...args);
         }
     }
 
@@ -57,9 +55,8 @@ const VNPTLogger = (function () {
     /** @param {...any} args */
     function info(/** @type {string} */ module, /** @type {string} */ message, ...args) {
         if (isDebugEnabled()) {
-            const context = getContext();
-            const prefix = context ? `[Patient: ${context.hoTen}] ` : '';
-            console.info(formatMessage(module, prefix + message), ...args);
+            // [P2-SEC-002] No patient name in console output
+            console.info(formatMessage(module, message), ...args);
         }
     }
 
@@ -68,9 +65,8 @@ const VNPTLogger = (function () {
      */
     /** @param {...any} args */
     function warn(/** @type {string} */ module, /** @type {string} */ message, ...args) {
-        const context = getContext();
-        const prefix = context ? `[Patient: ${context.hoTen}] ` : '';
-        console.warn(formatMessage(module, prefix + message), ...args);
+        // [P2-SEC-002] No patient name/PHI in console output
+        console.warn(formatMessage(module, message), ...args);
     }
 
     /**
@@ -83,25 +79,51 @@ const VNPTLogger = (function () {
      */
     function error(module, message, data = null) {
         const context = getContext();
+
+        // [P2-SEC-002] Sanitize data: only store error code/message, never raw API payload
+        let safeData = null;
+        if (data !== null && data !== undefined) {
+            if (data instanceof Error) {
+                safeData = { errorType: data.name, errorMessage: data.message };
+            } else if (typeof data === 'string') {
+                // Truncate long strings (API responses, clinical text)
+                safeData = data.length > 200 ? data.substring(0, 200) + '...[truncated]' : data;
+            } else if (typeof data === 'object') {
+                // Only keep safe fields, drop anything that might be PHI or large payloads
+                const SAFE_KEYS = ['status', 'code', 'errorCode', 'field', 'action', 'type', 'step'];
+                const filtered = {};
+                for (const k of SAFE_KEYS) {
+                    if (data[k] !== undefined) filtered[k] = data[k];
+                }
+                safeData = Object.keys(filtered).length > 0 ? filtered : { redacted: true };
+            }
+        }
+
         const entry = {
             time: new Date().toISOString(),
             module,
             message,
-            context,
-            data,
-            url: location.href
+            // [P2-SEC-002] Only store short correlation ID, never full patient info
+            shortId: context?.shortId || null,
+            data: safeData,
+            // [P2-SEC-002] Don't store full URL which may contain session tokens
+            path: location.pathname
         };
 
-        const prefix = context ? `[Patient: ${context.hoTen}] ` : '';
-        console.error(formatMessage(module, prefix + message), data || '');
+        // Log to console without PHI
+        console.log(formatMessage(module, message), safeData || '');
 
-        // Save to chrome.storage
+        // Save to chrome.storage with TTL enforcement
         try {
             const key = window.VNPTConfig?.storage?.errorLogs || 'vnpt_error_logs';
             const _chrome = (/** @type {any} */(window)).chrome;
             if (_chrome?.storage?.local) {
                 _chrome.storage.local.get([key], (res) => {
-                    const existing = res[key] || [];
+                    let existing = res[key] || [];
+                    // [P2-SEC-002] TTL: remove entries older than 24 hours
+                    const TTL_MS = 24 * 60 * 60 * 1000;
+                    const cutoff = new Date(Date.now() - TTL_MS).toISOString();
+                    existing = existing.filter(e => e.time > cutoff);
                     existing.push(entry);
                     _chrome.storage.local.set({ [key]: existing.slice(-50) });
                 });

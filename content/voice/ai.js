@@ -374,9 +374,10 @@ function promptPinForAI() {
                     const isValid = await HIS.Crypto.verifyPIN(val, pin_hash, pin_salt);
                     if (isValid) {
                         // Cache derived key in background
-                        chrome.runtime.sendMessage({ type: 'CACHE_SESSION_PIN', payload: { pin: val } });
+                        await new Promise(r => chrome.runtime.sendMessage({ type: 'CACHE_SESSION_PIN', payload: { pin: val } }, r));
+                        // [P1-SEC-001] Set unlock state — storageKey is set as true sentinel by loadSavedData
                         window.isAiUnlocked = true;
-                        window.storageKey = window.deriveKeyFromPIN ? await window.deriveKeyFromPIN(val) : val;
+                        window.storageKey = true; // Sentinel only — actual CryptoKey lives in background
                         if (window.updateAIButtonVisibility) window.updateAIButtonVisibility();
                         overlay.remove();
                         window.showToast('🔓 AI đã mở khóa!');

@@ -11,6 +11,8 @@
 
     // SECURITY: Get token assigned by extension
     const SECURE_TOKEN = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : null;
+    // [P1-SEC-006] SECURITY: Get nonce assigned by extension for mandatory message validation
+    const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : (window.__ALADINN_NONCE__ || null);
 
     // Cache to prevent duplicate simultaneous requests from multiple modules
     const vitalsCache = {};
@@ -1549,7 +1551,9 @@
             type,
             rowId,
             ...data,
-            requestId
+            requestId,
+            // [P1-SEC-006] Include nonce so messaging.js mandatory nonce check passes
+            nonce: ALADINN_NONCE
         }, window.location.origin);
     }
 
@@ -2353,6 +2357,6 @@
         }
     }
 
-    // Explicit initialization signal
-    window.postMessage({ type: 'FROM_PAGE_SCRIPT', status: 'ready' }, window.location.origin);
+    // Explicit initialization signal — [P1-SEC-006] include nonce
+    window.postMessage({ type: 'FROM_PAGE_SCRIPT', status: 'ready', nonce: ALADINN_NONCE }, window.location.origin);
 })();

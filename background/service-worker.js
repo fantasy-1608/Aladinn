@@ -207,15 +207,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
-    // ---- BACKGROUND DECRYPT API KEY (content scripts ask background to decrypt) ----
+    // ---- BACKGROUND DECRYPT API KEY (content scripts check unlock status) ----
+    // [P1-SEC-001] SECURITY FIX: Never return the actual apiKey to content script.
+    // Content script only needs to know if background has a valid cached CryptoKey.
     if (type === 'GET_SESSION_PIN' || type === 'BG_DECRYPT_API_KEY') {
-        // Instead of returning PIN, decrypt API key in background and return it
         bgDecryptApiKey().then(apiKey => {
-            sendResponse({ ok: true, apiKey: apiKey || '' });
+            // Return ONLY unlock status — never the key itself
+            sendResponse({ ok: true, unlocked: !!apiKey });
         }).catch(() => {
-            sendResponse({ ok: false, apiKey: '' });
+            sendResponse({ ok: false, unlocked: false });
         });
         return true; // async response
+    }
+
+    // ---- BACKGROUND CRYPTO SERVICE: Encrypt data (for transcript/results) ----
+    // [P1-SEC-001] Content script sends plaintext, background encrypts with CryptoKey
+    if (type === 'ENCRYPT_DATA') {
+        const plaintext = payload?.plaintext;
+        if (typeof plaintext !== 'string') {
+            sendResponse({ ok: false, error: 'INVALID_PAYLOAD' });
+            return false;
+        }
+        bgEncryptData(plaintext).then(ciphertext => {
+            sendResponse({ ok: true, ciphertext });
+        }).catch(() => {
+            sendResponse({ ok: false, error: 'ENCRYPT_FAILED' });
+        });
+        return true;
+    }
+
+    // ---- BACKGROUND CRYPTO SERVICE: Decrypt data (for transcript/results) ----
+    // [P1-SEC-001] Content script sends ciphertext, background decrypts with CryptoKey
+    if (type === 'DECRYPT_DATA') {
+        const ciphertext = payload?.ciphertext;
+        if (typeof ciphertext !== 'string') {
+            sendResponse({ ok: false, error: 'INVALID_PAYLOAD' });
+            return false;
+        }
+        bgDecryptData(ciphertext).then(plaintext => {
+            sendResponse({ ok: true, plaintext });
+        }).catch(() => {
+            sendResponse({ ok: false, error: 'DECRYPT_FAILED' });
+        });
+        return true;
     }
 
     // ---- VOICE MODULE: AI Request ----

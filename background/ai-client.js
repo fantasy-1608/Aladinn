@@ -14,6 +14,8 @@ const _CRYPTO_KEY_LENGTH = 256;
 // In-memory only — non-extractable CryptoKey, wiped on timeout/logout
 let _cachedDecryptKey = null;
 let _cachedDecryptSalt = null;
+// [P1-SEC-001] Separate encrypt key (extractable=false, usage=['encrypt'])
+let _cachedEncryptKey = null;
 
 // SECURITY: Aliases for service-worker.js logout handler to clear
 // (service-worker.js uses `_bgCachedKey = null` to wipe on logout)
@@ -43,18 +45,27 @@ globalThis.deriveBgKeyFromPin = async function(pin) {
         const baseKey = await crypto.subtle.importKey(
             'raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']
         );
+        // Derive decrypt key (for stored API key + transcript/results)
         const derivedKey = await crypto.subtle.deriveKey(
             { name: 'PBKDF2', salt: saltData, iterations: _CRYPTO_ITERATIONS, hash: 'SHA-256' },
             baseKey,
             { name: 'AES-GCM', length: _CRYPTO_KEY_LENGTH },
             false, ['decrypt']
         );
+        // [P1-SEC-001] Derive a SEPARATE encrypt key (same material, separate derivation)
+        const encryptKey = await crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: saltData, iterations: _CRYPTO_ITERATIONS, hash: 'SHA-256' },
+            baseKey,
+            { name: 'AES-GCM', length: _CRYPTO_KEY_LENGTH },
+            false, ['encrypt']
+        );
         _cachedDecryptKey = derivedKey;
+        _cachedEncryptKey = encryptKey;
         _cachedDecryptSalt = salt;
         touchActivity();
         console.log('[Aladinn Security] 🔑 Derived key cached in memory (PIN discarded).');
     } catch (e) {
-        console.error('[Aladinn Security] Key derivation failed:', e);
+        console.log('[Aladinn Security] Key derivation failed:', e);
     }
 };
 
@@ -74,9 +85,44 @@ globalThis.bgDecryptApiKey = async function() {
         touchActivity();
         return await _decryptWithKey(stored.geminiApiKey_encrypted, _cachedDecryptKey);
     } catch (e) {
-        console.warn('[Aladinn Security] bgDecryptApiKey failed:', e);
+        console.log('[Aladinn Security] bgDecryptApiKey failed:', e);
         return '';
     }
+};
+
+/**
+ * [P1-SEC-001] Encrypt arbitrary plaintext using the cached CryptoKey.
+ * Used as a background crypto service for transcript/results storage.
+ * Returns "base64iv:base64ciphertext" string, or throws on failure.
+ */
+globalThis.bgEncryptData = async function(plaintext) {
+    checkSessionTimeout();
+    if (!_cachedDecryptKey) throw new Error('No session key — PIN required');
+    touchActivity();
+
+    // Derive an encrypt-capable key from same material (cached key is decrypt-only)
+    // We keep a separate encrypt key cached alongside decrypt key.
+    if (!_cachedEncryptKey) throw new Error('No encrypt key — PIN required');
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(plaintext);
+    const cipherBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, _cachedEncryptKey, encoded);
+    const ivB64 = btoa(String.fromCharCode(...iv));
+    const cipherB64 = btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)));
+    return ivB64 + ':' + cipherB64;
+};
+
+/**
+ * [P1-SEC-001] Decrypt ciphertext using the cached CryptoKey.
+ * @param {string} ciphertext - "base64iv:base64ciphertext" format
+ * @returns {Promise<string>}
+ */
+globalThis.bgDecryptData = async function(ciphertext) {
+    checkSessionTimeout();
+    if (!_cachedDecryptKey) throw new Error('No session key — PIN required');
+    if (!ciphertext || !ciphertext.includes(':')) throw new Error('Invalid ciphertext format');
+    touchActivity();
+    return _decryptWithKey(ciphertext, _cachedDecryptKey);
 };
 
 async function decryptAPIKeyInBg(encryptedText, salt) {
@@ -109,6 +155,7 @@ function checkSessionTimeout() {
     if (_cachedDecryptKey && (Date.now() - _lastActivityTime > SESSION_TIMEOUT_MS)) {
         console.log('[Aladinn Security] 🔒 Session timeout (30 min idle) — clearing cached decryption key.');
         _cachedDecryptKey = null;
+        _cachedEncryptKey = null; // [P1-SEC-001] Also clear encrypt key
         _cachedDecryptSalt = null;
     }
 }
@@ -154,6 +201,8 @@ export function cancelRequest(requestId) {
 // System Prompt Builder
 // ========================================
 function buildSystemPrompt(text) {
+    // [P1-SEC-007] Use JSON.stringify to safely escape all special chars in text
+    const escapedText = JSON.stringify(text);
     return `Bạn là trợ lý y khoa chuyên nghiệp tại Bệnh viện Việt Nam. Nhiệm vụ: trích xuất thông tin từ văn bản y khoa (được nhập bằng giọng nói, có nhiều lỗi nhận dạng) và trả về **CHỈ JSON** — không kèm giải thích.
 
 ## QUY TẮC QUAN TRỌNG:
@@ -193,7 +242,7 @@ Văn bản được nhập bằng giọng nói tiếng Việt, CẦN PHẢI sử
   "icd10Suggest": [{"code": "", "name": ""}]
 }
 
-Văn bản nhập liệu: "${text}"`;
+Văn bản nhập liệu: ${escapedText}`;
 }
 
 // ========================================
@@ -359,7 +408,20 @@ export async function requestAI({ text, model, requestId }) {
     try {
         const systemPrompt = buildSystemPrompt(text);
         const apiVersion = 'v1beta';
-        const baseUrl = result.geminiBaseUrl || 'https://generativelanguage.googleapis.com';
+        // [P2-SEC-008] Validate geminiBaseUrl — only allow trusted domains
+        const rawBaseUrl = result.geminiBaseUrl || 'https://generativelanguage.googleapis.com';
+        const isAllowedEndpoint = (() => {
+            try {
+                const u = new URL(rawBaseUrl);
+                return u.hostname.endsWith('.googleapis.com') ||
+                       u.hostname.endsWith('.vncare.vn') ||
+                       u.hostname === 'localhost';
+            } catch (_) { return false; }
+        })();
+        const baseUrl = isAllowedEndpoint ? rawBaseUrl : 'https://generativelanguage.googleapis.com';
+        if (!isAllowedEndpoint && result.geminiBaseUrl) {
+            console.log('[Aladinn Security] ⛔ Blocked untrusted geminiBaseUrl:', result.geminiBaseUrl);
+        }
         const modelUrl = `${baseUrl}/${apiVersion}/models/${model}:generateContent`;
 
         const payload = {
