@@ -1113,9 +1113,8 @@
                             const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'kim lấy máu', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'chỉ phẫu thuật', 'chỉ vicryl', 'chỉ catgut', 'chỉ silk', 'chỉ prolen', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực', 'ống nghiệm', 'urgotul', 'urgo', 'tegaderm', 'opsite', 'bistouri', 'nẹp', 'băng thạch cao', 'gel siêu âm', 'bơm cho ăn', 'mặt nạ', 'mask thở', 'dây oxy', 'dây thở', 'ống nội khí quản', 'băng vết thương', 'miếng đắp', 'miếng dán vết thương', 'test nhanh', 'que thử', 'kim châm cứu', 'băng bột', 'oxy lỏng', 'khí oxy', 'oxy thở'].some(v => lowerName.includes(v));
                             if (isVTYT) continue;
                             
-                            // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
-                            const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi', 'túi'].some(u => donvitinh.includes(u));
                             // TẠM THỜI TẮT BỘ LỌC NGHIÊM NGẶT NÀY ĐỂ KHÔNG BỎ SÓT THUỐC
+                            // const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi', 'túi'].some(u => donvitinh.includes(u));
                             // if (!lieudung && !duongdung && !isDrugUnit) {
                             //     continue;
                             // }
