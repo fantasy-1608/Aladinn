@@ -361,6 +361,22 @@ const VNPTClinicalFill = (function () {
             }
         }
 
+        // Định dạng lại chẩn đoán: loại bỏ mã ICD, thay dấu '-' và ';' bằng dấu phẩy
+        if (chanDoanFull) {
+            const parts = chanDoanFull.split(';');
+            const cleanedParts = parts.map(p => {
+                let s = p.trim();
+                // 1. Loại bỏ mã ICD ở đầu đoạn (VD: "S06 - ", "S01.0-", "V99-")
+                s = s.replace(/^[A-Z]\d{2}(?:\.\d+)?\s*[-–]\s*/i, '');
+                // 2. Thay các dấu trừ còn lại bằng phẩy và khoảng trắng
+                s = s.replace(/\s*[-–]\s*/g, ', ');
+                return s;
+            }).filter(Boolean);
+            
+            // 3. Nối lại bằng dấu phẩy
+            chanDoanFull = cleanedParts.join(', ');
+        }
+
         return {
             'tomTatTieuSuBenh': join(
                 raw.quaTrinhBenhLy,
