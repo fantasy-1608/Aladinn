@@ -1046,17 +1046,23 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // These short codes overlap — must check testName for "nước tiểu" context
     const AMBIGUOUS_URINE = new Set(['GLU','BIL','KET','PRO']);
 
-    function _classifyLab(code, testName) {
+    function _classifyLab(code, testName, value) {
         const cUp = (code || '').toUpperCase().trim();
         const tUp = (testName || '').toUpperCase();
+        const vUp = (value || '').toUpperCase().trim();
         const combined = cUp + ' ' + tUp;
 
         // 1. Explicit urine short codes
         if (URINE_CODES.has(cUp)) return 'Nước tiểu';
 
-        // 2. Ambiguous codes — decide by test name context
+        // 2. Ambiguous codes — decide by test name context OR result value pattern
         if (AMBIGUOUS_URINE.has(cUp)) {
-            if (tUp.includes('NƯỚC TIỂU') || tUp.includes('NIỆU') || tUp.includes('URIN')) return 'Nước tiểu';
+            // 2a. testName chứa keyword nước tiểu
+            if (tUp.includes('NƯỚC TIỂU') || tUp.includes('NIỆU') || tUp.includes('URIN')
+                || tUp.includes('TỔNG PHÂN TÍCH') || tUp.includes('10 THÔNG SỐ')
+                || tUp.includes('DIPSTICK')) return 'Nước tiểu';
+            // 2b. Giá trị định tính (chỉ nước tiểu mới có, sinh hóa máu trả số)
+            if (vUp && /^(ÂM TÍNH|DƯƠNG TÍNH|TRACE|NEGATIVE|POSITIVE|NEG|POS|NORMAL|\d*\+{1,4})$/i.test(vUp)) return 'Nước tiểu';
             return 'Sinh hóa';
         }
 
@@ -1116,7 +1122,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         for (const l of labs) {
             if (!l.sheetDate) continue;
             datesSet.add(l.sheetDate);
-            const cat = _classifyLab(l.code || '', l.testName || '');
+            const cat = _classifyLab(l.code || '', l.testName || '', l.value || '');
             const cName = l.code || '—';
             if (!grouped[cat]) grouped[cat] = {};
             if (!grouped[cat][cName]) grouped[cat][cName] = { unit: l.unit, refMin: l.refMin, refMax: l.refMax, refDisplay: l.refDisplay, values: {} };
@@ -1760,7 +1766,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         `;
 
         modal.innerHTML = `
-            <div style="max-width:960px; width:92%; height:85vh; max-height:85vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
+            <div style="width:96vw; max-width:1400px; height:94vh; max-height:94vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -1828,8 +1834,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             </div>
                             <div id="ai-summary-result-modal" style="font-size:13px;color:#cbd5e1;line-height:1.7;"></div>
                             <div id="ai-search-links" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);display:none;">
-                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tra cứu phác đồ &amp; hướng dẫn điều trị</div>
-                                <div id="ai-links-wrap" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📚 Tra cứu chuyên sâu theo mã ICD</div>
+                                <div id="ai-links-wrap" style="display:flex;flex-direction:column;gap:8px;"></div>
+                            </div>
+                            <div id="ai-disclaimer" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);border-radius:8px;">
+                                <div style="display:flex;align-items:flex-start;gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:3px;">Lưu ý lâm sàng</div>
+                                        <div style="font-size:11px;color:#9a8e7e;line-height:1.6;">Nội dung trên được tạo bởi AI dựa trên dữ liệu có sẵn, mang tính <strong style='color:#c8b89a;'>tham khảo</strong> và có thể không chính xác hoặc thiếu sót. Bác sĩ điều trị chịu trách nhiệm <strong style='color:#c8b89a;'>đánh giá, xác minh</strong> và đưa ra quyết định lâm sàng cuối cùng.</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div id="ai-tab-error" style="display:none;padding:16px;background:rgba(232,84,84,0.06);border:1px solid rgba(232,84,84,0.2);border-radius:8px;color:#E85454;font-size:13px;"></div>
@@ -2018,10 +2033,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
                 if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
 
-                // 2. Thuốc (đầy đủ, loại trùng theo tên)
+                // 2. Thuốc (đầy đủ, loại trùng theo tên, kèm đường dùng)
                 const uniqueDrugs = [...new Map(drugs.map(d => [d.TENTHUOC, d])).values()];
                 const contextDrugs = uniqueDrugs
-                    .map(d => `${d.TENTHUOC || ''}${d.SOLUONG ? ' (' + d.SOLUONG + (d.DONVITINH ? ' ' + d.DONVITINH : '') + '/ngày)' : ''}`)
+                    .map(d => {
+                        let entry = d.TENTHUOC || '';
+                        if (!entry) return '';
+                        if (d.HAMLUONG?.trim()) entry += ` ${d.HAMLUONG.trim()}`;
+                        const parts = [];
+                        if (d.SOLUONG) parts.push(`${d.SOLUONG} ${d.DONVITINH || ''}/ngày`.trim());
+                        if (d.DUONGDUNG?.trim()) parts.push(d.DUONGDUNG.trim());
+                        if (d.CACHDUNG?.trim() && d.CACHDUNG.trim() !== d.DUONGDUNG?.trim()) parts.push(d.CACHDUNG.trim());
+                        if (parts.length > 0) entry += ` (${parts.join(', ')})`;
+                        return entry;
+                    })
                     .filter(Boolean).join('; ');
 
                 // 3. XN bất thường
@@ -2064,14 +2089,32 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const admFields = [
                     { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
                     { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
-                    { key: 'TIENSUBENH_BANTHAN', label: 'Tiền sử' },
+                    { key: 'TIENSUBENH_BANTHAN', label: 'Tiền sử bản thân' },
+                    { key: 'TIENSUBENH_GIADINH', label: 'Tiền sử gia đình' },
                     { key: 'KHAMBENH_TOANTHAN', label: 'Khám toàn thân' },
                     { key: 'KHAMBENH_BOPHAN', label: 'Khám bộ phận' },
                 ];
                 const admLines = admFields
                     .filter(f => historyDataForAI[f.key])
                     .map(f => `${f.label}: ${String(historyDataForAI[f.key]).slice(0, 300)}`);
+
+                // Tóm tắt CLS (có 2 key khác nhau tùy loại bệnh án)
+                const clsSummary = historyDataForAI.TOMTATKQCANLAMSANG || historyDataForAI.KHAMBENH_TOMTATKQCANLAMSANG || '';
+                if (clsSummary) admLines.push(`Tóm tắt CLS: ${String(clsSummary).slice(0, 300)}`);
+
                 const contextAdmission = admLines.join('\n');
+
+                // 5b. Sinh hiệu lúc nhập viện
+                const vitalParts = [];
+                if (historyDataForAI.KHAMBENH_MACH) vitalParts.push(`Mạch: ${historyDataForAI.KHAMBENH_MACH} l/p`);
+                if (historyDataForAI.KHAMBENH_NHIETDO) vitalParts.push(`T°: ${historyDataForAI.KHAMBENH_NHIETDO}°C`);
+                const haHigh = historyDataForAI.KHAMBENH_HUYETAP || historyDataForAI.KHAMBENH_HUYETAP_HIGH || '';
+                const haLow = historyDataForAI.KHAMBENH_HUYETAP_DUOI || historyDataForAI.KHAMBENH_HUYETAP_LOW || '';
+                if (haHigh || haLow) vitalParts.push(`HA: ${haHigh || '?'}/${haLow || '?'} mmHg`);
+                if (historyDataForAI.KHAMBENH_NHIPTHO) vitalParts.push(`NT: ${historyDataForAI.KHAMBENH_NHIPTHO} l/p`);
+                if (historyDataForAI.KHAMBENH_CANNANG) vitalParts.push(`CN: ${historyDataForAI.KHAMBENH_CANNANG} kg`);
+                if (historyDataForAI.KHAMBENH_CHIEUCAO) vitalParts.push(`CC: ${historyDataForAI.KHAMBENH_CHIEUCAO} cm`);
+                const contextVitals = vitalParts.length > 0 ? `SINH HIỆU: ${vitalParts.join(', ')}` : '';
 
                 // 6. Diễn tiến 3 ngày gần nhất
                 const recentDates = sortedDates.slice(-3).reverse(); // mới nhất trước
@@ -2093,9 +2136,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                 // 7. CĐHA (mô tả kết quả)
                 const imagingLines = (imgList || []).slice(0, 5).map(img => {
-                    const name = img.TENLOAI || img.TENKQ || img.TENXN || '';
-                    const desc = img.KETQUA || img.MOTA || img.NOIDUNG || '';
-                    const date = img.NGAYKQ || img.NGAYTRA || '';
+                    const name = img.name || img.TENLOAI || img.TENKQ || img.TENXN || 'CĐHA';
+                    const desc = img.conclusion || img.KETQUA || img.MOTA || img.NOIDUNG || '';
+                    const date = img.sheetDate || img.NGAYKQ || img.NGAYTRA || '';
                     if (!desc) return null;
                     return `- ${name}${date ? ' (' + date + ')' : ''}: ${String(desc).slice(0, 200)}`;
                 }).filter(Boolean);
@@ -2116,6 +2159,8 @@ CHẨN ĐOÁN: {{diagnosis}}
 
 {{admissionExam}}
 
+{{vitalSigns}}
+
 {{recentProgress}}
 
 XÉT NGHIỆM ({{labDate}}):
@@ -2125,10 +2170,13 @@ XÉT NGHIỆM ({{labDate}}):
 
 THUỐC: {{drugs}}
 
+Ngày điều trị: {{treatmentDay}}
+
 Trình bày ngắn gọn theo cấu trúc:
 1. Tóm tắt bệnh (1–2 câu, nêu mức độ nặng và vấn đề chính)
-2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 2 ý)
-3. Hướng xử trí đề xuất (tối đa 3 ý, mỗi ý 1 can thiệp cụ thể)
+2. Điểm lưu ý / nguy cơ lâm sàng (tối đa 3 ý, bao gồm tương tác thuốc hoặc chống chỉ định nếu phát hiện)
+3. Đánh giá đáp ứng điều trị (dựa trên diễn tiến lâm sàng và xét nghiệm)
+4. Hướng xử trí đề xuất (tối đa 3 ý, mỗi ý 1 can thiệp cụ thể)
 Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở đầu hay lời chào hỏi. Bắt đầu ngay vào nội dung.`;
                 }
 
@@ -2136,6 +2184,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                 const progressSection = contextProgress  ? `DIỄN TIẾN GẦN ĐÂY:\n${contextProgress}` : '';
                 const imagingSection  = contextImaging   ? `CĐHA:\n${contextImaging}` : '';
                 const abnSection      = contextAbn       ? `XN BẤT THƯỜNG: ${contextAbn}` : '';
+                const treatmentDayStr = allDates.length > 0 ? `${allDates.length} ngày (từ ${allDates[allDates.length - 1]} đến ${allDates[0]})` : 'Chưa rõ';
 
                 const prompt = promptTemplate
                     .replace('{{patientRef}}',    patientRef)
@@ -2143,11 +2192,13 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     .replace('{{gender}}',        patientGender)
                     .replace('{{diagnosis}}',     contextDiag)
                     .replace('{{admissionExam}}', admSection)
+                    .replace('{{vitalSigns}}',    contextVitals)
                     .replace('{{recentProgress}}',progressSection)
                     .replace('{{labDate}}',       latestLabDate || 'không rõ')
                     .replace('{{fullLabs}}',      contextFullLabs || abnSection || 'Không có dữ liệu XN')
                     .replace('{{imaging}}',       imagingSection)
                     .replace('{{drugs}}',         contextDrugs || 'Không rõ')
+                    .replace('{{treatmentDay}}',  treatmentDayStr)
                     // backward compat với template cũ
                     .replace('{{abnormal}}',      abnSection)
                     .replace('{{keylabs}}',       '');
@@ -2163,7 +2214,19 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                 if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                     let text = data.candidates[0].content.parts[0].text;
 
+                    // ── Responsive font scaling (tự động theo độ phân giải màn hình) ──
+                    // clamp: min 13px (laptop nhỏ 1366px) → max 19px (màn 27"+)
+                    const _vw = window.innerWidth;
+                    const basePx  = Math.max(15, Math.min(20, Math.round(_vw * 0.009))); // body text
+                    const smPx    = Math.max(11, Math.round(basePx * 0.82));               // badge number
+                    const badgeSz = Math.max(22, basePx + 10);                             // badge circle px
+                    const indPx   = Math.max(28, basePx + 16);                             // sub-heading indent
+
                     // ── Markdown → HTML (thứ tự: numbered trước, bold/italic sau) ─────
+                    // Bước 0: Đảm bảo mỗi đề mục số (1. 2. 3. 4.) bắt đầu trên dòng mới
+                    text = text.replace(/([^\n])\s*(\d+\.\s)/g, '$1\n$2');
+                    // Đảm bảo sub-heading in bold (như **Nguy cơ tim mạch:**) cũng xuống dòng
+                    text = text.replace(/([^\n])\s*(\*\*[A-ZÀ-ỸĐ][^*]+:\*\*)/g, '$1\n$2');
                     // Bước 1: xử lý numbered sections TRƯỚC khi replace **bold**
                     // → tránh colon trong style="color:#D4A853" bị nhầm là dấu phân cách label:content
                     text = text.replace(/^(\d+\.\s+)(.+)$/gm, (_, num, rawTitle) => {
@@ -2176,18 +2239,24 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                             .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
                             .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
                         return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
-                            `<span style="min-width:22px;height:22px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>` +
-                            `<span style="font-size:13px;line-height:1.55;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
+                            `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>` +
+                            `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
                             '</div>';
                     });
                     // Bước 2: bold/italic còn lại (trong bullet points, đoạn thường)
                     text = text
                         .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
                         .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
-                    // Bước 3: bullet points
-                    text = text.replace(/^[-*] (.*)$/gm, '<li style="margin-bottom:6px;color:#cbd5e1;line-height:1.6;">$1</li>');
+                    // Bước 3: bullet points — chỉ match "- text" hoặc "* text" (có space + ký tự sau)
+                    text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#cbd5e1;line-height:1.65;font-size:${basePx}px;">$1</li>`);
+                    // Bước 4: sub-heading dạng bold (đã chuyển thành <strong>) nằm đầu dòng → block riêng
+                    text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
+                        return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#cbd5e1;">${rest}</span></div>`;
+                    });
+                    // Bước 5: newlines còn lại → <br> (giữ khoảng cách giữa các đoạn)
+                    text = text.replace(/\n/g, '<br>');
 
-                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:13px;line-height:1.7;">${text}</div>`;
+                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:${basePx}px;line-height:1.75;">${text}</div>`;
 
                     // ── Token cost toast (in-modal, same z-index as overlay) ─────────
                     const _showCostToast = (msg) => {
@@ -2243,7 +2312,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         }
                     }
 
-                    // ── Search links (per ICD) ──────────────────────────
+                    // ── Search links (per ICD — grouped) ──────────────────────────
                     const allIcdCodes = [];
                     if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
                         for (const d of patientInfo.diagHistory) {
@@ -2257,39 +2326,54 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         allIcdCodes.push(...[...new Set(fb)].slice(0, 5));
                     }
 
-                    const rawText    = data.candidates[0].content.parts[0].text;
-                    const treatMatch = rawText.match(/3\..*?([\s\S]*?)(?:\n4\.|$)/i);
-                    const treatRaw   = treatMatch ? treatMatch[1] : '';
-                    const stopWords  = ['không','được','để','theo','cần','nếu','các','trong','nên','hoặc','với','phải','này','bằng','khi','sau','trước','bệnh','nhân','điều','trị'];
-                    const treatKw    = treatRaw.replace(/<[^>]+>/g,' ').split(/\s+/)
-                        .map(w => w.replace(/[^a-zà-ỹA-ZÀ-ỹ]/g,''))
-                        .filter(w => w.length > 4 && !stopWords.includes(w.toLowerCase()))
-                        .slice(0, 3);
+                    // Xây dựng map ICD → tên bệnh từ diagHistory
+                    // diagHistory có thể là mảng chuỗi như: ["S22.30 gãy xương sườn II, III, IV; I10 Tăng huyết áp"]
+                    // → tách từng đoạn bằng regex để lấy tên đúng cho từng mã
+                    const icdNameMap = {};
+                    const combinedDiag = (patientInfo.diagHistory || []).join(' ; ');
+                    // Tìm tất cả mã ICD và phần mô tả theo sau (đến mã kế tiếp hoặc hết chuỗi)
+                    const icdSegmentRe = /\b([A-Z]\d{2}(?:\.\d{1,2})?)\b\s*([^A-Z\d;]*(?:[a-z\d][^;[A-Z]*)?)/g;
+                    let seg;
+                    while ((seg = icdSegmentRe.exec(combinedDiag)) !== null) {
+                        const icd = seg[1];
+                        const desc = seg[2].replace(/^[\s,;-]+|[\s,;-]+$/g, '').replace(/\s+/g, ' ').slice(0, 50);
+                        if (!icdNameMap[icd] && desc) icdNameMap[icd] = desc;
+                    }
 
-                    const linkSvg = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>';
-
-                    const perIcdLinks = allIcdCodes.slice(0, 4).flatMap(code => {
-                        const matched  = (patientInfo.diagHistory || []).find(d => d.includes(code)) || '';
-                        const name = matched.replace(/\b[A-Z]\d{2}(?:\.\d{1,2})?\b/g,'').replace(/^[\s,;-]+/,'').trim().slice(0, 40);
-                        return [
-                            { label:`${code} – Phác đồ`, q:`${code} ${name} phác đồ điều trị Bộ Y tế Việt Nam`, color:'#D4A853' },
-                            { label:`${code} – BYT`, q:`site:moh.gov.vn OR site:kcb.vn ${code} ${name} hướng dẫn điều trị`, color:'#60a5fa', title: name || code }
-                        ];
+                    const icdGroups = allIcdCodes.slice(0, 4).map(code => {
+                        const displayName = icdNameMap[code] || '';
+                        return {
+                            code, displayName,
+                            links: [
+                                { label:'Phác đồ BYT', url:`https://www.google.com/search?q=${encodeURIComponent(code + ' phác đồ điều trị')}`, color:'#D4A853', icon:'🏥' },
+                                { label:'KCB.vn', url:`https://kcb.vn/?s=${encodeURIComponent(code)}`, color:'#60a5fa', icon:'📋' },
+                                { label:'UpToDate', url:`https://www.google.com/search?q=${encodeURIComponent('site:uptodate.com ' + code)}`, color:'#22c55e', icon:'🌐' },
+                                { label:'ICD Tra cứu', url:`https://www.google.com/search?q=${encodeURIComponent(code + ' ICD-10 là gì')}`, color:'#a78bfa', icon:'🔍' },
+                            ]
+                        };
                     });
-                    const extraLinks = treatKw.length > 0
-                        ? [{ label:'🔍 ' + treatKw.slice(0,2).join(' '), q: treatKw.join(' ') + ' điều trị phác đồ y khoa', color:'#a78bfa' }]
-                        : [];
 
-                    const allLinks = [...perIcdLinks, ...extraLinks];
-                    if (allLinks.length > 0 && aiLinksWrap && aiSearchWrap) {
-                        aiLinksWrap.innerHTML = allLinks.map(l =>
-                            `<a href="https://www.google.com/search?q=${encodeURIComponent(l.q)}" target="_blank" title="${l.title || l.label}"
-                                style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${l.color||'#60a5fa'};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:3px 8px;white-space:nowrap;transition:0.15s;"
-                                onmouseover="this.style.background='rgba(255,255,255,0.09)'"
-                                onmouseout="this.style.background='rgba(255,255,255,0.04)'">${linkSvg} ${l.label}</a>`
-                        ).join('');
+                    if (icdGroups.length > 0 && aiLinksWrap && aiSearchWrap) {
+                        aiLinksWrap.innerHTML = icdGroups.map(g => `
+                            <div style="padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">
+                                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                    <code style="font-size:11px;font-weight:800;color:#D4A853;background:rgba(212,168,83,0.15);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">${g.code}</code>
+                                    <span style="font-size:11px;color:#9a8e7e;">${g.displayName}</span>
+                                </div>
+                                <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                                    ${g.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" title="${l.label}: ${g.code}"
+                                        style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:${l.color};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.03);border:1px solid ${l.color}22;border-radius:5px;padding:3px 8px;white-space:nowrap;transition:all 0.15s;"
+                                        onmouseover="this.style.background='${l.color}15';this.style.borderColor='${l.color}44'"
+                                        onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='${l.color}22'">${l.icon} ${l.label}</a>`).join('')}
+                                </div>
+                            </div>
+                        `).join('');
                         aiSearchWrap.style.display = 'block';
                     }
+
+                    // Show disclaimer
+                    const disclaimerEl = modal.querySelector('#ai-disclaimer');
+                    if (disclaimerEl) disclaimerEl.style.display = 'block';
 
                     showAIState('result');
                     aiResultLoaded = true;

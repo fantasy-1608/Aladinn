@@ -246,7 +246,7 @@
             }
             let finalVitals = { pulse: '', temperature: '', bloodPressure: '', weight: '', height: '', bmi: '', respiratoryRate: '', spo2: '' };
             let found = { w: false, h: false, bp: false };
-            
+
             if (rowData) {
                 finalVitals.pulse = rowData.MACH || '';
                 finalVitals.temperature = rowData.NHIETDO || '';
@@ -257,7 +257,7 @@
                 finalVitals.respiratoryRate = rowData.NHIPTHO || rowData.NHIP_THO || '';
                 finalVitals.spo2 = rowData.SPO2 || '';
             }
-            
+
             if (finalVitals.weight && finalVitals.weight != '0' && finalVitals.weight != '&nbsp;') found.w = true;
             if (finalVitals.height && finalVitals.height != '0' && finalVitals.height != '&nbsp;') found.h = true;
             if (finalVitals.bloodPressure && finalVitals.bloodPressure != '0' && finalVitals.bloodPressure != '&nbsp;') found.bp = true;
@@ -265,7 +265,7 @@
             // Fallback reading from DOM TD attributes if rowData is incomplete
             if (!finalVitals.pulse || !finalVitals.temperature || !found.bp || !found.w || !found.h) {
                 const rowElem = _$('#' + rowId);
-                rowElem.find('td').each(function() {
+                rowElem.find('td').each(function () {
                     const aria = _$(this).attr('aria-describedby') || '';
                     const text = _$(this).text().trim();
                     if (text && text !== '&nbsp;') {
@@ -424,7 +424,7 @@
                                             const uk = k.toUpperCase();
                                             const val = r[k];
                                             if (!val || String(val).trim().length < 2) continue;
-                                            
+
                                             // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
                                             if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
 
@@ -459,7 +459,7 @@
                                                     const uk = k.toUpperCase();
                                                     const val = rec[k];
                                                     if (!val || String(val).trim().length < 2) continue;
-                                                    
+
                                                     // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
                                                     if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
 
@@ -540,13 +540,13 @@
                             const response = JSON.parse(xhr.responseText);
                             const rows = response.rows || [];
                             let allDiagnoses = [];
-                            
+
                             rows.forEach(item => {
                                 const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
                                 const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
                                 const rawName = item.CHANDOAN || item.TENBENH || '';
                                 const rawNameSub = item.CHANDOAN_KEMTHEO || item.TENBENHKEMTHEO || '';
-                                
+
                                 const extractMatches = (icdStr, nameStr, isPrimary) => {
                                     const matches = icdStr.toUpperCase().match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
                                     if (matches) {
@@ -562,7 +562,7 @@
                                         });
                                     }
                                 };
-                                
+
                                 extractMatches(rawIcd, rawName, true);
                                 extractMatches(rawIcdSub, rawNameSub, false);
                             });
@@ -600,7 +600,7 @@
             }
             const benhnhanId = rowData.BENHNHANID || '';
             const patientName = rowData.TENBENHNHAN || rowData.HOTEN || '';
-            
+
             let candidates = [
                 rowData.HOSOBENHANID,
                 rowData.TIEPNHANID,
@@ -609,7 +609,7 @@
             ].filter(v => v && v.trim() !== '');
 
             candidates = Array.from(new Set(candidates));
-            
+
             if (!benhnhanId || candidates.length === 0) {
                 sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId }, requestId);
                 return;
@@ -647,7 +647,7 @@
                             try {
                                 const response = JSON.parse(xhr.responseText);
                                 const rows = response.rows || [];
-                                
+
                                 if (rows.length > 0) {
                                     let allDiagnoses = [];
                                     let detailIds = [];
@@ -656,7 +656,7 @@
                                         const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
                                         const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
                                         const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
-                                        
+
                                         const diagnosisText = item.CHANDOAN || item.CHUANDOAN || item.BENHCHINH || '';
                                         const subDiagnosisText = item.BENHKEMTHEO || item.CHANDOANKEMTHEO || item.PHU || '';
                                         const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join('; ');
@@ -682,7 +682,7 @@
                                                 allDiagnoses.push({ code: combinedText, is_primary: allDiagnoses.length === 0 });
                                             }
                                         }
-                                        
+
                                         // Thu thập ID tờ điều trị cho Mode 2
                                         if (item.MADIEUTRI) detailIds.push(item.MADIEUTRI);
                                         if (item.PHIEUDIEUTRIID) detailIds.push(item.PHIEUDIEUTRIID);
@@ -703,27 +703,27 @@
                                         // Mode 2: Gọi NT.024.2.DETAIL cho các tờ điều trị vừa tìm được
                                         detailIds = [...new Set(detailIds)].slice(0, 5); // Lấy tối đa 5 tờ gần nhất tránh đơ UI
                                         console.log('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
-                                        
+
                                         for (let dId of detailIds) {
                                             try {
                                                 const resObj = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(dId), 0);
                                                 console.log('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
-                                                
+
                                                 let records = [];
                                                 if (typeof resObj === 'string' && resObj.trim() !== '') records = JSON.parse(resObj);
                                                 else if (typeof resObj === 'object' && resObj !== null) records = resObj;
-                                                
+
                                                 // Handle nested rows array if exists
                                                 if (records && records.rows && Array.isArray(records.rows)) {
                                                     records = records.rows;
                                                 } else if (!Array.isArray(records)) {
                                                     records = [records];
                                                 }
-                                                
+
                                                 var icdPatternExact = /^[A-Z]\d{2}(\.\d{1,2})?$/i;
                                                 var icdPatternContains = /(^|\s|\(|\[|-)[A-Z]\d{2}(\.\d{1,2})?($|\s|\)|\]|-)/i;
                                                 var potentialTexts = [];
-                                                
+
                                                 for (var ri = 0; ri < records.length; ri++) {
                                                     var rec = records[ri];
                                                     if (!rec) continue;
@@ -750,7 +750,7 @@
                                                                 if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
                                                             }
                                                         }
-                                                        
+
                                                         // Strip prefixes to match user request "bỏ từ chẩn đoán kèm theo phía trước đi"
                                                         if (desc) {
                                                             desc = desc.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
@@ -767,7 +767,7 @@
                                                         }
                                                     }
                                                 }
-                                            } catch (err) { 
+                                            } catch (err) {
                                                 console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
                                             }
                                         }
@@ -784,7 +784,7 @@
                                         }
                                     }
                                 }
-                                
+
                                 // Nếu không có data hoặc có data nhưng không có ICD -> Thử ID khác
                                 tryNext();
                             } catch (_e) { tryNext(); }
@@ -837,7 +837,7 @@
                     options: [
                         { name: '[0]', value: String(testId) }, // e.g. KHAMBENHID
                         { name: '[1]', value: String(benhnhanId) }, // BENHNHANID
-                        { name: '[2]', value: '7;' },
+                        { name: '[2]', value: '365;' }, // bao phủ toàn đợt nằm viện
                         { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.TIEPNHANID || testId) }
                     ]
                 };
@@ -905,17 +905,65 @@
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
             const baseUrl = '/vnpthis/RestService';
 
-            // Candidate IDs to try for the sheet list
+            // Dynamic dayFilter calculation to capture entire hospital stay
+            let dayFilter = 7;
+            try {
+                const ngayVaoVien = rowData.THOIGIANVAOVIEN || rowData.NGAYVAOKHOA || rowData.NGAYTIEPNHAN || '';
+                if (ngayVaoVien) {
+                    const datePart = ngayVaoVien.split(' ')[0];
+                    const parts = datePart.split('/');
+                    if (parts.length === 3) {
+                        const admissionDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                        const diffTime = Math.abs(new Date() - admissionDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        dayFilter = (diffDays > 0) ? diffDays + 2 : 7; // +2 for buffer
+                    }
+                }
+            } catch (e) { console.warn('[Aladinn Drug] Error calculating dayFilter:', e); }
+
+            // --- Step 1: Pre-fetch to discover all KHAMBENHID/MADIEUTRI across transfers ---
+            // We use NT.024.DSPHIEU type 4 (Treatment sheets) which spans the whole HSBA
+            let crossDeptCandidates = [];
+            if (hsbaId) {
+                try {
+                    const discoverParams = {
+                        func: 'ajaxExecuteQueryPaging', uuid: uuid,
+                        params: ['NT.024.DSPHIEU'],
+                        options: [
+                            { name: '[0]', value: '' },
+                            { name: '[1]', value: String(benhnhanId) },
+                            { name: '[2]', value: '4' }, // type=4 to find all depts
+                            { name: '[3]', value: String(hsbaId) }
+                        ]
+                    };
+                    const discoverUrl = `${baseUrl}?_search=false&rows=500&page=1&postData=${encodeURIComponent(JSON.stringify(discoverParams))}`;
+                    const dRes = await fetch(discoverUrl, { credentials: 'include' });
+                    if (dRes.ok) {
+                        const dData = await dRes.json();
+                        const dRows = dData.rows || [];
+                        for (const r of dRows) {
+                            if (r.KHAMBENHID) crossDeptCandidates.push(String(r.KHAMBENHID));
+                            if (r.MADIEUTRI) crossDeptCandidates.push(String(r.MADIEUTRI));
+                        }
+                    }
+                } catch (_e) { /* ignore */ }
+            }
+
+            // Ưu tiên KHAMBENHID trước vì API thường cần field này ở param [0]
             let candidates = [
                 rowData.KHAMBENHID,
                 rowData.MADIEUTRI,
+                ...crossDeptCandidates,
                 hsbaId,
-                rowData.TIEPNHANID
-            ].filter(v => v && v.trim() !== '');
+                rowData.TIEPNHANID,
+                '' // Thử case [0] rỗng để HIS tự resolve qua [3]=hsbaId
+            ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
             candidates = Array.from(new Set(candidates));
+            console.log(`[Aladinn Drug] Discovered ${candidates.length} candidate keys for fetching drug sheets:`, candidates);
 
-            // --- Step 1: Fetch list of drug sheets ---
+            // --- Step 2: Fetch list of drug sheets — gộp TẤT CẢ candidates (nhiều khoa) ---
             let sheets = [];
+            const seenSheetIds = new Set();
             for (const testId of candidates) {
                 try {
                     const params = {
@@ -925,21 +973,64 @@
                         options: [
                             { name: '[0]', value: String(testId) },
                             { name: '[1]', value: String(benhnhanId) },
-                            { name: '[2]', value: '7;' },
+                            { name: '[2]', value: String(dayFilter) + ';' }, // dynamic day filter
                             { name: '[3]', value: String(hsbaId || testId) }
                         ]
                     };
-                    const url = `${baseUrl}?_search=false&rows=500&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+                    const url = `${baseUrl}?_search=false&rows=1000&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
                     const res = await fetch(url, { credentials: 'include' });
                     if (res.ok) {
                         const data = await res.json();
-                        if ((data.rows || []).length > 0) {
-                            sheets = data.rows;
-                            console.log(`[Aladinn Drug] Step 1: Found ${sheets.length} drug sheets via candidate ${testId}`);
-                            break;
+                        const rows = data.rows || [];
+                        if (rows.length > 0) {
+                            console.log(`[Aladinn Drug] Step 1: Found ${rows.length} drug sheets via candidate ${testId} (dayFilter: ${dayFilter})`);
+                            for (const row of rows) {
+                                const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
+                                if (sid && !seenSheetIds.has(sid)) {
+                                    seenSheetIds.add(sid);
+                                    sheets.push(row);
+                                }
+                            }
                         }
                     }
                 } catch (_e) { /* try next candidate */ }
+            }
+            // Strategy 2: NT.024.DSPHIEU with type=3 (drug sheets)
+            if (hsbaId) {
+                try {
+                    const p2 = {
+                        func: 'ajaxExecuteQueryPaging', uuid: uuid,
+                        params: ['NT.024.DSPHIEU'],
+                        options: [
+                            { name: '[0]', value: '' },
+                            { name: '[1]', value: String(benhnhanId) },
+                            { name: '[2]', value: '3' }, 
+                            { name: '[3]', value: String(hsbaId) }
+                        ]
+                    };
+                    const url2 = `${baseUrl}?_search=false&rows=1000&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(p2))}`;
+                    const res2 = await fetch(url2, { credentials: 'include' });
+                    if (res2.ok) {
+                        const data2 = await res2.json();
+                        const rows2 = data2.rows || [];
+                        if (rows2.length > 0) {
+                            console.log(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=3): Found ${rows2.length} sheets`);
+                            for (const row of rows2) {
+                                const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
+                                if (sid && !seenSheetIds.has(sid)) {
+                                    seenSheetIds.add(sid);
+                                    sheets.push(row);
+                                }
+                            }
+                        }
+                    }
+                } catch (_e) { /* silent */ }
+            }
+
+            console.log(`[Aladinn Drug] Step 1 total: ${sheets.length} unique sheets from ${candidates.length} candidates`);
+            if (sheets.length > 0) {
+                const dates = sheets.map(s => s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYSD || s.NGAYSUDUNG || s.NGAYMAUBENHPHAM || '').filter(Boolean);
+                console.log('[Aladinn Drug] Sheet dates:', dates);
             }
 
             if (sheets.length === 0) {
@@ -948,8 +1039,6 @@
             }
 
             // --- Step 2: Fetch drug details for each sheet ---
-            // NT.024.2 is for labs — drugs use different query codes.
-            // Try multiple common VNPT HIS drug detail endpoints.
             const DRUG_DETAIL_QUERIES = [
                 'NT.034.1',
                 'NT.024.CTPHIEUTHUOC',
@@ -982,7 +1071,6 @@
                         console.log(`[Aladinn Drug] Trying ${queryCode} for sheet ${firstSheetId}: ${testRows.length} rows`);
                         if (testRows.length > 0) {
                             console.log(`[Aladinn Drug] ✅ ${queryCode} WORKS! Sample:`, JSON.stringify(testRows[0], null, 2));
-                            console.log('[Aladinn Drug] Keys:', Object.keys(testRows[0]));
                             workingQuery = queryCode;
                             break;
                         }
@@ -994,9 +1082,8 @@
 
             if (!workingQuery) {
                 console.warn('[Aladinn Drug] No drug detail query found. Falling back to sheet-level data.');
-                // Fallback: return sheet-level data (no drug names, but at least dates)
                 const fallbackDrugs = sheets.map(s => ({
-                    NGAYMAUBENHPHAM_SUDUNG: s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYMAUBENHPHAM || '',
+                    NGAYMAUBENHPHAM_SUDUNG: s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYSD || s.NGAYSUDUNG || s.NGAYMAUBENHPHAM || '',
                     TENTHUOC: s.TEAKHO || s.LOAIPHIEU || `Phiếu ${s.SOPHIEU || ''}`,
                     MAUBENHPHAMID: s.MAUBENHPHAMID || '',
                     LIEUDUNG: '', DONVITINH: '', DUONGDUNG: '', CACHDUNG: '',
@@ -1010,7 +1097,7 @@
             const allDrugs = [];
             const detailPromises = sheets.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
-                const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYMAUBENHPHAM || '';
+                const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYSD || sheet.NGAYSUDUNG || sheet.NGAYMAUBENHPHAM || '';
                 if (!sheetId) return;
 
                 try {
@@ -1028,18 +1115,35 @@
                         for (const item of items) {
                             // Dynamic name resolution — try all possible keys
                             const name = item.TEN || item.TENTHUOC || item.TENDICHVU ||
-                                         item.TENCHISO || item.TENCHIDINH || item.TENTONGHOP ||
-                                         item.TEN_THUOC || item.TENDICHVU_CHA ||
-                                         item.TENVATTU || item.TEN_DICHVU_KYTHUAT || '';
+                                item.TENCHISO || item.TENCHIDINH || item.TENTONGHOP ||
+                                item.TEN_THUOC || item.TENDICHVU_CHA ||
+                                item.TENVATTU || item.TEN_DICHVU_KYTHUAT || '';
                             if (!name) continue;
+
+                            // Lọc các dịch vụ/khám không phải là thuốc thực sự
+                            const lowerName = name.toLowerCase();
+                            const donvitinh = (item.DONVITINH || item.DONVI || item.DVT || '').toLowerCase();
+                            const lieudung = item.LIEUDUNG || item.LIEU || '';
+                            const duongdung = item.DUONGDUNG || item.TENDUONGDUNG || '';
+                            
+                            // Bỏ qua nếu là dịch vụ khám bệnh, giường bệnh, hoặc đơn vị tính là "Lần"
+                            if (donvitinh.includes('lần') || lowerName.startsWith('khám') || lowerName.includes('giường') || lowerName.includes('công khám')) {
+                                continue;
+                            }
+                            
+                            // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
+                            const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi'].some(u => donvitinh.includes(u));
+                            if (!lieudung && !duongdung && !isDrugUnit) {
+                                continue;
+                            }
 
                             allDrugs.push({
                                 NGAYMAUBENHPHAM_SUDUNG: sheetDate,
                                 TENTHUOC: name,
                                 MAUBENHPHAMID: String(sheetId),
-                                LIEUDUNG: item.LIEUDUNG || item.LIEU || '',
+                                LIEUDUNG: lieudung,
                                 DONVITINH: item.DONVITINH || item.DONVI || item.DVT || '',
-                                DUONGDUNG: item.DUONGDUNG || item.TENDUONGDUNG || '',
+                                DUONGDUNG: duongdung,
                                 CACHDUNG: item.CACHDUNG || item.SOLO_CACHDUNG || item.SUDUNG || '',
                                 SOLUONG: item.SOLUONG || item.SOLUONG_SUDUNG || '',
                                 HOATCHAT: item.HOATCHAT || item.TENHOATCHAT || item.HOAT_CHAT || item.TEN_HOATCHAT || item.TENHC || item.TEN_HC || item.TENKHOAHOC || '',
@@ -1254,7 +1358,7 @@
 
                                         // === LẤY CHẨN ĐOÁN: Ưu tiên lấy từ tờ điều trị tổng hợp (latest) vì nó chứa chuỗi hoàn chỉnh giống trên giao diện ===
                                         var foundChanDoan = false;
-                                        
+
                                         // 1. Ưu tiên lấy theo key chính xác
                                         var exactKeys = ['CHANDOAN', 'CHUANDOAN', 'TENCHANDOAN', 'TENCHUANDOAN', 'BENHCHINH'];
                                         for (var ei = 0; ei < exactKeys.length; ei++) {
@@ -1281,7 +1385,7 @@
                                                 var fuk = fk.toUpperCase();
                                                 var fv = latest[fk];
                                                 if (!fv || String(fv).trim().length < 2) continue;
-                                                
+
                                                 if (fuk.includes('CHANDOAN') || fuk.includes('CHUANDOAN') || fuk.includes('BENHCHINH')) {
                                                     // Bỏ qua các key của cận lâm sàng/hình ảnh
                                                     if (fuk.includes('HINHANH') || fuk.includes('QUANGTUYEN') || fuk.includes('YEUCAU') || fuk.includes('CDHA')) continue;
@@ -1309,12 +1413,12 @@
                                             for (var ri = 0; ri < records.length; ri++) {
                                                 var rec = records[ri];
                                                 if (!rec) continue;
-                                                
+
                                                 for (var rk in rec) {
                                                     var ruk = rk.toUpperCase();
                                                     var rv = String(rec[rk] || '').trim();
                                                     if (rv.length < 2) continue;
-                                                    
+
                                                     // Bỏ qua nếu là key rác
                                                     if (ruk.includes('HINHANH') || ruk.includes('QUANGTUYEN') || ruk.includes('YEUCAU') || ruk.includes('CDHA') || ruk.includes('DICHVU') || ruk.includes('PHONGKHAM') || ruk === 'TEN') continue;
 
@@ -1324,7 +1428,7 @@
 
                                             for (var i = 0; i < potentialTexts.length; i++) {
                                                 var curText = potentialTexts[i];
-                                                
+
                                                 // Nếu là mã ICD độc lập (VD: "S50") - Loại trừ NK vì đó là mã điều dưỡng (NK01)
                                                 if (curText.length <= 6 && icdPatternExact.test(curText) && !curText.toUpperCase().startsWith('NK')) {
                                                     var desc = '';
@@ -1338,7 +1442,7 @@
                                                             if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
                                                         }
                                                     }
-                                                    
+
                                                     if (desc) {
                                                         allDiagStrings.push(curText + ' - ' + desc);
                                                     } else {
@@ -1363,19 +1467,19 @@
                                         }
 
                                         // Làm sạch và gộp chẩn đoán (theo yêu cầu user: "gộp chẩn đoán và chẩn đoán kèm theo thành 1 dòng, bỏ từ 'chẩn đoán kèm theo'")
-                                        var cleanDiag = function(str) {
+                                        var cleanDiag = function (str) {
                                             if (!str) return '';
                                             return str.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
                                         };
 
                                         var cChinh = cleanDiag(result.chanDoanMoiNhat);
                                         var cPhu = cleanDiag(result.chanDoanKemTheoTDT);
-                                        
+
                                         var combined = cChinh;
                                         if (cPhu && !combined.includes(cPhu)) {
                                             combined += (combined ? '; ' : '') + cPhu;
                                         }
-                                        
+
                                         result.chanDoanMoiNhat = combined;
                                         result.chanDoanKemTheoTDT = ''; // Đã gộp nên xoá kèm theo để tránh hiển thị trùng
 
@@ -1484,7 +1588,7 @@
             // Priority 2: Trigger native HIS button if available
             let nativeTriggered = false;
             const frames = [window, ...Array.from(document.querySelectorAll('iframe')).map(f => f.contentWindow).filter(Boolean)];
-            
+
             for (const win of frames) {
                 if (win.$) {
                     const grid = win.$('#tcCDHAHisgrdCDHA');
@@ -1516,7 +1620,7 @@
             let domain = window.RIS_SERVICE_DOMAIN_NAME || 'https://cdha-sadecdtp.vnpthis.vn/';
             let getDicom = window.RIS_GET_DICOM_VIEWER || 'api/public/dicomViewer';
             let secret = window.RIS_SECRET_KEY || 'vnptris';
-            
+
             for (const win of frames) {
                 if (win.RIS_SECRET_KEY && win.RIS_SECRET_KEY.trim() !== '') secret = win.RIS_SECRET_KEY;
                 if (win.RIS_SERVICE_DOMAIN_NAME && win.RIS_SERVICE_DOMAIN_NAME.trim() !== '') domain = win.RIS_SERVICE_DOMAIN_NAME;
@@ -1524,16 +1628,16 @@
             }
 
             const requestsToTry = [];
-            
+
             // PRIORITY 1 (NEW PACS API): Gọi API dicomViewer với studyInstanceUID = GHICHU2 (sheetId)
             // Hệ thống mới sẽ trả về JSON chứa link study/summary kèm token UUID hợp lệ
             if (sheetId && String(sheetId).trim() !== '') {
                 requestsToTry.push({ url: domain + getDicom + '?studyInstanceUID=' + sheetId, identifyCode: sheetId });
             }
-            
+
             // PRIORITY 2: MAUBENHPHAMID + MADICHVU (Fallback cho VNPT Đồng Tháp cũ)
             const targetId = maubenhphamid || sheetId;
-            
+
             if (madichvu) {
                 requestsToTry.push({ url: domain + getDicom + '?requestCode=' + targetId + '&conceptCode=' + madichvu, identifyCode: targetId });
                 requestsToTry.push({ url: domain + 'ris/get_image.php?requestCode=' + targetId + '&conceptCode=' + madichvu, identifyCode: targetId });
@@ -1554,7 +1658,7 @@
             if (sophieu && sophieu !== targetId) {
                 requestsToTry.push({ url: domain + getDicom + '?studyInstanceUID=' + sophieu, identifyCode: sophieu });
                 requestsToTry.push({ url: domain + 'ris/get_image.php?instanceUID=' + sophieu, identifyCode: sophieu });
-                
+
                 if (madichvu) {
                     requestsToTry.push({ url: domain + getDicom + '?requestCode=' + sophieu + '&conceptCode=' + madichvu, identifyCode: sophieu });
                     requestsToTry.push({ url: domain + 'ris/get_image.php?requestCode=' + sophieu + '&conceptCode=' + madichvu, identifyCode: sophieu });
@@ -1584,7 +1688,7 @@
 
                     if (res.ok) {
                         const contentType = res.headers.get('content-type') || '';
-                        
+
                         if (contentType.includes('application/json')) {
                             const json = await res.json();
                             if (json && json.status_code === 200 && json.data) {
@@ -1738,11 +1842,11 @@
                 return;
             }
             const { rowData } = resolveActiveGrid(rowId);
-            
+
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
             const benhnhanId = rowData.BENHNHANID || '';
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
-            
+
             let patientName = 'Bệnh Nhân';
             try {
                 // Try from rowData keys first
@@ -1755,14 +1859,14 @@
                 // Try from DOM if still not found
                 if (patientName === 'Bệnh Nhân' || !patientName) {
                     const rowElem = _$('#' + rowId);
-                    rowElem.find('td').each(function() {
+                    rowElem.find('td').each(function () {
                         const aria = _$(this).attr('aria-describedby') || '';
                         if (aria.toUpperCase().includes('HOTEN') || aria.toUpperCase().includes('TENBENHNHAN')) {
                             patientName = _$(this).text().trim() || patientName;
                         }
                     });
                 }
-            } catch(_e) {}
+            } catch (_e) { }
 
             if (!benhnhanId) {
                 sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], patientName: '' }, requestId);
@@ -1969,12 +2073,12 @@
                         }
                     } else {
                         imagingData.push({
-                            sheetId: pacsId, 
+                            sheetId: pacsId,
                             maubenhphamid: sheetId,
                             sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
                             madichvu: '',
                             linkDicom: sheet.LINK_DICOM || '',
-                            sheetDate: sheet.NGAYMAUBENHPHAM || '', 
+                            sheetDate: sheet.NGAYMAUBENHPHAM || '',
                             name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
                             code: '', conclusion: '', status: sheet.TRANGTHAI || '', department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
                         });
@@ -2016,7 +2120,7 @@
                 }
             }
             if (!patientName) {
-                _$('#' + rowId).find('td').each(function() {
+                _$('#' + rowId).find('td').each(function () {
                     const aria = _$(this).attr('aria-describedby') || '';
                     if (aria.toUpperCase().includes('HOTEN') || aria.toUpperCase().includes('TENBENHNHAN')) {
                         patientName = _$(this).text().trim() || patientName;
@@ -2153,7 +2257,7 @@
             if (!_$) return;
             const { grid, effectiveRowId } = resolveActiveGrid(rowId);
             if (!grid || !effectiveRowId) return;
-            
+
             // 1. Select patient first
             grid.jqGrid('setSelection', effectiveRowId);
 
@@ -2165,18 +2269,18 @@
                 if (ptttTab.length > 0) {
                     clearInterval(tryClickPttt);
                     ptttTab.click();
-                    
+
                     let phase = 0;
                     let gridAttempts = 0;
                     // 3. Wait for PTTT elements to populate
                     const tryClickRowAndPrint = setInterval(() => {
                         gridAttempts++;
-                        
+
                         // Phase 0: Ensure "Load phiếu theo đợt điều trị" is checked, but ONLY after grid is initialized
                         if (phase === 0) {
                             const mainGrid = _$('#tcChuyenKhoagrdCK');
                             if (!mainGrid.hasClass('ui-jqgrid-btable')) return; // Wait for jqGrid initialization
-                            
+
                             const loadSpinner = _$('#load_tcChuyenKhoagrdCK');
                             if (loadSpinner.length > 0 && loadSpinner.is(':visible')) return; // Wait for initial HIS AJAX
 
@@ -2187,7 +2291,7 @@
                                     chkAll.trigger('change'); // Ensure HIS catches the change event
                                     // Delay phase 1 slightly so HIS has time to show the loading spinner again
                                     phase = 0.5;
-                                    setTimeout(() => { phase = 1; }, 500); 
+                                    setTimeout(() => { phase = 1; }, 500);
                                     return;
                                 }
                                 phase = 1;
@@ -2195,7 +2299,7 @@
                             return;
                         }
                         if (phase === 0.5) return; // Waiting for timeout to transition to phase 1
-                        
+
                         // Phase 1 & 2: Wait for both grids to render and select rows
                         if (phase >= 1) {
                             const loadSpinner = _$('#load_tcChuyenKhoagrdCK');
@@ -2203,7 +2307,7 @@
 
                             // Find all jqGrid tables inside PTTT tab
                             const grids = _$('#tcChuyenKhoa .ui-jqgrid-btable');
-                            
+
                             // 3a. Select top grid (Phiếu)
                             if (grids.length >= 1) {
                                 const topGrid = _$(grids[0]);
@@ -2217,16 +2321,16 @@
                                     }
                                 }
                             }
-                            
+
                             // 3b. Select bottom grid (Chi tiết dịch vụ) and print
                             if (phase === 2 && grids.length >= 2) {
                                 const bottomGrid = _$(grids[1]);
                                 const bottomRowIds = bottomGrid.jqGrid('getDataIDs');
-                                
+
                                 if (bottomRowIds && bottomRowIds.length > 0) {
                                     clearInterval(tryClickRowAndPrint);
                                     bottomGrid.jqGrid('setSelection', bottomRowIds[0]);
-                                    
+
                                     // wait a bit for HIS to fully register selection before clicking print
                                     setTimeout(() => {
                                         const printBtn = _$('#tcChuyenKhoatoolbarIdprintca_5');
@@ -2243,14 +2347,14 @@
                                 }
                             }
                         }
-                        
+
                         // Timeout safety to prevent infinite loop (15 seconds)
-                        if (gridAttempts > 60) clearInterval(tryClickRowAndPrint); 
+                        if (gridAttempts > 60) clearInterval(tryClickRowAndPrint);
                     }, 250); // reduced interval from 500ms to 250ms for speed
                 }
                 if (attempts > 40) clearInterval(tryClickPttt); // timeout after 10s
             }, 250); // reduced from 500ms
-        } catch(e) {
+        } catch (e) {
             console.error('[Aladinn API-Bridge] Error in triggerPtttPrint:', e);
         }
     }

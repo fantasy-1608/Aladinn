@@ -18,11 +18,12 @@ Aladinn là tiện ích Chrome giúp bác sĩ & điều dưỡng khai thác nhan
 | 🩻 CĐHA | Chẩn đoán hình ảnh, kết quả X-quang/ECG/siêu âm |
 | 🤖 AI | Phân tích lâm sàng tự động bằng Gemini AI |
 
-### 🤖 Phân tích AI (Rich Context)
+### 🤖 Phân tích AI (Rich Context v2.0)
 
-- **Prompt đầy đủ**: gửi khám vào viện + diễn tiến 3 ngày + toàn bộ XN ngày gần nhất + CĐHA + thuốc
+- **Prompt toàn diện**: khám vào viện + **sinh hiệu** (M/HA/T°/NT/CN/CC) + tiền sử bản thân & gia đình + tóm tắt CLS + diễn tiến 3 ngày + toàn bộ XN + CĐHA + thuốc kèm **đường dùng** (IV/PO/IM) + số ngày điều trị
+- **4-point output**: (1) Tóm tắt bệnh → (2) Nguy cơ + tương tác thuốc → (3) Đánh giá đáp ứng điều trị → (4) Hướng xử trí
 - **Ẩn danh y tế**: mã BN ẩn danh (BN-XXXX), không gửi tên/địa chỉ thật
-- **Token cost toast**: hiển thị số tokens và chi phí ước tính sau mỗi lần gọi API (z-index cao, không bị che bởi modal)
+- **Token cost toast**: hiển thị số tokens và chi phí ước tính sau mỗi lần gọi API
 - **Lazy load**: AI chỉ phân tích khi bấm vào tab AI
 
 ### 🎨 Giao diện Desert Mystic

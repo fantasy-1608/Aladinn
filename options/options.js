@@ -486,6 +486,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let clickCount = 0;
     let clickTimer = null;
 
+    if (versionTag) {
+        // Dynamically update version from manifest
+        try {
+            const manifest = chrome.runtime.getManifest();
+            if (manifest && manifest.version) {
+                versionTag.textContent = `Version ${manifest.version}`;
+            }
+        } catch (_e) { /* ignore if not in extension context */ }
+    }
+
     if (versionTag && advancedSection) {
         let aiVipContainer = document.getElementById('ai-vip-container');
         if (!aiVipContainer) {
