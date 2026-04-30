@@ -1152,19 +1152,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- Summary Cards ---
         const summaryCards = `<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
           <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
-            <div style="font-size:10px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🧪 Tổng chỉ số</div>
-            <div style="font-size:22px; font-weight:800; color:#d4a25a; margin-top:4px;">${totalIndicators}</div>
-            <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">${sortedMCats.length} nhóm XN</div>
+            <div style="font-size:12px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🧪 Tổng chỉ số</div>
+            <div style="font-size:26.4px; font-weight:800; color:#d4a25a; margin-top:4px;">${totalIndicators}</div>
+            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${sortedMCats.length} nhóm XN</div>
           </div>
           <div style="background:${abnormals.length > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)'}; border:1px solid ${abnormals.length > 0 ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'}; border-radius:10px; padding:12px;">
-            <div style="font-size:10px; color:${abnormals.length > 0 ? '#f87171' : '#6ee7a0'}; text-transform:uppercase; letter-spacing:1px; font-weight:700;">⚠️ Bất thường</div>
-            <div style="font-size:22px; font-weight:800; color:${abnormals.length > 0 ? '#f87171' : '#22c55e'}; margin-top:4px;">${abnormals.length}</div>
-            <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">${abnormals.length > 0 ? 'Cần lưu ý' : 'Tất cả bình thường'}</div>
+            <div style="font-size:12px; color:${abnormals.length > 0 ? '#f87171' : '#6ee7a0'}; text-transform:uppercase; letter-spacing:1px; font-weight:700;">⚠️ Bất thường</div>
+            <div style="font-size:26.4px; font-weight:800; color:${abnormals.length > 0 ? '#f87171' : '#22c55e'}; margin-top:4px;">${abnormals.length}</div>
+            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${abnormals.length > 0 ? 'Cần lưu ý' : 'Tất cả bình thường'}</div>
           </div>
           <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
-            <div style="font-size:10px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Ngày XN</div>
-            <div style="font-size:22px; font-weight:800; color:#d4a25a; margin-top:4px;">${sortedDates.length}</div>
-            <div style="font-size:10px; color:#7a6e5e; margin-top:2px;">${firstDate} → ${latestDate}</div>
+            <div style="font-size:12px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Ngày XN</div>
+            <div style="font-size:26.4px; font-weight:800; color:#d4a25a; margin-top:4px;">${sortedDates.length}</div>
+            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${firstDate} → ${latestDate}</div>
           </div>
         </div>`;
 
@@ -1178,11 +1178,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             }
             const abnItems = Object.values(uniqueAbn);
             alertsHtml = `<div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:12px 14px; margin-bottom:16px;">
-              <div style="font-size:11px; font-weight:700; color:#f87171; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">🔴 Chỉ số bất thường mới nhất</div>
+              <div style="font-size:13.2px; font-weight:700; color:#f87171; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">🔴 Chỉ số bất thường mới nhất</div>
               <div style="display:flex; flex-wrap:wrap; gap:6px;">
                 ${abnItems.map(a => {
                     const sc = _statusColor(a.status);
-                    return `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; background:${sc ? sc.bg : 'rgba(239,68,68,0.15)'}; color:${sc ? sc.text : '#f87171'}; border:1px solid ${sc ? sc.text + '33' : 'rgba(239,68,68,0.3)'};">${a.code || a.testName}: ${a.value} ${a.unit || ''} ${sc ? sc.icon : ''}</span>`;
+                    return `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:14.4px; font-weight:600; background:${sc ? sc.bg : 'rgba(239,68,68,0.15)'}; color:${sc ? sc.text : '#f87171'}; border:1px solid ${sc ? sc.text + '33' : 'rgba(239,68,68,0.3)'};">${a.code || a.testName}: ${a.value} ${a.unit || ''} ${sc ? sc.icon : ''}</span>`;
                 }).join('')}
               </div>
             </div>`;
@@ -1212,7 +1212,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // Sub-category header for "Huyết học" to distinguish Tế bào máu, Đông máu, Nhóm máu
                 if (mCat === 'Huyết học' && subCat !== 'Huyết học') {
                      const subName = subCat.replace('Huyết học (', '').replace(')', '');
-                     mRowsHtml += `<tr><td colspan="${sortedDates.length + 2}" style="padding:5px 10px; background:rgba(212,162,90,0.1); color:#d4a25a; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:1px; border-top:1px solid rgba(212,162,90,0.15); border-bottom:1px solid rgba(212,162,90,0.15); position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
+                     mRowsHtml += `<tr><td colspan="${sortedDates.length + 2}" style="padding:5px 10px; background:rgba(212,162,90,0.1); color:#d4a25a; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; border-top:1px solid rgba(212,162,90,0.15); border-bottom:1px solid rgba(212,162,90,0.15); position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
                 }
 
                 const sortedIndicators = Object.entries(indicators).sort((a, b) => {
@@ -1262,14 +1262,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                     mRowsHtml += `<tr style="background:${rowBg}; ${leftBorder}">`;
                     mRowsHtml += `<td style="padding:6px 10px; color:#e8dcc8; font-weight:${rowHasAbn ? '600' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1;">${cName}</td>`;
-                    mRowsHtml += `<td style="padding:6px 8px; color:#7a6e5e; font-size:10px; white-space:nowrap; background:${stickyBg};">${refText}</td>`;
+                    mRowsHtml += `<td style="padding:6px 8px; color:#7a6e5e; font-size:12px; white-space:nowrap; background:${stickyBg};">${refText}</td>`;
 
                     for (const d of sortedDates) {
                         const cell = data.values[d];
                         if (cell) {
                             const sc = _statusColor(cell.status);
                             let arrow = '';
-                            if (sc && sc.icon) arrow = ` <span style="color:${sc.text};font-size:10px;font-weight:700;">${sc.icon}</span>`;
+                            if (sc && sc.icon) arrow = ` <span style="color:${sc.text};font-size:12px;font-weight:700;">${sc.icon}</span>`;
                             const cellBg = sc ? sc.bg : '#1a1510';
                             const cellColor = sc ? sc.text : '#e8dcc8';
                             const fw = sc ? '700' : '400';
@@ -1287,18 +1287,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const icon = catIcons[mCat] || '📋';
                 tablesHtml += '<div style="margin-bottom:14px; border:1px solid rgba(212,162,90,0.2); border-radius:10px; overflow:hidden;">';
                 tablesHtml += `<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(212,162,90,0.08); border-bottom:1px solid rgba(212,162,90,0.15);">
-                  <span style="font-size:14px;">${icon}</span>
-                  <span style="font-size:13px; font-weight:700; color:#d4a25a;">${mCat}</span>
-                  <span style="font-size:10px; color:#a18764; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:10px;">${mIndicatorsCount} chỉ số</span>
-                  ${mHasAbn ? '<span style="font-size:10px; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 8px; border-radius:10px;">⚠ Bất thường</span>' : ''}
+                  <span style="font-size:16.8px;">${icon}</span>
+                  <span style="font-size:15.6px; font-weight:700; color:#d4a25a;">${mCat}</span>
+                  <span style="font-size:12px; color:#a18764; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:10px;">${mIndicatorsCount} chỉ số</span>
+                  ${mHasAbn ? '<span style="font-size:12px; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 8px; border-radius:10px;">⚠ Bất thường</span>' : ''}
                 </div>`;
                 
-                tablesHtml += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px;">';
+                tablesHtml += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:14.4px;">';
                 tablesHtml += `<thead><tr>
-                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#a0937e; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2;">Chỉ số</th>
-                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#7a6e5e; font-size:10px; font-weight:600; position:sticky; left:0; z-index:2;">Ref</th>`;
+                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#a0937e; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2;">Chỉ số</th>
+                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#7a6e5e; font-size:12px; font-weight:600; position:sticky; left:0; z-index:2;">Ref</th>`;
                 for (const d of sortedDates) {
-                    tablesHtml += `<th style="padding:7px 8px; text-align:right; background:rgba(0,0,0,0.2); color:#a0937e; font-size:10px; font-weight:600; white-space:nowrap;">${_shortDate(d)}</th>`;
+                    tablesHtml += `<th style="padding:7px 8px; text-align:right; background:rgba(0,0,0,0.2); color:#a0937e; font-size:12px; font-weight:600; white-space:nowrap;">${_shortDate(d)}</th>`;
                 }
                 tablesHtml += '</tr></thead><tbody>';
                 tablesHtml += mRowsHtml;
@@ -1311,24 +1311,24 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (imgList.length > 0) {
             cdhaHtml = `<div style="margin-bottom:14px; border:1px solid rgba(96,165,250,0.25); border-radius:10px; overflow:hidden;">
               <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(96,165,250,0.08); border-bottom:1px solid rgba(96,165,250,0.15);">
-                <span style="font-size:14px;">🩻</span>
-                <span style="font-size:13px; font-weight:700; color:#60a5fa;">Chẩn đoán hình ảnh</span>
-                <span style="font-size:10px; color:#6b8ab5; background:rgba(96,165,250,0.15); padding:2px 8px; border-radius:10px;">${imgList.length} phiếu</span>
+                <span style="font-size:16.8px;">🩻</span>
+                <span style="font-size:15.6px; font-weight:700; color:#60a5fa;">Chẩn đoán hình ảnh</span>
+                <span style="font-size:12px; color:#6b8ab5; background:rgba(96,165,250,0.15); padding:2px 8px; border-radius:10px;">${imgList.length} phiếu</span>
               </div>
               <div style="padding:8px 14px;">
                 ${imgList.map(img => {
                     const statusColor = (img.status || '').includes('Đang') ? '#fbbf24' : '#22c55e';
-                    const conclusionHtml = img.conclusion ? `<div style="color:#c8b89a; font-size:11px; margin-top:6px; padding:6px 10px; background:rgba(212,162,90,0.06); border-left:2px solid rgba(96,165,250,0.4); border-radius:0 6px 6px 0; line-height:1.5;">${img.conclusion}</div>` : '';
+                    const conclusionHtml = img.conclusion ? `<div style="color:#c8b89a; font-size:13.2px; margin-top:6px; padding:6px 10px; background:rgba(212,162,90,0.06); border-left:2px solid rgba(96,165,250,0.4); border-radius:0 6px 6px 0; line-height:1.5;">${img.conclusion}</div>` : '';
                     return `<div style="padding:10px 0; border-bottom:1px solid rgba(96,165,250,0.08);">
                       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div style="flex:1;">
-                          <div style="color:#e8dcc8; font-size:13px; font-weight:600;">${img.name || 'CĐHA'} ${img.code ? '<span style="color:#6b8ab5; font-size:10px; font-weight:400;">(' + img.code + ')</span>' : ''}</div>
-                          <div style="color:#7a6e5e; font-size:10px; margin-top:2px;">${img.department || ''}</div>
+                          <div style="color:#e8dcc8; font-size:15.6px; font-weight:600;">${img.name || 'CĐHA'} ${img.code ? '<span style="color:#6b8ab5; font-size:12px; font-weight:400;">(' + img.code + ')</span>' : ''}</div>
+                          <div style="color:#7a6e5e; font-size:12px; margin-top:2px;">${img.department || ''}</div>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; margin-left:12px;">
-                          <div style="color:#60a5fa; font-size:11px; font-weight:600;">${_shortDate(img.sheetDate)}</div>
-                          <div style="font-size:10px; color:${statusColor};">${img.status || ''}</div>
-                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.08)); border:1px solid rgba(96,165,250,0.4); color:#60a5fa; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap;" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
+                          <div style="color:#60a5fa; font-size:13.2px; font-weight:600;">${_shortDate(img.sheetDate)}</div>
+                          <div style="font-size:12px; color:${statusColor};">${img.status || ''}</div>
+                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.08)); border:1px solid rgba(96,165,250,0.4); color:#60a5fa; padding:4px 10px; border-radius:6px; font-size:13.2px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap;" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
                         </div>
                       </div>
                       ${conclusionHtml}
@@ -1443,22 +1443,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // Tag pills
                 const hasProgress = dayTreatments.some(t => t.DIENBIEN?.trim());
                 let pills = '';
-                if (hasProgress) pills += '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(96,165,250,0.12);color:#7ab8f5;border:1px solid rgba(96,165,250,0.2);">● Diễn tiến</span>';
-                if (diagChanged && !isFirst) pills += '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(167,139,250,0.1);color:#b79bfa;border:1px solid rgba(167,139,250,0.2);">↕ CĐ thay đổi</span>';
-                if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">📋 ${currDiags.size} CĐ</span>`;
-                if (dayDrugs.length > 0) pills += `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(212,162,90,0.1);color:#c49a52;border:1px solid rgba(212,162,90,0.2);">💊 ${dayDrugs.length} thuốc</span>`;
+                if (hasProgress) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(96,165,250,0.12);color:#7ab8f5;border:1px solid rgba(96,165,250,0.2);">● Diễn tiến</span>';
+                if (diagChanged && !isFirst) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(167,139,250,0.1);color:#b79bfa;border:1px solid rgba(167,139,250,0.2);">↕ CĐ thay đổi</span>';
+                if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">📋 ${currDiags.size} CĐ</span>`;
+                if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(212,162,90,0.1);color:#c49a52;border:1px solid rgba(212,162,90,0.2);">💊 ${dayDrugs.length} thuốc</span>`;
 
                 // ── Day card ──
                 combinedTimelineHtml += `<div style="border:1px solid rgba(212,162,90,0.1);border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.012);margin-bottom:8px;">
                   <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid rgba(212,162,90,0.1);">
                     <div style="text-align:center;min-width:28px;">
-                      <div style="font-size:18px;font-weight:800;color:${numColor};line-height:1;">${dt.substring(0,2)}</div>
-                      <div style="font-size:9px;color:#a18764;font-weight:600;">${dt.substring(3,5)}</div>
+                      <div style="font-size:21.6px;font-weight:800;color:${numColor};line-height:1;">${dt.substring(0,2)}</div>
+                      <div style="font-size:10.8px;color:#a18764;font-weight:600;">${dt.substring(3,5)}</div>
                     </div>
                     <div style="width:1px;height:28px;background:rgba(212,162,90,0.15);flex-shrink:0;"></div>
                     <div style="flex:1;">
-                      <div style="color:${numColor};font-weight:600;font-size:12.5px;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
-                      <div style="color:#6a5e4e;font-size:10.5px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
+                      <div style="color:${numColor};font-weight:600;font-size:15px;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
+                      <div style="color:#6a5e4e;font-size:12.6px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
                     </div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
                   </div>
@@ -1470,48 +1470,48 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (progNotes.length > 0) {
                     for (const tr of progNotes) {
                         const timePart = (tr.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
-                        const timeTag = timePart ? `<span style="font-size:10px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${timePart}</span>` : '';
-                        combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${timePart?'<br>':''}<span style="font-size:12px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span></div>`;
+                        const timeTag = timePart ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${timePart}</span>` : '';
+                        combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${timePart?'<br>':''}<span style="font-size:14.4px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span></div>`;
                     }
                 } else {
-                    combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có ghi chú diễn tiến.</div>';
+                    combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có ghi chú diễn tiến.</div>';
                 }
                 const ghichus = dayTreatments.filter(t => t.GHICHU?.trim());
                 if (ghichus.length > 0) {
                     combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
-                      <div style="font-size:9.5px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
-                      <div style="font-size:11.5px;color:#b89a70;line-height:1.5;font-style:italic;">${ghichus[0].GHICHU}</div>
+                      <div style="font-size:11.4px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
+                      <div style="font-size:13.8px;color:#b89a70;line-height:1.5;font-style:italic;">${ghichus[0].GHICHU}</div>
                     </div>`;
                 }
                 // Diagnosis
                 combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">
-                  <div style="font-size:9.5px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
+                  <div style="font-size:11.4px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
                 if (currDiags.size > 0) {
                     for (const d of currDiags) {
                         const isNewD = !isFirst && !prevDiags.has(d);
-                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:11.5px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
-                          <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
+                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
+                          <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
                         </div>`;
                     }
                     if (!isFirst) {
                         for (const d of prevDiags) {
                             if (!currDiags.has(d)) {
-                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:11.5px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
+                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
                                   <span style="flex:1;">${d}</span>
-                                  <span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
                                 </div>`;
                             }
                         }
                     }
                 } else {
-                    combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
+                    combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
                 }
                 combinedTimelineHtml += '</div></div>';
 
                 // ── RIGHT: Drugs ──
                 combinedTimelineHtml += '<div style="padding:10px 12px;">';
                 if (dayDrugs.length > 0 || prevDrugs.length > 0) {
-                    combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:10px;">
+                    combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;">
                       <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;"></span>Mới</span>
                       <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#6b7280;display:inline-block;"></span>Tiếp tục</span>
                       <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;"></span>Ngưng</span>
@@ -1524,8 +1524,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             _totalStopped++;
                             combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);opacity:.75;">
                               <span style="width:6px;height:6px;border-radius:50%;background:#f87171;flex-shrink:0;margin-top:5px;"></span>
-                              <span style="flex:1;font-size:12px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
-                              <span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                              <span style="flex:1;font-size:14.4px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
+                              <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
                             </div>`;
                         }
                     }
@@ -1547,14 +1547,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const nameC = (isNew||isFirst)?'#d0f0e4':'#9ca3af';
                     const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
                     const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
-                    const newBadge = (isNew&&!isFirst)?'<span style="font-size:8.5px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
+                    const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
                     combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
                       <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
-                      <span style="flex:1;font-size:12px;color:${nameC};line-height:1.4;" title="${fullName}">${fullName}${newBadge}</span>
-                      ${totalDose?`<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
+                      <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${fullName}${newBadge}</span>
+                      ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
                     </div>`;
                 }
-                if (dayDrugs.length === 0) combinedTimelineHtml += '<div style="font-size:11px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có y lệnh thuốc.</div>';
+                if (dayDrugs.length === 0) combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có y lệnh thuốc.</div>';
                 combinedTimelineHtml += '</div></div></div>';
             }
         } else {
@@ -1568,7 +1568,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         if (Object.keys(historyData).length > 0) {
             khamVaoVienHtml += `<div style="background:rgba(212,162,90,0.05); border:1px solid rgba(212,162,90,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
-                <h4 style="color:#d4a25a; margin:0 0 12px 0; font-size:14px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
+                <h4 style="color:#d4a25a; margin:0 0 12px 0; font-size:16.8px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
             const fields = [
                 { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
                 { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
@@ -1580,8 +1580,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             for (const f of fields) {
                 if (historyData[f.key]) {
                     khamVaoVienHtml += `<div style="margin-bottom:10px;">
-                        <span style="color:#a18764; font-weight:600; font-size:12px; display:block; margin-bottom:2px;">${f.label}:</span>
-                        <div style="color:#e8dcc8; font-size:13px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
+                        <span style="color:#a18764; font-weight:600; font-size:14.4px; display:block; margin-bottom:2px;">${f.label}:</span>
+                        <div style="color:#e8dcc8; font-size:15.6px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
                     </div>`;
                 }
             }
@@ -1660,7 +1660,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
                     const border = isPrimary ? 'rgba(212,162,90,0.4)' : 'rgba(255,255,255,0.1)';
                     const color = isPrimary ? '#f0d78c' : '#c8b89a';
-                    return `<span style="display:inline-block; padding:2px 8px; border-radius:5px; font-size:12px; font-weight:700; font-family:'SF Mono','Menlo','Consolas',monospace; color:${color}; background:${bg}; border:1px solid ${border}; letter-spacing:0.3px; line-height:1.4;" title="${isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${code}</span>`;
+                    return `<span style="display:inline-block; padding:2px 8px; border-radius:5px; font-size:14.4px; font-weight:700; font-family:'SF Mono','Menlo','Consolas',monospace; color:${color}; background:${bg}; border:1px solid ${border}; letter-spacing:0.3px; line-height:1.4;" title="${isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${code}</span>`;
                 }).join(' ')
                 : '';
             
@@ -1678,25 +1678,25 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const color = isPrimary ? '#e8dcc8' : '#9a8e7e';
                     const weight = isPrimary ? '600' : '400';
                     const title = isPrimary ? 'Chẩn đoán chính' : 'Chẩn đoán kèm';
-                    return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:${weight}; color:${color}; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
+                    return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:14.4px; font-weight:${weight}; color:${color}; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
                 }).join(' ');
 
                 // Tạo danh sách ICD cho phần chi tiết
                 const icdDetailList = patientInfo.diagHistory.map(d => {
                     const codes = (d.match(icdRegex) || []);
                     const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
-                    const codeStr = codes.length > 0 ? codes.map(c => `<code style="font-size:10px;background:rgba(212,162,90,0.12);padding:1px 4px;border-radius:3px;color:#a18764;">${c}</code>`).join(' ') : '';
-                    return `<li style="margin-bottom:4px; color:#c8b89a; font-size:12px; line-height:1.5;">${escapeHtml(cleanName)}${codeStr ? ' ' + codeStr : ''}</li>`;
+                    const codeStr = codes.length > 0 ? codes.map(c => `<code style="font-size:12px;background:rgba(212,162,90,0.12);padding:1px 4px;border-radius:3px;color:#a18764;">${c}</code>`).join(' ') : '';
+                    return `<li style="margin-bottom:4px; color:#c8b89a; font-size:14.4px; line-height:1.5;">${escapeHtml(cleanName)}${codeStr ? ' ' + codeStr : ''}</li>`;
                 }).join('');
 
                 patientDiagHtml = `
                     <div style="margin-top:5px;">
                         <div style="display:flex; align-items:baseline; gap:6px; flex-wrap:nowrap;">
-                            <span style="font-size:10px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
-                            <div style="font-size:12px; color:#e8dcc8; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(patientInfo.diagHistory.map(d => d.replace(icdRegex,'').replace(/^[\s,;-]+/,'').trim()).filter(Boolean).join(' · '))}</div>
+                            <span style="font-size:12px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                            <div style="font-size:14.4px; color:#e8dcc8; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(patientInfo.diagHistory.map(d => d.replace(icdRegex,'').replace(/^[\s,;-]+/,'').trim()).filter(Boolean).join(' · '))}</div>
                         </div>
                         <details style="margin-top:3px;">
-                            <summary style="font-size:11px; color:#5a5450; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:3px;">
+                            <summary style="font-size:13.2px; color:#5a5450; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:3px;">
                                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 Chi tiết (${patientInfo.diagHistory.length} chẩn đoán, kèm mã ICD)
                             </summary>
@@ -1709,15 +1709,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             } else {
                 patientDiagHtml = `
                     <div style="margin-top:5px; display:flex; align-items:baseline; gap:6px;">
-                        <span style="font-size:10px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
-                        <div style="font-size:12px; color:#e8dcc8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(descText || rawDiag)}</div>
+                        <span style="font-size:12px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                        <div style="font-size:14.4px; color:#e8dcc8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(descText || rawDiag)}</div>
                     </div>
                 `;
             }
 
         }
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml
-            ? `<div style="margin-top:3px; font-size:12px; color:#9a8e7e;">${patientAgeHtml}${patientDiagHtml}</div>`
+            ? `<div style="margin-top:3px; font-size:14.4px; color:#9a8e7e;">${patientAgeHtml}${patientDiagHtml}</div>`
             : '';
 
         const tabsHeaderHtml = `
@@ -1754,11 +1754,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
             </style>
             <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:3px;">
-                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
-                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
-                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
-                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
-                <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:12px; transition:all 0.2s; line-height:normal;">
+                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
+                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
+                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
+                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+                <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     AI
                 </button>
@@ -1770,14 +1770,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                            <h3 style="color:#d4a25a; margin:0; font-size:16px; display:flex; align-items:center; gap:10px;">
+                            <h3 style="color:#d4a25a; margin:0; font-size:19.2px; display:flex; align-items:center; gap:10px;">
                                 <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
-                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>${headerGender || patientInfo.age ? `<span style="color:#9a8e7e; font-size:13px; font-weight:400;">${[headerGender, patientInfo.age].filter(Boolean).join(', ')}</span>` : ''}
+                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>${headerGender || patientInfo.age ? `<span style="color:#9a8e7e; font-size:15.6px; font-weight:400;">${[headerGender, patientInfo.age].filter(Boolean).join(', ')}</span>` : ''}
                             </h3>
                         </div>
                         ${headerSubtitleHtml}
                     </div>
-                    <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:22px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
+                    <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:26.4px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
                 </div>
                 ${tabsHeaderHtml}
                 <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
@@ -1801,10 +1801,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                             </div>
                             <div>
-                                <div style="color:#D4A853;font-weight:700;font-size:14px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
-                                <div style="color:#6b7280;font-size:12px;line-height:1.5;">Nhấn <strong style="color:#c8a455;">Phân tích</strong> để AI tóm tắt hồ sơ bệnh nhân</div>
+                                <div style="color:#D4A853;font-weight:700;font-size:16.8px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
+                                <div style="color:#6b7280;font-size:14.4px;line-height:1.5;">Nhấn <strong style="color:#c8a455;">Phân tích</strong> để AI tóm tắt hồ sơ bệnh nhân</div>
                             </div>
-                            <button id="btn-ai-start" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:13px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
+                            <button id="btn-ai-start" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:15.6px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                                 Phân tích ngay
                             </button>
@@ -1815,7 +1815,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                     <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(212,168,83,0.15);"></div>
                                     <div style="position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:#D4A853;animation:aisSpinRing 0.9s linear infinite;"></div>
                                 </div>
-                                <span style="color:#D4A853;font-weight:600;font-size:13px;">Đang phân tích hồ sơ lâm sàng...</span>
+                                <span style="color:#D4A853;font-weight:600;font-size:15.6px;">Đang phân tích hồ sơ lâm sàng...</span>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:8px;padding-left:32px;">
                                 <div style="height:9px;background:rgba(212,168,83,0.12);border-radius:5px;width:88%;animation:aisSkel 1.6s ease-in-out infinite;"></div>
@@ -1826,28 +1826,28 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         </div>
                         <div id="ai-tab-result" style="display:none;">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(212,168,83,0.12);">
-                                <span style="font-size:11px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Kết quả phân tích</span>
-                                <button id="btn-ai-rerun" style="display:flex;align-items:center;gap:5px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);color:#c8a455;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:0.2s;" title="Phân tích lại">
+                                <span style="font-size:13.2px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Kết quả phân tích</span>
+                                <button id="btn-ai-rerun" style="display:flex;align-items:center;gap:5px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);color:#c8a455;border-radius:6px;padding:3px 10px;font-size:13.2px;font-weight:600;cursor:pointer;transition:0.2s;" title="Phân tích lại">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                                     Phân tích lại
                                 </button>
                             </div>
-                            <div id="ai-summary-result-modal" style="font-size:13px;color:#cbd5e1;line-height:1.7;"></div>
+                            <div id="ai-summary-result-modal" style="font-size:15.6px;color:#cbd5e1;line-height:1.7;"></div>
                             <div id="ai-search-links" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);display:none;">
-                                <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📚 Tra cứu chuyên sâu theo mã ICD</div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📚 Tra cứu chuyên sâu theo mã ICD</div>
                                 <div id="ai-links-wrap" style="display:flex;flex-direction:column;gap:8px;"></div>
                             </div>
                             <div id="ai-disclaimer" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);border-radius:8px;">
                                 <div style="display:flex;align-items:flex-start;gap:8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                     <div>
-                                        <div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:3px;">Lưu ý lâm sàng</div>
-                                        <div style="font-size:11px;color:#9a8e7e;line-height:1.6;">Nội dung trên được tạo bởi AI dựa trên dữ liệu có sẵn, mang tính <strong style='color:#c8b89a;'>tham khảo</strong> và có thể không chính xác hoặc thiếu sót. Bác sĩ điều trị chịu trách nhiệm <strong style='color:#c8b89a;'>đánh giá, xác minh</strong> và đưa ra quyết định lâm sàng cuối cùng.</div>
+                                        <div style="font-size:13.2px;font-weight:700;color:#f59e0b;margin-bottom:3px;">Lưu ý lâm sàng</div>
+                                        <div style="font-size:13.2px;color:#9a8e7e;line-height:1.6;">Nội dung trên được tạo bởi AI dựa trên dữ liệu có sẵn, mang tính <strong style='color:#c8b89a;'>tham khảo</strong> và có thể không chính xác hoặc thiếu sót. Bác sĩ điều trị chịu trách nhiệm <strong style='color:#c8b89a;'>đánh giá, xác minh</strong> và đưa ra quyết định lâm sàng cuối cùng.</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div id="ai-tab-error" style="display:none;padding:16px;background:rgba(232,84,84,0.06);border:1px solid rgba(232,84,84,0.2);border-radius:8px;color:#E85454;font-size:13px;"></div>
+                        <div id="ai-tab-error" style="display:none;padding:16px;background:rgba(232,84,84,0.06);border:1px solid rgba(232,84,84,0.2);border-radius:8px;color:#E85454;font-size:15.6px;"></div>
                     </div>
                 </div>
                 <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid rgba(212,162,90,0.2); padding-top:12px;">

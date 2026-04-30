@@ -324,22 +324,22 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                 @keyframes aqtSlideIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
                 .aqt-panel{background:linear-gradient(135deg,#1a1510 0%,#231c14 100%);border:1px solid rgba(212,162,90,0.3);border-radius:16px;padding:16px;width:260px;box-shadow:0 20px 40px rgba(0,0,0,0.5),0 0 20px rgba(212,162,90,0.1);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e8dcc8;pointer-events:auto;animation:aqtSlideIn .25s ease}
                 .aqt-sec{background:rgba(0,0,0,0.25);border:1px solid rgba(212,162,90,0.1);border-radius:10px;padding:8px 10px;margin-bottom:8px}
-                .aqt-lbl{font-size:10px;color:#a0937e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+                .aqt-lbl{font-size: 12px;color:#a0937e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
                 .aqt-time-row{display:flex;align-items:center;justify-content:center;gap:2px}
                 .aqt-spin{display:flex;flex-direction:column;align-items:center;gap:2px}
-                .aqt-btn{width:26px;height:20px;border:none;border-radius:4px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;background:rgba(212,162,90,0.12);color:#d4a25a;transition:all .12s}
+                .aqt-btn{width: 31px;height: 24px;border:none;border-radius:4px;cursor:pointer;font-size: 10.8px;display:flex;align-items:center;justify-content:center;background:rgba(212,162,90,0.12);color:#d4a25a;transition:all .12s}
                 .aqt-btn:hover{background:rgba(212,162,90,0.3);transform:scale(1.1)}
                 .aqt-btn:active{background:rgba(212,162,90,0.45);transform:scale(.92)}
-                .aqt-val{font-size:20px;font-weight:700;color:#e8dcc8;font-family:'Segoe UI',monospace;min-width:44px;text-align:center;letter-spacing:1px;line-height:1;cursor:default}
-                .aqt-val-input{width:44px;font-size:20px;font-weight:700;color:#d4a25a;font-family:'Segoe UI',monospace;text-align:center;letter-spacing:1px;background:rgba(212,162,90,0.15);border:1px solid #d4a25a;border-radius:4px;outline:none;padding:2px 0;line-height:1}
-                .aqt-colon{font-size:20px;font-weight:700;color:#d4a25a;line-height:1;margin:0 1px}
-                .aqt-date{font-size:10px;color:#7a6e5e;text-align:center;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:6px}
-                .aqt-day-btn{background:none;border:none;color:#7a6e5e;cursor:pointer;font-size:10px;padding:0 2px;transition:color .15s;opacity:.6}
+                .aqt-val{font-size: 24px;font-weight:700;color:#e8dcc8;font-family:'Segoe UI',monospace;min-width: 53px;text-align:center;letter-spacing:1px;line-height:1;cursor:default}
+                .aqt-val-input{width: 53px;font-size: 24px;font-weight:700;color:#d4a25a;font-family:'Segoe UI',monospace;text-align:center;letter-spacing:1px;background:rgba(212,162,90,0.15);border:1px solid #d4a25a;border-radius:4px;outline:none;padding:2px 0;line-height:1}
+                .aqt-colon{font-size: 24px;font-weight:700;color:#d4a25a;line-height:1;margin:0 1px}
+                .aqt-date{font-size: 12px;color:#7a6e5e;text-align:center;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:6px}
+                .aqt-day-btn{background:none;border:none;color:#7a6e5e;cursor:pointer;font-size: 12px;padding:0 2px;transition:color .15s;opacity:.6}
                 .aqt-day-btn:hover{color:#d4a25a;opacity:1}
-                .aqt-preview{background:rgba(0,0,0,0.3);border:1px solid rgba(212,162,90,0.08);border-radius:8px;padding:6px 10px;font-size:10px;color:#7a6e5e}
+                .aqt-preview{background:rgba(0,0,0,0.3);border:1px solid rgba(212,162,90,0.08);border-radius:8px;padding:6px 10px;font-size: 12px;color:#7a6e5e}
                 .aqt-preview-row{display:flex;justify-content:space-between;padding:2px 0}
                 .aqt-preview-val{color:#e8dcc8;font-weight:600;font-family:monospace}
-                .aqt-step-btn{width:30px;height:26px;border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;background:rgba(212,162,90,0.15);color:#d4a25a;transition:all .12s}
+                .aqt-step-btn{width: 36px;height: 31px;border:none;border-radius:6px;cursor:pointer;font-size: 19.2px;font-weight:700;display:flex;align-items:center;justify-content:center;background:rgba(212,162,90,0.15);color:#d4a25a;transition:all .12s}
                 .aqt-step-btn:hover{background:rgba(212,162,90,0.35);transform:scale(1.1)}
                 .aqt-step-btn:active{transform:scale(.9)}
             `;
@@ -378,14 +378,14 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
         modal.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                 <div style="display:flex;align-items:center;gap:6px">
-                    <span style="font-size:18px">🧞</span>
-                    <span style="font-size:14px;font-weight:700;color:#d4a25a">Auto Giờ BHYT</span>
+                    <span style="font-size: 21.6px">🧞</span>
+                    <span style="font-size: 16.8px;font-weight:700;color:#d4a25a">Auto Giờ BHYT</span>
                 </div>
-                <button id="aqt-x" style="background:none;border:none;color:#7a6e5e;cursor:pointer;font-size:16px;padding:0 2px;transition:color .2s" title="Đóng">✕</button>
+                <button id="aqt-x" style="background:none;border:none;color:#7a6e5e;cursor:pointer;font-size: 19.2px;padding:0 2px;transition:color .2s" title="Đóng">✕</button>
             </div>
             <div class="aqt-sec" style="padding:6px 10px">
                 <div class="aqt-lbl">Y lệnh</div>
-                <div style="font-size:12px;color:#d4a25a;font-weight:600">${orderTimeStr || 'N/A'}</div>
+                <div style="font-size: 14.4px;color:#d4a25a;font-weight:600">${orderTimeStr || 'N/A'}</div>
             </div>
             ${buildSpinner('aqt-prev', prevEndDate, '⏱ Kết thúc ca trước')}
             ${buildSpinner('aqt-rcpt', receiptDate, '📋 Tiếp nhận (bắt đầu)')}
@@ -393,12 +393,12 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
                 <div class="aqt-lbl">Bước nhảy (phút)</div>
                 <div style="display:flex;align-items:center;gap:10px;justify-content:center">
                     <button class="aqt-step-btn" id="aqt-sd">−</button>
-                    <span id="aqt-sv" style="font-size:22px;font-weight:700;color:#d4a25a;min-width:30px;text-align:center">${stepMins}</span>
+                    <span id="aqt-sv" style="font-size: 26.4px;font-weight:700;color:#d4a25a;min-width: 36px;text-align:center">${stepMins}</span>
                     <button class="aqt-step-btn" id="aqt-su">+</button>
                 </div>
-                <div style="font-size:9px;color:#7a6e5e;text-align:center;margin-top:3px">Đường huyết 1' · Siêu âm 5'</div>
+                <div style="font-size: 10.8px;color:#7a6e5e;text-align:center;margin-top:3px">Đường huyết 1' · Siêu âm 5'</div>
             </div>
-            <div id="aqt-st" style="font-size:11px;text-align:center;min-height:14px;margin-bottom:6px;color:#6ee7a0;transition:color .2s"></div>
+            <div id="aqt-st" style="font-size: 13.2px;text-align:center;min-height:14px;margin-bottom:6px;color:#6ee7a0;transition:color .2s"></div>
             <div class="aqt-preview">
                 <div class="aqt-preview-row"><span>Tiếp nhận</span><span class="aqt-preview-val" id="aqt-p0">--</span></div>
                 <div class="aqt-preview-row"><span>Bắt đầu TH</span><span class="aqt-preview-val" id="aqt-p1">--</span></div>

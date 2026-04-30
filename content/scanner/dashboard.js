@@ -41,14 +41,14 @@ const VNPTDashboard = (function () {
                 
                 <div class="vnpt-stats-row">
                     <div class="vnpt-stat-card">
-                        <span class="stat-icon" style="font-size:18px;">👥</span>
+                        <span class="stat-icon" style="font-size: 21.6px;">👥</span>
                         <div class="stat-info">
                             <span class="stat-value" id="dash-total-patients">${overview.total}</span>
                             <span class="stat-label">Tổng Bệnh Nhân</span>
                         </div>
                     </div>
                     <div class="vnpt-stat-card">
-                        <span class="stat-icon" style="font-size:18px;">🛏️</span>
+                        <span class="stat-icon" style="font-size: 21.6px;">🛏️</span>
                         <div class="stat-info">
                             <span class="stat-value" id="dash-total-rooms">0</span>
                             <span class="stat-label">Phòng Đã Quét</span>
@@ -328,13 +328,13 @@ const VNPTDashboard = (function () {
                 background: linear-gradient(145deg, #1a0b2e, #0f172a); border: 1px solid var(--mini-border); border-radius: 20px; width: 440px; max-width: 90%; padding: 24px; box-shadow: var(--mini-shadow);
             }
             .vnpt-dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-            .vnpt-dashboard-header h3 { margin: 0; font-size: 18px; color: #ffd700; font-weight: 800; text-shadow: 0 0 10px rgba(255,215,0,0.3); display: flex; align-items: center;}
-            #vnpt-dashboard-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0; line-height: 1; }
+            .vnpt-dashboard-header h3 { margin: 0; font-size: 21.6px; color: #ffd700; font-weight: 800; text-shadow: 0 0 10px rgba(255,215,0,0.3); display: flex; align-items: center;}
+            #vnpt-dashboard-close { background: none; border: none; font-size: 28.8px; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0; line-height: 1; }
             #vnpt-dashboard-close:hover { color: #00f0ff; text-shadow: 0 0 8px #00f0ff; }
 
             .vnpt-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
             .vnpt-chart-card { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; min-height: 180px; }
-            .vnpt-chart-card h4 { margin: 0 0 12px 0; font-size: 13px; font-weight: 700; color: #d0e0ff; }
+            .vnpt-chart-card h4 { margin: 0 0 12px 0; font-size: 15.6px; font-weight: 700; color: #d0e0ff; }
 
             .vnpt-room-stats-list { width: 100%; max-height: 200px; overflow-y: auto; padding-right: 6px; }
             .vnpt-room-stats-list::-webkit-scrollbar { width: 4px; }
@@ -342,22 +342,22 @@ const VNPTDashboard = (function () {
 
             .vnpt-room-stat-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; transition: transform 0.2s; }
             .vnpt-room-stat-row:hover { transform: translateX(4px); }
-            .vnpt-room-stat-row .room-name { width: 60px; font-weight: 700; font-size: 12px; color: #d0e0ff; display: flex; align-items: center; gap: 4px; }
+            .vnpt-room-stat-row .room-name { width: 72px; font-weight: 700; font-size: 14.4px; color: #d0e0ff; display: flex; align-items: center; gap: 4px; }
             .vnpt-room-stat-row .room-bar-wrapper { flex: 1; height: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.02);}
             .vnpt-room-stat-row .room-bar { height: 100%; background: linear-gradient(90deg, #00f0ff, #0284c7); border-radius: 6px; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
             .vnpt-room-stat-row .room-bar.highest { background: linear-gradient(90deg, #ffd700, #f59e0b); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-            .vnpt-room-stat-row .room-count { width: 30px; font-weight: 800; text-align: right; color: #00f0ff; font-size: 12px; text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
+            .vnpt-room-stat-row .room-count { width: 36px; font-weight: 800; text-align: right; color: #00f0ff; font-size: 14.4px; text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
 
             .vnpt-stats-column { display: flex; flex-direction: column; gap: 12px; }
             .vnpt-stat-card { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; }
             .vnpt-stat-card:hover { border-color: rgba(0, 240, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 240, 255, 0.1); transform: translateY(-2px); }
             .stat-icon { width: 36px; height: 36px; background: rgba(0, 240, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.3));}
             .stat-info { display: flex; flex-direction: column; }
-            .stat-value { font-size: 18px; font-weight: 800; color: #00f0ff; line-height: 1.2; text-shadow: 0 0 10px rgba(0,240,255,0.3); }
-            .stat-label { font-size: 11px; color: #d0e0ff; font-weight: 600; opacity: 0.8;}
+            .stat-value { font-size: 21.6px; font-weight: 800; color: #00f0ff; line-height: 1.2; text-shadow: 0 0 10px rgba(0,240,255,0.3); }
+            .stat-label { font-size: 13.2px; color: #d0e0ff; font-weight: 600; opacity: 0.8;}
 
             .vnpt-dashboard-footer { margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px; }
-            .aladinn-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+            .aladinn-btn { padding: 8px 16px; border-radius: 8px; font-size: 15.6px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
             .aladinn-btn-primary { background: linear-gradient(90deg, #00f0ff, #0284c7); color: #1a0b2e; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); }
             .aladinn-btn-primary:hover { box-shadow: 0 0 15px rgba(0, 240, 255, 0.6); transform: scale(1.02); }
             .aladinn-btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #d0e0ff; }
@@ -379,19 +379,19 @@ const VNPTDashboard = (function () {
             }
             .mini-header {
                 display: flex; justify-content: space-between; align-items: center;
-                margin-bottom: 15px; font-size: 13px; font-weight: 800; color: #ffd700;
+                margin-bottom: 15px; font-size: 15.6px; font-weight: 800; color: #ffd700;
             }
             .mini-tag {
-                background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff6b6b; padding: 2px 6px; border-radius: 4px; font-size: 9px;
+                background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ff6b6b; padding: 2px 6px; border-radius: 4px; font-size: 10.8px;
                 text-transform: uppercase; animation: vnpt-blink 1.5s infinite; text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
             }
             .vnpt-room-stat-row.mini { margin-bottom: 8px; }
-            .vnpt-room-stat-row.mini .room-name { width: 45px; font-size: 10px; color: #d0e0ff;}
+            .vnpt-room-stat-row.mini .room-name { width: 54px; font-size: 12px; color: #d0e0ff;}
             .vnpt-room-stat-row.mini .room-bar-wrapper { height: 16px; background: rgba(255,255,255,0.05); }
             .vnpt-room-stat-row.mini .room-bar { display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
-            .room-count-inside { color: #1a0b2e; font-weight: 900; font-size: 10px; text-shadow: none; }
-            .lead-icon { font-size: 12px; position: absolute; left: -14px; filter: drop-shadow(0 0 2px rgba(255,215,0,0.8)); }
-            .empty-stats { color: #d0e0ff; font-size: 11px; text-align: center; padding: 20px 0; font-style: italic; opacity: 0.7; }
+            .room-count-inside { color: #1a0b2e; font-weight: 900; font-size: 12px; text-shadow: none; }
+            .lead-icon { font-size: 14.4px; position: absolute; left: -14px; filter: drop-shadow(0 0 2px rgba(255,215,0,0.8)); }
+            .empty-stats { color: #d0e0ff; font-size: 13.2px; text-align: center; padding: 20px 0; font-style: italic; opacity: 0.7; }
             .aladinn-hidden-row { display: none !important; }
 
             /* Quick Filter Bar Styles */
@@ -403,13 +403,13 @@ const VNPTDashboard = (function () {
                 animation: vnpt-fade-in 0.4s ease;
             }
             #aladinn-quick-filter-bar .filter-title {
-                font-weight: 800; color: #ffd700; font-size: 13px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
+                font-weight: 800; color: #ffd700; font-size: 15.6px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.4);
                 display: flex; align-items: center; white-space: nowrap;
             }
             #aladinn-quick-filter-bar .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
             .app-quick-filter-chip {
                 background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #d0e0ff;
-                padding: 6px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+                padding: 6px 14px; border-radius: 12px; font-size: 14.4px; font-weight: 700; cursor: pointer;
                 transition: all 0.2s; display: flex; align-items: center; gap: 6px;
             }
             .app-quick-filter-chip:hover {
@@ -419,7 +419,7 @@ const VNPTDashboard = (function () {
                 background: rgba(0, 240, 255, 0.2); border-color: #00f0ff; color: #00f0ff; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
             }
             .app-quick-filter-chip .chip-count {
-                background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 8px; font-size: 11px; color: #ffd700; font-weight: 800;
+                background: rgba(0,0,0,0.4); padding: 1px 6px; border-radius: 8px; font-size: 13.2px; color: #ffd700; font-weight: 800;
             }
 
             @keyframes vnpt-pop-in { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }

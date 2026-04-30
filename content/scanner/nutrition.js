@@ -160,7 +160,7 @@ const VNPTNutrition = (function () {
                 user-select: none !important;
                 background: linear-gradient(135deg, #2196F3, #1565C0) !important;
                 border: 2px solid rgba(255,255,255,0.3) !important;
-                font-size: 22px !important;
+                font-size: 26.4px !important;
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
                 animation: fab-pulse-nutrition 2.5s ease-in-out infinite !important;
             }
@@ -174,7 +174,7 @@ const VNPTNutrition = (function () {
                 position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
                 background: rgba(15,23,42,0.95); color: #f1f5f9;
                 padding: 6px 12px; border-radius: 8px;
-                font-size: 12px; font-weight: 500; white-space: nowrap;
+                font-size: 14.4px; font-weight: 500; white-space: nowrap;
                 pointer-events: none; opacity: 0; transition: opacity 0.2s;
                 font-family: 'Inter', system-ui, sans-serif;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
