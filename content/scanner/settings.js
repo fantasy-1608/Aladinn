@@ -69,7 +69,8 @@ const VNPTSettings = (function () {
         if (window.VNPTStore) window.VNPTStore.set('isDarkMode', settings.darkMode);
 
         if (window.VNPTConfig) {
-            window.VNPTConfig.VERSION = '1.1.8';
+            const _chrome = (/** @type {any} */(window)).chrome;
+            window.VNPTConfig.VERSION = _chrome?.runtime?.getManifest?.()?.version || '0.0.0';
         }
     }
 
@@ -85,12 +86,15 @@ const VNPTSettings = (function () {
         settingsPanel.id = 'vnpt-settings-panel';
         settingsPanel.className = 'vnpt-settings-panel';
 
+        const _chrome = (/** @type {any} */(window)).chrome;
+        const _ver = _chrome?.runtime?.getManifest?.()?.version || '0.0.0';
+
         settingsPanel.innerHTML = `
             <div class="vnpt-settings-container">
                 <div class="vnpt-settings-header">
                     <div class="header-title">
                         <span class="header-icon" style="font-size:22px;">⚙️</span>
-                        <h3>Cài đặt Hệ thống v1.1.8</h3>
+                        <h3>Cài đặt Hệ thống v${_ver}</h3>
                     </div>
                     <button class="vnpt-settings-close">&times;</button>
                 </div>
@@ -161,7 +165,7 @@ const VNPTSettings = (function () {
 
                 <div class="vnpt-settings-footer">
                     <div class="version-info">
-                        VNPT HIS Smart Scanner <span class="version-tag" style="cursor: pointer;">v1.1.8</span>
+                        VNPT HIS Smart Scanner <span class="version-tag" style="cursor: pointer;">v${_ver}</span>
                     </div>
                 </div>
             </div>
