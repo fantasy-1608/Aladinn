@@ -932,7 +932,7 @@
                         options: [
                             { name: '[0]', value: '' },
                             { name: '[1]', value: String(benhnhanId) },
-                            { name: '[2]', value: '4' }, // type=4 to find all depts
+                            { name: '[2]', value: '' }, // Rỗng để lấy TẤT CẢ các loại phiếu, từ đó móc ra KHAMBENHID của tất cả các khoa
                             { name: '[3]', value: String(hsbaId) }
                         ]
                     };
@@ -1008,13 +1008,13 @@
                             { name: '[3]', value: String(hsbaId) }
                         ]
                     };
-                    const url2 = `${baseUrl}?_search=false&rows=1000&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(p2))}`;
+                    const url2 = `${baseUrl}?_search=false&rows=1000&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(p2))}`;
                     const res2 = await fetch(url2, { credentials: 'include' });
                     if (res2.ok) {
                         const data2 = await res2.json();
                         const rows2 = data2.rows || [];
                         if (rows2.length > 0) {
-                            console.log(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=3): Found ${rows2.length} sheets`);
+                            console.log(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=''): Found ${rows2.length} sheets`);
                             for (const row of rows2) {
                                 const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
                                 if (sid && !seenSheetIds.has(sid)) {
@@ -1111,9 +1111,10 @@
                             
                             // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
                             const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi', 'túi'].some(u => donvitinh.includes(u));
-                            if (!lieudung && !duongdung && !isDrugUnit) {
-                                continue;
-                            }
+                            // TẠM THỜI TẮT BỘ LỌC NGHIÊM NGẶT NÀY ĐỂ KHÔNG BỎ SÓT THUỐC
+                            // if (!lieudung && !duongdung && !isDrugUnit) {
+                            //     continue;
+                            // }
 
                             allDrugs.push({
                                 NGAYMAUBENHPHAM_SUDUNG: sheetDate,
