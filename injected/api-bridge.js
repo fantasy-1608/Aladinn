@@ -906,7 +906,7 @@
             const baseUrl = '/vnpthis/RestService';
 
             // Dynamic dayFilter calculation to capture entire hospital stay
-            let dayFilter = 7;
+            let dayFilter = 99;
             try {
                 const ngayVaoVien = rowData.THOIGIANVAOVIEN || rowData.NGAYVAOKHOA || rowData.NGAYTIEPNHAN || '';
                 if (ngayVaoVien) {
@@ -916,7 +916,11 @@
                         const admissionDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
                         const diffTime = Math.abs(new Date() - admissionDate);
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        dayFilter = (diffDays > 0) ? diffDays + 2 : 7; // +2 for buffer
+                        
+                        // VNPT HIS server có bug ngầm ở nhánh SQL khi dayFilter='7;' (hoặc các mốc chuẩn 15, 30)
+                        // Bệnh nhân có SNĐT=6 -> diffDays=5 -> dayFilter=7 -> BỊ LỖI TRẢ VỀ 0 RECORD!
+                        // Fix: Cộng hẳn 99 ngày để lệch khỏi các mốc chuẩn, ép HIS dùng nhánh SQL dynamic fallback.
+                        dayFilter = (diffDays > 0 && !isNaN(diffDays)) ? diffDays + 99 : 99;
                     }
                 }
             } catch (e) { console.warn('[Aladinn Drug] Error calculating dayFilter:', e); }
