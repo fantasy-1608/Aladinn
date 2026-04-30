@@ -1126,10 +1126,14 @@
                             const lieudung = item.LIEUDUNG || item.LIEU || '';
                             const duongdung = item.DUONGDUNG || item.TENDUONGDUNG || '';
                             
-                            // Bỏ qua nếu là dịch vụ khám bệnh, giường bệnh, hoặc đơn vị tính là "Lần"
+                            // Bỏ qua nếu là dịch vụ khám bệnh, giường bệnh, công khám
                             if (donvitinh.includes('lần') || lowerName.startsWith('khám') || lowerName.includes('giường') || lowerName.includes('công khám')) {
                                 continue;
                             }
+
+                            // Bỏ qua vật tư y tế (VTYT)
+                            const isVTYT = ['kim tiêm', 'kim luồn', 'kim bướm', 'bơm tiêm', 'dây truyền', 'bộ dây', 'catheter', 'băng keo', 'băng dính', 'băng thun', 'băng cá nhân', 'gạc', 'bông', 'găng tay', 'chỉ khâu', 'lưỡi dao', 'ống silicon', 'canuyn', 'sonde', 'xong dạ dày', 'túi nước tiểu', 'điện cực'].some(v => lowerName.includes(v));
+                            if (isVTYT) continue;
                             
                             // Chỉ nhận nếu có liều dùng hoặc đường dùng HOẶC đơn vị tính rõ ràng của thuốc
                             const isDrugUnit = ['viên', 'lọ', 'ống', 'chai', 'bơm', 'típ', 'tuýp', 'gói', 'ml', 'vỉ', 'vi'].some(u => donvitinh.includes(u));
