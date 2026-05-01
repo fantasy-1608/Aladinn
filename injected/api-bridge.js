@@ -1199,6 +1199,7 @@
                 tomTatCLS: '',
                 huongXuLy: '',
                 dienBienBenh: '',
+                khamToanThanTDT: '',  // Khám toàn thân từ tờ điều trị mới nhất
                 sinhHieu: {}
             };
 
@@ -1337,9 +1338,46 @@
                             const tData = JSON.parse(xhr.responseText);
                             const rows = tData.rows || [];
                             if (rows.length > 0) {
+                                // Sort client-side theo ngày giảm dần vì API đôi khi bỏ qua sidx=NGAYMAUBENHPHAM
+                                // Format ngày HIS: "DD/MM/YYYY HH:MM:SS"
+                                function _parseTDTDate(str) {
+                                    if (!str) return 0;
+                                    var p = str.split(/[/\s:]/);
+                                    if (p.length >= 5) {
+                                        return new Date(p[2], parseInt(p[1]) - 1, p[0], p[3], p[4], p[5] || 0).getTime();
+                                    }
+                                    return 0;
+                                }
+                                rows.sort(function(a, b) {
+                                    return _parseTDTDate(b.NGAYMAUBENHPHAM || b.NGAY_Y_LENH || b.NGAY || '')
+                                         - _parseTDTDate(a.NGAYMAUBENHPHAM || a.NGAY_Y_LENH || a.NGAY || '');
+                                });
                                 foundTreatment = true;
                                 const latest = rows[0];
                                 result.dienBienBenh = latest.DIENBIENBENH || latest.NOIDUNG || '';
+
+                                // Trích xuất Khám toàn thân từ tờ điều trị
+                                var kttKeys = ['KHAMTOANHAN', 'KHAMBENHTOANTHAN', 'KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'TOANTHAN'];
+                                for (var ki2 = 0; ki2 < kttKeys.length; ki2++) {
+                                    var kv = latest[kttKeys[ki2]];
+                                    if (kv && String(kv).trim().length > 1) {
+                                        result.khamToanThanTDT = String(kv).trim();
+                                        break;
+                                    }
+                                }
+                                // Fallback: universal scan nếu không tìm thấy theo key chuẩn
+                                if (!result.khamToanThanTDT) {
+                                    for (var fkk in latest) {
+                                        var fuk2 = fkk.toUpperCase();
+                                        if (fuk2.includes('KHAMTOAN') || fuk2.includes('TOANTHAN') || fuk2 === 'KHAMBENH_TOANTHAN') {
+                                            var fvv = latest[fkk];
+                                            if (fvv && String(fvv).trim().length > 1) {
+                                                result.khamToanThanTDT = String(fvv).trim();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
 
                                 // === Bước 2a: Gọi NT.024.2.DETAIL để lấy chẩn đoán đầy đủ (có ICD) ===
                                 var detailSheetId = latest.MAUBENHPHAMID || latest.PHIEUID || latest.ID;

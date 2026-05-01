@@ -339,9 +339,10 @@ const VNPTClinicalFill = (function () {
         const ttVaoVien = join(raw.khamToanThan, raw.khamBoPhan);
 
         // Tóm tắt TT hiện tại: ưu tiên diễn biến tờ điều trị mới nhất,
-        // fallback khám toàn thân + bộ phận
-        const ttHienTai = raw.dienBienBenh
-            ? raw.dienBienBenh
+        // gộp thêm Khám toàn thân của tờ điều trị nếu có,
+        // fallback khám toàn thân + bộ phận từ HSBA
+        const ttHienTai = raw.dienBienBenh || raw.khamToanThanTDT
+            ? join(raw.dienBienBenh, raw.khamToanThanTDT)
             : join(raw.khamToanThan, raw.khamBoPhan);
 
         // Kết luận chẩn đoán: ưu tiên nguyên chẩn đoán từ tờ điều trị mới nhất (chính + kèm theo)
@@ -409,11 +410,19 @@ const VNPTClinicalFill = (function () {
             v.bloodPressure ? 'HA: ' + v.bloodPressure + ' mmHg' : ''
         ].filter(Boolean).join(', ');
 
+        // Dấu hiệu lâm sàng: ưu tiên khám toàn thân từ tờ điều trị nếu có, fallback HSBA
+        const kttSource = raw.khamToanThanTDT || raw.khamToanThan;
+        const dauHieu = join(kttSource, raw.khamBoPhan, vitalStr ? 'Sinh hiệu: ' + vitalStr : '');
+
+        // Tình trạng người bệnh: gộp diễn biến + khám toàn thân tờ điều trị
+        const tinhTrang = join(raw.dienBienBenh, raw.khamToanThanTDT)
+            || join(raw.khamToanThan, raw.khamBoPhan);
+
         return {
-            'dauHieuLamSang': join(raw.khamToanThan, raw.khamBoPhan, vitalStr ? 'Sinh hiệu: ' + vitalStr : ''),
+            'dauHieuLamSang': dauHieu,
             'quaTrinhBenhLy': raw.quaTrinhBenhLy || '',
             'ketQuaCLS': raw.tomTatCLS || '',
-            'tinhTrangNguoiBenh': raw.dienBienBenh || join(raw.khamToanThan, raw.khamBoPhan),
+            'tinhTrangNguoiBenh': tinhTrang,
             'thuoc': 'Toa thuốc Bệnh viện',
             'huongDieuTri': raw.huongXuLy || 'Chuyển tuyến trên'
         };
