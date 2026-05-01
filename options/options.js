@@ -684,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             ${tpl.title}
-                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">/${tpl.shortcut}</span>
+                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${tpl.shortcut}</span>
                         </div>
                         <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${tpl.content}</div>
                     </div>

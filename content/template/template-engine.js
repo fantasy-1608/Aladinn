@@ -60,53 +60,23 @@ class TemplateEngine {
     }
 
     /**
-     * isValidTarget — chỉ cho phép:
-     *   - <textarea> bất kỳ (kể cả trong form bệnh án dạng bảng)
-     *   - <input type="text"> KHÔNG nằm trong grid filter row của HIS
+     * isValidTarget — cho phép mọi ô nhập liệu:
+     *   - <textarea> bất kỳ
+     *   - <input type="text"> hoặc <input type="search">
      *
-     * Phân biệt:
-     *   Grid filter: row có ≥3 input (dãy ô lọc bệnh nhân đầu bảng)
-     *   Form bệnh án: bảng 2 cột label|textarea/input → luôn cho phép
+     * Trigger là "//" (2 dấu gạch chéo) nên rất khó vô tình kích hoạt.
+     * Không cần filter phức tạp nữa.
      */
     isValidTarget(target) {
         if (!target) return false;
 
         const tagName = target.tagName.toLowerCase();
 
-        // Textarea: luôn hợp lệ (HIS form dùng table layout nhưng vẫn là form hợp lệ)
         if (tagName === 'textarea') return true;
 
         if (tagName === 'input') {
             const type = (target.type || 'text').toLowerCase();
-            if (type !== 'text' && type !== 'search') return false;
-
-            const id          = (target.id  || '').toLowerCase();
-            const cls         = (target.className || '').toLowerCase();
-            const name        = (target.name || '').toLowerCase();
-            const placeholder = (target.placeholder || '').toLowerCase();
-
-            // 1. Ô có từ khóa tìm kiếm rõ ràng
-            const searchWords = ['search', 'filter', 'lookup', 'timkiem', 'find'];
-            if (searchWords.some(w => id.includes(w) || cls.includes(w) || placeholder.includes(w))) {
-                return false;
-            }
-
-            // 2. Reject nếu nằm trong <th> (header cell → chắc chắn là filter)
-            if (target.closest('th')) return false;
-
-            // 3. Reject nếu row hiện tại có ≥3 input (đặc trưng grid filter HIS)
-            //    Form bệnh án 2 cột chỉ có 1 input/row → an toàn
-            const parentRow = target.closest('tr');
-            if (parentRow) {
-                const inputsInRow = parentRow.querySelectorAll('input[type="text"], input:not([type])').length;
-                if (inputsInRow >= 3) return false;
-            }
-
-            // 4. Ô có id/name khớp pattern mã filter của HIS (maBN, ngayTu, denNgay...)
-            const codePatterns = /^(ma[a-z]|ngay|tunga|dennga|trangtha|loaidk)/i;
-            if (codePatterns.test(id) || codePatterns.test(name)) return false;
-
-            return true;
+            return type === 'text' || type === 'search';
         }
 
         return false;
@@ -135,27 +105,21 @@ class TemplateEngine {
         const cursorPos = target.selectionStart;
 
         const textBeforeCursor = value.substring(0, cursorPos);
-        const lastSlashIndex   = textBeforeCursor.lastIndexOf('/');
 
-        if (lastSlashIndex !== -1) {
-            // Cho phép / ở bất kỳ vị trí nào, trừ sau chữ/số liền kề
-            // (tránh http://, 1/2, 01/01)
-            const charBefore    = lastSlashIndex > 0 ? textBeforeCursor[lastSlashIndex - 1] : '';
-            const isPartOfToken = /[a-zA-Z0-9]/.test(charBefore);
+        // Trigger bằng "//" — tìm chuỗi "//" gần cursor nhất
+        const lastDoubleSlashIndex = textBeforeCursor.lastIndexOf('//');
 
-            if (!isPartOfToken) {
-                const query = textBeforeCursor.substring(lastSlashIndex + 1);
+        if (lastDoubleSlashIndex !== -1) {
+            // query là phần sau "//"
+            const query = textBeforeCursor.substring(lastDoubleSlashIndex + 2);
 
-                // Query không được chứa khoảng trắng/newline
-                if (!/[\s\n]/.test(query)) {
-                    if (!templateUI.isOpen) {
-                        // Nếu target trong iframe, cần truyền top-document để
-                        // menu render trên top frame (không bị crop bởi iframe)
-                        templateUI.open(target, lastSlashIndex);
-                    }
-                    templateUI.updateQuery(query);
-                    return;
+            // Query không được chứa khoảng trắng/newline
+            if (!/[\s\n]/.test(query)) {
+                if (!templateUI.isOpen) {
+                    templateUI.open(target, lastDoubleSlashIndex);
                 }
+                templateUI.updateQuery(query);
+                return;
             }
         }
 

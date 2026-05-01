@@ -132,6 +132,23 @@ class TemplateUI {
         this.queryStartPos = queryStartPos;
         this.currentQuery = '';
         this.isOpen = true;
+
+        // Nếu target nằm trong iframe, phải render menu vào document của iframe đó.
+        // Nếu để menu trong top document, iframe sẽ tạo stacking context che khuất menu
+        // dù z-index có cao đến đâu.
+        const targetDoc = targetEl.ownerDocument;
+        if (this.menuEl.ownerDocument !== targetDoc) {
+            this.menuEl.remove();
+            // Inject CSS vào targetDoc nếu chưa có
+            if (!targetDoc.getElementById('aladinn-template-style')) {
+                const srcStyle = document.getElementById('aladinn-template-style');
+                if (srcStyle) {
+                    const cloned = srcStyle.cloneNode(true);
+                    targetDoc.head.appendChild(cloned);
+                }
+            }
+            targetDoc.body.appendChild(this.menuEl);
+        }
         
         this.updateFilter();
         this.positionMenu();
@@ -176,7 +193,7 @@ class TemplateUI {
             html += `
                 <div class="aladinn-template-item ${isSelected}" data-index="${index}">
                     <div class="aladinn-template-item-title">
-                        ${t.title} <span class="aladinn-template-item-shortcut">/${t.shortcut}</span>
+                        ${t.title} <span class="aladinn-template-item-shortcut">//${t.shortcut}</span>
                     </div>
                     <div class="aladinn-template-item-content">${t.content}</div>
                 </div>
@@ -201,17 +218,18 @@ class TemplateUI {
 
     positionMenu() {
         if (!this.activeTarget) return;
-        
-        // Lấy toạ độ của textarea (để hiển thị ngay bên dưới)
+
         const rect = this.activeTarget.getBoundingClientRect();
-        
-        this.menuEl.style.top = (rect.bottom + window.scrollY + 5) + 'px';
-        this.menuEl.style.left = (rect.left + window.scrollX) + 'px';
-        
+        // Dùng window của document chứa target (có thể là iframe window)
+        const win  = this.activeTarget.ownerDocument.defaultView || window;
+
+        this.menuEl.style.top  = (rect.bottom + win.scrollY + 5) + 'px';
+        this.menuEl.style.left = (rect.left   + win.scrollX)     + 'px';
+
         // Tránh bị tràn màn hình
         const menuRect = this.menuEl.getBoundingClientRect();
-        if (rect.left + menuRect.width > window.innerWidth) {
-            this.menuEl.style.left = (window.innerWidth - menuRect.width - 10) + 'px';
+        if (rect.left + menuRect.width > win.innerWidth) {
+            this.menuEl.style.left = (win.innerWidth - menuRect.width - 10) + 'px';
         }
     }
 
