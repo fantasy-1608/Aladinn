@@ -4494,5 +4494,293 @@
     "pharmacologic_class": "unknown",
     "therapeutic_class": "unknown",
     "is_active": true
+  },
+  {
+    "generic_name": "apixaban",
+    "generic_name_en": "apixaban",
+    "atc_code": "B01AF02",
+    "pharmacologic_class": "anticoagulant",
+    "therapeutic_class": "antithrombotic",
+    "is_active": true
+  },
+  {
+    "generic_name": "colchicine",
+    "generic_name_en": "colchicine",
+    "atc_code": "M04AC01",
+    "pharmacologic_class": "antigout",
+    "therapeutic_class": "musculoskeletal",
+    "is_active": true
+  },
+  {
+    "generic_name": "sertraline",
+    "generic_name_en": "sertraline",
+    "atc_code": "N06AB06",
+    "pharmacologic_class": "ssri",
+    "therapeutic_class": "antidepressant",
+    "is_active": true
+  },
+  {
+    "generic_name": "tizanidine",
+    "generic_name_en": "tizanidine",
+    "atc_code": "M03BX02",
+    "pharmacologic_class": "muscle_relaxant",
+    "therapeutic_class": "musculoskeletal",
+    "is_active": true
+  },
+  {
+    "generic_name": "calcium gluconate",
+    "generic_name_en": "calcium gluconate",
+    "atc_code": "A12AA03",
+    "pharmacologic_class": "mineral_supplement",
+    "therapeutic_class": "supplement",
+    "is_active": true
+  },
+  {
+    "generic_name": "fluoxetine",
+    "generic_name_en": "fluoxetine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "paroxetine",
+    "generic_name_en": "paroxetine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "escitalopram",
+    "generic_name_en": "escitalopram",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "venlafaxine",
+    "generic_name_en": "venlafaxine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "mirtazapine",
+    "generic_name_en": "mirtazapine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "duloxetine",
+    "generic_name_en": "duloxetine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "amitriptyline",
+    "generic_name_en": "amitriptyline",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "carbamazepine",
+    "generic_name_en": "carbamazepine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "lamotrigine",
+    "generic_name_en": "lamotrigine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "oxcarbazepine",
+    "generic_name_en": "oxcarbazepine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "nicardipine",
+    "generic_name_en": "nicardipine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "lercanidipine",
+    "generic_name_en": "lercanidipine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "felodipine",
+    "generic_name_en": "felodipine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "nifedipine",
+    "generic_name_en": "nifedipine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "verapamil",
+    "generic_name_en": "verapamil",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "glimepiride",
+    "generic_name_en": "glimepiride",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "empagliflozin",
+    "generic_name_en": "empagliflozin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "dipyridamole",
+    "generic_name_en": "dipyridamole",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "prasugrel",
+    "generic_name_en": "prasugrel",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "cilostazol",
+    "generic_name_en": "cilostazol",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "fluconazole",
+    "generic_name_en": "fluconazole",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "voriconazole",
+    "generic_name_en": "voriconazole",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "cyclosporine",
+    "generic_name_en": "cyclosporine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "tacrolimus",
+    "generic_name_en": "tacrolimus",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "mycophenolate",
+    "generic_name_en": "mycophenolate",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "torasemide",
+    "generic_name_en": "torasemide",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "amiloride",
+    "generic_name_en": "amiloride",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "febuxostat",
+    "generic_name_en": "febuxostat",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "pethidine",
+    "generic_name_en": "pethidine",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "fondaparinux",
+    "generic_name_en": "fondaparinux",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "nadroparin",
+    "generic_name_en": "nadroparin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
   }
 ]

@@ -3,8 +3,8 @@
  * Được chuyển đổi từ dự án Checkmap sang Vanilla JS để tương thích với Aladinn.
  */
 
-export const KB_SCHEMA_VERSION = 4;
-export const KB_SEED_VERSION = '2026-04-22-aladinn-v6'; // Update seed flag
+export const KB_SCHEMA_VERSION = 5; // Bumped for Pipeline v1.0 — forces full re-seed
+export const KB_SEED_VERSION = '2026-05-02-pipeline-v9-full'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
 
 const DB_NAME = 'AladinnCDS';
 const META_STORE = 'meta';
@@ -16,6 +16,8 @@ const DRUG_DISEASE_RULE_STORE = 'drug_disease_rule';
 const DRUG_ALLERGY_RULE_STORE = 'drug_allergy_rule';
 const INSURANCE_FORMULARY_STORE = 'insurance_formulary';
 const INSURANCE_RULE_STORE = 'insurance_rule';
+const RENAL_ADJUSTMENT_STORE = 'renal_adjustment';
+const DRUG_LAB_RULE_STORE = 'drug_lab_rule';
 const AUDIT_LOG_STORE = 'audit_log';
 
 const STORE_DEFINITIONS = [
@@ -28,6 +30,8 @@ const STORE_DEFINITIONS = [
     { name: DRUG_ALLERGY_RULE_STORE, keyPath: 'rule_code' },
     { name: INSURANCE_FORMULARY_STORE, keyPath: 'generic_name' },
     { name: INSURANCE_RULE_STORE, keyPath: 'rule_code' },
+    { name: RENAL_ADJUSTMENT_STORE, keyPath: 'rule_code' },
+    { name: DRUG_LAB_RULE_STORE, keyPath: 'rule_code' },
     { name: AUDIT_LOG_STORE, keyPath: 'id', autoIncrement: true }
 ];
 
@@ -108,7 +112,7 @@ async function replaceStore(db, storeName, rows) {
 }
 
 async function seedKnowledgeBase(db) {
-    const dataPath = 'cds-data'; // Changed from data
+    const dataPath = 'cds-data';
     const [
         drugGeneric,
         brandGenericMap,
@@ -129,6 +133,13 @@ async function seedKnowledgeBase(db) {
         fetchJson(`${dataPath}/insurance_rules.json`)
     ]);
 
+    // Pipeline v1.0 files — fetch with fallback to empty array
+    let renalRules = [], drugLabRules = [];
+    try { renalRules = await fetchJson(`${dataPath}/renal_adjustment_rules.json`); } catch (_e) { console.warn('[CDS] renal_adjustment_rules.json not found, skipping'); }
+    try { drugLabRules = await fetchJson(`${dataPath}/drug_lab_rules.json`); } catch (_e) { console.warn('[CDS] drug_lab_rules.json not found, skipping'); }
+
+    console.log(`[Aladinn CDS] Loaded: ${ddiRules.length} DDI, ${drugDiseaseRules.length} Drug-Disease, ${renalRules.length} Renal, ${drugLabRules.length} Drug-Lab`);
+
     await Promise.all([
         replaceStore(db, DRUG_GENERIC_STORE, drugGeneric),
         replaceStore(db, DRUG_BRAND_MAP_STORE, brandGenericMap),
@@ -137,21 +148,58 @@ async function seedKnowledgeBase(db) {
         replaceStore(db, DRUG_DISEASE_RULE_STORE, drugDiseaseRules),
         replaceStore(db, DRUG_ALLERGY_RULE_STORE, allergyRules),
         replaceStore(db, INSURANCE_FORMULARY_STORE, insuranceFormulary),
-        replaceStore(db, INSURANCE_RULE_STORE, insuranceRules)
+        replaceStore(db, INSURANCE_RULE_STORE, insuranceRules),
+        replaceStore(db, RENAL_ADJUSTMENT_STORE, renalRules),
+        replaceStore(db, DRUG_LAB_RULE_STORE, drugLabRules)
     ]);
 
     await setMetaValue(db, 'seedVersion', KB_SEED_VERSION);
     await setMetaValue(db, 'seededAt', new Date().toISOString());
-    console.log('[Aladinn CDS] Database has been seeded successfully from JSON.');
+    console.log('[Aladinn CDS] 🧞 Database seeded (Pipeline v1.0): DDI + Drug-Disease + Renal + Drug-Lab');
 }
 
 export async function initializeKnowledgeBase(forceSync = false) {
-    const db = await openDatabase();
-    const currentSeedVersion = await getMetaValue(db, 'seedVersion');
-    if (!forceSync && currentSeedVersion === KB_SEED_VERSION) {
-        return;
+    try {
+        const db = await openDatabase();
+        const currentSeedVersion = await getMetaValue(db, 'seedVersion');
+        console.log(`[Aladinn CDS] DB check: stored="${currentSeedVersion}" vs required="${KB_SEED_VERSION}" force=${forceSync}`);
+        if (!forceSync && currentSeedVersion === KB_SEED_VERSION) {
+            console.log('[Aladinn CDS] DB is up-to-date, skipping seed.');
+            return;
+        }
+        console.log('[Aladinn CDS] 🔄 Seeding database...');
+        await seedKnowledgeBase(db);
+        console.log('[Aladinn CDS] ✅ Seed complete.');
+    } catch (err) {
+        console.error('[Aladinn CDS] ❌ initializeKnowledgeBase FAILED:', err);
     }
-    await seedKnowledgeBase(db);
+}
+
+/**
+ * Phase 6: Auto-update diagnostics — returns CDS database status
+ */
+export async function getCdsStatus() {
+    try {
+        const db = await openDatabase();
+        const seedVersion = await getMetaValue(db, 'seedVersion');
+        const seededAt = await getMetaValue(db, 'seededAt');
+        const [ddiCount, dddCount, renalCount, dlCount, genericCount] = await Promise.all([
+            getAllFromStore(db, DDI_RULE_STORE).then(r => r.length),
+            getAllFromStore(db, DRUG_DISEASE_RULE_STORE).then(r => r.length),
+            getAllFromStore(db, RENAL_ADJUSTMENT_STORE).then(r => r.length),
+            getAllFromStore(db, DRUG_LAB_RULE_STORE).then(r => r.length),
+            getAllFromStore(db, DRUG_GENERIC_STORE).then(r => r.length),
+        ]);
+        return {
+            seedVersion,
+            requiredVersion: KB_SEED_VERSION,
+            isUpToDate: seedVersion === KB_SEED_VERSION,
+            seededAt,
+            rules: { ddi: ddiCount, drugDisease: dddCount, renal: renalCount, drugLab: dlCount, generics: genericCount }
+        };
+    } catch (err) {
+        return { error: err.message, isUpToDate: false };
+    }
 }
 
 export async function getAllFromStore(db, storeName) {
@@ -195,6 +243,14 @@ export async function getInsuranceRules(db) {
     return getAllFromStore(db, INSURANCE_RULE_STORE);
 }
 
+export async function getRenalAdjustmentRules(db) {
+    return getAllFromStore(db, RENAL_ADJUSTMENT_STORE);
+}
+
+export async function getDrugLabRules(db) {
+    return getAllFromStore(db, DRUG_LAB_RULE_STORE);
+}
+
 export async function logAuditEvent(record) {
     const db = await openDatabase();
     const tx = db.transaction(AUDIT_LOG_STORE, 'readwrite');
@@ -232,7 +288,11 @@ const IMPORT_ALIAS = {
     tetracyclin: 'tetracycline', ketoconazol: 'ketoconazole',
     fluconazol: 'fluconazole', itraconazol: 'itraconazole',
     aciclovir: 'acyclovir', valaciclovir: 'valacyclovir',
-    artesunat: 'artesunate'
+    artesunat: 'artesunate',
+    // Pipeline v1.0
+    colchicin: 'colchicine', tizanidin: 'tizanidine', sertralin: 'sertraline',
+    'calcium gluconat': 'calcium gluconate', 'calci gluconat': 'calcium gluconate',
+    'ketorolac tromethamin': 'ketorolac'
 };
 
 function normalizeGenericForImport(name) {

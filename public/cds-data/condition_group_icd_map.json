@@ -1,52 +1,289 @@
 [
-  { "condition_group_code": "ckd", "icd_prefix": "N17" },
-  { "condition_group_code": "ckd", "icd_prefix": "N18" },
-  { "condition_group_code": "ckd", "icd_prefix": "N19" },
-  { "condition_group_code": "asthma", "icd_prefix": "J45" },
-  { "condition_group_code": "asthma", "icd_prefix": "J46" },
-  { "condition_group_code": "copd", "icd_prefix": "J44" },
-  { "condition_group_code": "copd", "icd_prefix": "J43" },
-  { "condition_group_code": "heart_failure", "icd_prefix": "I50" },
-  { "condition_group_code": "heart_failure", "icd_prefix": "I42" },
-  { "condition_group_code": "heart_failure", "icd_prefix": "I43" },
-  { "condition_group_code": "peptic_ulcer", "icd_prefix": "K25" },
-  { "condition_group_code": "peptic_ulcer", "icd_prefix": "K26" },
-  { "condition_group_code": "peptic_ulcer", "icd_prefix": "K27" },
-  { "condition_group_code": "peptic_ulcer", "icd_prefix": "K28" },
-  { "condition_group_code": "peptic_ulcer", "icd_prefix": "K29" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K70" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K71" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K72" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K73" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K74" },
-  { "condition_group_code": "liver_disease", "icd_prefix": "K76" },
-  { "condition_group_code": "diabetes", "icd_prefix": "E10" },
-  { "condition_group_code": "diabetes", "icd_prefix": "E11" },
-  { "condition_group_code": "diabetes", "icd_prefix": "E13" },
-  { "condition_group_code": "diabetes", "icd_prefix": "E14" },
-  { "condition_group_code": "hypertension", "icd_prefix": "I10" },
-  { "condition_group_code": "hypertension", "icd_prefix": "I11" },
-  { "condition_group_code": "hypertension", "icd_prefix": "I12" },
-  { "condition_group_code": "hypertension", "icd_prefix": "I13" },
-  { "condition_group_code": "epilepsy", "icd_prefix": "G40" },
-  { "condition_group_code": "epilepsy", "icd_prefix": "G41" },
-  { "condition_group_code": "osteoporosis", "icd_prefix": "M80" },
-  { "condition_group_code": "osteoporosis", "icd_prefix": "M81" },
-  { "condition_group_code": "pregnancy", "icd_prefix": "Z34" },
-  { "condition_group_code": "pregnancy", "icd_prefix": "Z33" },
-  { "condition_group_code": "pregnancy", "icd_prefix": "O09" },
-  { "condition_group_code": "atrial_fibrillation", "icd_prefix": "I48" },
-  { "condition_group_code": "coronary_artery_disease", "icd_prefix": "I20" },
-  { "condition_group_code": "coronary_artery_disease", "icd_prefix": "I21" },
-  { "condition_group_code": "coronary_artery_disease", "icd_prefix": "I22" },
-  { "condition_group_code": "coronary_artery_disease", "icd_prefix": "I25" },
-  { "condition_group_code": "stroke", "icd_prefix": "I63" },
-  { "condition_group_code": "stroke", "icd_prefix": "I64" },
-  { "condition_group_code": "stroke", "icd_prefix": "I65" },
-  { "condition_group_code": "stroke", "icd_prefix": "I66" },
-  { "condition_group_code": "parkinson", "icd_prefix": "G20" },
-  { "condition_group_code": "parkinson", "icd_prefix": "G21" },
-  { "condition_group_code": "bph", "icd_prefix": "N40" },
-  { "condition_group_code": "bph", "icd_prefix": "N41" },
-  { "condition_group_code": "pregnancy", "icd_prefix": "O" }
+  {
+    "condition_group_code": "ckd",
+    "icd_prefix": "N17"
+  },
+  {
+    "condition_group_code": "ckd",
+    "icd_prefix": "N18"
+  },
+  {
+    "condition_group_code": "ckd",
+    "icd_prefix": "N19"
+  },
+  {
+    "condition_group_code": "asthma",
+    "icd_prefix": "J45"
+  },
+  {
+    "condition_group_code": "asthma",
+    "icd_prefix": "J46"
+  },
+  {
+    "condition_group_code": "copd",
+    "icd_prefix": "J44"
+  },
+  {
+    "condition_group_code": "copd",
+    "icd_prefix": "J43"
+  },
+  {
+    "condition_group_code": "heart_failure",
+    "icd_prefix": "I50"
+  },
+  {
+    "condition_group_code": "heart_failure",
+    "icd_prefix": "I42"
+  },
+  {
+    "condition_group_code": "heart_failure",
+    "icd_prefix": "I43"
+  },
+  {
+    "condition_group_code": "peptic_ulcer",
+    "icd_prefix": "K25"
+  },
+  {
+    "condition_group_code": "peptic_ulcer",
+    "icd_prefix": "K26"
+  },
+  {
+    "condition_group_code": "peptic_ulcer",
+    "icd_prefix": "K27"
+  },
+  {
+    "condition_group_code": "peptic_ulcer",
+    "icd_prefix": "K28"
+  },
+  {
+    "condition_group_code": "peptic_ulcer",
+    "icd_prefix": "K29"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K70"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K71"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K72"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K73"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K74"
+  },
+  {
+    "condition_group_code": "liver_disease",
+    "icd_prefix": "K76"
+  },
+  {
+    "condition_group_code": "diabetes",
+    "icd_prefix": "E10"
+  },
+  {
+    "condition_group_code": "diabetes",
+    "icd_prefix": "E11"
+  },
+  {
+    "condition_group_code": "diabetes",
+    "icd_prefix": "E13"
+  },
+  {
+    "condition_group_code": "diabetes",
+    "icd_prefix": "E14"
+  },
+  {
+    "condition_group_code": "hypertension",
+    "icd_prefix": "I10"
+  },
+  {
+    "condition_group_code": "hypertension",
+    "icd_prefix": "I11"
+  },
+  {
+    "condition_group_code": "hypertension",
+    "icd_prefix": "I12"
+  },
+  {
+    "condition_group_code": "hypertension",
+    "icd_prefix": "I13"
+  },
+  {
+    "condition_group_code": "epilepsy",
+    "icd_prefix": "G40"
+  },
+  {
+    "condition_group_code": "epilepsy",
+    "icd_prefix": "G41"
+  },
+  {
+    "condition_group_code": "osteoporosis",
+    "icd_prefix": "M80"
+  },
+  {
+    "condition_group_code": "osteoporosis",
+    "icd_prefix": "M81"
+  },
+  {
+    "condition_group_code": "pregnancy",
+    "icd_prefix": "Z34"
+  },
+  {
+    "condition_group_code": "pregnancy",
+    "icd_prefix": "Z33"
+  },
+  {
+    "condition_group_code": "pregnancy",
+    "icd_prefix": "O09"
+  },
+  {
+    "condition_group_code": "atrial_fibrillation",
+    "icd_prefix": "I48"
+  },
+  {
+    "condition_group_code": "coronary_artery_disease",
+    "icd_prefix": "I20"
+  },
+  {
+    "condition_group_code": "coronary_artery_disease",
+    "icd_prefix": "I21"
+  },
+  {
+    "condition_group_code": "coronary_artery_disease",
+    "icd_prefix": "I22"
+  },
+  {
+    "condition_group_code": "coronary_artery_disease",
+    "icd_prefix": "I25"
+  },
+  {
+    "condition_group_code": "stroke",
+    "icd_prefix": "I63"
+  },
+  {
+    "condition_group_code": "stroke",
+    "icd_prefix": "I64"
+  },
+  {
+    "condition_group_code": "stroke",
+    "icd_prefix": "I65"
+  },
+  {
+    "condition_group_code": "stroke",
+    "icd_prefix": "I66"
+  },
+  {
+    "condition_group_code": "parkinson",
+    "icd_prefix": "G20"
+  },
+  {
+    "condition_group_code": "parkinson",
+    "icd_prefix": "G21"
+  },
+  {
+    "condition_group_code": "bph",
+    "icd_prefix": "N40"
+  },
+  {
+    "condition_group_code": "bph",
+    "icd_prefix": "N41"
+  },
+  {
+    "condition_group_code": "pregnancy",
+    "icd_prefix": "O"
+  },
+  {
+    "condition_group_code": "tendon_disorder",
+    "icd_prefix": "M76"
+  },
+  {
+    "condition_group_code": "tendon_disorder",
+    "icd_prefix": "M77"
+  },
+  {
+    "condition_group_code": "tendon_disorder",
+    "icd_prefix": "M65"
+  },
+  {
+    "condition_group_code": "tendon_disorder",
+    "icd_prefix": "M66"
+  },
+  {
+    "condition_group_code": "tendon_disorder",
+    "icd_prefix": "M67"
+  },
+  {
+    "condition_group_code": "dvt",
+    "icd_prefix": "I80"
+  },
+  {
+    "condition_group_code": "dvt",
+    "icd_prefix": "I82"
+  },
+  {
+    "condition_group_code": "pe",
+    "icd_prefix": "I26"
+  },
+  {
+    "condition_group": "gerd",
+    "icd_pattern": "K21",
+    "description": "Trào ngược dạ dày thực quản"
+  },
+  {
+    "condition_group": "gi_bleeding",
+    "icd_pattern": "K92.0|K92.1|K92.2",
+    "description": "Xuất huyết tiêu hóa"
+  },
+  {
+    "condition_group": "zollinger_ellison",
+    "icd_pattern": "E16.4",
+    "description": "Hội chứng Zollinger-Ellison"
+  },
+  {
+    "condition_group": "atrial_fibrillation",
+    "icd_pattern": "I48",
+    "description": "Rung nhĩ"
+  },
+  {
+    "condition_group": "prosthetic_valve",
+    "icd_pattern": "Z95.2|Z95.3|Z95.4",
+    "description": "Van tim nhân tạo"
+  },
+  {
+    "condition_group": "diabetes",
+    "icd_pattern": "E10|E11|E12|E13|E14",
+    "description": "Đái tháo đường"
+  },
+  {
+    "condition_group": "dyslipidemia",
+    "icd_pattern": "E78",
+    "description": "Rối loạn lipid máu"
+  },
+  {
+    "condition_group": "coronary_artery_disease",
+    "icd_pattern": "I20|I21|I22|I23|I24|I25",
+    "description": "Bệnh mạch vành"
+  },
+  {
+    "condition_group": "stroke_prevention",
+    "icd_pattern": "I63|I64|I65|I66|G45",
+    "description": "Đột quỵ / Phòng ngừa đột quỵ"
+  },
+  {
+    "condition_group": "epilepsy",
+    "icd_pattern": "G40|G41",
+    "description": "Động kinh"
+  },
+  {
+    "condition_group": "neuropathic_pain",
+    "icd_pattern": "G50|G51|G52|G53|G54|G55|G56|G57|G58|G59|G60|G61|G62|M54.1|M79.2",
+    "description": "Đau thần kinh"
+  }
 ]

@@ -1,0 +1,115 @@
+[
+  {
+    "rule_code": "MDIAG-PPI-NO-GI",
+    "drug_generic": "omeprazole",
+    "drug_class": [
+      "omeprazole",
+      "esomeprazole",
+      "pantoprazole",
+      "rabeprazole",
+      "lansoprazole"
+    ],
+    "required_condition_groups": [
+      "gerd",
+      "peptic_ulcer",
+      "gi_bleeding",
+      "zollinger_ellison"
+    ],
+    "severity": "medium",
+    "clinical_effect": "PPI kê đơn không có chẩn đoán GI phù hợp. Cân nhắc có chỉ định không?",
+    "recommendation": "Kiểm tra chỉ định PPI: GERD, loét dạ dày, dự phòng GI khi dùng NSAID/chống đông.",
+    "is_active": true
+  },
+  {
+    "rule_code": "MDIAG-ANTICOAG-NO-AF-DVT",
+    "drug_generic": "warfarin",
+    "drug_class": [
+      "warfarin",
+      "rivaroxaban",
+      "apixaban",
+      "dabigatran",
+      "enoxaparin"
+    ],
+    "required_condition_groups": [
+      "atrial_fibrillation",
+      "dvt",
+      "pe",
+      "prosthetic_valve"
+    ],
+    "severity": "medium",
+    "clinical_effect": "Thuốc chống đông kê đơn nhưng không có chẩn đoán AF/DVT/PE.",
+    "recommendation": "Xác nhận chỉ định chống đông: rung nhĩ, huyết khối TM sâu, thuyên tắc phổi.",
+    "is_active": true
+  },
+  {
+    "rule_code": "MDIAG-INSULIN-NO-DM",
+    "drug_generic": "insulin",
+    "drug_class": [
+      "insulin"
+    ],
+    "required_condition_groups": [
+      "diabetes"
+    ],
+    "severity": "high",
+    "clinical_effect": "Insulin kê đơn nhưng không có chẩn đoán đái tháo đường!",
+    "recommendation": "Bắt buộc có ICD E10-E14 khi kê Insulin.",
+    "is_active": true
+  },
+  {
+    "rule_code": "MDIAG-OAD-NO-DM",
+    "drug_generic": "metformin",
+    "drug_class": [
+      "metformin",
+      "gliclazide",
+      "sitagliptin",
+      "vildagliptin",
+      "dapagliflozin",
+      "pioglitazone"
+    ],
+    "required_condition_groups": [
+      "diabetes"
+    ],
+    "severity": "medium",
+    "clinical_effect": "Thuốc hạ đường huyết nhưng không có chẩn đoán đái tháo đường.",
+    "recommendation": "Cần có ICD E10-E14 khi kê thuốc hạ đường huyết.",
+    "is_active": true
+  },
+  {
+    "rule_code": "MDIAG-STATIN-NO-LIPID",
+    "drug_generic": "atorvastatin",
+    "drug_class": [
+      "atorvastatin",
+      "simvastatin",
+      "rosuvastatin",
+      "lovastatin",
+      "pravastatin"
+    ],
+    "required_condition_groups": [
+      "dyslipidemia",
+      "coronary_artery_disease",
+      "stroke_prevention"
+    ],
+    "severity": "low",
+    "clinical_effect": "Statin kê đơn nhưng không có chẩn đoán rối loạn lipid máu hoặc BTMV.",
+    "recommendation": "Cần chẩn đoán E78.x (rối loạn lipid) hoặc I25.x (BTMV) khi kê Statin.",
+    "is_active": true
+  },
+  {
+    "rule_code": "MDIAG-ANTIEPILEPTIC-NO-EPILEPSY",
+    "drug_generic": "phenytoin",
+    "drug_class": [
+      "phenytoin",
+      "levetiracetam",
+      "gabapentin",
+      "pregabalin"
+    ],
+    "required_condition_groups": [
+      "epilepsy",
+      "neuropathic_pain"
+    ],
+    "severity": "medium",
+    "clinical_effect": "Thuốc chống động kinh nhưng không có chẩn đoán động kinh hoặc đau thần kinh.",
+    "recommendation": "Cần ICD G40.x (động kinh) hoặc G57-G62 (đau thần kinh) khi kê.",
+    "is_active": true
+  }
+]

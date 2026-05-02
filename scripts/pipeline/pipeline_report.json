@@ -1,0 +1,185 @@
+{
+  "timestamp": "2026-05-02T09:35:36.234Z",
+  "version": "2.0.0",
+  "actions": [
+    {
+      "type": "add_generic",
+      "name": "apixaban",
+      "atc": "B01AF02"
+    },
+    {
+      "type": "add_generic",
+      "name": "colchicine",
+      "atc": "M04AC01"
+    },
+    {
+      "type": "add_generic",
+      "name": "sertraline",
+      "atc": "N06AB06"
+    },
+    {
+      "type": "add_generic",
+      "name": "tizanidine",
+      "atc": "M03BX02"
+    },
+    {
+      "type": "add_generic",
+      "name": "calcium gluconate",
+      "atc": "A12AA03"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "tendon_disorder",
+      "prefix": "M76"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "tendon_disorder",
+      "prefix": "M77"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "tendon_disorder",
+      "prefix": "M65"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "tendon_disorder",
+      "prefix": "M66"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "tendon_disorder",
+      "prefix": "M67"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "dvt",
+      "prefix": "I80"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "dvt",
+      "prefix": "I82"
+    },
+    {
+      "type": "add_condition_group",
+      "group": "pe",
+      "prefix": "I26"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-KETOROLAC-ENOXAPARIN-001",
+      "pair": "ketorolac ↔ enoxaparin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-TRAMADOL-SERTRALINE-001",
+      "pair": "tramadol ↔ sertraline"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-CIPROFLOXACIN-TIZANIDINE-001",
+      "pair": "ciprofloxacin ↔ tizanidine"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-DICLOFENAC-ENOXAPARIN-001",
+      "pair": "diclofenac ↔ enoxaparin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-CELECOXIB-ENOXAPARIN-001",
+      "pair": "celecoxib ↔ enoxaparin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-MELOXICAM-ENOXAPARIN-001",
+      "pair": "meloxicam ↔ enoxaparin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-KETOROLAC-WARFARIN-001",
+      "pair": "ketorolac ↔ warfarin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-KETOROLAC-RIVAROXABAN-001",
+      "pair": "ketorolac ↔ rivaroxaban"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-KETOROLAC-APIXABAN-001",
+      "pair": "ketorolac ↔ apixaban"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-MORPHINE-GABAPENTIN-001",
+      "pair": "morphine ↔ gabapentin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-TRAMADOL-GABAPENTIN-001",
+      "pair": "tramadol ↔ gabapentin"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-CEFTRIAXONE-CALCIUM-001",
+      "pair": "ceftriaxone ↔ calcium gluconate"
+    },
+    {
+      "type": "add_ddi",
+      "code": "DDI-COLCHICINE-CLARITHROMYCIN-001",
+      "pair": "colchicine ↔ clarithromycin"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-NSAID-PUD-KETOROLAC-001",
+      "drug": "ketorolac",
+      "condition": "peptic_ulcer"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-NSAID-CKD-KETOROLAC-001",
+      "drug": "ketorolac",
+      "condition": "ckd"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-FQ-TENDON-LEVOFLOXACIN-001",
+      "drug": "levofloxacin",
+      "condition": "tendon_disorder"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-FQ-TENDON-CIPROFLOXACIN-001",
+      "drug": "ciprofloxacin",
+      "condition": "tendon_disorder"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-NSAID-CKD-CELECOXIB-001",
+      "drug": "celecoxib",
+      "condition": "ckd"
+    },
+    {
+      "type": "add_drug_disease",
+      "code": "DX-NSAID-CKD-MELOXICAM-001",
+      "drug": "meloxicam",
+      "condition": "ckd"
+    }
+  ],
+  "errors": [],
+  "summary": {
+    "new_generics": 5,
+    "new_condition_groups": 8,
+    "new_ddi_rules": 13,
+    "new_drug_disease_rules": 6,
+    "skipped_ddi": 0,
+    "total_ddi": 211,
+    "total_drug_disease": 27,
+    "total_generics": 567,
+    "total_condition_groups": 58,
+    "errors": 0
+  }
+}

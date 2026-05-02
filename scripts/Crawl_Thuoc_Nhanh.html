@@ -80,9 +80,10 @@
 <body>
 
 <div class="container">
-    <span class="tag">CÔNG CỤ NỘI BỘ • v3.0 — Auto Import</span>
+    <span class="tag">CÔNG CỤ NỘI BỘ • v5.0 — 1 Request Mode</span>
     <h1>💊 Cào Thuốc HIS Siêu Tốc</h1>
-    <p class="subtitle">Cào toàn bộ danh mục thuốc từ VNPT HIS và <b>tự động cập nhật</b> vào cơ sở dữ liệu CDS Aladinn.</p>
+    <p class="subtitle">Cào toàn bộ danh mục thuốc từ VNPT HIS và <b>tự động cập nhật</b> vào cơ sở dữ liệu CDS Aladinn.<br>
+    <b style="color:#34d399">v5.0</b>: <b>1 request duy nhất</b> lấy toàn bộ kho thuốc (~2 giây). Tự động fallback DOM nếu thất bại.</p>
 
     <a class="bookmarklet-btn" id="bm-link" href="javascript:void(0)">
         💊 Cào Thuốc HIS
@@ -104,7 +105,7 @@
             <li>Trong VNPT HIS, mở <b>form kê đơn thuốc</b>.</li>
             <li>Click vào ô <b>"Tên thuốc"</b> để <b>bảng dropdown bung ra</b>.</li>
             <li>Bấm nút <b>💊 Cào Thuốc HIS</b> trên <b>thanh Bookmark</b>.</li>
-            <li>✅ Dữ liệu tự động cập nhật vào Aladinn CDS + tải CSV backup.</li>
+            <li>✅ Dữ liệu tự động cập nhật vào Aladinn CDS.</li>
         </ol>
 
         <hr class="divider">
@@ -117,23 +118,24 @@
         </ol>
 
         <div class="feature-box">
-            <h4>🆕 Tính năng v3.0</h4>
+            <h4>🆕 v5.0 — 1 Request Mode</h4>
             <ul>
-                <li>Tự động import vào database CDS Aladinn</li>
-                <li>Hiển thị ngày cập nhật data trên panel CDS</li>
-                <li>Tải CSV backup song song</li>
+                <li>XHR Intercept → replay <code>rows=9999</code> (1 API call)</li>
+                <li>Fix: parse đúng field <code>TEN_THUOC</code> từ response</li>
+                <li>Fallback DOM scraping đầy đủ (phân trang) nếu thất bại</li>
+                <li>Tự động import vào IndexedDB CDS Aladinn</li>
             </ul>
         </div>
     </div>
 </div>
 
 <script>
-// Bookmarklet v3.1 — Dùng overlay thay vì alert (HIS override alert gây tự tắt)
-// Regex fix: \\s → \s (single escape for whitespace class)
-var bmCode = 'javascript:void((async()=>{try{var T=document,d=T;T.querySelectorAll("iframe").forEach(i=>{try{if(i.contentDocument){var c=i.contentDocument;if(c.querySelector(".cg-autocomplete"))d=c}}catch(e){}});var gs=[...d.querySelectorAll(".cg-autocomplete.combogrid")].filter(g=>g.offsetWidth>0);var ov=T.createElement("div");ov.id="ala-ov";ov.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.95);color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 22px system-ui;text-align:center;cursor:pointer";ov.onclick=function(){ov.remove()};if(!gs.length){ov.textContent="Bang thuoc chua bung! Click o Ten thuoc truoc. (Nhan de dong)";T.body.appendChild(ov);return}var g=gs[gs.length-1],tp=1,pi=g.querySelector("[id*=navInfo]");if(pi){var m=pi.innerText.match(/of\\s*(\\d+)/i);if(m)tp=+m[1]}ov.textContent="Dang cao... 0/"+tp;ov.onclick=null;ov.style.cursor="wait";T.body.appendChild(ov);var R=[],S=new Set();for(var p=1;p<=tp;p++){var its=g.querySelectorAll(".cg-comboItem");for(var i=0;i<its.length;i++){var cs=its[i].querySelectorAll(".cg-DivItem");if(cs.length>=3){var n=cs[1]?cs[1].innerText.trim():"",h=cs[2]?cs[2].innerText.trim():"";if(n&&!S.has(n)){S.add(n);R.push({ten:n,hc:h})}}}ov.textContent="Dang cao... "+p+"/"+tp+" ("+R.length+" thuoc)";if(p<tp){var nb=g.querySelector(".ui-icon-seek-next");if(nb){var b=nb.closest(".cg-pg-button")||nb.parentElement;if(b&&!b.classList.contains("cg-state-disabled")){var ft=its[0]?its[0].querySelector(".cg-DivItem:nth-child(2)"):"";ft=ft?ft.innerText.trim():"";b.click();var w=0;while(w<8e3){await new Promise(r=>setTimeout(r,20));w+=20;var nf=g.querySelector(".cg-comboItem .cg-DivItem:nth-child(2)");if(nf&&nf.innerText.trim()!==ft)break}}else break}else break}}ov.style.cursor="pointer";ov.onclick=function(){ov.remove()};if(!R.length){ov.textContent="0 thuoc! (Nhan de dong)";return}window.dispatchEvent(new CustomEvent("ALADINN_CRAWL_RESULT",{detail:{drugs:R}}));ov.textContent="Da cao "+R.length+" thuoc va cap nhat CDS! (Nhan de dong)"}catch(e){var o=T.getElementById("ala-ov")||T.createElement("div");o.id="ala-ov";o.style.cssText="position:fixed;inset:0;background:rgba(15,23,42,.95);color:#f87171;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 18px system-ui;text-align:center;cursor:pointer";o.onclick=function(){o.remove()};o.textContent="Loi: "+e.message+" (Nhan de dong)";if(!o.parentNode)T.body.appendChild(o)}})())';
+// Bookmarklet v5.0 — XHR Intercept + Fixed Parser
+// FIX: Server trả TEN_THUOC (có gạch dưới), không phải TENTHUOC
+// Luồng: Bắt URL → replay rows=9999 → parse TEN_THUOC/HOATCHAT → CDS import
+var bmCode = "javascript:void((async()=>{try{var T=document,d=T;T.querySelectorAll(\"iframe\").forEach(i=>{try{if(i.contentDocument){var c=i.contentDocument;if(c.querySelector(\".cg-autocomplete\"))d=c}}catch(e){}});var gs=[...d.querySelectorAll(\".cg-autocomplete.combogrid\")].filter(g=>g.offsetWidth>0);var ov=T.createElement(\"div\");ov.id=\"ala-ov\";ov.style.cssText=\"position:fixed;inset:0;background:rgba(15,23,42,.95);color:#fff;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 22px system-ui;text-align:center;cursor:pointer\";ov.onclick=function(){ov.remove()};if(!gs.length){ov.textContent=\"Bang thuoc chua bung! Click o Ten thuoc truoc. (Nhan de dong)\";T.body.appendChild(ov);return}var g=gs[gs.length-1],tp=1,pi=g.querySelector(\"[id*=navInfo]\");if(pi){var m=pi.innerText.match(/of\\s*(\\d+)/i);if(m)tp=+m[1]}T.body.appendChild(ov);var R=[],S=new Set();var apiOk=false;var dw=d.defaultView||window;try{ov.textContent=\"Dang bat URL API...\";ov.style.cursor=\"wait\";ov.onclick=null;var cUrl=null;var oOpen=dw.XMLHttpRequest.prototype.open;dw.XMLHttpRequest.prototype.open=function(mt,url){if(typeof url===\"string\"&&url.indexOf(\"doComboGrid\")>-1){cUrl=url;}return oOpen.apply(this,arguments);};var nbs=g.querySelectorAll(\".cg-pg-button\");var clicked=false;for(var bi=0;bi<nbs.length;bi++){if(!nbs[bi].classList.contains(\"cg-state-disabled\")){var ic=nbs[bi].querySelector(\".ui-icon-seek-next,.ui-icon-seek-prev\");if(ic){nbs[bi].click();clicked=true;break;}}}if(!clicked){var inp=g.querySelector(\"input.ui-pg-input\");if(inp){inp.value=\"2\";inp.dispatchEvent(new Event(\"change\",{bubbles:true}));}}var wt=0;while(!cUrl&&wt<5000){await new Promise(r=>setTimeout(r,100));wt+=100;}dw.XMLHttpRequest.prototype.open=oOpen;if(cUrl){var fbs=g.querySelectorAll(\".cg-pg-button\");for(var fi=0;fi<fbs.length;fi++){var fic=fbs[fi].querySelector(\".ui-icon-seek-first\");if(fic){fbs[fi].click();break;}}await new Promise(r=>setTimeout(r,500));var bigUrl=cUrl.replace(/rows=\\d+/,\"rows=9999\").replace(/page=\\d+/,\"page=1\");ov.textContent=\"Dang tai toan bo kho (1 request)...\";console.log(\"[Aladinn v5] Replay:\",bigUrl);var resp=await fetch(bigUrl,{credentials:\"include\",headers:{\"X-Requested-With\":\"XMLHttpRequest\",\"Accept\":\"application/json, text/javascript, */*; q=0.01\"}});if(!resp.ok)throw new Error(\"HTTP \"+resp.status);var data=await resp.json();var rows=data.rows||[];console.log(\"[Aladinn v5] Got\",rows.length,\"rows\");for(var row of rows){var name=\"\",hc=\"\";if(row.cell&&Array.isArray(row.cell)){name=String(row.cell[1]||\"\").trim();hc=String(row.cell[2]||\"\").trim();}else{name=(row.TEN_THUOC||row.TENTHUOC||row.TEN||\"\").trim();hc=(row.HOATCHAT||row.TENHC||\"\").trim();}if(name&&!S.has(name)){S.add(name);R.push({ten:name,hc:hc});}}if(R.length>0){apiOk=true;window.dispatchEvent(new CustomEvent(\"ALADINN_CRAWL_RESULT\",{detail:{drugs:R}}));ov.style.cursor=\"pointer\";ov.onclick=function(){ov.remove()};ov.textContent=\"Da cao \"+R.length+\" thuoc (1 request)! (Nhan de dong)\";}else{throw new Error(\"Parse 0 thuoc tu \"+rows.length+\" rows\");}}else{throw new Error(\"Khong bat duoc URL sau 5s\");}}catch(apiErr){console.warn(\"[Aladinn v5] that bai:\",apiErr.message);R=[];S=new Set();}if(!apiOk){ov.textContent=\"Dang cao... 0/\"+tp;ov.style.cursor=\"wait\";ov.onclick=null;for(var p=1;p<=tp;p++){var its=g.querySelectorAll(\".cg-comboItem\");for(var i=0;i<its.length;i++){var cs=its[i].querySelectorAll(\".cg-DivItem\");if(cs.length>=3){var n=cs[1]?cs[1].innerText.trim():\"\",h=cs[2]?cs[2].innerText.trim():\"\";if(n&&!S.has(n)){S.add(n);R.push({ten:n,hc:h})}}}ov.textContent=\"Dang cao... \"+p+\"/\"+tp+\" (\"+R.length+\" thuoc)\";if(p<tp){var nb=g.querySelector(\".ui-icon-seek-next\");if(nb){var b=nb.closest(\".cg-pg-button\")||nb.parentElement;if(b&&!b.classList.contains(\"cg-state-disabled\")){var ft=its[0]?its[0].querySelector(\".cg-DivItem:nth-child(2)\"):\"\";ft=ft?ft.innerText.trim():\"\";b.click();var w=0;while(w<8e3){await new Promise(r=>setTimeout(r,20));w+=20;var nf=g.querySelector(\".cg-comboItem .cg-DivItem:nth-child(2)\");if(nf&&nf.innerText.trim()!==ft)break}}else break}else break}}ov.style.cursor=\"pointer\";ov.onclick=function(){ov.remove()};if(!R.length){ov.textContent=\"0 thuoc! (Nhan de dong)\";return}window.dispatchEvent(new CustomEvent(\"ALADINN_CRAWL_RESULT\",{detail:{drugs:R}}));ov.textContent=\"Da cao \"+R.length+\" thuoc va cap nhat CDS! (Nhan de dong)\"}}catch(e){var o=T.getElementById(\"ala-ov\")||T.createElement(\"div\");o.id=\"ala-ov\";o.style.cssText=\"position:fixed;inset:0;background:rgba(15,23,42,.95);color:#f87171;z-index:2147483647;display:flex;align-items:center;justify-content:center;font:700 18px system-ui;text-align:center;cursor:pointer\";o.onclick=function(){o.remove()};o.textContent=\"Loi: \"+e.message+\" (Nhan de dong)\";if(!o.parentNode)T.body.appendChild(o)}})())";
 
-// Validate
-try { new Function(bmCode.replace('javascript:','')); console.log('[Bookmarklet] OK! Size:', bmCode.length); } catch(e) { console.error('[Bookmarklet] SYNTAX ERROR:', e.message); }
+try { new Function(bmCode.replace('javascript:','')); console.log('[Bookmarklet v5.0] OK! Size:', bmCode.length); } catch(e) { console.error('[Bookmarklet v5.0] SYNTAX ERROR:', e.message); }
 document.getElementById('bm-link').href = bmCode;
 </script>
 

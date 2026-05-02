@@ -12,6 +12,8 @@ import {
     // getDrugAllergyRules,
     getInsuranceFormulary,
     getInsuranceRules,
+    getRenalAdjustmentRules,
+    getDrugLabRules,
     // logAuditEvent
 } from './db.js';
 
@@ -68,7 +70,63 @@ const ALIAS_MAP = {
     dutaon: 'dutasteride',
     tamsulosin: 'tamsulosin',
     alanboss: 'tamsulosin',
-    prolufo: 'tamsulosin'
+    prolufo: 'tamsulosin',
+
+    // Pipeline v1.0 — CTCH core drugs
+    colchicin: 'colchicine',
+    tizanidin: 'tizanidine',
+    sertralin: 'sertraline',
+    'calcium gluconat': 'calcium gluconate',
+    'calci gluconat': 'calcium gluconate',
+    ketorolac: 'ketorolac',
+    'ketorolac tromethamin': 'ketorolac',
+
+    // Pipeline v2.0 — Full hospital coverage
+    carbamazepin: 'carbamazepine',
+    verapamil: 'verapamil',
+    nifedipin: 'nifedipine',
+    nicardipin: 'nicardipine',
+    felodipin: 'felodipine',
+    lercanidipin: 'lercanidipine',
+    morphin: 'morphine',
+    amitriptylin: 'amitriptyline',
+    phenytoin: 'phenytoin',
+    pioglitazon: 'pioglitazone',
+    itraconazol: 'itraconazole',
+    fluconazol: 'fluconazole',
+    ketoconazol: 'ketoconazole',
+    hydrochlorothiazid: 'hydrochlorothiazide',
+    methotrexat: 'methotrexate',
+    ciclosporin: 'cyclosporine',
+    'dl-lysin acetylsalicylat': 'aspirin',
+    'dl-lysin-acetylsalicylat': 'aspirin',
+    tetracyclin: 'tetracycline',
+    aciclovir: 'acyclovir',
+    // Salt forms — strip suffix
+    'amiodaron hydroclorid': 'amiodarone',
+    'amitriptylin hydroclorid': 'amitriptyline',
+    'tizanidin hydroclorid': 'tizanidine',
+    'verapamil hydroclorid': 'verapamil',
+    'propranolol hydroclorid': 'propranolol',
+    'tramadol hydroclorid': 'tramadol',
+    'morphin hydroclorid': 'morphine',
+    'morphin sulfat': 'morphine',
+    'sertralin hydroclorid': 'sertraline',
+    'metformin hydroclorid': 'metformin',
+    'phenytoin natri': 'phenytoin',
+    'enalapril maleat': 'enalapril',
+    'perindopril erbumin': 'perindopril',
+    'losartan kali': 'losartan',
+    'candesartan cilexetil': 'candesartan',
+    'atorvastatin calcium': 'atorvastatin',
+    'clopidogrel bisulfat': 'clopidogrel',
+    'clopidogrel hydrosulfat': 'clopidogrel',
+    'bisoprolol fumarat': 'bisoprolol',
+    'metoprolol tartrat': 'metoprolol',
+    'pioglitazon hydroclorid': 'pioglitazone',
+    'pantoprazol natri': 'pantoprazole',
+    'dapagliflozin propanediol': 'dapagliflozin',
+    'tetracyclin hydroclorid': 'tetracycline',
 };
 
 function applySuffixNormalization(token) {
@@ -218,7 +276,10 @@ export async function normalizeContext(context) {
         }
 
         if (normalized) {
-            normalizedDrugs.add(normalized);
+            // Strip parenthetical content from resolved generic name
+            // E.g. "enoxaparin (natri)" → "enoxaparin" to match DDI rules
+            const cleanGeneric = normalized.replace(/\(.*?\)/g, '').trim();
+            normalizedDrugs.add(cleanGeneric || normalized);
         } else {
             unmappedDrugs.push(med.display_name.trim());
         }
@@ -287,7 +348,7 @@ function runDdiRules(rules, normalized) {
     return alerts;
 }
 
-function runDrugDiseaseRules(rules, normalized, context) {
+function runDrugDiseaseRules(rules, normalized, context, drugLabRulesFromDb, renalRulesFromDb) {
     const alerts = [];
     const labs = context.labs || [];
     
@@ -318,199 +379,88 @@ function runDrugDiseaseRules(rules, normalized, context) {
         });
     }
     
-    // ===== DRUG-LAB INTERACTION RULES =====
-    // These are hardcoded clinical rules that check actual lab values
-    if (labs.length > 0) {
-        const drugLabAlerts = runDrugLabRules(normalized.normalized_drugs, labMap);
+    // ===== DRUG-LAB INTERACTION RULES (JSON-driven from IndexedDB) =====
+    if (labs.length > 0 && drugLabRulesFromDb) {
+        const drugLabAlerts = runDrugLabRulesFromDb(drugLabRulesFromDb, normalized.normalized_drugs, labMap);
         alerts.push(...drugLabAlerts);
+    }
+
+    // ===== RENAL ADJUSTMENT RULES =====
+    if (renalRulesFromDb) {
+        const renalAlerts = runRenalAdjustmentRules(renalRulesFromDb, normalized.normalized_drugs, labMap);
+        alerts.push(...renalAlerts);
     }
     
     return alerts;
 }
 
 /**
- * Drug-Lab Interaction Rules Engine
- * Checks actual lab values against drug safety thresholds
+ * Drug-Lab Interaction Rules Engine (JSON-driven)
+ * Reads rules from IndexedDB instead of hardcoded values.
  */
-function runDrugLabRules(drugs, labMap) {
+function runDrugLabRulesFromDb(rules, drugs, labMap) {
     const alerts = [];
-    
-    const DRUG_LAB_RULES = [
-        // === ANTICOAGULANTS + Coagulation ===
-        {
-            drugs: ['warfarin'],
-            lab: 'INR',
-            check: (v) => v > 3.0,
-            severity: 'high',
-            effect: 'INR > 3.0 — Nguy cơ xuất huyết rất cao khi đang dùng Warfarin!',
-            recommendation: 'Xem xét giảm liều hoặc tạm ngừng Warfarin. Theo dõi sát INR mỗi 1-2 ngày.'
-        },
-        {
-            drugs: ['warfarin'],
-            lab: 'INR',
-            check: (v) => v > 2.0 && v <= 3.0,
-            severity: 'medium',
-            effect: 'INR trong khoảng 2.0-3.0. Liều Warfarin cần theo dõi sát.',
-            recommendation: 'Duy trì theo dõi INR định kỳ. Chú ý tương tác thuốc mới thêm.'
-        },
-        {
-            drugs: ['enoxaparin', 'heparin', 'rivaroxaban', 'apixaban', 'dabigatran'],
-            lab: 'platelet',
-            check: (v) => v < 100,
-            severity: 'high',
-            effect: 'Tiểu cầu < 100 G/L — Nguy cơ xuất huyết khi dùng thuốc chống đông!',
-            recommendation: 'Đánh giá lại chỉ định chống đông. Xem xét giảm liều hoặc ngừng thuốc.'
-        },
 
-        // === KIDNEY-CLEARED DRUGS + Creatinine/eGFR ===
-        {
-            drugs: ['metformin'],
-            lab: 'eGFR',
-            check: (v) => v < 30,
-            severity: 'high',
-            effect: 'eGFR < 30 mL/phút — Chống chỉ định Metformin! Nguy cơ nhiễm toan lactic.',
-            recommendation: 'Ngừng Metformin ngay. Chuyển sang insulin hoặc thuốc hạ đường huyết khác.'
-        },
-        {
-            drugs: ['metformin'],
-            lab: 'eGFR',
-            check: (v) => v >= 30 && v < 45,
-            severity: 'medium',
-            effect: 'eGFR 30-45 mL/phút — Cần giảm liều Metformin.',
-            recommendation: 'Giảm liều Metformin tối đa 1000mg/ngày. Theo dõi eGFR mỗi 3 tháng.'
-        },
-        {
-            drugs: ['digoxin'],
-            lab: 'creatinine',
-            check: (v) => v > 1.5,
-            severity: 'high',
-            effect: 'Creatinine tăng cao — Nguy cơ tích lũy Digoxin gây ngộ độc!',
-            recommendation: 'Giảm liều Digoxin. Theo dõi nồng độ Digoxin máu (mục tiêu 0.5-0.9 ng/mL).'
-        },
-        {
-            drugs: ['gabapentin', 'pregabalin'],
-            lab: 'eGFR',
-            check: (v) => v < 60,
-            severity: 'medium',
-            effect: 'eGFR < 60 — Cần hiệu chỉnh liều thuốc bài tiết qua thận.',
-            recommendation: 'Giảm liều theo bảng hiệu chỉnh eGFR. Theo dõi tác dụng phụ (buồn ngủ, chóng mặt).'
-        },
-        {
-            drugs: ['colchicin', 'colchicine'],
-            lab: 'eGFR',
-            check: (v) => v < 30,
-            severity: 'high',
-            effect: 'eGFR < 30 — Nguy cơ ngộ độc Colchicin rất cao!',
-            recommendation: 'Giảm liều tối đa (0.5mg/ngày) hoặc kéo dài khoảng cách liều. Chống chỉ định nếu suy thận nặng kèm dùng clarithromycin.'
-        },
-        {
-            drugs: ['allopurinol'],
-            lab: 'eGFR',
-            check: (v) => v < 60,
-            severity: 'medium',
-            effect: 'eGFR < 60 — Cần giảm liều Allopurinol khởi đầu.',
-            recommendation: 'Bắt đầu với liều thấp 50-100mg/ngày để tránh hội chứng quá mẫn Allopurinol (AHS).'
-        },
-        {
-            drugs: ['rivaroxaban', 'apixaban', 'dabigatran'],
-            lab: 'eGFR',
-            check: (v) => v < 15,
-            severity: 'high',
-            effect: 'eGFR < 15 — Chống chỉ định NOAC (chống đông đường uống mới)!',
-            recommendation: 'Ngừng NOAC. Xem xét chuyển sang Warfarin nếu bệnh nhân suy thận giai đoạn cuối.'
-        },
-        {
-            drugs: ['rivaroxaban', 'apixaban', 'dabigatran'],
-            lab: 'eGFR',
-            check: (v) => v >= 15 && v <= 50,
-            severity: 'medium',
-            effect: 'eGFR 15-50 — Cần giảm liều NOAC.',
-            recommendation: 'Hiệu chỉnh liều chống đông theo chức năng thận để tránh xuất huyết.'
-        },
-
-        // === POTASSIUM-AFFECTING DRUGS ===
-        {
-            drugs: ['spironolactone', 'amiloride', 'triamterene'],
-            lab: 'potassium',
-            check: (v) => v > 5.0,
-            severity: 'high',
-            effect: 'Kali máu > 5.0 mEq/L — Nguy cơ tăng kali máu nguy hiểm khi dùng lợi tiểu giữ kali!',
-            recommendation: 'Ngừng thuốc lợi tiểu giữ kali. Kiểm tra ECG. Xem xét điều trị hạ kali cấp.'
-        },
-        {
-            drugs: ['enalapril', 'lisinopril', 'ramipril', 'perindopril', 'captopril'],
-            lab: 'potassium',
-            check: (v) => v > 5.5,
-            severity: 'high',
-            effect: 'Kali máu > 5.5 mEq/L khi dùng ACEI — Nguy cơ loạn nhịp tim!',
-            recommendation: 'Xem xét ngừng ACEI. Kiểm tra ECG. Theo dõi Kali máu sát.'
-        },
-        {
-            drugs: ['furosemide', 'hydrochlorothiazide', 'indapamide'],
-            lab: 'potassium',
-            check: (v) => v < 3.5,
-            severity: 'medium',
-            effect: 'Kali máu < 3.5 mEq/L — Hạ kali do lợi tiểu thải kali.',
-            recommendation: 'Bổ sung Kali (uống hoặc truyền). Theo dõi điện giải định kỳ.'
-        },
-
-        // === LIVER DRUGS + Liver Enzymes ===
-        {
-            drugs: ['paracetamol', 'acetaminophen'],
-            lab: 'ALT',
-            check: (v) => v > 120, // 3x ULN
-            severity: 'high',
-            effect: 'ALT tăng > 3 lần bình thường — Nguy cơ tổn thương gan khi dùng Paracetamol!',
-            recommendation: 'Giảm liều hoặc ngừng Paracetamol. Tối đa 2g/ngày nếu bắt buộc dùng.'
-        },
-        {
-            drugs: ['atorvastatin', 'simvastatin', 'rosuvastatin', 'lovastatin'],
-            lab: 'ALT',
-            check: (v) => v > 120, // 3x ULN
-            severity: 'high',
-            effect: 'ALT tăng > 3 lần bình thường — Cần đánh giá lại Statin!',
-            recommendation: 'Ngừng Statin nếu ALT > 3x ULN kéo dài. Kiểm tra lại sau 2-4 tuần.'
-        },
-
-        // === BLOOD SUGAR DRUGS + Glucose ===
-        {
-            drugs: ['insulin', 'glimepiride', 'gliclazide', 'glipizide'],
-            lab: 'glucose',
-            check: (v) => v < 3.9,
-            severity: 'high',
-            effect: 'Đường huyết < 3.9 mmol/L — Hạ đường huyết khi dùng thuốc hạ đường huyết!',
-            recommendation: 'Xử trí hạ đường huyết cấp. Xem xét giảm liều insulin/sulfonylurea.'
-        },
-
-        // === SODIUM ===
-        {
-            drugs: ['carbamazepine', 'oxcarbazepine'],
-            lab: 'sodium',
-            check: (v) => v < 130,
-            severity: 'medium',
-            effect: 'Natri máu < 130 mEq/L — Hạ Natri máu do thuốc chống động kinh.',
-            recommendation: 'Theo dõi Natri máu. Xem xét giảm liều hoặc đổi thuốc.'
-        },
-    ];
-
-    for (const rule of DRUG_LAB_RULES) {
-        const labResult = labMap.get(rule.lab);
+    for (const rule of rules) {
+        if (!rule.is_active) continue;
+        const labResult = labMap.get(rule.lab_code);
         if (!labResult) continue;
 
         const hasDrug = rule.drugs.some(d => drugs.includes(d));
         if (!hasDrug) continue;
 
-        if (!rule.check(labResult.value)) continue;
+        const v = labResult.value;
+        let triggered = false;
+        if (rule.operator === '<' && v < rule.threshold) triggered = true;
+        else if (rule.operator === '>' && v > rule.threshold) triggered = true;
+        else if (rule.operator === 'range' && v >= rule.threshold && v <= (rule.threshold_max ?? Infinity)) triggered = true;
+
+        if (!triggered) continue;
 
         const matchedDrug = rule.drugs.find(d => drugs.includes(d));
         alerts.push({
-            rule_code: `DL-${matchedDrug.toUpperCase()}-${rule.lab}-AUTO`,
+            rule_code: rule.rule_code,
             domain: 'drug_lab',
             severity: rule.severity,
             title: '⚠️ Xét nghiệm bất thường + Thuốc',
-            effect: `${rule.effect} (${rule.lab} = ${labResult.value} ${labResult.unit})`,
+            effect: `${rule.clinical_effect} (${rule.lab_code} = ${labResult.value} ${labResult.unit})`,
             recommendation: rule.recommendation,
-            matched_items: { drug: [matchedDrug], lab: [rule.lab], value: [String(labResult.value)] }
+            matched_items: { drug: [matchedDrug], lab: [rule.lab_code], value: [String(labResult.value)] }
+        });
+    }
+
+    return alerts;
+}
+
+/**
+ * Renal Adjustment Rules Engine
+ * Checks eGFR lab value against drug-specific thresholds from IndexedDB.
+ */
+function runRenalAdjustmentRules(rules, drugs, labMap) {
+    const alerts = [];
+    const egfrResult = labMap.get('eGFR');
+    if (!egfrResult) return alerts;
+
+    const egfr = egfrResult.value;
+
+    for (const rule of rules) {
+        if (!rule.is_active) continue;
+        if (!drugs.includes(rule.generic_name.toLowerCase())) continue;
+
+        let triggered = false;
+        if (rule.operator === '<' && egfr < rule.egfr_threshold) triggered = true;
+        else if (rule.operator === '<=' && egfr <= rule.egfr_threshold) triggered = true;
+
+        if (!triggered) continue;
+
+        alerts.push({
+            rule_code: rule.rule_code,
+            domain: 'renal',
+            severity: rule.severity,
+            title: '🩺 Chỉnh liều theo chức năng thận',
+            effect: `${rule.rationale} (eGFR = ${egfr} mL/phút)`,
+            recommendation: rule.recommendation,
+            matched_items: { drug: [rule.generic_name], lab: ['eGFR'], value: [String(egfr)] }
         });
     }
 
@@ -683,12 +633,14 @@ export async function analyzeLocally(context, filterLow = true) {
     const db = await openDatabase();
     const normalized = await normalizeContext(context);
 
-    const [genericMap, ddiRules, drugDiseaseRules, insuranceFormulary, insuranceRules] = await Promise.all([
+    const [genericMap, ddiRules, drugDiseaseRules, insuranceFormulary, insuranceRules, renalRules, drugLabRules] = await Promise.all([
         getDrugGenericMap(db),
         getDdiRules(db),
         getDrugDiseaseRules(db),
         getInsuranceFormulary(db),
-        getInsuranceRules(db)
+        getInsuranceRules(db),
+        getRenalAdjustmentRules(db),
+        getDrugLabRules(db)
     ]);
 
     // Check CTCH missing diagnosis rule
@@ -707,11 +659,18 @@ export async function analyzeLocally(context, filterLow = true) {
         });
     }
 
+    // 🔍 DEBUG: Show what's being matched
+    console.log(`[Aladinn CDS] 🔍 DEBUG: normalized_drugs = [${normalized.normalized_drugs.join(', ')}]`);
+    console.log(`[Aladinn CDS] 🔍 DEBUG: DDI rules loaded = ${ddiRules.length}, Drug-Disease = ${drugDiseaseRules.length}`);
+    if (normalized.unmapped_drugs.length > 0) {
+        console.warn(`[Aladinn CDS] ⚠️ Unmapped drugs: [${normalized.unmapped_drugs.join(', ')}]`);
+    }
+
     let allAlerts = dedupeAlerts([
         ...noDiagnosisAlerts,
         ...runDuplicateTherapyRules(normalized, genericMap),
         ...runDdiRules(ddiRules, normalized),
-        ...runDrugDiseaseRules(drugDiseaseRules, normalized, context),
+        ...runDrugDiseaseRules(drugDiseaseRules, normalized, context, drugLabRules, renalRules),
         ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, context)
     ]);
 
