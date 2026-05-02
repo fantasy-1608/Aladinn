@@ -22,4 +22,5 @@ import './nutrition.js';
 import './emergency.js';
 import './clinical-fill.js';
 import './quick-time-edit.js';
+import './smartca-guard.js';
 import './scanner-init.js';

@@ -32,6 +32,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window.VNPTEmergency) window.VNPTEmergency.init();
             if (window.VNPTClinicalFill) window.VNPTClinicalFill.init();
             if (window.Aladinn?.Scanner?.QuickTimeEdit) window.Aladinn.Scanner.QuickTimeEdit.init();
+            if (window.Aladinn?.Scanner?.SmartCAGuard) window.Aladinn.Scanner.SmartCAGuard.init();
 
             // 3. Shortcuts
             if (window.VNPTShortcuts) {

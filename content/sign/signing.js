@@ -699,6 +699,14 @@ window.Aladinn.Sign.Signing = (function () {
         const UI = _ui();
 
         // STEP 1: Auto-click "Xác nhận" (#btnConfirm)
+        // 🛡️ SmartCA Guard: Block auto-click if signer name mismatch
+        if (window.__aladinnSmartCAMismatch) {
+            if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
+                UI.showToast('🚨 SmartCA KHÔNG KHỚP với BS HIS — Tự động ký bị chặn!', 'warning');
+                AUTO_SIGN.lastConfirmTime = now;
+            }
+            return;
+        }
         if (!AUTO_SIGN.hasClickedConfirm && (now - AUTO_SIGN.lastConfirmTime > 800)) {
             const btn = _findBtnById('#btnConfirm') || _findBtnByText(['Xác nhận', 'Chấp nhận']);
             if (btn) {

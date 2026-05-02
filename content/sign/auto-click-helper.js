@@ -78,6 +78,8 @@
         const now = Date.now();
 
         // Auto-click #btnConfirm (e-Seal Smart CA "Xác nhận")
+        // 🛡️ SmartCA Guard: Block auto-click if signer name mismatch detected
+        if (window.__aladinnSmartCAMismatch) return;
         if (now - lastConfirmClick > 2000) {
             const confirmBtn = findInShadowRoots('#btnConfirm');
             if (confirmBtn && !confirmBtn.dataset.aladinnClicked) {
