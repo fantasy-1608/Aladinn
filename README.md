@@ -2,10 +2,10 @@
 
 <div align="center">
 
-**v1.2.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v1.2.1** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](#)
-[![Version](https://img.shields.io/badge/version-1.2.0-gold?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-1.2.1-gold?style=flat-square)](#)
 [![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](#)
 
 *Tích hợp AI · Bảo mật y tế · Desert Mystic Design*
@@ -78,7 +78,7 @@ Nhập liệu bằng giọng nói, AI trích xuất và điền tự động và
 
 ---
 
-## 🛡️ Bảo mật & Quyền riêng tư (v1.2.0)
+## 🛡️ Bảo mật & Quyền riêng tư (v1.2.1)
 
 Aladinn được kiểm toán bảo mật toàn diện với 8 điểm được xử lý:
 
@@ -193,17 +193,22 @@ Aladinn/
 
 ## 📦 Changelog
 
+### v1.2.1 (03/05/2026) — SmartCA Guard & CDS Expansion
+
+**Tính năng mới:**
+- SmartCA Guard: polling thông minh cho auto-logout, re-login ngay trong modal e-Seal
+- CDS mở rộng Phase 4–6: 426 DDI rules, VN alias mapping, missing diagnosis detection
+- Slash command nâng cấp: trigger `//`, hoạt động mọi ô kể cả iframe modal HIS
+
+**Sửa lỗi:**
+- clinical-fill: lấy đúng tờ điều trị mới nhất + gộp Khám toàn thân
+- template: slash command hoạt động đúng trong mọi ô nhập liệu HIS
+
 ### v1.2.0 (30/04/2026) — Security Hardening & Feature Polish
 
 **Bảo mật:**
-- `storageKey` không còn là raw API key string — background service là crypto authority duy nhất
-- Thêm `ENCRYPT_DATA` / `DECRYPT_DATA` message handler trong background
-- Nonce bắt buộc cho **tất cả** postMessage (từ optional → mandatory)
-- `JSON.stringify()` cho prompt text để ngăn prompt injection
-- Allowlist cho `geminiBaseUrl` — chặn endpoint không tin cậy
-- PHI redaction trong error logs + TTL 24h tự xoá
-- Export CSV/JSON yêu cầu xác nhận + ghi audit log
-- Legacy plaintext detection + warning banner + auto-purge 24h
+- Background Crypto Service (AES-256-GCM + PBKDF2), nonce bắt buộc, prompt injection prevention
+- PHI redaction + TTL 24h, endpoint allowlist, export consent + audit log
 
 **Tính năng:**
 - Phiếu hội chẩn: chỉnh sửa trực tiếp trên bảng preview, đồng bộ các trường liên quan

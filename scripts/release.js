@@ -34,11 +34,36 @@ execSync(
 
 console.log('\n🚀 [3/3] Đẩy lên Github Release...');
 try {
-    const latestCommitMsg = execSync('git log -1 --pretty=%B').toString().trim();
-    const tempNotesPath = path.join(__dirname, '..', '.commit-notes.tmp');
+    // Extract release notes from CHANGELOG.md for the current version
+    const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
+    let releaseNotes = '';
+
+    if (fs.existsSync(changelogPath)) {
+        const changelog = fs.readFileSync(changelogPath, 'utf8');
+        // Extract section between current version header and next version header
+        const versionRegex = new RegExp(
+            `## \\[${version.replace(/\./g, '\\.')}\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|---\\n\\n<div|$)`,
+            'm'
+        );
+        const match = changelog.match(versionRegex);
+        if (match) {
+            releaseNotes = match[1].trim();
+            // Remove trailing --- if present
+            releaseNotes = releaseNotes.replace(/\n---\s*$/, '').trim();
+        }
+    }
+
+    // Fallback to last commit message if no changelog found
+    if (!releaseNotes) {
+        releaseNotes = execSync('git log -1 --pretty=%B').toString().trim();
+    }
+
+    const tempNotesPath = path.join(__dirname, '..', '.release-notes.tmp');
     try {
-        fs.writeFileSync(tempNotesPath, latestCommitMsg);
-        const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "Aladinn v${version}" --notes-file ".commit-notes.tmp"`;
+        // Add header to release notes
+        const fullNotes = `# 🏺 Aladinn v${version}\n\n${releaseNotes}\n\n---\n\n> 📥 Tải file \`Aladinn-v${version}.zip\` bên dưới → giải nén → Chrome → \`chrome://extensions\` → Load unpacked`;
+        fs.writeFileSync(tempNotesPath, fullNotes);
+        const ghCommand = `export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin && gh release create v${version} dist-zip/Aladinn-v${version}.zip --title "🏺 Aladinn v${version}" --notes-file ".release-notes.tmp"`;
         execSync(ghCommand, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
         console.log('\n✅ Hoàn tất! Đã release v' + version + ' thành công lên GitHub!');
     } finally {
@@ -52,3 +77,4 @@ try {
 }
 
 console.log('\n' + '='.repeat(50));
+
