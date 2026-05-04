@@ -6,7 +6,7 @@
 
 import { initializeKnowledgeBase, importCrawledDrugs, getCrawlMetadata } from './db.js';
 import { CDSExtractor, CDSCacheManager } from './extractor.js';
-import { analyzeLocally, runBhytAuditRules } from './engine.js';
+import { analyzeLocally, runBhytAuditRules, icdMatchesRequirement } from './engine.js';
 import { CDSUI } from './ui.js';
 
 console.log('[Aladinn CDS] 📦 Module loaded.');
@@ -30,6 +30,22 @@ let iframeDiagnoses = [];
 // Giải quyết: HIS unload tab Điều trị khỏi DOM khi chuyển tab → mất ICD
 let patientDiagAccumulator = new Map(); // code → { code, is_primary }
 let accumulatorPatientId = '';
+
+function splitIcdRequirements(value) {
+    return String(value || '').split(',').map(v => v.trim().toUpperCase()).filter(Boolean);
+}
+
+function isInsuranceAlertSatisfiedByContext(alert, diagnoses) {
+    if (alert?.domain !== 'insurance' || !alert.missing_icd) return false;
+    const requirements = splitIcdRequirements(alert.missing_icd);
+    if (requirements.length === 0) return false;
+    const icdCodes = (diagnoses || []).map(d => d.code || d).filter(Boolean);
+    return icdCodes.some(icd => requirements.some(req => icdMatchesRequirement(icd, req)));
+}
+
+function filterSatisfiedInsuranceAlerts(alerts, diagnoses) {
+    return (alerts || []).filter(alert => !isInsuranceAlertSatisfiedByContext(alert, diagnoses));
+}
 
 // ===== CORE SCAN =====
 async function runScan() {
@@ -88,6 +104,7 @@ async function runScan() {
         lastScanHash = currentHash;
 
         const result = await analyzeLocally(context, filterLow);
+        result.alerts = filterSatisfiedInsuranceAlerts(result.alerts, context.encounter.diagnoses);
         
         // CHỐNG NHẢY LUNG TUNG: Chỉ update nếu alert thực sự thay đổi
         const resultString = JSON.stringify(result.alerts) + '||' + context.medications.length;
@@ -499,6 +516,7 @@ window.addEventListener('ALADINN_BHYT_AUDIT', async () => {
             context.medications = merged;
         }
         const result = await runBhytAuditRules(context);
+        result.alerts = filterSatisfiedInsuranceAlerts(result.alerts, context.encounter.diagnoses);
         console.log('[Aladinn CDS] 🛡️ BHYT Audit:', result.alerts.length, 'issues found');
         CDSUI.showBhytAuditResults(result);
     } catch (error) {

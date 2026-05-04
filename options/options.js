@@ -42,6 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let _hasPinHash = false;
     let _currentPinForEncrypt = ''; 
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function loadSettings() {
         chrome.storage.local.get([
             'geminiApiKey',
@@ -170,19 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
-                headers: { 'x-goog-api-key': apiKey }
+            const response = await chrome.runtime.sendMessage({
+                type: 'AI_LIST_MODELS',
+                payload: { apiKey }
             });
-            if (!response.ok) {
-                throw new Error(`Lỗi API (${response.status}) - Kiểm tra lại API Key`);
+            if (!response?.ok) {
+                throw new Error(response?.error?.message || 'Lỗi API - Kiểm tra lại API Key');
             }
-            const data = await response.json();
-            
-            const validModels = (data.models || []).filter(m => 
-                m.name.includes('gemini') && 
-                m.supportedGenerationMethods && 
-                m.supportedGenerationMethods.includes('generateContent')
-            );
+            const validModels = response.data?.models || [];
 
             if (validModels.length === 0) {
                 showToast('Không tìm thấy mô hình Gemini khả dụng.', true);
@@ -194,14 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             validModels.sort((a, b) => b.name.localeCompare(a.name)).forEach(model => {
                 const option = document.createElement('option');
-                const modelValue = model.name.replace('models/', '');
+                const modelValue = model.id || model.name.replace('models/', '');
                 option.value = modelValue;
-                option.textContent = `${model.displayName} (${model.version})`;
+                option.textContent = model.name || modelValue;
                 
                 if (modelValue.includes('2.5-flash')) {
-                    option.textContent = `${model.displayName} (Khuyên dùng - Mới nhất)`;
-                } else if (modelValue.includes('1.5-flash') && !validModels.some(m => m.name.includes('2.5-flash'))) {
-                    option.textContent = `${model.displayName} (Khuyên dùng)`;
+                    option.textContent = `${model.name || modelValue} (Khuyên dùng - Mới nhất)`;
+                } else if (modelValue.includes('1.5-flash') && !validModels.some(m => (m.id || m.name).includes('2.5-flash'))) {
+                    option.textContent = `${model.name || modelValue} (Khuyên dùng)`;
                 }
                 
                 elements.aiModel.appendChild(option);
@@ -338,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         chrome.storage.local.set(localPatch, () => {
-            chrome.storage.sync.set({}, () => {
+            const finishSave = () => chrome.storage.sync.set({}, () => {
                 showToast('✅ Đã lưu cấu hình thành công!');
                 _currentPinForEncrypt = ''; 
                 
@@ -348,6 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+            if (isNewPin && apiKeyVal && pinVal) {
+                chrome.runtime.sendMessage({
+                    type: 'CACHE_SESSION_PIN',
+                    payload: { pin: pinVal }
+                }, () => finishSave());
+            } else {
+                finishSave();
+            }
         });
     });
 
@@ -683,16 +695,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.innerHTML = `
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            ${tpl.title}
-                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${tpl.shortcut}</span>
+                            ${escapeHtml(tpl.title)}
+                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${escapeHtml(tpl.shortcut)}</span>
                         </div>
-                        <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${tpl.content}</div>
+                        <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${escapeHtml(tpl.content)}</div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
-                        <button class="btn-edit-tpl" data-id="${tpl.id}" title="Ch\u1ec9nh s\u1eeda" style="background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px; opacity: 0.75; transition: 0.2s;">
+                        <button class="btn-edit-tpl" data-id="${escapeHtml(tpl.id)}" title="Ch\u1ec9nh s\u1eeda" style="background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px; opacity: 0.75; transition: 0.2s;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="btn-delete-tpl" data-id="${tpl.id}" title="X\u00f3a" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
+                        <button class="btn-delete-tpl" data-id="${escapeHtml(tpl.id)}" title="X\u00f3a" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
@@ -902,4 +914,3 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
 
     loadAIConfig();
 });
-

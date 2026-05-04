@@ -18,6 +18,15 @@ class TemplateUI {
         this.init();
     }
 
+    escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     async init() {
         this.templates = await TemplateStore.getTemplates();
         this.createMenuElement();
@@ -182,7 +191,7 @@ class TemplateUI {
 
     renderMenu() {
         if (this.filteredTemplates.length === 0) {
-            this.menuEl.innerHTML = `<div class="aladinn-template-empty">Không tìm thấy mẫu nào phù hợp với "${this.currentQuery}"</div>`;
+            this.menuEl.innerHTML = `<div class="aladinn-template-empty">Không tìm thấy mẫu nào phù hợp với "${this.escapeHtml(this.currentQuery)}"</div>`;
             return;
         }
 
@@ -190,12 +199,15 @@ class TemplateUI {
         
         this.filteredTemplates.forEach((t, index) => {
             const isSelected = index === this.selectedIndex ? 'selected' : '';
+            const safeTitle = this.escapeHtml(t.title);
+            const safeShortcut = this.escapeHtml(t.shortcut);
+            const safeContent = this.escapeHtml(t.content);
             html += `
                 <div class="aladinn-template-item ${isSelected}" data-index="${index}">
                     <div class="aladinn-template-item-title">
-                        ${t.title} <span class="aladinn-template-item-shortcut">//${t.shortcut}</span>
+                        ${safeTitle} <span class="aladinn-template-item-shortcut">//${safeShortcut}</span>
                     </div>
-                    <div class="aladinn-template-item-content">${t.content}</div>
+                    <div class="aladinn-template-item-content">${safeContent}</div>
                 </div>
             `;
         });

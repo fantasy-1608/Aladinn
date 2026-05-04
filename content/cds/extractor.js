@@ -56,6 +56,11 @@ export const CDSExtractor = {
             }
         }
 
+        const meds = this.getMedications();
+        const labs = this.getLabs();
+
+        console.log(`[Aladinn CDS Extractor] 🔍 Context extracted for patient: ${currentDomPatientId}. Cache hits: Meds=${meds.length}, Diags=${diagnoses.length}, Labs=${labs.length}`);
+
         return {
             patient: {
                 id: currentDomPatientId,
@@ -70,8 +75,8 @@ export const CDSExtractor = {
                 care_setting: this.getCareSetting(),
                 is_insured: true // Tạm thời mặc định BHYT
             },
-            medications: this.getMedications(),
-            labs: this.getLabs()
+            medications: meds,
+            labs: labs
         };
     },
 

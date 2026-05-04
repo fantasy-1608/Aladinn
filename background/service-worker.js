@@ -11,7 +11,13 @@
  */
 
 // Import AI client
-import { requestAI, cancelRequest } from './ai-client.js';
+import {
+    requestAI,
+    cancelRequest,
+    requestScannerAI,
+    summarizeHistoryAI,
+    listGeminiModels
+} from './ai-client.js';
 /* global deriveBgKeyFromPin, bgDecryptApiKey, bgEncryptData, bgDecryptData */ // defined in ai-client.js via globalThis
 // Import self-update checker
 import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
@@ -148,7 +154,10 @@ function autoClickInTab(tabId) {
 function isValidSender(sender) {
     // Only accept messages from this extension
     if (sender.id !== chrome.runtime.id) return false;
-    // If from a tab, must be on vncare.vn domain
+    // Extension pages (popup/options) are trusted after sender.id validation.
+    const senderUrl = sender.tab?.url || sender.url || '';
+    if (senderUrl.startsWith(`chrome-extension://${chrome.runtime.id}/`)) return true;
+    // If from a web tab, must be on vncare.vn domain.
     if (sender.tab?.url && !sender.tab.url.match(/^https?:\/\/[^/]*\.vncare\.vn\//)) return false;
     return true;
 }
@@ -163,6 +172,13 @@ const SETTINGS_WRITE_WHITELIST = [
     'selectedModel', 'geminiBaseUrl', 'aladinn_features',
     'aladinn_voice_appSettings'
 ];
+
+function serializeAiError(err) {
+    return {
+        code: err?.code || 'AI_ERROR',
+        message: err?.message || 'Lỗi AI không xác định'
+    };
+}
 
 // ========================================
 // UNIFIED MESSAGE HANDLER (single listener — fixes race conditions)
@@ -261,7 +277,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             requestId: aiPayload.requestId
         })
             .then(data => sendResponse({ ok: true, requestId, data }))
-            .catch(err => sendResponse({ ok: false, requestId, error: { code: 'AI_ERROR', message: err.message } }));
+            .catch(err => sendResponse({ ok: false, requestId, error: serializeAiError(err) }));
         return true;
     }
 
@@ -269,6 +285,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const cancelled = cancelRequest(payload?.requestId);
         sendResponse({ ok: true, requestId, data: { cancelled } });
         return false;
+    }
+
+    // ---- BACKGROUND-ONLY AI GATEWAY (Scanner/Options) ----
+    if (type === 'SCANNER_AI_REQUEST') {
+        requestScannerAI(payload || {})
+            .then(data => sendResponse({ ok: true, requestId, data }))
+            .catch(err => sendResponse({ ok: false, requestId, error: serializeAiError(err) }));
+        return true;
+    }
+
+    if (type === 'SCANNER_SUMMARIZE_HISTORY') {
+        summarizeHistoryAI(payload || {})
+            .then(data => sendResponse({ ok: true, requestId, data }))
+            .catch(err => sendResponse({ ok: false, requestId, error: serializeAiError(err) }));
+        return true;
+    }
+
+    if (type === 'AI_LIST_MODELS') {
+        listGeminiModels(payload || {})
+            .then(models => sendResponse({ ok: true, requestId, data: { models } }))
+            .catch(err => sendResponse({ ok: false, requestId, error: serializeAiError(err) }));
+        return true;
     }
 
     // ---- VOICE MODULE: Settings (SECURITY: whitelist keys) ----

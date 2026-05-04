@@ -739,32 +739,24 @@ const VNPTHistory = (function () {
             if (isVipActive && isSummaryTab) {
                 let vipSuccess = false;
                 try {
-                    // Bước 1: Thử lấy API Key (từ cache hoặc plaintext)
-                    let resolvedApiKey = await HIS.getApiKey();
-
-                    // Bước 2: Nếu không có → kiểm tra có key encrypted cần PIN không
-                    if (!resolvedApiKey && HIS.ApiKeyService?.needsPin) {
-                        const encrypted = await HIS.ApiKeyService.needsPin();
-                        if (encrypted) {
-                            // Hiển thị PIN prompt inline ngay tại màn hình bệnh án
+                    let isAiUnlocked = false;
+                    if (HIS.ApiKeyService?.ensureUnlocked) {
+                        if (!(await HIS.ApiKeyService.isUnlocked?.())) {
                             globalWin.VNPTRealtime?.showToast('🔐 API Key đã mã hóa. Vui lòng nhập PIN...', 'info');
-                            resolvedApiKey = await HIS.ApiKeyService.promptAndUnlock();
                         }
+                        isAiUnlocked = await HIS.ApiKeyService.ensureUnlocked();
                     }
 
-                    // Bước 3: Nếu vẫn không có key → fallback BASE
-                    if (!resolvedApiKey) {
+                    if (!isAiUnlocked) {
                         globalWin.VNPTRealtime?.showToast('⚡ Chuyển sang chế độ Bình thường (BASE)', 'info');
-                        console.warn('[History] VIP → BASE: API Key không khả dụng');
-                        // KHÔNG throw — tiếp tục điền BASE bình thường
+                        console.warn('[History] VIP → BASE: phiên AI chưa mở khóa');
                     } else {
-                        // Bước 4: Gọi AI
                         globalWin.VNPTRealtime?.showToast('🪄 AI Đang phân tích Bệnh án...', 'info');
                         const resolvedModel = await HIS.getAiModel();
 
                         const aiSummary = await globalWin.GeminiAPI.summarizeHistory(
                             formattedDienBien || history.QUATRINHBENHLY || history.KHAMBENH_BENHSU || summary,
-                            resolvedApiKey,
+                            null,
                             resolvedModel,
                             pid
                         );

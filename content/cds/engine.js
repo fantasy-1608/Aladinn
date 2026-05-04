@@ -129,6 +129,39 @@ const ALIAS_MAP = {
     'tetracyclin hydroclorid': 'tetracycline',
 };
 
+function parseIcdCode(code) {
+    const match = String(code || '').trim().toUpperCase().match(/^([A-Z])(\d{2})(?:\.(\d{1,2}))?$/);
+    if (!match) return null;
+    return {
+        letter: match[1],
+        major: Number(match[2]),
+        decimal: match[3] == null ? null : Number(match[3])
+    };
+}
+
+export function icdMatchesRequirement(icd, requirement) {
+    const normalizedIcd = String(icd || '').trim().toUpperCase();
+    const normalizedReq = String(requirement || '').trim().toUpperCase();
+    if (!normalizedIcd || !normalizedReq) return false;
+
+    if (!normalizedReq.includes('-')) {
+        return normalizedIcd.startsWith(normalizedReq);
+    }
+
+    const [startRaw, endRaw] = normalizedReq.split('-').map(v => v.trim());
+    const start = parseIcdCode(startRaw);
+    const end = parseIcdCode(endRaw);
+    const current = parseIcdCode(normalizedIcd);
+    if (!start || !end || !current || start.letter !== end.letter || current.letter !== start.letter) {
+        return normalizedIcd.startsWith(normalizedReq);
+    }
+
+    const currentValue = current.major + (current.decimal ?? 0) / 100;
+    const startValue = start.major + (start.decimal ?? 0) / 100;
+    const endValue = end.major + (end.decimal ?? 99) / 100;
+    return currentValue >= startValue && currentValue <= endValue;
+}
+
 function applySuffixNormalization(token) {
     if (token.endsWith('prazol')) return token.replace(/prazol$/, 'prazole');
     if (token.endsWith('cilin')) return token.replace(/cilin$/, 'cillin');
@@ -521,7 +554,7 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
         
         if (rule.condition_type === 'icd_prefix_required') {
             const allowed = (rule.condition_value || '').split(',').map(v => v.trim().toUpperCase()).filter(Boolean);
-            const hasMatch = allowed.length === 0 || normalized.icd_codes.some(icd => allowed.some(p => icd.toUpperCase().startsWith(p)));
+            const hasMatch = allowed.length === 0 || normalized.icd_codes.some(icd => allowed.some(p => icdMatchesRequirement(icd, p)));
             if (!hasMatch) {
                 // Bỏ qua cảnh báo BHYT cho Paracetamol/Acetaminophen để tránh Alert Fatigue
                 // vì đây là thuốc quá phổ biến, thường dùng cho nhiều mục đích ngoài chẩn đoán chính.

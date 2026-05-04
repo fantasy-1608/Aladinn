@@ -10,6 +10,50 @@ export const CDSUI = {
     hasUserDismissed: false,  // User đã tự đóng panel
     lastAlertLevel: 'safe',   // Lưu level cuối cùng để chỉ auto-show khi severity thay đổi
 
+    escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    parseIcdCode(code) {
+        const match = String(code || '').trim().toUpperCase().match(/^([A-Z])(\d{2})(?:\.(\d{1,2}))?$/);
+        if (!match) return null;
+        return {
+            letter: match[1],
+            major: Number(match[2]),
+            decimal: match[3] == null ? null : Number(match[3])
+        };
+    },
+
+    icdMatchesRequirement(icd, requirement) {
+        const normalizedIcd = String(icd || '').trim().toUpperCase();
+        const normalizedReq = String(requirement || '').trim().toUpperCase();
+        if (!normalizedIcd || !normalizedReq) return false;
+        if (!normalizedReq.includes('-')) return normalizedIcd.startsWith(normalizedReq);
+
+        const [startRaw, endRaw] = normalizedReq.split('-').map(v => v.trim());
+        const start = this.parseIcdCode(startRaw);
+        const end = this.parseIcdCode(endRaw);
+        const current = this.parseIcdCode(normalizedIcd);
+        if (!start || !end || !current || start.letter !== end.letter || current.letter !== start.letter) {
+            return normalizedIcd.startsWith(normalizedReq);
+        }
+
+        const currentValue = current.major + (current.decimal ?? 0) / 100;
+        const startValue = start.major + (start.decimal ?? 0) / 100;
+        const endValue = end.major + (end.decimal ?? 99) / 100;
+        return currentValue >= startValue && currentValue <= endValue;
+    },
+
+    alertSatisfiedByIcd(alert, icdCodes) {
+        if (alert?.domain !== 'insurance' || !alert.missing_icd) return false;
+        const requirements = String(alert.missing_icd).split(',').map(v => v.trim().toUpperCase()).filter(Boolean);
+        return icdCodes.some(icd => requirements.some(req => this.icdMatchesRequirement(icd, req)));
+    },
 
     init() {
         if (document.getElementById('aladinn-cds-drawer')) return;
@@ -450,6 +494,8 @@ export const CDSUI = {
         const statusText = document.getElementById('cds-status-text');
         const patientInfo = document.getElementById('cds-patient-info');
 
+        const visibleIcdCodes = [];
+
         // Render Patient Info
         if (context && context.patient && context.patient.id) {
             const diagnoses = context.encounter.diagnoses || [];
@@ -495,6 +541,7 @@ export const CDSUI = {
                             }
                             
                             parsedCodes.push({ code: m, isPrimary: d.is_primary && parsedCodes.length === 0, desc: individualDesc });
+                            visibleIcdCodes.push(m);
                         }
                     });
                 } else {
@@ -503,6 +550,7 @@ export const CDSUI = {
                         seenCodes.add(d.code);
                         let individualDesc = rawDesc || (d.is_primary && parsedCodes.length === 0 ? 'Chẩn đoán chính' : 'Bệnh kèm theo');
                         parsedCodes.push({ code: d.code, isPrimary: d.is_primary && parsedCodes.length === 0, desc: individualDesc });
+                        visibleIcdCodes.push(d.code);
                     }
                 }
             }
@@ -512,7 +560,7 @@ export const CDSUI = {
                 const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 const pills = parsedCodes.map(p => {
                     const cls = p.isPrimary ? 'cds-diag-pill primary' : 'cds-diag-pill';
-                    return `<span class="${cls}" title="${escapeHtml(p.desc)}">${p.code}</span>`;
+                    return `<span class="${cls}" title="${escapeHtml(p.desc)}">${escapeHtml(p.code)}</span>`;
                 }).join('');
 
                 diagHtml = `<div class="cds-patient-diag">
@@ -526,7 +574,7 @@ export const CDSUI = {
             patientInfo.innerHTML = `
                 <div class="cds-patient-name" style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    ${context.patient.name || context.patient.id}
+                    ${this.escapeHtml(context.patient.name || context.patient.id)}
                 </div>
                 ${diagHtml}
             `;
@@ -536,6 +584,14 @@ export const CDSUI = {
         } else {
             patientInfo.style.display = 'none';
         }
+
+        alerts = (alerts || []).filter(alert => !this.alertSatisfiedByIcd(alert, visibleIcdCodes));
+        summary = {
+            ...summary,
+            critical_count: alerts.filter(a => a.severity === 'high').length,
+            warning_count: alerts.filter(a => a.severity === 'medium').length,
+            info_count: alerts.filter(a => a.severity === 'low' || a.severity === 'info').length
+        };
 
         
         // Cập nhật Shield Icon (KHÔNG tự bung panel — user click khi cần)
@@ -568,7 +624,8 @@ export const CDSUI = {
         if (alerts.length > 0) {
             alerts.forEach((alert, idx) => {
                 const card = document.createElement('div');
-                card.className = `cds-alert-card ${alert.severity}`;
+                const severity = ['high', 'medium', 'low', 'info'].includes(alert.severity) ? alert.severity : 'info';
+                card.className = `cds-alert-card ${severity}`;
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(12px)';
                 card.style.animation = 'aladinn-staggerIn .4s ease forwards';
@@ -582,7 +639,7 @@ export const CDSUI = {
                     if (alert.matched_items.drug) items.push(...alert.matched_items.drug);
                     
                     if (items.length > 0) {
-                        matchedHtml = `<div class="alert-match-list">${items.map(i => `<span>${i}</span>`).join('')}</div>`;
+                        matchedHtml = `<div class="alert-match-list">${items.map(i => `<span>${this.escapeHtml(i)}</span>`).join('')}</div>`;
                     }
 
                     if (alert.domain === 'interaction' && alert.matched_items.drug && alert.matched_items.drug.length >= 2) {
@@ -595,9 +652,9 @@ export const CDSUI = {
                 }
 
                 card.innerHTML = `
-                    <div class="cds-alert-title">${this.getSeverityEmoji(alert.severity)} ${alert.title}</div>
-                    <div class="cds-alert-effect">${alert.effect}</div>
-                    <div class="cds-alert-rec">${alert.recommendation}</div>
+                    <div class="cds-alert-title">${this.getSeverityEmoji(severity)} ${this.escapeHtml(alert.title)}</div>
+                    <div class="cds-alert-effect">${this.escapeHtml(alert.effect)}</div>
+                    <div class="cds-alert-rec">${this.escapeHtml(alert.recommendation)}</div>
                     ${matchedHtml}
                     ${linkHtml}
                 `;
@@ -627,7 +684,7 @@ export const CDSUI = {
             checkedHtml = `
                 <div class="cds-coverage-group cds-checked">
                     <div class="cds-coverage-label">✅ Đã kiểm tra an toàn <span class="cds-coverage-count">(${safeDrugs.length})</span></div>
-                    <div class="cds-coverage-pills">${safeDrugs.map(d => `<span class="cds-pill checked">${d}</span>`).join('')}</div>
+                    <div class="cds-coverage-pills">${safeDrugs.map(d => `<span class="cds-pill checked">${this.escapeHtml(d)}</span>`).join('')}</div>
                 </div>`;
         }
 
@@ -636,7 +693,7 @@ export const CDSUI = {
         if (hasUnmapped) {
             const pills = unmapped.map(d => {
                 const q = encodeURIComponent(`tương tác thuốc ${d}`);
-                return `<a href="https://www.google.com/search?q=${q}" target="_blank" class="cds-pill unchecked" title="Tra cứu ${d} trên Google">${d} <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:3px;vertical-align:middle"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg></a>`;
+                return `<a href="https://www.google.com/search?q=${q}" target="_blank" class="cds-pill unchecked" title="Tra cứu ${this.escapeHtml(d)} trên Google">${this.escapeHtml(d)} <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:3px;vertical-align:middle"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg></a>`;
             }).join('');
             uncheckedHtml = `
                 <div class="cds-coverage-group cds-unchecked">
@@ -823,9 +880,9 @@ export const CDSUI = {
                     <div style="display: flex; align-items: flex-start; gap: 6px;">
                         <span style="font-size: 14px; margin-top: 1px;">${icon}</span>
                         <div style="flex: 1; min-width: 0;">
-                            <div style="color: ${borderColor}; font-weight: 700; font-size: 12px; margin-bottom: 2px;">${alert.title}</div>
-                            <div style="color: #D4CFC5; font-size: 12px; line-height: 1.4;">${alert.effect}</div>
-                            <div style="color: #10b981; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: rgba(16,185,129,0.08); border-radius: 6px;">💡 ${alert.recommendation}</div>
+                            <div style="color: ${borderColor}; font-weight: 700; font-size: 12px; margin-bottom: 2px;">${this.escapeHtml(alert.title)}</div>
+                            <div style="color: #D4CFC5; font-size: 12px; line-height: 1.4;">${this.escapeHtml(alert.effect)}</div>
+                            <div style="color: #10b981; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: rgba(16,185,129,0.08); border-radius: 6px;">💡 ${this.escapeHtml(alert.recommendation)}</div>
                         </div>
                     </div>
                 </div>

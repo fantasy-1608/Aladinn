@@ -21,10 +21,12 @@ let _cachedEncryptKey = null;
 // (service-worker.js uses `_bgCachedKey = null` to wipe on logout)
 // We use a getter/setter pattern so both names reference the same variable
 Object.defineProperty(globalThis, '_bgCachedKey', {
+    configurable: true,
     get() { return _cachedDecryptKey; },
     set(v) { _cachedDecryptKey = v; }
 });
 Object.defineProperty(globalThis, '_bgCachedSalt', {
+    configurable: true,
     get() { return _cachedDecryptSalt; },
     set(v) { _cachedDecryptSalt = v; }
 });
@@ -254,6 +256,12 @@ function sanitizeKey(key) {
     return key.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
 }
 
+function aiError(message, code = 'AI_ERROR') {
+    const err = new Error(message);
+    err.code = code;
+    return err;
+}
+
 // ========================================
 // Fetch with Retry
 // ========================================
@@ -272,7 +280,7 @@ async function fetchWithRetry(url, options, retries = RETRY_DELAYS) {
             }
 
             if (response.status === 429) {
-                throw new Error('⚠️ Google API quota limited. Vui lòng thử lại sau.');
+                throw aiError('⚠️ Google API quota limited. Vui lòng thử lại sau.', 'AI_QUOTA_LIMIT');
             }
 
             // Retry on 5xx server errors
@@ -284,11 +292,14 @@ async function fetchWithRetry(url, options, retries = RETRY_DELAYS) {
 
             // Non-retryable client error
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+            const code = response.status === 400 || response.status === 401 || response.status === 403
+                ? 'AI_INVALID_API_KEY'
+                : 'AI_HTTP_ERROR';
+            throw aiError(errorData.error?.message || `API Error: ${response.status}`, code);
         } catch (err) {
             // AbortError = user cancelled, don't retry
             if (err.name === 'AbortError') {
-                throw new Error('Request đã bị hủy.', { cause: err });
+                throw aiError('Request đã bị hủy.', 'AI_ABORTED');
             }
 
             // Network errors: retry
@@ -298,6 +309,9 @@ async function fetchWithRetry(url, options, retries = RETRY_DELAYS) {
                 continue;
             }
 
+            if (!err.code && err instanceof TypeError) {
+                throw aiError('Lỗi mạng khi gọi Gemini. Vui lòng kiểm tra kết nối.', 'AI_NETWORK_ERROR');
+            }
             throw err;
         }
     }
@@ -360,6 +374,164 @@ function parseAIResponse(rawText) {
 }
 
 // ========================================
+// Background-only Gemini helpers
+// ========================================
+async function resolveApiKey(optionalApiKey = '') {
+    let apiKey = sanitizeKey(optionalApiKey);
+    if (apiKey) return apiKey;
+
+    const result = await chrome.storage.local.get([
+        'geminiApiKey_encrypted',
+        'pin_salt'
+    ]);
+
+    if (result.geminiApiKey_encrypted && result.pin_salt) {
+        try {
+            apiKey = await decryptAPIKeyInBg(result.geminiApiKey_encrypted, result.pin_salt);
+        } catch (_e) {
+            apiKey = '';
+        }
+    }
+
+    return sanitizeKey(apiKey);
+}
+
+function getTrustedGeminiBaseUrl(rawBaseUrl) {
+    const fallback = 'https://generativelanguage.googleapis.com';
+    if (!rawBaseUrl) return fallback;
+    try {
+        const u = new URL(rawBaseUrl);
+        if (u.origin === fallback) return fallback;
+    } catch (_) { /* use fallback */ }
+    console.log('[Aladinn Security] ⛔ Blocked untrusted geminiBaseUrl:', rawBaseUrl);
+    return fallback;
+}
+
+async function callGeminiGenerateContent({ prompt, model, requestId, generationConfig = {}, systemInstruction = null }) {
+    if (!prompt || typeof prompt !== 'string') {
+        throw aiError('Prompt không hợp lệ.', 'AI_INVALID_PAYLOAD');
+    }
+
+    const apiKey = await resolveApiKey();
+    if (!apiKey) {
+        throw aiError('Chưa cấu hình API Key hoặc phiên đã khóa. Vui lòng nhập PIN.', 'AI_LOCKED');
+    }
+
+    await waitForRateLimit();
+
+    const controller = new AbortController();
+    if (requestId) {
+        _abortControllers.set(requestId, controller);
+    }
+
+    try {
+        const stored = await chrome.storage.local.get(['geminiBaseUrl']);
+        const apiVersion = 'v1beta';
+        const baseUrl = getTrustedGeminiBaseUrl(stored.geminiBaseUrl);
+        const modelUrl = `${baseUrl}/${apiVersion}/models/${model || 'gemini-2.0-flash'}:generateContent`;
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig
+        };
+        if (systemInstruction) {
+            payload.system_instruction = { parts: [{ text: systemInstruction }] };
+        }
+
+        const response = await fetchWithRetry(modelUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+        });
+
+        return response.json();
+    } finally {
+        if (requestId) {
+            _abortControllers.delete(requestId);
+        }
+    }
+}
+
+export async function requestScannerAI({ prompt, model, requestId, generationConfig }) {
+    const data = await callGeminiGenerateContent({
+        prompt,
+        model,
+        requestId,
+        generationConfig: generationConfig || { temperature: 0.1 }
+    });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!text) {
+        throw aiError(data.error?.message || 'Lỗi từ máy chủ AI', 'AI_EMPTY_RESPONSE');
+    }
+    return { text, usageMetadata: data.usageMetadata || {}, model };
+}
+
+export async function summarizeHistoryAI({ rawTreatments, model, targetField }) {
+    let systemInstruction = `Bạn là một Bác sĩ Trưởng khoa đang viết Tờ "Tổng kết Hồ sơ Bệnh án" (Phần 1: Quá trình bệnh lý và Diễn biến lâm sàng) để lưu trữ hồ sơ xuất viện theo Chuẩn Bộ Y tế Việt Nam.
+
+Dưới đây là toàn bộ số liệu chăm sóc và điều trị của đợt bệnh này. Hãy tổng hợp lại thành một bản tóm tắt có giá trị pháp lý và chuyên môn cao:
+
+== YÊU CẦU CHUYÊN MÔN KẾT ÁN ==
+1. Tóm lược rất ngắn gọn tình trạng lúc vào viện.
+2. Nêu bật các diễn biến lâm sàng XẤU ĐI hoặc CẢI THIỆN RÕ RỆT trong suốt quá trình nằm viện. Nếu nhiều ngày liền tình trạng không đổi, hãy gom chúng lại.
+3. Mục cuối cùng ghi rõ "Tình trạng hiện tại: ..." (là diễn biến lâm sàng của tờ điều trị cuối cùng).
+4. TUYỆT ĐỐI BẢO LƯU TÍNH CHÍNH XÁC: Không chế bản, không tự bịa thuốc/chỉ định nếu văn bản gốc không có.
+5. VĂN PHONG SÚC TÍCH: Định dạng thành 1-2 đoạn văn chuyên khoa mạch lạc. CHỈ TRẢ VỀ NỘI DUNG TÓM TẮT. KHÔNG CHỨA LỜI CHÀO. KHÔNG BỌC TRONG KHUNG MARKDOWN.`;
+
+    if (targetField === 'CANLAMSANG') {
+        systemInstruction = 'Hãy CHỈ giữ lại các chỉ định siêu âm, x-quang, xét nghiệm máu/nước tiểu sinh hóa và kết quả của chúng. Bỏ qua các thông tin khác.';
+    }
+
+    const data = await callGeminiGenerateContent({
+        prompt: `DỮ LIỆU ĐIỀU TRỊ (Đã được ẩn danh):\n${rawTreatments || ''}`,
+        model: model || 'gemini-2.0-flash-lite-preview-02-05',
+        generationConfig: {
+            temperature: 0.1,
+            topP: 0.8,
+            topK: 40
+        },
+        systemInstruction
+    });
+
+    const output = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!output) {
+        throw aiError(data.error?.message || 'AI không trả về nội dung', 'AI_EMPTY_RESPONSE');
+    }
+    return { text: output, usageMetadata: data.usageMetadata || {} };
+}
+
+export async function listGeminiModels({ apiKey } = {}) {
+    const resolvedKey = await resolveApiKey(apiKey || '');
+    if (!resolvedKey) {
+        throw aiError('API Key chưa được cấu hình hoặc phiên đã khóa.', 'AI_LOCKED');
+    }
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+        headers: { 'x-goog-api-key': resolvedKey }
+    });
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const code = response.status === 400 || response.status === 401 || response.status === 403
+            ? 'AI_INVALID_API_KEY'
+            : 'AI_HTTP_ERROR';
+        throw aiError(err.error?.message || 'Lỗi HTTP ' + response.status, code);
+    }
+    const data = await response.json();
+    return (data.models || [])
+        .filter(m => m.name?.includes('gemini') &&
+            Array.isArray(m.supportedGenerationMethods) &&
+            m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => ({
+            id: m.name.replace('models/', ''),
+            name: m.displayName || m.name.replace('models/', ''),
+            description: m.description || ''
+        }));
+}
+
+// ========================================
 // Main AI Request Handler
 // ========================================
 /**
@@ -371,29 +543,11 @@ function parseAIResponse(rawText) {
  * @returns {Promise<Object>} - Parsed JSON result from Gemini
  */
 export async function requestAI({ text, model, requestId }) {
-    // Get API key from storage (only encrypted)
-    const result = await chrome.storage.local.get([
-        'geminiApiKey_encrypted',
-        'pin_hash', 'pin_salt', 'geminiBaseUrl'
-    ]);
-
-    let apiKey = '';
-
-    // Only allow encrypted key
-    if (result.geminiApiKey_encrypted && result.pin_salt) {
-        try {
-            apiKey = await decryptAPIKeyInBg(result.geminiApiKey_encrypted, result.pin_salt);
-        } catch (_e) {
-            // Decryption failed
-        }
-    }
-
-    if (apiKey) {
-        apiKey = sanitizeKey(apiKey);
-    }
+    const result = await chrome.storage.local.get(['geminiBaseUrl']);
+    const apiKey = await resolveApiKey();
 
     if (!apiKey) {
-        throw new Error('Chưa cấu hình API Key. Vui lòng vào Settings.');
+        throw aiError('Chưa cấu hình API Key hoặc phiên đã khóa. Vui lòng nhập PIN.', 'AI_LOCKED');
     }
 
     // Rate limit
@@ -408,20 +562,7 @@ export async function requestAI({ text, model, requestId }) {
     try {
         const systemPrompt = buildSystemPrompt(text);
         const apiVersion = 'v1beta';
-        // [P2-SEC-008] Validate geminiBaseUrl — only allow trusted domains
-        const rawBaseUrl = result.geminiBaseUrl || 'https://generativelanguage.googleapis.com';
-        const isAllowedEndpoint = (() => {
-            try {
-                const u = new URL(rawBaseUrl);
-                return u.hostname.endsWith('.googleapis.com') ||
-                       u.hostname.endsWith('.vncare.vn') ||
-                       u.hostname === 'localhost';
-            } catch (_) { return false; }
-        })();
-        const baseUrl = isAllowedEndpoint ? rawBaseUrl : 'https://generativelanguage.googleapis.com';
-        if (!isAllowedEndpoint && result.geminiBaseUrl) {
-            console.log('[Aladinn Security] ⛔ Blocked untrusted geminiBaseUrl:', result.geminiBaseUrl);
-        }
+        const baseUrl = getTrustedGeminiBaseUrl(result.geminiBaseUrl);
         const modelUrl = `${baseUrl}/${apiVersion}/models/${model}:generateContent`;
 
         const payload = {

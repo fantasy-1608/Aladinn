@@ -167,9 +167,10 @@ const VNPTDashboard = (function () {
             const percent = highestCount > 0 ? Math.round((count / highestCount) * 100) : 0;
             const isHighest = count === highestCount && count > 0;
             const safeName = escapeHtml(name);
+            const encodedName = encodeURIComponent(name);
 
             return `
-                <div class="vnpt-room-stat-row ${isMini ? 'mini' : ''} ${isHighest ? 'is-lead' : ''}" data-room="${safeName}" style="cursor: pointer; opacity: ${currentFilterRoom && currentFilterRoom !== safeName ? '0.4' : '1'};">
+                <div class="vnpt-room-stat-row ${isMini ? 'mini' : ''} ${isHighest ? 'is-lead' : ''}" data-room="${encodedName}" style="cursor: pointer; opacity: ${currentFilterRoom && currentFilterRoom !== name ? '0.4' : '1'};">
                     <div class="room-name" title="${safeName}">
                         ${isHighest ? '<span class="lead-icon">👑</span>' : ''}
                         ${safeName}
@@ -188,7 +189,7 @@ const VNPTDashboard = (function () {
         container.onclick = (e) => {
             const row = e.target.closest('.vnpt-room-stat-row');
             if (!row) return;
-            const roomName = row.dataset.room;
+            const roomName = row.dataset.room ? decodeURIComponent(row.dataset.room) : '';
             if (roomName) toggleRoomFilter(roomName);
         };
     }
@@ -202,6 +203,9 @@ const VNPTDashboard = (function () {
             currentFilterRoom = null;
             // Reset UI
             document.querySelectorAll('.vnpt-room-stat-row').forEach(r => r.style.opacity = '1');
+            document.querySelectorAll('.app-quick-filter-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.room === 'ALL');
+            });
             gridRows.forEach(tr => tr.classList.remove('aladinn-hidden-row'));
             if (window.VNPTRealtime) window.VNPTRealtime.showToast('Tắt lọc buồng', 'info');
             return;
@@ -211,7 +215,8 @@ const VNPTDashboard = (function () {
 
         // Update Dashboard visual state
         document.querySelectorAll('.vnpt-room-stat-row').forEach(r => {
-            r.style.opacity = r.dataset.room === roomName ? '1' : '0.4';
+            const rowRoom = r.dataset.room ? decodeURIComponent(r.dataset.room) : '';
+            r.style.opacity = rowRoom === roomName ? '1' : '0.4';
         });
 
         // Update Grid
@@ -236,7 +241,8 @@ const VNPTDashboard = (function () {
 
         // Sync Quick Filter Chips
         document.querySelectorAll('.app-quick-filter-chip').forEach(c => {
-            c.classList.toggle('active', c.dataset.room === roomName || (roomName === null && c.dataset.room === 'ALL'));
+            const chipRoom = c.dataset.room === 'ALL' ? 'ALL' : decodeURIComponent(c.dataset.room || '');
+            c.classList.toggle('active', chipRoom === roomName || (roomName === null && c.dataset.room === 'ALL'));
         });
 
         if (window.VNPTRealtime && roomName !== 'ALL') window.VNPTRealtime.showToast(`🔍 Hiển thị ${matchCount} bệnh nhân Buồng ${roomName}`, 'info');
@@ -280,7 +286,7 @@ const VNPTDashboard = (function () {
             html += `<button class="app-quick-filter-chip ${currentFilterRoom === null ? 'active' : ''}" data-room="ALL">✨ Tất cả</button>`;
             
             entries.forEach(([name, count]) => {
-                html += `<button class="app-quick-filter-chip ${currentFilterRoom === name ? 'active' : ''}" data-room="${name}">${name} <span class="chip-count">${count}</span></button>`;
+                html += `<button class="app-quick-filter-chip ${currentFilterRoom === name ? 'active' : ''}" data-room="${encodeURIComponent(name)}">${escapeHtml(name)} <span class="chip-count">${count}</span></button>`;
             });
             html += '</div>';
             
@@ -289,7 +295,7 @@ const VNPTDashboard = (function () {
             bar.querySelectorAll('.app-quick-filter-chip').forEach(btn => {
                 btn.onclick = (e) => {
                     const room = e.currentTarget.dataset.room;
-                    toggleRoomFilter(room === 'ALL' ? currentFilterRoom : room);
+                    toggleRoomFilter(room === 'ALL' ? null : decodeURIComponent(room || ''));
                 };
             });
         }

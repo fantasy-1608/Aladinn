@@ -1,12 +1,10 @@
 /**
  * 🧞 Aladinn — Centralized API Key Service
- * Provides `HIS.getApiKey()` for ALL modules (Scanner, Voice, future modules).
+ * Provides AI unlock state helpers for ALL modules (Scanner, Voice, future modules).
  *
  * Resolution chain:
- *   1. In-memory cache (fastest)
- *   2. chrome.storage.local plaintext
- *   3. his_settings nested key
- *   4. Encrypted key → PIN prompt inline
+ *   1. Background in-memory CryptoKey unlock status
+ *   2. Encrypted key → PIN prompt inline
  *
  * PIN Prompt: When encrypted key exists but PIN unavailable,
  * call `HIS.ApiKeyService.promptAndUnlock()` to show inline PIN dialog.
@@ -21,18 +19,12 @@ HIS.ApiKeyService = (function () {
     let _cachedKey = '';
     /** @type {number} */
     let _cacheTimestamp = 0;
-    const CACHE_TTL_MS = 30 * 60 * 1000; // Cache key for 30 minutes (matches auto-lock)
-
     /**
-     * Get the Gemini API Key silently (no UI prompts).
-     * @returns {Promise<string>} Decrypted API key or empty string
+     * Check whether the background session can decrypt the Gemini API key.
+     * SECURITY: Content scripts never receive the API key.
+     * @returns {Promise<boolean>}
      */
-    async function getKey() {
-        // 1. Memory cache
-        if (_cachedKey && (Date.now() - _cacheTimestamp < CACHE_TTL_MS)) {
-            return _cachedKey;
-        }
-
+    async function isUnlocked() {
         try {
             const stored = await new Promise(resolve =>
                 chrome.storage.local.get(
@@ -41,13 +33,13 @@ HIS.ApiKeyService = (function () {
                 )
             );
 
-            // 2. Encrypted key → ask background to decrypt (background has cached CryptoKey)
+            // 2. Encrypted key → ask background whether it can decrypt
             if (stored.geminiApiKey_encrypted && stored.pin_salt) {
-                const decrypted = await getDecryptedKeyFromBackground();
-                if (decrypted) {
-                    _cachedKey = sanitize(decrypted);
+                const unlocked = await getUnlockStatusFromBackground();
+                if (unlocked) {
+                    _cachedKey = '__UNLOCKED__';
                     _cacheTimestamp = Date.now();
-                    return _cachedKey;
+                    return true;
                 }
             }
 
@@ -61,7 +53,23 @@ HIS.ApiKeyService = (function () {
             console.warn('[ApiKeyService] Error resolving API key:', err);
         }
 
-        return '';
+        return false;
+    }
+
+    /**
+     * Backward-compatible alias. Do not use for new code.
+     * @returns {Promise<string>} sentinel when unlocked, otherwise empty string
+     */
+    async function getKey() {
+        return (await isUnlocked()) ? '__UNLOCKED__' : '';
+    }
+
+    async function ensureUnlocked() {
+        if (await isUnlocked()) return true;
+        if (await needsPin()) {
+            return !!(await promptAndUnlock());
+        }
+        return false;
     }
 
     /**
@@ -96,15 +104,20 @@ HIS.ApiKeyService = (function () {
                 stored.geminiApiKey_encrypted, pin, stored.pin_salt
             );
             if (decrypted) {
-                _cachedKey = sanitize(decrypted);
-                _cacheTimestamp = Date.now();
                 // Cache PIN in background session for subsequent calls
                 try {
-                    chrome.runtime.sendMessage({
-                        type: 'CACHE_SESSION_PIN',
-                        payload: { pin }
+                    const resp = await new Promise(resolve => {
+                        chrome.runtime.sendMessage({
+                            type: 'CACHE_SESSION_PIN',
+                            payload: { pin }
+                        }, resolve);
                     });
-                } catch (_) { /* ignore */ }
+                    if (!resp?.ok) return '';
+                } catch (_) {
+                    return '';
+                }
+                _cachedKey = '__UNLOCKED__';
+                _cacheTimestamp = Date.now();
                 return _cachedKey;
             }
         } catch (err) {
@@ -398,21 +411,15 @@ HIS.ApiKeyService = (function () {
      * Ask background to decrypt the API key using its cached CryptoKey.
      * Content scripts NEVER receive the PIN.
      */
-    async function getDecryptedKeyFromBackground() {
+    async function getUnlockStatusFromBackground() {
         try {
             const response = await new Promise(resolve =>
                 chrome.runtime.sendMessage({ type: 'BG_DECRYPT_API_KEY' }, resolve)
             );
-            return response?.apiKey || '';
+            return response?.unlocked === true;
         } catch (_) {
-            return '';
+            return false;
         }
-    }
-
-    function sanitize(key) {
-        if (!key) return '';
-        // eslint-disable-next-line no-control-regex
-        return key.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '').trim();
     }
 
     function clearCache() {
@@ -452,7 +459,7 @@ HIS.ApiKeyService = (function () {
         HIS.EventBus.on('session:logout', clearCache);
     }
 
-    return { getKey, getModel, hasKey, clearCache, needsPin, unlockWithPin, promptAndUnlock };
+    return { getKey, getModel, hasKey, clearCache, needsPin, unlockWithPin, promptAndUnlock, isUnlocked, ensureUnlocked };
 })();
 
 // Convenience shortcuts

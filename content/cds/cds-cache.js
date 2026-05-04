@@ -61,6 +61,14 @@ class CDSCacheManager {
     handleData(payload) {
         if (!payload) return;
         let hasChanges = false;
+        
+        console.log('[Aladinn CDS Cache] 📥 Nhận dữ liệu snoop:', {
+            benhnhanId: payload.benhnhanId,
+            khambenhId: payload.khambenhId,
+            diagCount: payload.diagnoses?.length || 0,
+            medsCount: payload.medications?.length || 0,
+            labsCount: payload.labs?.length || 0
+        });
 
         // === Patient Key chuẩn: benhnhanId + khambenhId ===
         // Ưu tiên composite key thay vì heuristic độ dài ID
@@ -185,8 +193,89 @@ class CDSCacheManager {
     }
 
     get() {
+        // Enforce 5-minute TTL for medications
+        const TTL_MS = 5 * 60 * 1000;
+        if (this.cache._medsTimestamp && (Date.now() - this.cache._medsTimestamp > TTL_MS)) {
+            console.log('[Aladinn CDS Cache] ⏱️ TTL hết hạn (quá 5 phút). Đang flush medications để tránh dữ liệu cũ.');
+            this.resetMedications();
+            this.cache._medsTimestamp = 0; // Reset timestamp sau khi xóa
+        }
         return this.cache;
+    }
+
+    showDebugPanel() {
+        const existing = document.getElementById('aladinn-cds-debug-panel');
+        if (existing) {
+            existing.remove();
+            return;
+        }
+
+        const panel = document.createElement('div');
+        panel.id = 'aladinn-cds-debug-panel';
+        panel.style.cssText = `
+            position: fixed; top: 20px; right: 20px; z-index: 2147483647;
+            width: 450px; max-height: 80vh; overflow-y: auto;
+            background: linear-gradient(145deg, #1a1510, #0f0d0a);
+            border: 1px solid rgba(212,162,90,0.4); border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+            color: #e8dcc8; font-family: 'Courier New', monospace; font-size: 12px; padding: 15px;
+        `;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '❌';
+        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: transparent; border: none; cursor: pointer; color: #d4a25a; font-size: 16px;';
+        closeBtn.onclick = () => panel.remove();
+        
+        const ttlRemaining = this.cache._medsTimestamp ? Math.max(0, 300000 - (Date.now() - this.cache._medsTimestamp)) : 0;
+        
+        panel.innerHTML = `
+            <h3 style="margin-top: 0; color: #d4a25a; border-bottom: 1px solid rgba(212,162,90,0.3); padding-bottom: 8px;">🧞 AI Cache Debug Panel</h3>
+            <div><strong>Patient Key:</strong> ${this._patientKey || 'N/A'}</div>
+            <div><strong>BenhNhan ID:</strong> ${this.cache.benhnhanId || 'N/A'}</div>
+            <div><strong>KhamBenh ID:</strong> ${this.cache.khambenhId || 'N/A'}</div>
+            <div><strong>Patient IDs:</strong> ${Array.from(this.cache.patientIds).join(', ') || 'None'}</div>
+            <div><strong>Medications TTL:</strong> ${ttlRemaining > 0 ? Math.round(ttlRemaining/1000) + 's' : 'Expired/None'}</div>
+            
+            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Diagnoses (${this.cache.diagnoses.length})</h4>
+            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+                ${this.cache.diagnoses.map(d => `[${d.code}] ${d.name || ''}`).join('<br>') || 'None'}
+            </div>
+            
+            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Medications (${this.cache.medications.length})</h4>
+            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 150px; overflow-y: auto;">
+                ${this.cache.medications.map(m => m.display_name).join('<br>') || 'None'}
+            </div>
+            
+            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Labs (${this.cache.labs.length})</h4>
+            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+                ${this.cache.labs.map(l => `[${l.code}] ${l.value}`).join('<br>') || 'None'}
+            </div>
+            
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button id="btn-force-reset" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Force Reset All</button>
+                <button id="btn-refresh-ui" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Refresh Panel</button>
+            </div>
+        `;
+        
+        panel.appendChild(closeBtn);
+        document.body.appendChild(panel);
+        
+        document.getElementById('btn-force-reset').onclick = () => {
+            this.reset();
+            this.showDebugPanel(); // Rerender
+            console.log('[Aladinn CDS Debug] Forced reset from Debug Panel');
+        };
+        document.getElementById('btn-refresh-ui').onclick = () => {
+            this.showDebugPanel();
+        };
     }
 }
 
 export const CDSCache = new CDSCacheManager();
+
+// Khởi tạo shortcut cho Debug Panel (Ctrl+Shift+Alt+D)
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.altKey && e.key.toLowerCase() === 'd') {
+        CDSCache.showDebugPanel();
+    }
+});

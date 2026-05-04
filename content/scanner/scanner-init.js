@@ -12,6 +12,111 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
     const Logger = window.Aladinn?.Logger;
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderSafeAiMarkdown(rawText, { basePx, smPx, badgeSz, indPx }) {
+        let text = escapeHtml(rawText);
+        text = text.replace(/([^\n])\s*(\d+\.\s)/g, '$1\n$2');
+        text = text.replace(/([^\n])\s*(\*\*[A-ZÀ-ỸĐ][^*]+:\*\*)/g, '$1\n$2');
+        text = text.replace(/^(\d+\.\s+)(.+)$/gm, (_, num, rawTitle) => {
+            const colonIdx = rawTitle.indexOf(':');
+            const labelRaw = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
+            const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
+            const contentHtml = contentRaw
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>');
+            return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
+                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
+                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
+                '</div>';
+        });
+        text = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>');
+        text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#cbd5e1;line-height:1.65;font-size:${basePx}px;">$1</li>`);
+        text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
+            return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#cbd5e1;">${rest}</span></div>`;
+        });
+        return text.replace(/\n/g, '<br>');
+    }
+
+    async function requestScannerAI(prompt, model) {
+        const response = await chrome.runtime.sendMessage({
+            type: 'SCANNER_AI_REQUEST',
+            payload: {
+                prompt,
+                model,
+                generationConfig: { temperature: 0.1 }
+            }
+        });
+        if (!response?.ok) {
+            const err = new Error(getAiErrorMessage(response?.error));
+            err.code = response?.error?.code || 'AI_ERROR';
+            throw err;
+        }
+        return response.data;
+    }
+
+    function getAiErrorMessage(error) {
+        const code = error?.code || 'AI_ERROR';
+        if (code === 'AI_LOCKED') return 'Phiên AI đã khóa hoặc chưa cấu hình API Key. Vui lòng nhập PIN trong Aladinn.';
+        if (code === 'AI_INVALID_API_KEY') return 'API Key không hợp lệ hoặc không có quyền gọi Gemini. Vui lòng kiểm tra lại trong Cài đặt.';
+        if (code === 'AI_QUOTA_LIMIT') return 'Gemini đang giới hạn quota/rate limit. Vui lòng thử lại sau.';
+        if (code === 'AI_NETWORK_ERROR') return 'Không kết nối được Gemini. Vui lòng kiểm tra mạng.';
+        if (code === 'AI_EMPTY_RESPONSE') return 'Gemini không trả về nội dung hợp lệ. Vui lòng phân tích lại.';
+        return error?.message || 'Lỗi AI không xác định.';
+    }
+
+    async function sha256Short(text) {
+        const data = new TextEncoder().encode(text);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(digest)).slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function storageLocalGet(keys) {
+        return new Promise(resolve => chrome.storage.local.get(keys, resolve));
+    }
+
+    function storageLocalSet(value) {
+        return new Promise(resolve => chrome.storage.local.set(value, resolve));
+    }
+
+    async function getAiCache(cacheKey) {
+        try {
+            const stored = await storageLocalGet(['aladinn_ai_result_cache']);
+            return stored.aladinn_ai_result_cache?.[cacheKey] || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function setAiCache(cacheKey, value) {
+        try {
+            const stored = await storageLocalGet(['aladinn_ai_result_cache']);
+            const cache = stored.aladinn_ai_result_cache || {};
+            cache[cacheKey] = { ...value, savedAt: Date.now() };
+            const entries = Object.entries(cache).sort((a, b) => (b[1].savedAt || 0) - (a[1].savedAt || 0)).slice(0, 30);
+            await storageLocalSet({ aladinn_ai_result_cache: Object.fromEntries(entries) });
+        } catch (_) { /* cache is best-effort */ }
+    }
+
+    async function removeAiCache(cacheKey) {
+        try {
+            const stored = await storageLocalGet(['aladinn_ai_result_cache']);
+            const cache = stored.aladinn_ai_result_cache || {};
+            if (!Object.prototype.hasOwnProperty.call(cache, cacheKey)) return;
+            delete cache[cacheKey];
+            await storageLocalSet({ aladinn_ai_result_cache: cache });
+        } catch (_) { /* cache is best-effort */ }
+    }
+
     window.Aladinn.Scanner.init = function () {
         if (Logger) Logger.info('Scanner.Init', 'Bắt đầu khởi tạo các module Scanner lõi...');
 
@@ -50,6 +155,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // We keep a dummy inject for now to satisfy old logic if any, but it won't do anything visible 
                 // if we remove the actual DOM injection inside menu-manager.js
             }
+
+            // Consistency Audit: Listen for global cache reset signal
+            window.addEventListener('ALADINN_FORCE_RESET_CACHE', async () => {
+                if (Logger) Logger.info('Scanner.Init', '🔄 Received ALADINN_FORCE_RESET_CACHE, clearing scanner caches...');
+                try {
+                    await storageLocalSet({ aladinn_ai_result_cache: {} });
+                    if (window.Aladinn?.Scanner?.clearCache) {
+                        window.Aladinn.Scanner.clearCache();
+                    }
+                } catch (e) {
+                    if (Logger) Logger.error('Scanner.Init', 'Failed to clear cache on force reset:', e);
+                }
+            });
 
             // Standalone Ai Lab Summary function for Popup to call
             async function showAiLabSummary() {
@@ -1984,23 +2102,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         async function triggerAIIfNeeded() {
             if (aiResultLoaded) return; // cached
-            await runAIAnalysis();
+            await runAIAnalysis(false);
         }
 
-        async function runAIAnalysis() {
-            let apiKey = await window.HIS.ApiKeyService.getKey();
-            if (!apiKey) {
-                const needsPin = await window.HIS.ApiKeyService.needsPin();
-                if (needsPin) apiKey = await window.HIS.ApiKeyService.promptAndUnlock();
-            }
-            if (!apiKey) {
+        async function runAIAnalysis(forceRefresh = false) {
+            const unlocked = await window.HIS.ApiKeyService.ensureUnlocked();
+            if (!unlocked) {
                 showAIState('error');
-                if (aiError) aiError.innerHTML = '⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào <strong>Cài đặt Aladinn</strong> để thiết lập.';
+                if (aiError) {
+                    aiError.textContent = '⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.';
+                }
                 return;
             }
 
             showAIState('loading');
             if (btnStart) btnStart.disabled = true;
+            if (btnRerun) btnRerun.disabled = true;
 
             try {
                 // ── Ẩn danh hoá ─────────────────────────────────────────
@@ -2211,15 +2328,21 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     .replace('{{keylabs}}',       '');
 
                 const model = await window.HIS.getAiModel();
-                const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-                    { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
-                );
-                const data = await response.json();
+                const promptHash = await sha256Short(prompt);
+                const cacheKey = `cls:${patientInfo.id || patientRef}:${model}:${promptHash}`;
+                if (forceRefresh) {
+                    await removeAiCache(cacheKey);
+                }
+                const cached = forceRefresh ? null : await getAiCache(cacheKey);
+                const data = cached?.data || await requestScannerAI(prompt, model);
+                if (!cached?.data) {
+                    await setAiCache(cacheKey, { data });
+                } else if (window.VNPTRealtime?.showToast) {
+                    window.VNPTRealtime.showToast('⚡ Đã dùng kết quả AI đã lưu. Bấm "Phân tích lại" để cập nhật.', 'info');
+                }
 
-                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                    let text = data.candidates[0].content.parts[0].text;
+                if (data.text) {
+                    const text = data.text;
 
                     // ── Responsive font scaling (tự động theo độ phân giải màn hình) ──
                     // clamp: min 13px (laptop nhỏ 1366px) → max 19px (màn 27"+)
@@ -2229,41 +2352,8 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     const badgeSz = Math.max(22, basePx + 10);                             // badge circle px
                     const indPx   = Math.max(28, basePx + 16);                             // sub-heading indent
 
-                    // ── Markdown → HTML (thứ tự: numbered trước, bold/italic sau) ─────
-                    // Bước 0: Đảm bảo mỗi đề mục số (1. 2. 3. 4.) bắt đầu trên dòng mới
-                    text = text.replace(/([^\n])\s*(\d+\.\s)/g, '$1\n$2');
-                    // Đảm bảo sub-heading in bold (như **Nguy cơ tim mạch:**) cũng xuống dòng
-                    text = text.replace(/([^\n])\s*(\*\*[A-ZÀ-ỸĐ][^*]+:\*\*)/g, '$1\n$2');
-                    // Bước 1: xử lý numbered sections TRƯỚC khi replace **bold**
-                    // → tránh colon trong style="color:#D4A853" bị nhầm là dấu phân cách label:content
-                    text = text.replace(/^(\d+\.\s+)(.+)$/gm, (_, num, rawTitle) => {
-                        // rawTitle vẫn là markdown thuần, chưa có HTML tags
-                        const colonIdx = rawTitle.indexOf(':');
-                        const labelRaw   = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
-                        const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
-                        // Apply inline bold/italic chỉ trong phần content
-                        const contentHtml = contentRaw
-                            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                            .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
-                        return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
-                            `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.','')}</span>` +
-                            `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
-                            '</div>';
-                    });
-                    // Bước 2: bold/italic còn lại (trong bullet points, đoạn thường)
-                    text = text
-                        .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                        .replace(/\*(.*?)\*/g,     '<em style="color:#e8dcc8">$1</em>');
-                    // Bước 3: bullet points — chỉ match "- text" hoặc "* text" (có space + ký tự sau)
-                    text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#cbd5e1;line-height:1.65;font-size:${basePx}px;">$1</li>`);
-                    // Bước 4: sub-heading dạng bold (đã chuyển thành <strong>) nằm đầu dòng → block riêng
-                    text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
-                        return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#cbd5e1;">${rest}</span></div>`;
-                    });
-                    // Bước 5: newlines còn lại → <br> (giữ khoảng cách giữa các đoạn)
-                    text = text.replace(/\n/g, '<br>');
-
-                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:${basePx}px;line-height:1.75;">${text}</div>`;
+                    const safeHtml = renderSafeAiMarkdown(text, { basePx, smPx, badgeSz, indPx });
+                    if (aiResultBody) aiResultBody.innerHTML = `<div style="font-size:${basePx}px;line-height:1.75;">${safeHtml}</div>`;
 
                     // ── Token cost toast (in-modal, same z-index as overlay) ─────────
                     const _showCostToast = (msg) => {
@@ -2292,7 +2382,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                                 @keyframes ald-toast-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(6px)}}
                             </style>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                            <span>${msg}</span>`;
+                            <span>${escapeHtml(msg)}</span>`;
                         document.body.appendChild(toast);
                         setTimeout(() => {
                             toast.style.animation = 'ald-toast-out 0.3s ease forwards';
@@ -2364,11 +2454,11 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         aiLinksWrap.innerHTML = icdGroups.map(g => `
                             <div style="padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">
                                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                                    <code style="font-size:11px;font-weight:800;color:#D4A853;background:rgba(212,168,83,0.15);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">${g.code}</code>
-                                    <span style="font-size:11px;color:#9a8e7e;">${g.displayName}</span>
+                                    <code style="font-size:11px;font-weight:800;color:#D4A853;background:rgba(212,168,83,0.15);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">${escapeHtml(g.code)}</code>
+                                    <span style="font-size:11px;color:#9a8e7e;">${escapeHtml(g.displayName)}</span>
                                 </div>
                                 <div style="display:flex;gap:5px;flex-wrap:wrap;">
-                                    ${g.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" title="${l.label}: ${g.code}"
+                                    ${g.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" title="${escapeHtml(l.label)}: ${escapeHtml(g.code)}"
                                         style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:${l.color};font-weight:600;text-decoration:none;background:rgba(255,255,255,0.03);border:1px solid ${l.color}22;border-radius:5px;padding:3px 8px;white-space:nowrap;transition:all 0.15s;"
                                         onmouseover="this.style.background='${l.color}15';this.style.borderColor='${l.color}44'"
                                         onmouseout="this.style.background='rgba(255,255,255,0.03)';this.style.borderColor='${l.color}22'">${l.icon} ${l.label}</a>`).join('')}
@@ -2385,20 +2475,19 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     showAIState('result');
                     aiResultLoaded = true;
                 } else {
-                    throw new Error(data.error?.message || 'Lỗi từ máy chủ AI');
+                    throw new Error('Lỗi từ máy chủ AI');
                 }
             } catch (e) {
                 showAIState('error');
-                if (aiError) aiError.innerHTML = '❌ Lỗi AI: ' + e.message;
+                if (aiError) aiError.textContent = '❌ Lỗi AI: ' + e.message;
             } finally {
                 if (btnStart)  btnStart.disabled  = false;
                 if (btnRerun)  btnRerun.disabled  = false;
             }
         }
 
-        btnStart?.addEventListener('click', runAIAnalysis);
-        btnRerun?.addEventListener('click', () => { aiResultLoaded = false; runAIAnalysis(); });
+        btnStart?.addEventListener('click', () => runAIAnalysis(false));
+        btnRerun?.addEventListener('click', () => { aiResultLoaded = false; runAIAnalysis(true); });
     }
 
 })();
-

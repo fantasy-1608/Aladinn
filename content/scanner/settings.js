@@ -224,12 +224,9 @@ const VNPTSettings = (function () {
         if (fetchModelsBtn && modelSelect) {
             fetchModelsBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                let apiKey = null;
-                if (window.HIS && window.HIS.getApiKey) {
-                    apiKey = await window.HIS.getApiKey();
-                }
-                if (!apiKey) {
-                    showNotification('⚠️ Vui lòng cấu hình API Key trong trang Cài đặt (Options) trước!', 'warning');
+                const unlocked = await window.HIS?.ApiKeyService?.ensureUnlocked?.();
+                if (!unlocked) {
+                    showNotification('⚠️ Vui lòng cấu hình API Key hoặc nhập PIN trong trang Cài đặt (Options) trước!', 'warning');
                     return;
                 }
 
@@ -237,7 +234,7 @@ const VNPTSettings = (function () {
                     fetchModelsBtn.innerText = '⏳ Đang quét...';
                     fetchModelsBtn.disabled = true;
 
-                    const models = await (/** @type {any} */(window)).GeminiAPI.fetchModels(apiKey);
+                    const models = await (/** @type {any} */(window)).GeminiAPI.fetchModels();
                     if (models && models.length > 0) {
                         modelSelect.innerHTML = '';
                         models.forEach((/** @type {any} */ m) => {
