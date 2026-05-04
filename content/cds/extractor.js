@@ -50,7 +50,7 @@ export const CDSExtractor = {
                     }
                 }
             } catch (e) {
-                console.warn('[Aladinn CDS] Background fetch diagnoses failed:', e);
+                console.log('[Aladinn CDS] Background fetch diagnoses failed:', e);
                 // Cho phép retry lần sau
                 CDSExtractor._fetchedPatients.delete(fetchKey);
             }
@@ -201,8 +201,10 @@ export const CDSExtractor = {
         const cache = CDSCache.get();
         if (cache.diagnoses && cache.diagnoses.length > 0) {
             cache.diagnoses.forEach(diag => {
-                diagnoses.push(diag);
-                seenCodes.add(diag.code.toUpperCase());
+                if (diag && diag.code) {
+                    diagnoses.push(diag);
+                    seenCodes.add(diag.code.toUpperCase());
+                }
             });
         }
 

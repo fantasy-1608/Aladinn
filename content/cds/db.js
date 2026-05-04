@@ -135,8 +135,8 @@ async function seedKnowledgeBase(db) {
 
     // Pipeline v1.0 files — fetch with fallback to empty array
     let renalRules = [], drugLabRules = [];
-    try { renalRules = await fetchJson(`${dataPath}/renal_adjustment_rules.json`); } catch (_e) { console.warn('[CDS] renal_adjustment_rules.json not found, skipping'); }
-    try { drugLabRules = await fetchJson(`${dataPath}/drug_lab_rules.json`); } catch (_e) { console.warn('[CDS] drug_lab_rules.json not found, skipping'); }
+    try { renalRules = await fetchJson(`${dataPath}/renal_adjustment_rules.json`); } catch (_e) { console.log('[CDS] renal_adjustment_rules.json not found, skipping'); }
+    try { drugLabRules = await fetchJson(`${dataPath}/drug_lab_rules.json`); } catch (_e) { console.log('[CDS] drug_lab_rules.json not found, skipping'); }
 
     console.log(`[Aladinn CDS] Loaded: ${ddiRules.length} DDI, ${drugDiseaseRules.length} Drug-Disease, ${renalRules.length} Renal, ${drugLabRules.length} Drug-Lab`);
 
