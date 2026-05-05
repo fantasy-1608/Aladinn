@@ -72,9 +72,21 @@ const VNPTEmergency = (function () {
 
         for (const iframe of Array.from(iframes)) {
             if (!(iframe instanceof HTMLIFrameElement)) continue;
+            if (iframe.offsetWidth === 0 && iframe.offsetHeight === 0) continue;
             try {
                 const doc = iframe.contentDocument;
                 if (!doc) continue;
+
+                // ── EXCLUSION: Bỏ qua form Dinh dưỡng DD-03 ──
+                // DD-03 cũng dùng input[id^="textfield_"] nên dễ bị nhận nhầm
+                const iframeSrc = (iframe.src || '').toLowerCase();
+                const isNutritionByUrl = iframeSrc.includes('pslvdgddnbnt') || iframeSrc.includes('dinhduong') || iframeSrc.includes('dd03') || iframeSrc.includes('dd-03');
+                const isNutritionByFields = doc.getElementById('textfield_1535') && doc.getElementById('textfield_1536');
+                if (isNutritionByUrl || isNutritionByFields) continue;
+
+                // ── EXCLUSION: Bỏ qua trang Danh sách phiếu (NTU02D021) ──
+                // Trang này chứa dropdown + grid liệt kê nhiều loại phiếu, không phải form thực tế
+                if (iframeSrc.includes('ntu02d021')) continue;
 
                 // Form Nhận định cấp cứu
                 const cboDanhSach = doc.getElementById('cboDANHSACH');
@@ -86,15 +98,18 @@ const VNPTEmergency = (function () {
                 let hasEmergencyText = false;
                 if (!hasEmergencyCbo && !hasEmergencyGrid && doc.querySelector('input[id^="textfield_"]')) {
                     const textContent = doc.body.textContent || '';
+                    // Chỉ match khi có cả hai: text đặc trưng + KHÔNG phải form DD-03
                     if (
-                        textContent.includes('Phiếu nhận định phân loại') || 
-                        textContent.includes('NDPLNBCC-')
+                        (textContent.includes('Phiếu nhận định phân loại') || 
+                         textContent.includes('NDPLNBCC-')) &&
+                        !textContent.includes('dinh dưỡng') &&
+                        !textContent.includes('DD-03')
                     ) {
                         hasEmergencyText = true;
                     }
                 }
 
-                if (iframe.offsetWidth > 0 && (hasEmergencyCbo || hasEmergencyGrid || hasEmergencyText)) {
+                if (hasEmergencyCbo || hasEmergencyGrid || hasEmergencyText) {
                     found = true;
                     currentFormIframe = iframe;
 

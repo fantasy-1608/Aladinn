@@ -524,18 +524,26 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
             // Check if e-Seal dialog is visible
             if (isEsealDialogVisible()) {
                 const info = scrapeSmartCAInfo();
+                
+                // Cập nhật tên SmartCA nếu phát hiện mới
                 if (info.name && info.name !== _smartcaUserName) {
                     _smartcaUserName = info.name;
                     updateBadgeState();
-
                     if (Logger) Logger.info('SmartCA-Guard', `SmartCA user detected: "${_smartcaUserName}"`);
+                }
 
-                    // Check match
+                // Luôn kiểm tra match/mismatch khi dialog đang mở
+                // (không chỉ khi tên thay đổi — vì warning bị mất khi dialog đóng/mở lại)
+                if (_smartcaUserName && _hisUserName) {
                     const match = namesMatch(_hisUserName, _smartcaUserName);
                     if (match === false) {
-                        // MISMATCH! Inject warning
+                        // MISMATCH! Inject warning nếu chưa có
                         injectMismatchWarning();
-                        showGuardToast(`🚨 SmartCA (${_smartcaUserName}) KHÔNG khớp với BS HIS (${_hisUserName})!`, 'error', 8000);
+                        
+                        // Chỉ toast 1 lần (tránh spam mỗi 1.5s)
+                        if (!window.__aladinnSmartCAMismatch) {
+                            showGuardToast(`🚨 SmartCA (${_smartcaUserName}) KHÔNG khớp với BS HIS (${_hisUserName})!`, 'error', 8000);
+                        }
 
                         // Block auto-click by setting a global flag
                         window.__aladinnSmartCAMismatch = true;

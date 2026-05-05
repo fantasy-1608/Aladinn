@@ -376,10 +376,23 @@ const VNPTHistory = (function () {
                 return;
             }
 
-            let history = window.VNPTStore?.get('medicalHistoryMap')[pid];
+            // LUÔN fetch mới từ API — tránh lấy nhầm data BN cũ từ cache
+            // Cache medicalHistoryMap có thể stale khi chuyển BN nhanh
+            window.VNPTRealtime?.showToast('⏳ Đang lấy dữ liệu bệnh nhân...', 'info');
+            let history = await fetchHistoryForPatient(pid);
+            
+            // Fallback: chỉ dùng cache nếu API thất bại hoàn toàn
             if (!history) {
-                window.VNPTRealtime?.showToast('⏳ Đang lấy dữ liệu...', 'info');
-                history = await fetchHistoryForPatient(pid);
+                const cachedHistory = window.VNPTStore?.get('medicalHistoryMap')?.[pid];
+                if (cachedHistory) {
+                    console.warn('[History] ⚠️ API fetch failed, using cached data for', pid);
+                    history = cachedHistory;
+                }
+            }
+
+            // Cập nhật cache cho lần sau
+            if (history && window.VNPTStore?.actions?.updateMedicalHistory) {
+                window.VNPTStore.actions.updateMedicalHistory(pid, history);
             }
 
             if (!history) {
@@ -389,13 +402,14 @@ const VNPTHistory = (function () {
 
             // Đồng bộ hoá Cân nặng, Chiều cao từ module Sinh hiệu (Vitals) sang Bệnh án
             try {
-                const vitalsStorage = window.VNPTStore?.get('vitalsDataMap');
-                let vitals = vitalsStorage ? vitalsStorage[pid] : null;
-
-                if (!vitals || !vitals.pulse || !vitals.temperature || !vitals.bloodPressure || !vitals.weight || !vitals.height) {
-                    window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
-                    const fresh = await fetchVitalsForPatient(pid);
-                    if (fresh) vitals = fresh;
+                // LUÔN fetch mới sinh hiệu — tránh lấy nhầm data BN cũ
+                window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
+                let vitals = await fetchVitalsForPatient(pid);
+                
+                // Fallback: dùng cache nếu API thất bại
+                if (!vitals) {
+                    const vitalsStorage = window.VNPTStore?.get('vitalsDataMap');
+                    vitals = vitalsStorage ? vitalsStorage[pid] : null;
                 }
 
                 if (vitals) {

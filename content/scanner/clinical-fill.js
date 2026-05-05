@@ -94,33 +94,39 @@ const VNPTClinicalFill = (function () {
             if (!doc) return;
             const iframes = doc.querySelectorAll('iframe');
             for (const iframe of Array.from(iframes)) {
-                if (!iframe || iframe.tagName !== 'IFRAME') continue; // dùng tagName thay instanceof để tránh cross-frame class mismatch
+                if (!iframe || iframe.tagName !== 'IFRAME') continue;
                 if (iframe.offsetWidth === 0 && iframe.offsetHeight === 0) continue;
+
+                // Đọc src + contentDocument sớm để dùng cho cả exclusion lẫn detection
+                const iframeSrc = (iframe.src || '').toLowerCase();
+                let innerDoc = null;
+                try { innerDoc = iframe.contentDocument; } catch (_e) { /* cross-origin */ }
+
+                // ── EXCLUSION: Bỏ qua form Dinh dưỡng DD-03 ──
+                // HIS dùng chung iframe ID `dlgXuTriifmView` cho nhiều loại phiếu,
+                // nên phải loại trừ DD-03 trước khi chạy detection Hội chẩn/Chuyển viện.
+                const isNutritionByUrl = iframeSrc.includes('pslvdgddnbnt') || iframeSrc.includes('dinhduong') || iframeSrc.includes('dd03') || iframeSrc.includes('dd-03');
+                const isNutritionByFields = innerDoc && innerDoc.getElementById('textfield_1535') && innerDoc.getElementById('textfield_1536');
+                if (isNutritionByUrl || isNutritionByFields) {
+                    // Vẫn scan đệ quy vào iframe con (có thể chứa form khác)
+                    if (innerDoc) scanIframes(innerDoc);
+                    continue; // Bỏ qua iframe này — không detect Hội chẩn/Chuyển viện
+                }
 
                 let isHoiChan = false;
                 let isChuyenVien = false;
 
-                // Phương pháp 0: Detect qua iframe ID cụ thể (chính xác nhất)
-                if (iframe.id === 'dlgXuTriifmView') {
+                // Phương pháp 1: Detect qua iframe src URL pattern
+                if (iframeSrc.includes('bienbanhoi') || iframeSrc.includes('hoichuan') || iframeSrc.includes('hoichan') || iframeSrc.includes('ntu02d008')) {
+                    isHoiChan = true;
+                } else if (iframeSrc.includes('chuyenvien') || iframeSrc.includes('ngt02k009')) {
                     isChuyenVien = true;
                 }
 
-                // Phương pháp 1: Detect qua iframe src URL pattern
-                if (!isChuyenVien) {
-                    const iframeSrc = (iframe.src || '').toLowerCase();
-                    if (iframeSrc.includes('bienbanhoi') || iframeSrc.includes('hoichuan') || iframeSrc.includes('hoichan') || iframeSrc.includes('ntu02d008')) {
-                        isHoiChan = true;
-                    } else if (iframeSrc.includes('chuyenvien') || iframeSrc.includes('ngt02k009')) {
-                        isChuyenVien = true;
-                    }
-                }
-
                 // Phương pháp 2: Detect qua field IDs trong iframe (nếu accessible)
-                // Chỉ dùng khi chưa xác định được từ URL hay ID
-                let innerDoc = null;
-                try {
-                    innerDoc = iframe.contentDocument;
-                    if (innerDoc && !isHoiChan && !isChuyenVien) {
+                // Chỉ dùng khi chưa xác định được từ URL
+                if (innerDoc && !isHoiChan && !isChuyenVien) {
+                    try {
                         isHoiChan = !!(
                             innerDoc.getElementById('txtTOMTAT_TIEUSUBENH') ||
                             innerDoc.getElementById('txtKETLUAN_CHANDOAN') ||
@@ -128,15 +134,15 @@ const VNPTClinicalFill = (function () {
                         );
 
                         // Chỉ dùng field đặc trưng riêng của form chuyển viện
-                        // KHOONG dùng txtQUATRINHBENHLY vì nó cũng có trong form Hỏi bệnh
+                        // KHÔNG dùng txtQUATRINHBENHLY vì nó cũng có trong form Hỏi bệnh
                         isChuyenVien = !isHoiChan && !!(
                             innerDoc.getElementById('txtDAUHIEULAMSANG') ||
                             innerDoc.getElementById('txtDAU_HIEU_LAM_SANG') ||
                             innerDoc.getElementById('txtTINHTRANGNGUOIBENH') ||
                             innerDoc.getElementById('txtTINHTRANG_CHUYENTUYEN')
                         );
-                    }
-                } catch (_e) { /* cross-origin, skip */ }
+                    } catch (_e2) { /* cross-origin field access */ }
+                }
 
                 if (isHoiChan || isChuyenVien) {
                     found = true;
