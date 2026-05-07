@@ -2,13 +2,13 @@
 
 <div align="center">
 
-**v1.2.1** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v1.2.3** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](#)
-[![Version](https://img.shields.io/badge/version-1.2.1-gold?style=flat-square)](#)
-[![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](#)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
+[![Version](https://img.shields.io/badge/version-1.2.3-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
+[![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
 
-*Tích hợp AI · Bảo mật y tế · Desert Mystic Design*
+> Tích hợp AI · Bảo mật y tế · Desert Mystic Design
 
 </div>
 
@@ -196,21 +196,25 @@ Aladinn/
 ### v1.2.1 (03/05/2026) — SmartCA Guard & CDS Expansion
 
 **Tính năng mới:**
+
 - SmartCA Guard: polling thông minh cho auto-logout, re-login ngay trong modal e-Seal
 - CDS mở rộng Phase 4–6: 426 DDI rules, VN alias mapping, missing diagnosis detection
 - Slash command nâng cấp: trigger `//`, hoạt động mọi ô kể cả iframe modal HIS
 
 **Sửa lỗi:**
+
 - clinical-fill: lấy đúng tờ điều trị mới nhất + gộp Khám toàn thân
 - template: slash command hoạt động đúng trong mọi ô nhập liệu HIS
 
 ### v1.2.0 (30/04/2026) — Security Hardening & Feature Polish
 
 **Bảo mật:**
+
 - Background Crypto Service (AES-256-GCM + PBKDF2), nonce bắt buộc, prompt injection prevention
 - PHI redaction + TTL 24h, endpoint allowlist, export consent + audit log
 
 **Tính năng:**
+
 - Phiếu hội chẩn: chỉnh sửa trực tiếp trên bảng preview, đồng bộ các trường liên quan
 - Slash command templates: thêm nút **Chỉnh sửa** bên cạnh nút Xoá (inline edit form)
 - Định dạng chẩn đoán: tự động strip mã ICD-10, chuẩn hoá dấu phân cách
@@ -255,7 +259,7 @@ npm run release  # Build + đóng gói zip + tạo GitHub Release
 
 <div align="center">
 
-*Built with ❤️ for Vietnamese clinicians*
+> Built with ❤️ for Vietnamese clinicians
 
 **Tác giả: Bác sĩ Huỳnh Trung Anh** · Powered by Gemini AI · Desert Mystic Design
 

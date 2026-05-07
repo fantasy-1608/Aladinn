@@ -21,6 +21,8 @@ import {
 /* global deriveBgKeyFromPin, bgDecryptApiKey, bgEncryptData, bgDecryptData */ // defined in ai-client.js via globalThis
 // Import self-update checker
 import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
+// Import remote config (Safe Mode / Kill Switch)
+import { scheduleRemoteConfigRefresh, handleRemoteConfigAlarm, getRemoteConfig, refreshRemoteConfig } from './remote-config.js';
 
 // ========================================
 // INSTALLATION & STARTUP
@@ -36,12 +38,16 @@ chrome.runtime.onInstalled.addListener((details) => {
     updateBadge(true);
     // Lên lịch kiểm tra update
     scheduleUpdateCheck();
+    // Lên lịch tải remote config (Safe Mode)
+    scheduleRemoteConfigRefresh();
 });
 
 chrome.runtime.onStartup.addListener(() => {
     updateBadge(true);
     // Lên lịch kiểm tra update khi browser khởi động
     scheduleUpdateCheck();
+    // Lên lịch tải remote config (Safe Mode)
+    scheduleRemoteConfigRefresh();
 });
 
 // Alarm listener cho update checker
@@ -49,6 +55,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'aladinn-update-check') {
         checkForUpdate();
     }
+    // Remote config refresh alarm
+    handleRemoteConfigAlarm(alarm);
 });
 
 // Initial badge + legacy cleanup
@@ -454,6 +462,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         sendResponse({ ok: true });
         return false;
+    }
+
+    // ---- SAFE MODE: Remote Config Query ----
+    if (type === 'GET_REMOTE_CONFIG') {
+        getRemoteConfig().then(config => {
+            sendResponse({ ok: true, config });
+        });
+        return true;
+    }
+
+    if (type === 'REFRESH_REMOTE_CONFIG') {
+        refreshRemoteConfig().then(config => {
+            sendResponse({ ok: true, config });
+        });
+        return true;
     }
 
     return false;

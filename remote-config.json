@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "features": {
+        "autoSign": true,
+        "cdsEngine": true,
+        "aiVoice": true,
+        "scanner": true
+    },
+    "emergencyMessage": ""
+}

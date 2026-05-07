@@ -9,21 +9,38 @@
     let lastConfirmClick = 0;
     let lastOkClick = 0;
     let isSignModuleEnabled = true; // Default to true, updated via storage
+    let remoteAutoSignEnabled = true; // Remote Kill Switch — default ON (fail-open)
 
     console.log('[Aladinn/AutoClick] 🔄 Helper loaded in frame:', window.location.href.substring(0, 80));
 
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         // Load initial state
-        chrome.storage.local.get('aladinn_features', (result) => {
+        chrome.storage.local.get(['aladinn_features', 'aladinn_remote_config'], (result) => {
             const features = result.aladinn_features || {};
             isSignModuleEnabled = features.sign !== false;
+
+            // Remote Kill Switch check
+            const rc = result.aladinn_remote_config;
+            if (rc && typeof rc.features === 'object') {
+                remoteAutoSignEnabled = rc.features.autoSign !== false;
+            }
         });
 
-        // Listen for changes from popup
+        // Listen for changes from popup AND remote config refresh
         chrome.storage.onChanged.addListener((changes, namespace) => {
             if (namespace === 'local' && changes.aladinn_features) {
                 const features = changes.aladinn_features.newValue || {};
                 isSignModuleEnabled = features.sign !== false;
+            }
+            // Remote config changed (background fetched new config)
+            if (namespace === 'local' && changes.aladinn_remote_config) {
+                const rc = changes.aladinn_remote_config.newValue;
+                if (rc && typeof rc.features === 'object') {
+                    remoteAutoSignEnabled = rc.features.autoSign !== false;
+                    if (!remoteAutoSignEnabled) {
+                        console.log('[Aladinn/AutoClick] 🚫 Auto-Sign bị TẮT từ xa (Remote Kill Switch)');
+                    }
+                }
             }
         });
     }
@@ -72,6 +89,7 @@
 
     setInterval(() => {
         if (!isSignModuleEnabled) return;
+        if (!remoteAutoSignEnabled) return; // Remote Kill Switch
         // Khi signing session đang chạy, signing.js quản lý auto-click riêng
         if (window.__aladinnSigningActive) return;
 

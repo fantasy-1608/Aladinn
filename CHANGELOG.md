@@ -7,6 +7,26 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.2.3] — 2026-05-08
+
+### 🛡 Safe Mode (Kill Switch từ xa)
+
+- **Remote Config**: Tích hợp module cấu hình từ xa qua GitHub, cho phép tắt nóng các tính năng nhạy cảm (Auto-Sign, CDS, AI) trên tất cả các máy trạm mà không cần người dùng cài lại tiện ích.
+- **Fail-open & Graceful Shutdown**: Kiến trúc an toàn đảm bảo không chặn tiến trình tải UI và chỉ chạy khi có cấu hình hợp lệ.
+- Fix markdown linting.
+
+---
+
+## [1.2.2] — 2026-05-07
+
+### 🛠 Kỹ thuật & Hạ tầng (30-day Stabilization Phase)
+
+- **CI/CD Automation**: Tự động hóa quá trình đóng gói và phát hành (release) qua GitHub Actions, loại bỏ rủi ro stale zip.
+- **Testing Coverage**: Bổ sung Unit Tests (jsdom, vitest) cho `CDSCacheManager` và quy trình trích xuất chẩn đoán.
+- **Linter Enforced**: Loại bỏ triệt để mọi cảnh báo (Zero-Linter-Warning).
+
+---
+
 ## [1.2.1] — 2026-05-03
 
 ### ✨ Tính năng mới

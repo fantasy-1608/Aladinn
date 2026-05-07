@@ -715,8 +715,8 @@ body.vnpt-native-active #vnpt-scanner-ui {
 ======================================== */
 .vnpt-toast-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 24px;
+    left: 24px;
     z-index: 2147483647 !important;
     display: flex;
     flex-direction: column;
@@ -732,42 +732,41 @@ body.vnpt-native-active #vnpt-scanner-ui {
     animation: vnpt-toast-in 0.3s ease;
     cursor: pointer;
     color: #fff;
+    backdrop-filter: blur(8px);
 }
 
 .vnpt-toast-info {
-    background: #17a2b8;
+    background: rgba(23, 162, 184, 0.95);
 }
 
 .vnpt-toast-warning {
-    background: #ffc107;
+    background: rgba(255, 193, 7, 0.95);
     color: #000;
 }
 
 .vnpt-toast-success {
-    background: #28a745;
+    background: rgba(40, 167, 69, 0.95);
 }
 
 @keyframes vnpt-toast-in {
     from {
         opacity: 0;
-        transform: translateX(50px);
+        transform: translateY(20px) scale(0.95);
     }
-
     to {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0) scale(1);
     }
 }
 
 @keyframes vnpt-toast-out {
     from {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0) scale(1);
     }
-
     to {
         opacity: 0;
-        transform: translateX(50px);
+        transform: translateY(20px) scale(0.95);
     }
 }
 

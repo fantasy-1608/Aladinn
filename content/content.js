@@ -49,6 +49,102 @@
     }
 
     // ========================================
+    // REMOTE CONFIG (SAFE MODE / KILL SWITCH)
+    // Non-blocking, fail-open: nếu không tải được → mọi thứ vẫn BẬT
+    // ========================================
+    async function applyRemoteConfig(features) {
+        try {
+            const result = await new Promise((resolve) => {
+                if (!chrome?.storage?.local) { resolve({}); return; }
+                chrome.storage.local.get('aladinn_remote_config', (r) => resolve(r));
+            });
+
+            const rc = result.aladinn_remote_config;
+            if (!rc || typeof rc.features !== 'object') return features;
+
+            // Mapping: remote config key → local feature key
+            const mapping = {
+                autoSign: 'sign',
+                cdsEngine: 'cds',
+                aiVoice: 'voice',
+                scanner: 'scanner'
+            };
+
+            let hasKill = false;
+            for (const [remoteKey, localKey] of Object.entries(mapping)) {
+                if (rc.features[remoteKey] === false) {
+                    features[localKey] = false;
+                    hasKill = true;
+                    if (Logger) Logger.warn('SafeMode', `🚫 Tính năng "${localKey}" đã bị TẮT từ xa (Remote Kill Switch)`);
+                }
+            }
+
+            // Hiển thị thông báo khẩn cấp nếu có
+            if (rc.emergencyMessage && typeof rc.emergencyMessage === 'string' && rc.emergencyMessage.trim()) {
+                showEmergencyToast(rc.emergencyMessage.trim(), hasKill);
+            }
+
+            window.Aladinn.features = features;
+            return features;
+        } catch (_err) {
+            // Fail-open: bỏ qua lỗi, giữ nguyên features
+            return features;
+        }
+    }
+
+    /**
+     * Hiển thị toast thông báo khẩn cấp (nếu admin đặt emergencyMessage)
+     */
+    function showEmergencyToast(message, isKill) {
+        // Tránh hiển thị trùng
+        if (document.getElementById('aladinn-emergency-toast')) return;
+
+        const toast = document.createElement('div');
+        toast.id = 'aladinn-emergency-toast';
+        toast.style.cssText = `
+            position: fixed; bottom: 20px; right: 20px; z-index: 2147483647;
+            max-width: 380px; padding: 14px 18px;
+            background: ${isKill ? 'linear-gradient(135deg, #7f1d1d, #991b1b)' : 'linear-gradient(135deg, #1a1510, #2d2418)'};
+            border: 1px solid ${isKill ? 'rgba(239,68,68,0.6)' : 'rgba(212,162,90,0.5)'};
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            color: #e8dcc8; font-family: system-ui, sans-serif; font-size: 13px;
+            line-height: 1.5;
+            animation: aladinn-toast-in 0.4s ease-out;
+        `;
+        toast.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">${isKill ? '🚨' : '📢'}</span>
+                <strong style="color:${isKill ? '#fca5a5' : '#d4a25a'};">Thông báo từ Aladinn</strong>
+            </div>
+            <div>${message}</div>
+            <button id="aladinn-toast-close" style="
+                position:absolute; top:8px; right:8px;
+                background:transparent; border:none; color:#e8dcc8;
+                cursor:pointer; font-size:14px; opacity:0.7;
+            ">✕</button>
+        `;
+
+        // Inject animation keyframe
+        if (!document.getElementById('aladinn-toast-style')) {
+            const style = document.createElement('style');
+            style.id = 'aladinn-toast-style';
+            style.textContent = `
+                @keyframes aladinn-toast-in {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(toast);
+        document.getElementById('aladinn-toast-close').onclick = () => toast.remove();
+        // Tự tắt sau 15 giây
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 15000);
+    }
+
+    // ========================================
     // SECURITY: Shared nonce + random JWT channel (per-session)
     // ========================================
     const __ALADINN_NONCE__ = crypto.randomUUID();
@@ -358,12 +454,14 @@
     // ========================================
     // ENTRY POINT
     // ========================================
-    loadFeatureFlags().then(features => {
-        try {
-            initModules(features);
-        } catch (err) {
-            console.error('[Aladinn] Critical error during initialization:', err);
-        }
-    });
+    loadFeatureFlags()
+        .then(features => applyRemoteConfig(features))
+        .then(features => {
+            try {
+                initModules(features);
+            } catch (err) {
+                console.error('[Aladinn] Critical error during initialization:', err);
+            }
+        });
 
 })();
