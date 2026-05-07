@@ -1,6 +1,6 @@
 {
   "name": "aladinn-his-assistant",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Tiện ích mở rộng AI (Giọng nói & Quét Dữ liệu) cho hệ thống VNPT HIS",
   "type": "module",
   "scripts": {

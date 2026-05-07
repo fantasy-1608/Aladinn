@@ -7,13 +7,13 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
-## [1.2.3] — 2026-05-08
+## [1.2.4] — 2026-05-08
 
 ### 🛡 Safe Mode (Kill Switch từ xa)
 
 - **Remote Config**: Tích hợp module cấu hình từ xa qua GitHub, cho phép tắt nóng các tính năng nhạy cảm (Auto-Sign, CDS, AI) trên tất cả các máy trạm mà không cần người dùng cài lại tiện ích.
 - **Fail-open & Graceful Shutdown**: Kiến trúc an toàn đảm bảo không chặn tiến trình tải UI và chỉ chạy khi có cấu hình hợp lệ.
-- Fix markdown linting.
+- Fix markdown linting và lỗi đồng bộ \`package-lock.json\` gây crash CI/CD pipeline.
 
 ---
 
