@@ -11,7 +11,7 @@ window.HIS = window.HIS || {};
 HIS.Crypto = (function () {
     'use strict';
 
-    const ITERATIONS = 100000;
+    const ITERATIONS = 310000;
     const KEY_LENGTH = 256;
 
     function generateSalt() {

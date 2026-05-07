@@ -89,7 +89,7 @@ Aladinn được kiểm toán bảo mật toàn diện với 8 điểm được 
 | **De-identification AI** | Họ tên, CCCD, số ĐT, ngày sinh, mã BN bị ẩn trước khi gửi Gemini |
 | **Nonce bắt buộc** | Tất cả postMessage đều yêu cầu nonce hợp lệ — không có message nào được chấp nhận nếu thiếu |
 | **Prompt injection** | Văn bản nhập được escape bằng `JSON.stringify()` trước khi nhúng vào system prompt |
-| **Endpoint allowlist** | `geminiBaseUrl` chỉ được phép trỏ đến `*.googleapis.com`, `*.vncare.vn`, hoặc `localhost` |
+| **Endpoint allowlist** | `geminiBaseUrl` chỉ được phép trỏ đến `*.googleapis.com`, `*.vncare.vn`, `*.githubusercontent.com` (chỉ dùng cho remote config) hoặc `localhost` |
 | **PHI trong log** | Error log chỉ lưu short ID (`P-****`), không lưu họ tên/địa chỉ. TTL 24h tự xoá |
 | **Export PHI** | Cần xác nhận từ người dùng trước khi xuất CSV/JSON + ghi audit log |
 | **Legacy plaintext** | Tự động phát hiện dữ liệu cũ chưa mã hoá, cảnh báo người dùng nhập PIN. Tự xoá sau 24h |

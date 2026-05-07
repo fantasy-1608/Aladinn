@@ -27,3 +27,5 @@ logs
 *.zip
 .release-notes.tmp
 .commit-notes.tmp
+.gitnexus
+coverage/

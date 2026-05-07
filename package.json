@@ -9,13 +9,17 @@
     "preview": "vite preview",
     "release": "node scripts/release.js",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "analyze": "gitnexus analyze"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",
     "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.2.0",
+    "gitnexus": "^1.6.3",
     "globals": "^17.4.0",
     "jsdom": "^29.0.2",
     "vite": "^8.0.10",

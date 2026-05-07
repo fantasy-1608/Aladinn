@@ -8,7 +8,7 @@
 // Crypto Helper (for decrypting API key in background context)
 // SECURITY: PIN is never stored. Only the derived CryptoKey (non-extractable) is cached.
 // ========================================
-const _CRYPTO_ITERATIONS = 100000;
+const _CRYPTO_ITERATIONS = 310000;
 const _CRYPTO_KEY_LENGTH = 256;
 
 // In-memory only — non-extractable CryptoKey, wiped on timeout/logout

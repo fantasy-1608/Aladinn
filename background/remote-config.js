@@ -36,6 +36,7 @@ const DEFAULT_CONFIG = {
         aiVoice: true,
         scanner: true
     },
+    mode: 'full_mode',
     emergencyMessage: '',
     _fetchedAt: 0,
     _source: 'default'
@@ -76,6 +77,7 @@ async function fetchRemoteConfig() {
                 ...DEFAULT_CONFIG.features,
                 ...data.features
             },
+            mode: data.mode || DEFAULT_CONFIG.mode,
             emergencyMessage: data.emergencyMessage || '',
             _fetchedAt: Date.now(),
             _source: 'github'

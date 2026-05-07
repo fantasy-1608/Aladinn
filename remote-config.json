@@ -1,10 +1,11 @@
 {
     "version": 1,
     "features": {
-        "autoSign": true,
+        "autoSign": false,
         "cdsEngine": true,
         "aiVoice": true,
         "scanner": true
     },
+    "mode": "pilot_safe_mode",
     "emergencyMessage": ""
 }

@@ -13,6 +13,12 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 - **Remote Config**: Tích hợp module cấu hình từ xa qua GitHub, cho phép tắt nóng các tính năng nhạy cảm (Auto-Sign, CDS, AI) trên tất cả các máy trạm mà không cần người dùng cài lại tiện ích.
 - **Fail-open & Graceful Shutdown**: Kiến trúc an toàn đảm bảo không chặn tiến trình tải UI và chỉ chạy khi có cấu hình hợp lệ.
+- **30-Day Stabilization - Week 1-4**:
+  - Đã rà soát bảo mật, đồng bộ tài liệu và code (PBKDF2 310,000 iterations).
+  - Tích hợp Unit test với coverage thông qua Vitest.
+  - Bổ sung Release Gating (preflight checks) vào \`scripts/release.js\`.
+  - Thiết lập Pilot Safe Mode, tắt Auto-Sign mặc định khi cấu hình Pilot.
+  - Cấu trúc hệ thống tài liệu (Docs) cho Architecture, Security, Release, QA và Pilot.
 - Fix markdown linting và lỗi đồng bộ \`package-lock.json\` gây crash CI/CD pipeline.
 
 ---
