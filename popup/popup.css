@@ -14,11 +14,22 @@
 body {
     width: 380px;
     min-height: 460px;
+    max-height: 600px;
     font-family: var(--al-font);
     background: var(--al-bg-deep);
     color: var(--al-text);
     overflow-x: hidden;
+    overflow-y: auto;
     position: relative;
+}
+
+/* Custom Scrollbar for popup */
+body::-webkit-scrollbar {
+    width: 6px;
+}
+body::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 83, 0.3);
+    border-radius: 4px;
 }
 
 /* Subtle ambient gold glow */
