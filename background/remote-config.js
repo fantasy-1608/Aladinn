@@ -52,7 +52,9 @@ const DEFAULT_CONFIG = {
  */
 async function fetchRemoteConfig() {
     try {
-        const response = await fetch(REMOTE_CONFIG.url, {
+        // Bypass GitHub raw CDN cache by adding a timestamp
+        const cacheBusterUrl = `${REMOTE_CONFIG.url}?t=${Date.now()}`;
+        const response = await fetch(cacheBusterUrl, {
             cache: 'no-cache',
             headers: { 'Accept': 'application/json' }
         });

@@ -13,23 +13,14 @@
 
 body {
     width: 380px;
-    min-height: 460px;
-    max-height: 600px;
+    height: 580px;
     font-family: var(--al-font);
     background: var(--al-bg-deep);
     color: var(--al-text);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
     position: relative;
-}
-
-/* Custom Scrollbar for popup */
-body::-webkit-scrollbar {
-    width: 6px;
-}
-body::-webkit-scrollbar-thumb {
-    background: rgba(212, 168, 83, 0.3);
-    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Subtle ambient gold glow */
@@ -47,6 +38,25 @@ body::before {
 .app-container {
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* Important for flex children to scroll */
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Custom Scrollbar for popup */
+.main-content::-webkit-scrollbar {
+    width: 6px;
+}
+.main-content::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 83, 0.3);
+    border-radius: 4px;
 }
 
 /* ── Header ── */
