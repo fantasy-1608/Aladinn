@@ -23,6 +23,8 @@ import {
 import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion } from './updater.js';
 // Import remote config (Safe Mode / Kill Switch)
 import { scheduleRemoteConfigRefresh, handleRemoteConfigAlarm, getRemoteConfig, refreshRemoteConfig } from './remote-config.js';
+// Import audit telemetry (local-only, no PHI)
+import { AuditEvents } from '../shared/audit-telemetry.js';
 
 // ========================================
 // INSTALLATION & STARTUP
@@ -207,8 +209,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // Derive CryptoKey in background memory, then purge PIN from session
             deriveBgKeyFromPin(pin).then(() => {
                 // PIN is now only in the derived key (non-extractable)
+                AuditEvents.pinUnlockSuccess();
                 sendResponse({ ok: true });
             }).catch(() => {
+                AuditEvents.pinUnlockFailed();
                 sendResponse({ ok: false, error: 'KEY_DERIVATION_FAILED' });
             });
             return true; // async
@@ -279,13 +283,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // ---- VOICE MODULE: AI Request ----
     if (type === 'AI_REQUEST') {
         const aiPayload = payload || {};
+        const _aiStartTime = Date.now();
+        AuditEvents.aiRequestStarted(aiPayload.model);
         requestAI({
             text: aiPayload.text,
             model: aiPayload.model,
             requestId: aiPayload.requestId
         })
-            .then(data => sendResponse({ ok: true, requestId, data }))
-            .catch(err => sendResponse({ ok: false, requestId, error: serializeAiError(err) }));
+            .then(data => {
+                AuditEvents.aiRequestCompleted(aiPayload.model, Date.now() - _aiStartTime);
+                sendResponse({ ok: true, requestId, data });
+            })
+            .catch(err => {
+                AuditEvents.aiRequestFailed(err?.code || 'AI_ERROR', aiPayload.model);
+                sendResponse({ ok: false, requestId, error: serializeAiError(err) });
+            });
         return true;
     }
 
@@ -415,12 +427,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // ---- SIGN MODULE: Auto-Sign Control ----
     if (action === 'enableAutoSign') {
         autoSignEnabled = true;
+        AuditEvents.autosignStarted();
         sendResponse({ ok: true });
         return false;
     }
 
     if (action === 'disableAutoSign') {
         autoSignEnabled = false;
+        AuditEvents.autosignStopped('manual');
         sendResponse({ ok: true });
         return false;
     }
@@ -506,6 +520,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         // Only act if the tab was on the HIS domain
         if (url.includes('vncare.vn')) {
             console.log('[Aladinn Security] 🔒 HIS logout detected — purging all cached patient data.');
+            AuditEvents.hisLogoutPurge();
             // Remove sensitive patient/AI data from local storage
             chrome.storage.local.remove([
                 'transcript', 'results', 'ai_audit_logs',

@@ -110,7 +110,7 @@ HIS.Crypto = (function () {
             );
             return new TextDecoder().decode(decrypted);
         } catch (e) {
-            if (HIS.Logger) HIS.Logger.error('Crypto', 'Decrypt failed:', e);
+            if (HIS.Logger) HIS.Logger.debug('Crypto', 'Decrypt failed:', e.message || e);
             return null;
         }
     }

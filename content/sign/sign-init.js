@@ -364,11 +364,12 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             const selectors = ['#grdBenhNhan', '#tblGridKetQua', '#grdDanhSach', '.ui-jqgrid-btable'];
             let table = null;
             for (const sel of selectors) {
-                const candidate = document.querySelector(sel);
-                if (candidate) {
+                const candidates = document.querySelectorAll(sel);
+                for (const candidate of candidates) {
                     const testRows = candidate.querySelectorAll('tr.jqgrow, tr.ui-widget-content');
-                    if (testRows.length > 0) { table = candidate; break; }
+                    if (testRows.length > 0 && candidate.offsetWidth > 0) { table = candidate; break; }
                 }
+                if (table) break;
             }
             if (!table) return false;
 

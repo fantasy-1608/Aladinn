@@ -44,16 +44,23 @@ if (!fs.existsSync(changelogPath)) {
     process.exit(1);
 }
 const changelog = fs.readFileSync(changelogPath, 'utf8');
-const versionRegex = new RegExp(`## \\[${version.replace(/\\./g, '\\.')}\\]`, 'm');
-if (!versionRegex.test(changelog)) {
+const entryHeader = `## [${version}]`;
+const startIdx = changelog.indexOf(entryHeader);
+
+if (startIdx === -1) {
     console.error(`❌ Chưa có entry cho version [${version}] trong CHANGELOG.md`);
     process.exit(1);
 }
+
 // Extract notes
-const match = changelog.match(new RegExp(`## \\[${version.replace(/\\./g, '\\.')}\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|---\\n\\n<div|$)`, 'm'));
-if (match) {
-    releaseNotes = match[1].trim().replace(/\\n---\\s*$/, '').trim();
-}
+let endIdx = changelog.indexOf('\\n## [', startIdx + entryHeader.length);
+if (endIdx === -1) endIdx = changelog.length;
+
+releaseNotes = changelog.substring(startIdx + entryHeader.length, endIdx);
+// cleanup the dash and date if any
+releaseNotes = releaseNotes.replace(/^[^\\n]*\\n/, '').trim();
+releaseNotes = releaseNotes.replace(/\\n---\\s*$/, '').trim();
+
 if (!releaseNotes) {
     console.error(`❌ Changelog entry cho [${version}] trống!`);
     process.exit(1);

@@ -61,31 +61,6 @@
         return null;
     }
 
-    function closeTopModal() {
-        const closeSelectors = [
-            '.jBox-closeButton',
-            '.ui-dialog-titlebar-close',
-            'button.ui-dialog-titlebar-close',
-            '#btnDONG', '#btnClose', '.btnClose'
-        ];
-        const docs = [document];
-        try { if (window.parent && window.parent.document && window.parent !== window) docs.push(window.parent.document); } catch(_e){}
-        try { if (window.top && window.top.document && window.top !== window && window.top !== window.parent) docs.push(window.top.document); } catch(_e){}
-
-        for (const doc of docs) {
-            for (const sel of closeSelectors) {
-                try {
-                    const btns = doc.querySelectorAll(sel);
-                    for (const btn of btns) {
-                        if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
-                            btn.click();
-                            return;
-                        }
-                    }
-                } catch(_e) {}
-            }
-        }
-    }
 
     setInterval(() => {
         if (!isSignModuleEnabled) return;
@@ -136,10 +111,9 @@
                 okBtn.click();
                 lastOkClick = now;
                 
-                // Đóng modal chính của HIS (HIS - Đẩy hồ sơ bệnh án điện tử) sau khi báo thành công
-                setTimeout(() => {
-                    closeTopModal();
-                }, 500);
+                // Không tự động đóng Modal chính của HIS ở đây!
+                // HIS sẽ tiếp tục chạy vòng lặp nội bộ (nếu có nhiều phiếu),
+                // hoặc user sẽ tự kiểm tra và đóng/chuyển bệnh nhân.
             }
         }
     }, 1000);

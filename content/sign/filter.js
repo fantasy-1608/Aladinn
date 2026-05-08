@@ -103,16 +103,17 @@ window.Aladinn.Sign.Filter = (function () {
         let usedSelector = '';
 
         for (const sel of selectors) {
-            const candidate = document.querySelector(sel);
-            if (candidate) {
-                // Verify this table actually has data rows
+            const candidates = document.querySelectorAll(sel);
+            for (const candidate of candidates) {
+                // Verify this table actually has data rows and is visible
                 const testRows = candidate.querySelectorAll('tr.jqgrow, tr.ui-widget-content');
-                if (testRows.length > 0) {
+                if (testRows.length > 0 && candidate.offsetWidth > 0) {
                     table = candidate;
                     usedSelector = sel;
                     break;
                 }
             }
+            if (table) break;
         }
 
         if (!table) {

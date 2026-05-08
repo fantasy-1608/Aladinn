@@ -23,16 +23,26 @@ body {
     flex-direction: column;
 }
 
-/* Subtle ambient gold glow */
-body::before {
+/* ── Ambient Mystic Smoke ── */
+body::before, body::after {
     content: '';
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background:
-        radial-gradient(ellipse at 10% 0%, rgba(212, 168, 83, 0.07) 0%, transparent 45%),
-        radial-gradient(ellipse at 90% 100%, rgba(212, 168, 83, 0.03) 0%, transparent 45%);
+    top: -50%; left: -50%; width: 200%; height: 200%;
     pointer-events: none;
     z-index: 0;
+    will-change: transform, opacity;
+}
+
+body::before {
+    background: radial-gradient(ellipse at center, rgba(212, 168, 83, 0.08) 0%, transparent 40%);
+    transform-origin: 40% 60%;
+    animation: drift-smoke-1 25s linear infinite;
+}
+
+body::after {
+    background: radial-gradient(circle at center, rgba(212, 168, 83, 0.05) 0%, transparent 45%);
+    transform-origin: 60% 40%;
+    animation: drift-smoke-2 30s linear infinite reverse;
 }
 
 .app-container {
@@ -538,4 +548,16 @@ input[type="checkbox"]:checked + .toggle-slider::before {
 @keyframes fab-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+@keyframes drift-smoke-1 {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.6; }
+    50% { transform: rotate(180deg) scale(1.2) translate(30px, -10px); opacity: 1; }
+    100% { transform: rotate(360deg) scale(1) translate(0, 0); opacity: 0.6; }
+}
+
+@keyframes drift-smoke-2 {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.5; }
+    50% { transform: rotate(180deg) scale(1.1) translate(-20px, 20px); opacity: 0.8; }
+    100% { transform: rotate(360deg) scale(1) translate(0, 0); opacity: 0.5; }
 }

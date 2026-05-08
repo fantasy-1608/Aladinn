@@ -7,6 +7,16 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.2.5] — 2026-05-09
+
+### 🚀 Pilot-Ready Release
+
+- **Hoàn tất lộ trình 30 ngày ổn định**: Đáp ứng 100% Definition of Done (DoD) cho việc phát hành thử nghiệm.
+- **Dọn dẹp Linter & Warning**: Làm sạch hoàn toàn code base, loại bỏ mọi warning trong quá trình scan và build.
+- **Hoàn thiện UI Ambient**: Cập nhật hiệu ứng nhận diện phiên làm việc Aladinn (Genie icon & Desert Mystic aura) tích hợp liền mạch vào HIS Footer.
+
+---
+
 ## [1.2.4] — 2026-05-08
 
 ### 🛡 Safe Mode (Kill Switch từ xa)

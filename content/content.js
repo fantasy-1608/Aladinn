@@ -346,6 +346,105 @@
             if (Logger) Logger.info('Main', `📡 CommandBus: ${Aladinn.CommandBus.list().length} commands registered`);
         }
 
+        // ========================================
+        // AMBIENT UI EFFECTS (Aesthetics)
+        // ========================================
+        if (window === window.top) {
+            let uiRetries = 0;
+            const applyAesthetics = setInterval(() => {
+                uiRetries++;
+                let found = false;
+                
+                // Tìm tất cả các element ở footer để apply hiệu ứng Aladinn
+                const elements = document.querySelectorAll('*');
+                for (const el of elements) {
+                    if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
+                    
+                    if (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+                        const text = el.textContent.trim();
+                        
+                        // Trường hợp 1: "Người dùng:" và tên nằm ở 2 element khác nhau (thường gặp do khác màu)
+                        if (text === 'Người dùng:' || text === 'Người dùng') {
+                            let nameNode = el.nextSibling;
+                            
+                            // Bỏ qua khoảng trắng
+                            while (nameNode && nameNode.nodeType === Node.TEXT_NODE && nameNode.textContent.trim() === '') {
+                                nameNode = nameNode.nextSibling;
+                            }
+                            
+                            if (nameNode) {
+                                let targetEl;
+                                if (nameNode.nodeType === Node.TEXT_NODE) {
+                                    if (nameNode.textContent.trim().length > 0) {
+                                        targetEl = document.createElement('span');
+                                        targetEl.textContent = nameNode.textContent;
+                                        nameNode.parentNode.replaceChild(targetEl, nameNode);
+                                    }
+                                } else if (nameNode.nodeType === Node.ELEMENT_NODE) {
+                                    targetEl = nameNode;
+                                }
+                                
+                                if (targetEl && !targetEl.classList.contains('his-mystic-username-aura')) {
+                                    targetEl.classList.add('his-mystic-username-aura');
+                                    injectAuraStyles(targetEl);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        } 
+                        // Trường hợp 2: "Người dùng:" và tên nằm trong cùng 1 element
+                        else if (text.startsWith('Người dùng:') && text.includes('-')) {
+                            if (!el.classList.contains('his-mystic-username-aura-applied')) {
+                                const match = text.match(/(Người dùng:\s*)(.*?(?=\s+Khoa:|$))/);
+                                if (match) {
+                                    const username = match[2];
+                                    el.classList.add('his-mystic-username-aura-applied');
+                                    el.innerHTML = el.innerHTML.replace(
+                                        username, 
+                                        `<span class="his-mystic-username-aura">${username}</span>`
+                                    );
+                                    
+                                    const newTarget = el.querySelector('.his-mystic-username-aura');
+                                    if (newTarget) injectAuraStyles(newTarget);
+                                    
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                function injectAuraStyles(targetEl) {
+                    targetEl.style.display = 'inline-block';
+                    targetEl.style.padding = '2px 8px';
+                    targetEl.style.borderRadius = '8px';
+                    targetEl.style.color = '#fff';
+                    targetEl.style.fontWeight = '600';
+                    targetEl.style.textShadow = '0 0 10px rgba(212, 168, 83, 0.8), 0 0 20px rgba(212, 168, 83, 0.4)';
+                    targetEl.style.position = 'relative';
+                    targetEl.style.zIndex = '1';
+                    
+                    if (!targetEl.querySelector('.aladinn-genie-icon')) {
+                        const icon = document.createElement('span');
+                        icon.className = 'aladinn-genie-icon';
+                        icon.textContent = ' 🧞';
+                        icon.style.fontSize = '14px';
+                        icon.style.marginLeft = '4px';
+                        icon.style.filter = 'drop-shadow(0 0 5px rgba(212, 168, 83, 0.8))';
+                        icon.style.display = 'inline-block';
+                        // Using pulse animation for the icon to match the mystic feel
+                        icon.style.animation = 'his-icon-pulse 2s infinite alternate';
+                        targetEl.appendChild(icon);
+                    }
+                }
+
+                if (found || uiRetries > 30) {
+                    clearInterval(applyAesthetics);
+                }
+            }, 1000);
+        }
+
         if (Logger) Logger.success('Main', '🧞 Aladinn đã sẵn sàng!');
     }
 

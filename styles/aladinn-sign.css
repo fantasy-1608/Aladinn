@@ -289,6 +289,42 @@
     animation: panelSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1), panelFloat 6s ease-in-out infinite 0.5s !important;
 }
 
+/* ── Ambient Mystic Smoke Aura ── */
+.his-workflow-panel::before,
+.his-workflow-panel::after {
+    content: '';
+    position: absolute;
+    top: -20%; left: -20%; width: 140%; height: 140%;
+    pointer-events: none;
+    z-index: -1; /* Behind the panel */
+    border-radius: 40%;
+    will-change: transform, opacity;
+}
+
+.his-workflow-panel::before {
+    background: radial-gradient(ellipse at center, rgba(212, 168, 83, 0.15) 0%, transparent 60%);
+    transform-origin: 40% 60%;
+    animation: his-smoke-1 15s linear infinite;
+}
+
+.his-workflow-panel::after {
+    background: radial-gradient(circle at center, rgba(212, 168, 83, 0.1) 0%, transparent 65%);
+    transform-origin: 60% 40%;
+    animation: his-smoke-2 20s linear infinite reverse;
+}
+
+@keyframes his-smoke-1 {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.5; }
+    50% { transform: rotate(180deg) scale(1.1) translate(20px, -10px); opacity: 0.9; }
+    100% { transform: rotate(360deg) scale(1) translate(0, 0); opacity: 0.5; }
+}
+
+@keyframes his-smoke-2 {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); opacity: 0.4; }
+    50% { transform: rotate(180deg) scale(1.05) translate(-15px, 20px); opacity: 0.7; }
+    100% { transform: rotate(360deg) scale(1) translate(0, 0); opacity: 0.4; }
+}
+
 @keyframes panelFloat {
 
     0%,
@@ -1817,4 +1853,41 @@
 .his-advsign-loading-text {
     font-size: 13px;
     color: #94a3b8;
+}
+
+/* ── Ambient Mystic Smoke for HIS Username ── */
+.his-mystic-username-aura {
+    position: relative !important;
+    display: inline-block !important;
+    z-index: 1 !important;
+    text-shadow: 0 0 8px rgba(212, 168, 83, 0.6) !important;
+}
+
+.his-mystic-username-aura::before,
+.his-mystic-username-aura::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 140%;
+    height: 200%;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 50%;
+    will-change: transform, opacity;
+}
+
+.his-mystic-username-aura::before {
+    background: radial-gradient(ellipse at center, rgba(212, 168, 83, 0.45) 0%, transparent 60%);
+    animation: his-smoke-1 4s ease-in-out infinite alternate;
+}
+
+.his-mystic-username-aura::after {
+    background: radial-gradient(circle at center, rgba(212, 168, 83, 0.35) 0%, transparent 65%);
+    animation: his-smoke-2 5s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes his-icon-pulse {
+    0% { transform: scale(1) rotate(-5deg); filter: drop-shadow(0 0 5px rgba(212, 168, 83, 0.8)); }
+    100% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 12px rgba(212, 168, 83, 1)); }
 }
