@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let _pinSalt = '';
     let _hasPinHash = false;
     let _currentPinForEncrypt = ''; 
+    let _hasEncryptedKey = false;
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -91,8 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 hasValidApi = false;
             } else if (localRes.geminiApiKey_encrypted) {
                 elements.apiKey.value = '';
-                elements.apiKey.placeholder = '🔒 API Key đã được mã hóa. Nhập PIN để xem.';
+                elements.apiKey.placeholder = '🔒 Đã mã hóa API Key. Bấm Xóa Mã PIN bên dưới để đổi.';
+                elements.apiKey.readOnly = true;
                 hasValidApi = true;
+                _hasEncryptedKey = true;
+            } else {
+                elements.apiKey.readOnly = false;
+                _hasEncryptedKey = false;
             }
 
             if (localRes.selectedModel) {
@@ -168,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchModels() {
         const apiKey = elements.apiKey.value.trim();
-        if (!apiKey) {
+        if (!apiKey && !_hasEncryptedKey) {
             showToast('⚠️ Vui lòng nhập API Key trước khi dò tìm!', true);
             return;
         }
@@ -181,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await chrome.runtime.sendMessage({
                 type: 'AI_LIST_MODELS',
-                payload: { apiKey }
+                payload: { apiKey: apiKey || '' }
             });
             if (!response?.ok) {
                 throw new Error(response?.error?.message || 'Lỗi API - Kiểm tra lại API Key');
@@ -219,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showToast('✅ Đã cập nhật danh sách mô hình!');
+            document.getElementById('ai-features-container').classList.remove('locked');
             
         } catch (err) {
             showToast(`Lỗi: ${err.message}`, true);
@@ -311,6 +318,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const encryptedKey = await _encryptAPIKey(apiKeyVal, pinVal, salt);
                     localPatch.geminiApiKey_encrypted = encryptedKey;
                     toggleAIFeatures(true);
+                    _hasEncryptedKey = true;
+                    elements.apiKey.value = '';
+                    elements.apiKey.readOnly = true;
+                    elements.apiKey.placeholder = '🔒 Đã mã hóa API Key. Bấm Xóa Mã PIN bên dưới để đổi.';
                 }
 
                 chrome.storage.local.remove(['dashboard_password', 'geminiApiKey']);
@@ -326,6 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     localPatch.geminiApiKey_encrypted = encryptedKey;
                     chrome.storage.local.remove('geminiApiKey');
                     toggleAIFeatures(true);
+                    _hasEncryptedKey = true;
+                    elements.apiKey.value = '';
+                    elements.apiKey.readOnly = true;
+                    elements.apiKey.placeholder = '🔒 Đã mã hóa API Key. Bấm Xóa Mã PIN bên dưới để đổi.';
                 } catch (_e) {
                     showToast('Lỗi mã hóa API Key.', true);
                     return;
@@ -336,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (apiKeyVal && !_hasPinHash) {
                  showToast('Không lưu được: Yêu cầu mã PIN!', true);
                  return;
-            } else if (!apiKeyVal) {
+            } else if (!apiKeyVal && !_hasEncryptedKey) {
                  toggleAIFeatures(false);
             }
         }
@@ -385,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 b.disabled = true;
             });
             pinActions.style.display = 'flex';
+            btnChangePin.style.display = 'none';
         } else {
             _hasExistingPin = false;
             pinHidden.value = '';
@@ -457,8 +473,10 @@ document.addEventListener('DOMContentLoaded', () => {
         _hasPinHash = false;
         _pinSalt = '';
         _currentPinForEncrypt = '';
+        _hasEncryptedKey = false;
         pinHidden.value = '';
         elements.apiKey.value = '';
+        elements.apiKey.readOnly = false;
         elements.apiKey.placeholder = 'Nhập Gemini API Key';
         initPinUI('');
         toggleAIFeatures(false);
@@ -596,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================
     // INLINE CRYPTO HELPERS 
     // ========================================
-    const _ITERATIONS = 100000;
+    const _ITERATIONS = 310000;
     const _KEY_LENGTH = 256;
 
     function _generateSalt() {

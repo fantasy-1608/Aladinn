@@ -429,15 +429,10 @@ HIS.ApiKeyService = (function () {
 
     async function getModel() {
         try {
-            const localSettings = localStorage.getItem('vnpt_settings');
-            if (localSettings) {
-                const parsed = JSON.parse(localSettings);
-                if (parsed.geminiModel) return parsed.geminiModel;
-            }
             const stored = await new Promise(resolve =>
-                chrome.storage.local.get(['selectedModel'], resolve)
+                chrome.storage.local.get(['selectedModel', 'his_settings'], resolve)
             );
-            return stored.selectedModel || 'gemini-2.0-flash';
+            return stored.his_settings?.geminiModel || stored.selectedModel || 'gemini-2.0-flash';
         } catch (_) {
             return 'gemini-2.0-flash';
         }

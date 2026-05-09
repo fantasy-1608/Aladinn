@@ -3,11 +3,11 @@ void (() => {
     /**
      * @param {string} rawTreatments
      * @param {string} [_apiKey] Deprecated. API key is resolved only in background.
-     * @param {string} [model="gemini-2.0-flash-lite-preview-02-05"]
+     * @param {string} [model="gemini-2.0-flash"]
      * @param {string} [patientId="UNKNOWN"]
      * @param {string} [targetField="QUATRINHBENHLY"]
      */
-    async function summarizeHistory(rawTreatments, _apiKey, model = 'gemini-2.0-flash-lite-preview-02-05', patientId = 'UNKNOWN', targetField = 'QUATRINHBENHLY') {
+    async function summarizeHistory(rawTreatments, _apiKey, model = 'gemini-2.0-flash', patientId = 'UNKNOWN', targetField = 'QUATRINHBENHLY') {
         try {
             const response = await chrome.runtime.sendMessage({
                 type: 'SCANNER_SUMMARIZE_HISTORY',
