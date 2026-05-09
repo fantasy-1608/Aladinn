@@ -7,6 +7,16 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.2.6] — 2026-05-09
+
+### 🐛 Sửa lỗi
+
+- **Bảo mật & Trải nghiệm**: Sửa lỗi "Sai mã PIN" bằng cách đồng bộ thuật toán mã hóa PBKDF2 lên 310,000 iterations. Cải thiện logic lưu mô hình AI để tránh bị ảnh hưởng bởi dữ liệu cũ trong `localStorage` trên trang HIS.
+- **AI Selection**: Xóa fallback cứng (`gemini-2.0-flash-lite...`), giờ đây hệ thống sẽ luôn lấy đúng mô hình mà người dùng đã chọn từ giao diện cài đặt (như `gemini-2.0-flash`).
+- **Giao diện Options**: Làm rõ cơ chế tự động ẩn API Key để bảo mật, đồng thời làm mượt hiệu ứng nhịp thở cho tên hiển thị trên hệ thống.
+
+---
+
 ## [1.2.5] — 2026-05-09
 
 ### 🚀 Pilot-Ready Release
