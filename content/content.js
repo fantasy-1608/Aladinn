@@ -419,9 +419,8 @@
                     targetEl.style.display = 'inline-block';
                     targetEl.style.padding = '2px 8px';
                     targetEl.style.borderRadius = '8px';
-                    targetEl.style.color = '#fff';
-                    targetEl.style.fontWeight = '600';
-                    targetEl.style.textShadow = '0 0 10px rgba(212, 168, 83, 0.8), 0 0 20px rgba(212, 168, 83, 0.4)';
+                    targetEl.style.color = '#fdf8ec';
+                    targetEl.style.fontWeight = '500';
                     targetEl.style.position = 'relative';
                     targetEl.style.zIndex = '1';
                     
@@ -431,10 +430,10 @@
                         icon.textContent = ' 🧞';
                         icon.style.fontSize = '14px';
                         icon.style.marginLeft = '4px';
-                        icon.style.filter = 'drop-shadow(0 0 5px rgba(212, 168, 83, 0.8))';
+                        icon.style.filter = 'drop-shadow(0 0 3px rgba(212, 162, 90, 0.4))';
                         icon.style.display = 'inline-block';
                         // Using pulse animation for the icon to match the mystic feel
-                        icon.style.animation = 'his-icon-pulse 2s infinite alternate';
+                        icon.style.animation = 'his-icon-pulse 3s infinite alternate ease-in-out';
                         targetEl.appendChild(icon);
                     }
                 }
