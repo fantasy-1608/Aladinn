@@ -13,20 +13,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
     - name: Use Node.js 20.x
       uses: actions/setup-node@v4
       with:
         node-version: 20.x
-        cache: 'npm'
+        cache: 'pnpm'
 
     - name: Install dependencies
-      run: npm install
+      run: pnpm install
 
     - name: Run Linter
-      run: npm run lint
+      run: pnpm run lint
 
     - name: Run Unit Tests
-      run: npm run test
+      run: pnpm run test
 
     - name: Build Extension
-      run: npm run build
+      run: pnpm run build
