@@ -1,3 +1,4 @@
+import '../debug-init.js';
 /**
  * VNPT HIS Extension v4.0.1
  * Nutrition Iframe Helper

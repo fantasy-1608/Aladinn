@@ -318,6 +318,11 @@
         if (event.origin !== window.location.origin) return;
         if (!event.data || !event.data.type) return;
 
+        if (event.data.type === 'ALADINN_SET_DEBUG') {
+            window.__ALADINN_DEBUG__ = event.data.state;
+            return;
+        }
+
         // SECURITY: Rate-limit all incoming requests
         if (event.data.type.startsWith('REQ_') && !checkRateLimit()) {
             console.warn('[Aladinn API-Bridge] Rate limit exceeded — request dropped');

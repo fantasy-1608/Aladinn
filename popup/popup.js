@@ -168,6 +168,43 @@ async function initPopup() {
         chrome.runtime.openOptionsPage();
     });
 
+    // Debug Toggle
+    const debugBtn = document.getElementById('toggle-debug-btn');
+    if (debugBtn) {
+        chrome.storage.local.get('aladinn_debug_mode', (res) => {
+            const isDebug = !!res.aladinn_debug_mode;
+            debugBtn.style.color = isDebug ? '#ef4444' : 'var(--al-text-dim)';
+            debugBtn.style.background = isDebug ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
+        });
+
+        debugBtn.addEventListener('click', () => {
+            chrome.storage.local.get('aladinn_debug_mode', (res) => {
+                const newState = !res.aladinn_debug_mode;
+                chrome.storage.local.set({ aladinn_debug_mode: newState });
+                
+                debugBtn.style.color = newState ? '#ef4444' : 'var(--al-text-dim)';
+                debugBtn.style.background = newState ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
+                
+                // Notify content script
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0]) {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id, allFrames: true },
+                            world: 'ISOLATED',
+                            func: (debugState) => {
+                                if (window.VNPTConfig) window.VNPTConfig.DEBUG = debugState;
+                                // Pass to Main World (api-bridge)
+                                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: debugState }, '*');
+                                return true;
+                            },
+                            args: [newState]
+                        }).catch(() => {});
+                    }
+                });
+            });
+        });
+    }
+
     // --- Sign Tab Logic ---
     const selectAllBtn = document.getElementById('sign-select-all-btn');
     if(selectAllBtn) selectAllBtn.addEventListener('click', () => {

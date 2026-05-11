@@ -1,3 +1,4 @@
+import '../debug-init.js';
 /**
  * VNPT HIS Smart Scanner v4.0.1
  * Chuyen Vien (Transfer) Iframe Helper

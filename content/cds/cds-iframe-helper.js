@@ -1,3 +1,4 @@
+import '../debug-init.js';
 /**
  * 🧞 Aladinn CDS — Iframe Helper
  * Chạy BÊN TRONG iframe "Tạo phiếu thuốc từ kho" (CapThuoc / PhieuThuoc).

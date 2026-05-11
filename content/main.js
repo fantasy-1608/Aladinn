@@ -1,3 +1,4 @@
+import './debug-init.js';
 import '../shared/constants.js';
 import '../shared/logger.js';
 import '../shared/error-handler.js';
