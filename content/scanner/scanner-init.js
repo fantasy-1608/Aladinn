@@ -316,12 +316,40 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         });
                     };
 
-                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary] = await Promise.all([
+                    const fetchDemographicsFromBridge = (rowId) => {
+                        return new Promise((resolve) => {
+                            const requestId = 'demo_' + Date.now().toString() + Math.random().toString().slice(2);
+                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
+                            
+                            const listener = (event) => {
+                                if (event.data && event.data.type === 'FETCH_PATIENT_DEMOGRAPHICS_RESULT' && event.data.requestId === requestId) {
+                                    window.removeEventListener('message', listener);
+                                    resolve(event.data.demographics || null);
+                                }
+                            };
+                            window.addEventListener('message', listener);
+                            
+                            window.postMessage({
+                                type: 'REQ_FETCH_PATIENT_DEMOGRAPHICS',
+                                rowId: rowId,
+                                requestId: requestId,
+                                token: token
+                            }, window.location.origin);
+                            
+                            setTimeout(() => {
+                                window.removeEventListener('message', listener);
+                                resolve(null);
+                            }, 5000);
+                        });
+                    };
+
+                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary, demographics] = await Promise.all([
                         fetchLabsFromBridge(pid),
                         fetchDrugsFromBridge(pid),
                         fetchHistoryFromBridge(pid),
                         fetchTreatmentFromBridge(pid),
-                        fetchClinicalSummaryFromBridge(pid)
+                        fetchClinicalSummaryFromBridge(pid),
+                        fetchDemographicsFromBridge(pid)
                     ]);
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
@@ -332,15 +360,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const storeName = window.VNPTStore?.get('selectedPatientName');
                     const patientName = storeName || result?.patientName || 'Bệnh Nhân';
                     
-                    let age = '';
-                    let diagnosis = '';
+                    // Phase 1: API-first for age & diagnosis, DOM fallback
+                    let age = demographics?.age || demographics?.dob || '';
+                    let diagnosis = demographics?.diagnosis || '';
                     try {
-                        const tr = document.getElementById(pid);
-                        if (tr) {
-                            const ageTd = tr.querySelector("td[aria-describedby$='_TUOI']") || tr.querySelector("td[aria-describedby$='_NAMSINH']");
-                            if (ageTd) age = ageTd.textContent.trim();
-                            const diagTd = tr.querySelector("td[aria-describedby$='_CHANDOAN']");
-                            if (diagTd) diagnosis = diagTd.textContent.trim();
+                        if (!age || !diagnosis) {
+                            const tr = document.getElementById(pid);
+                            if (tr) {
+                                if (!age) {
+                                    const ageTd = tr.querySelector("td[aria-describedby$='_TUOI']") || tr.querySelector("td[aria-describedby$='_NAMSINH']");
+                                    if (ageTd) age = ageTd.textContent.trim();
+                                }
+                                if (!diagnosis) {
+                                    const diagTd = tr.querySelector("td[aria-describedby$='_CHANDOAN']");
+                                    if (diagTd) diagnosis = diagTd.textContent.trim();
+                                }
+                            }
                         }
                     } catch (_e) {}
 
@@ -388,6 +423,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         age, 
                         diagnosis,
                         diagHistory,
+                        // Phase 1: demographics từ API bridge (thay thế DOM reads cho gender, dob, etc.)
+                        demographicsGender: demographics?.gender || '',
+                        demographics: demographics || null,
                         clinicalData: {
                             history: historyData || {},
                             treatments: treatmentList || [],
@@ -396,6 +434,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             treatmentContext: treatmentResult?.treatmentContext || clinicalSummary?.treatmentContext || {}
                         }
                     };
+
+                    // Phase 1: Cache demographics vào Store cho history.js và các module khác sử dụng
+                    if (demographics) {
+                        window.VNPTStore?.set('patientDemographics', demographics);
+                    }
 
                     if (labs.length === 0 && imaging.length === 0 && drugs.length === 0 && (!historyData || Object.keys(historyData).length === 0)) {
                         window.VNPTRealtime?.showToast('⚠️ Không tìm thấy dữ liệu CLS / Thuốc / Bệnh án của bệnh nhân này.', 'warning');
@@ -1762,18 +1805,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         const defaultActiveTab = 1;
 
-        // Giới tính từ nhiều nguồn (DOM + patientInfo)
+        // Giới tính: API-first (demographics) → patientInfo → DOM fallback
         let headerGender = '';
         try {
-            // Nguồn 1: patientInfo trực tiếp
-            const gi = patientInfo.gender || patientInfo.GIOITINH || patientInfo.GT || patientInfo.PHAI || '';
+            // Nguồn 1: Demographics API (Phase 1 — ổn định nhất)
+            const gi = patientInfo.demographicsGender || patientInfo.gender || patientInfo.GIOITINH || patientInfo.GT || patientInfo.PHAI || '';
             if (gi) {
                 const g = String(gi).trim().toLowerCase();
                 if (g === '1' || g === 'nam' || g === 'male') headerGender = 'Nam';
                 else if (g === '2' || g === 'nữ' || g === 'nu' || g === 'female') headerGender = 'Nữ';
                 else if (gi.trim()) headerGender = gi.trim();
             }
-            // Nguồn 2: DOM query theo row id
+            // Nguồn 2 (DOM fallback): chỉ chạy khi API không trả giới tính
             if (!headerGender) {
                 const pid = patientInfo.id ? String(patientInfo.id) : null;
                 const gTd = pid
@@ -1788,7 +1831,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     else if (gTd.textContent.trim()) headerGender = gTd.textContent.trim();
                 }
             }
-            // Nguồn 3: hàng đang được chọn (selected row) trong grid
+            // Nguồn 3 (DOM fallback): selected row trong grid
             if (!headerGender) {
                 const selRow = document.querySelector('tr.jqgrow.ui-state-highlight, tr.ui-state-highlight');
                 const gTd2 = selRow
@@ -2201,20 +2244,31 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
                     : 'không rõ';
 
-                // Giới tính từ DOM
+                // Giới tính: API-first (demographics) → DOM fallback
                 let patientGender = 'không rõ';
                 try {
-                    const pid = patientInfo.id ? String(patientInfo.id) : null;
-                    const genderTd = pid
-                        ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
-                           document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
-                           document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
-                        : null;
-                    if (genderTd) {
-                        const gt = genderTd.textContent.trim().toLowerCase();
-                        if (gt === '1' || gt === 'nam' || gt === 'male') patientGender = 'Nam';
-                        else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') patientGender = 'Nữ';
-                        else patientGender = genderTd.textContent.trim() || 'không rõ';
+                    // Nguồn 1: Demographics API (Phase 1)
+                    const demoGender = patientInfo.demographicsGender || '';
+                    if (demoGender) {
+                        const g = String(demoGender).trim().toLowerCase();
+                        if (g === '1' || g === 'nam' || g === 'male') patientGender = 'Nam';
+                        else if (g === '2' || g === 'nữ' || g === 'nu' || g === 'female') patientGender = 'Nữ';
+                        else patientGender = demoGender.trim() || 'không rõ';
+                    }
+                    // Nguồn 2: DOM fallback
+                    if (patientGender === 'không rõ') {
+                        const pid = patientInfo.id ? String(patientInfo.id) : null;
+                        const genderTd = pid
+                            ? (document.querySelector(`tr#${pid} td[aria-describedby$='_GIOITINH']`) ||
+                               document.querySelector(`tr#${pid} td[aria-describedby$='_GT']`) ||
+                               document.querySelector(`tr#${pid} td[aria-describedby$='_PHAI']`))
+                            : null;
+                        if (genderTd) {
+                            const gt = genderTd.textContent.trim().toLowerCase();
+                            if (gt === '1' || gt === 'nam' || gt === 'male') patientGender = 'Nam';
+                            else if (gt === '2' || gt === 'nữ' || gt === 'nu' || gt === 'female') patientGender = 'Nữ';
+                            else patientGender = genderTd.textContent.trim() || 'không rõ';
+                        }
                     }
                 } catch (_) { /* ignore */ }
 

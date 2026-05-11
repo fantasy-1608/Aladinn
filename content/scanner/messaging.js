@@ -16,7 +16,8 @@ const VNPTMessaging = (function () {
         'FETCH_DRUGS_RESULT',
         'FETCH_PTTT_RESULT',
         'FETCH_BHYT_TIMES_RESULT',
-        'FETCH_CLINICAL_SUMMARY_RESULT'
+        'FETCH_CLINICAL_SUMMARY_RESULT',
+        'FETCH_PATIENT_DEMOGRAPHICS_RESULT'
     ]);
 
     function getAllowedOrigin() {

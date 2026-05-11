@@ -960,29 +960,62 @@ const VNPTHistory = (function () {
      * @param {string} pid
      */
     function generateSummary(history, pid) {
-        // 1. Lấy giới tính, tuổi từ store hoặc grid
+        // 1. Lấy giới tính, tuổi — API-first (Phase 1) → DOM fallback
         let gender = 'bệnh nhân';
         let age = '';
 
-        // Thử lấy từ Grid (thường là nguồn tin cậy nhất hiện tại)
-        const rows = document.querySelectorAll('#grdBenhNhan tr.ui-widget-content');
-        for (const row of Array.from(rows)) {
-            // @ts-ignore
-            if (row.id === pid) {
-                const ageCell = row.querySelector("td[aria-describedby$='_NGAYSINH']");
-                const genderCell = row.querySelector("td[aria-describedby$='_GIOITINH']");
-                if (genderCell) gender = genderCell.textContent?.trim().toLowerCase() === 'nam' ? 'nam' : 'nữ';
-                if (ageCell) {
-                    const dob = ageCell.textContent?.trim() || '';
-                    if (dob.includes('/')) {
-                        const birthYear = parseInt(dob.split('/').pop() || '0');
+        // Nguồn 1: VNPTStore demographics (đã fetch từ API bridge)
+        try {
+            const storedDemo = window.VNPTStore?.get('patientDemographics');
+            if (storedDemo) {
+                const gRaw = storedDemo.gender || '';
+                if (gRaw) {
+                    const g = String(gRaw).trim().toLowerCase();
+                    if (g === '1' || g === 'nam' || g === 'male') gender = 'nam';
+                    else if (g === '2' || g === 'nữ' || g === 'nu' || g === 'female') gender = 'nữ';
+                }
+                const ageRaw = storedDemo.age || storedDemo.dob || '';
+                if (ageRaw) {
+                    const av = String(ageRaw).trim();
+                    if (av.includes('/')) {
+                        const birthYear = parseInt(av.split('/').pop() || '0');
                         if (birthYear > 0) age = (new Date().getFullYear() - birthYear) + ' tuổi';
-                    } else if (dob.length === 4) {
-                        age = (new Date().getFullYear() - parseInt(dob)) + ' tuổi';
+                    } else if (av.length === 4 && !isNaN(parseInt(av))) {
+                        age = (new Date().getFullYear() - parseInt(av)) + ' tuổi';
+                    } else if (av) {
+                        age = av + (av.match(/tuổi/i) ? '' : ' tuổi');
                     }
                 }
-                break;
             }
+        } catch (_) { /* ignore */ }
+
+        // Nguồn 2 (DOM fallback): chỉ chạy khi API không trả đủ data
+        if (gender === 'bệnh nhân' || !age) {
+            try {
+                const rows = document.querySelectorAll('#grdBenhNhan tr.ui-widget-content');
+                for (const row of Array.from(rows)) {
+                    // @ts-ignore
+                    if (row.id === pid) {
+                        if (gender === 'bệnh nhân') {
+                            const genderCell = row.querySelector("td[aria-describedby$='_GIOITINH']");
+                            if (genderCell) gender = genderCell.textContent?.trim().toLowerCase() === 'nam' ? 'nam' : 'nữ';
+                        }
+                        if (!age) {
+                            const ageCell = row.querySelector("td[aria-describedby$='_NGAYSINH']");
+                            if (ageCell) {
+                                const dob = ageCell.textContent?.trim() || '';
+                                if (dob.includes('/')) {
+                                    const birthYear = parseInt(dob.split('/').pop() || '0');
+                                    if (birthYear > 0) age = (new Date().getFullYear() - birthYear) + ' tuổi';
+                                } else if (dob.length === 4) {
+                                    age = (new Date().getFullYear() - parseInt(dob)) + ' tuổi';
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            } catch (_) { /* ignore */ }
         }
 
         const person = `Bệnh nhân ${gender}${age ? ', ' + age : ''}`;

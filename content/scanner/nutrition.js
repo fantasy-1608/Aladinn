@@ -287,20 +287,29 @@ const VNPTNutrition = (function () {
             const h = vitals?.height || '';
             const hMeter = parseFloat(h) > 10 ? (parseFloat(h) / 100).toFixed(2) : h;
 
-            // ✅ Extract Admission Date (Ngày nhập khoa) từ header thông tin bệnh nhân (Từ khung Top)
+            // ✅ Extract Admission Date (Ngày nhập khoa)
+            // Phase 2: API-first → DOM fallback
             let admissionDate = '';
             try {
-                // Cách 1 cực nhanh và chuẩn: Dựa theo DOM ID của VNPT HIS trên top frame
-                const lblMsg = document.getElementById('lblMSG_BOSUNG');
-                if (lblMsg) {
-                    const match = lblMsg.innerText.match(/(\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}:\d{2})/);
-                    if (match) {
-                        admissionDate = match[1];
-                        console.log('[Nutrition] TOP: Tìm thấy Ngày nhập khoa qua ID:', admissionDate);
+                // Nguồn 0 (API — Phase 2): vitals.admissionDate từ bridge (rowData jqGrid internal)
+                if (vitals && vitals.admissionDate) {
+                    admissionDate = vitals.admissionDate;
+                    console.log('[Nutrition] API: Ngày nhập khoa từ API bridge:', admissionDate);
+                }
+
+                // Nguồn 1 (DOM fallback): lblMSG_BOSUNG
+                if (!admissionDate) {
+                    const lblMsg = document.getElementById('lblMSG_BOSUNG');
+                    if (lblMsg) {
+                        const match = lblMsg.innerText.match(/(\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}:\d{2})/);
+                        if (match) {
+                            admissionDate = match[1];
+                            console.log('[Nutrition] DOM: Tìm thấy Ngày nhập khoa qua ID:', admissionDate);
+                        }
                     }
                 }
                 
-                // Cách 2: Thử tìm theo cấu trúc Node text của VNPT nếu ID bị mất
+                // Nguồn 2 (DOM fallback): TreeWalker
                 if (!admissionDate) {
                     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
                     let textNode;
@@ -310,21 +319,14 @@ const VNPTNutrition = (function () {
                             const match = text.match(/(\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}:\d{2})/);
                             if (match) {
                                 admissionDate = match[1];
-                                console.log('[Nutrition] TOP: Tìm thấy Ngày nhập khoa qua TreeWalker:', admissionDate);
+                                console.log('[Nutrition] DOM: Tìm thấy Ngày nhập khoa qua TreeWalker:', admissionDate);
                                 break;
                             }
                         }
                     }
                 }
-                
-                // Cách 3: Lôi từ đáy biển (API NT.006) thông qua dữ liệu Vitals đã quét chìm
-                if (!admissionDate && vitals && vitals.admissionDate) {
-                    admissionDate = vitals.admissionDate;
-                    console.log('[Nutrition] TOP: Đã kéo được Ngày nhập khoa TỪ API (Dành cho BN Ra Viện):', admissionDate);
-                }
 
-                // Ghi chú: Có thể lblMSG_BOSUNG nằm bên TRONG iframe, ta sẽ để Helper tự quét thêm nếu TOP frame không tìm thấy.
-                if (!admissionDate) console.log('[Nutrition] TOP: Không tìm thấy Ngày nhập khoa ở Top frame lẫn API. Sẽ chuyển giao cho Iframe Helper.');
+                if (!admissionDate) console.log('[Nutrition] Không tìm thấy Ngày nhập khoa ở API lẫn DOM. Sẽ chuyển giao cho Iframe Helper.');
             } catch (_e) { console.warn('[Nutrition] Lỗi nội bộ khi dò parse Ngày nhập viện', _e); }
 
             // Gửi lệnh điền — gửi cả weight/bloodPressure + admissionDate

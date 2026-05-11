@@ -370,6 +370,9 @@
             case 'REQ_FETCH_CLINICAL_SUMMARY':
                 fetchClinicalSummary(event.data.rowId, event.data.requestId);
                 break;
+            case 'REQ_FETCH_PATIENT_DEMOGRAPHICS':
+                fetchPatientDemographics(event.data.rowId, event.data.requestId);
+                break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
         }
     });
@@ -422,6 +425,82 @@
         } catch (e) {
             console.error('[API-Bridge] fetchHistory error:', e);
             sendResult('FETCH_HISTORY_RESULT', rowId, { history: {} }, requestId);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Phase 1: FETCH_PATIENT_DEMOGRAPHICS — Thay thế DOM reads cho
+    // giới tính, tuổi, năm sinh, chẩn đoán, ngày nhập viện, phòng, BS
+    // ══════════════════════════════════════════════════════════════
+    function fetchPatientDemographics(rowId, requestId) {
+        try {
+            if (!_$) {
+                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
+                return;
+            }
+            const { rowData } = resolveActiveGrid(rowId);
+            if (!rowData) {
+                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
+                return;
+            }
+
+            // Universal scan: tìm tất cả field liên quan đến nhân khẩu học
+            let gender = '', age = '', dob = '', diagnosis = '', admissionDate = '', room = '', doctor = '', insuranceId = '', patientName = '';
+
+            for (const k in rowData) {
+                const uk = k.toUpperCase();
+                const val = rowData[k];
+                if (val === null || val === undefined || String(val).trim() === '' || val === '&nbsp;') continue;
+                const sv = String(val).trim();
+
+                // Giới tính
+                if (!gender && (uk === 'GIOITINH' || uk === 'GT' || uk === 'PHAI' || uk === 'GIOI_TINH' || uk === 'SEX' || uk === 'GENDER')) {
+                    gender = sv;
+                }
+                // Tuổi
+                if (!age && (uk === 'TUOI' || uk === 'AGE')) {
+                    age = sv;
+                }
+                // Ngày sinh / Năm sinh
+                if (!dob && (uk === 'NGAYSINH' || uk === 'NAMSINH' || uk === 'NGAY_SINH' || uk === 'NAM_SINH' || uk === 'DOB' || uk === 'BIRTHDAY')) {
+                    dob = sv;
+                }
+                // Chẩn đoán
+                if (!diagnosis && (uk === 'CHANDOAN' || uk === 'CHAN_DOAN' || uk === 'CHANDOANCHINH' || uk === 'CHANDOAN_CHINH')) {
+                    diagnosis = sv;
+                }
+                // Ngày nhập viện / vào khoa
+                if (!admissionDate && (uk === 'THOIGIANVAOVIEN' || uk === 'NGAYVAOKHOA' || uk === 'NGAYTIEPNHAN' || uk === 'NGAYNHAPKHOA' || uk === 'NGAY_VAO_VIEN' || uk === 'THOIGIAN_VAOVIEN')) {
+                    admissionDate = sv;
+                }
+                // Phòng / Giường
+                if (!room && (uk === 'TENBUONG' || uk === 'GIUONG_NAME' || uk === 'BUONG' || uk === 'TENGIUONG' || uk === 'GIUONG' || uk === 'TENPHONG')) {
+                    room = sv;
+                }
+                // Bác sĩ điều trị
+                if (!doctor && (uk === 'BSDIEUTRI' || uk === 'BACSI' || uk === 'TENBACSI' || uk === 'TENBS' || uk === 'BS_DIEUTRI' || uk === 'TEN_BS')) {
+                    doctor = sv;
+                }
+                // Số BHYT
+                if (!insuranceId && (uk === 'SOBHYT' || uk === 'BHYT' || uk === 'SO_BHYT' || uk === 'MATHE_BHYT')) {
+                    insuranceId = sv;
+                }
+                // Tên BN
+                if (!patientName && (uk === 'TENBENHNHAN' || uk === 'HOTEN' || uk === 'TEN_BN' || uk === 'TEN_BENHNHAN')) {
+                    patientName = sv;
+                }
+            }
+
+            const demographics = {
+                gender, age, dob, diagnosis, admissionDate,
+                room, doctor, insuranceId, patientName
+            };
+
+            console.log('[API-Bridge] Patient demographics:', demographics);
+            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics }, requestId);
+        } catch (e) {
+            console.error('[API-Bridge] fetchPatientDemographics error:', e);
+            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
         }
     }
 
@@ -571,6 +650,9 @@
                     finalVitals[key] = String(finalVitals[key]).replace(/<[^>]+>/g, '').trim();
                 }
             }
+
+            // Phase 2: Thêm admissionDate vào vitals result (thay thế DOM read trong nutrition.js)
+            finalVitals.admissionDate = rowData.THOIGIANVAOVIEN || rowData.NGAYVAOKHOA || rowData.NGAYTIEPNHAN || rowData.NGAYNHAPKHOA || '';
 
             vitalsCache[rowId] = { data: finalVitals, timestamp: Date.now() };
             sendResult('FETCH_VITALS_RESULT', rowId, { vitals: finalVitals }, requestId);
