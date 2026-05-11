@@ -195,8 +195,8 @@ const VNPTDashboard = (function () {
     }
 
     function toggleRoomFilter(roomName) {
-        const gridRows = document.querySelectorAll('#grdBenhNhan tr.jqgrow');
-        if (!gridRows || gridRows.length === 0) return;
+        const gridSel = (window.VNPTConfig?.selectors?.patientGrid || '#grdBenhNhan') + ' tr.jqgrow';
+        const gridRows = document.querySelectorAll(gridSel);
 
         // Toggle logic
         if (currentFilterRoom === roomName) {

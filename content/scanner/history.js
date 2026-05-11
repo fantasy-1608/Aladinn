@@ -992,7 +992,8 @@ const VNPTHistory = (function () {
         // Nguồn 2 (DOM fallback): chỉ chạy khi API không trả đủ data
         if (gender === 'bệnh nhân' || !age) {
             try {
-                const rows = document.querySelectorAll('#grdBenhNhan tr.ui-widget-content');
+                const gridSel = (window.VNPTConfig?.selectors?.patientGrid || '#grdBenhNhan') + ' tr.ui-widget-content';
+                const rows = document.querySelectorAll(gridSel);
                 for (const row of Array.from(rows)) {
                     // @ts-ignore
                     if (row.id === pid) {

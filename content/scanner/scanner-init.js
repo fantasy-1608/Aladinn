@@ -180,21 +180,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     
                     window.VNPTRealtime?.showToast('🪄 Đang tải CLS + Thuốc từ VNPT HIS...', 'info');
                     
-                    const fetchLabsFromBridge = (rowId) => {
+                    // Đề xuất 3: Generic bridge fetch helper — thay thế 6 hàm lặp
+                    const bridgeFetch = (reqType, resType, rowId, extractFn, timeout = 10000, prefix = 'req') => {
                         return new Promise((resolve) => {
-                            const requestId = Date.now().toString() + Math.random().toString().slice(2);
+                            const requestId = prefix + '_' + Date.now().toString() + Math.random().toString().slice(2);
                             const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
                             
                             const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_LABS_RESULT' && event.data.requestId === requestId) {
+                                if (event.data && event.data.type === resType && event.data.requestId === requestId) {
                                     window.removeEventListener('message', listener);
-                                    resolve({ labs: event.data.labsData || [], imaging: event.data.imagingData || [], patientName: event.data.patientName || '' });
+                                    resolve(extractFn(event.data));
                                 }
                             };
                             window.addEventListener('message', listener);
                             
                             window.postMessage({
-                                type: 'REQ_FETCH_LABS',
+                                type: reqType,
                                 rowId: rowId,
                                 requestId: requestId,
                                 token: token
@@ -202,146 +203,42 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             
                             setTimeout(() => {
                                 window.removeEventListener('message', listener);
-                                resolve(null);
-                            }, 20000);
+                                resolve(extractFn({}));
+                            }, timeout);
                         });
                     };
 
-                    const fetchDrugsFromBridge = (rowId) => {
-                        return new Promise((resolve) => {
-                            const requestId = 'drugs_' + Date.now().toString() + Math.random().toString().slice(2);
-                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
-                            
-                            const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_DRUGS_CLS_RESULT' && event.data.requestId === requestId) {
-                                    window.removeEventListener('message', listener);
-                                    resolve({ drugList: event.data.drugList || [] });
-                                }
-                            };
-                            window.addEventListener('message', listener);
-                            
-                            window.postMessage({
-                                type: 'REQ_FETCH_DRUGS_CLS',
-                                rowId: rowId,
-                                requestId: requestId,
-                                token: token
-                            }, window.location.origin);
-                            
-                            setTimeout(() => {
-                                window.removeEventListener('message', listener);
-                                resolve({ drugList: [] });
-                            }, 15000);
-                        });
-                    };
-
-                    const fetchHistoryFromBridge = (rowId) => {
-                        return new Promise((resolve) => {
-                            const requestId = 'hist_' + Date.now().toString() + Math.random().toString().slice(2);
-                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
-                            
-                            const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_HISTORY_RESULT' && event.data.requestId === requestId) {
-                                    window.removeEventListener('message', listener);
-                                    resolve(event.data.history || {});
-                                }
-                            };
-                            window.addEventListener('message', listener);
-                            
-                            window.postMessage({
-                                type: 'REQ_FETCH_HISTORY',
-                                rowId: rowId,
-                                requestId: requestId,
-                                token: token
-                            }, window.location.origin);
-                            
-                            setTimeout(() => {
-                                window.removeEventListener('message', listener);
-                                resolve({});
-                            }, 10000);
-                        });
-                    };
-
-                    const fetchTreatmentFromBridge = (rowId) => {
-                        return new Promise((resolve) => {
-                            const requestId = 'treat_' + Date.now().toString() + Math.random().toString().slice(2);
-                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
-                            
-                            const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_TREATMENT_RESULT' && event.data.requestId === requestId) {
-                                    window.removeEventListener('message', listener);
-                                    resolve(event.data || {});
-                                }
-                            };
-                            window.addEventListener('message', listener);
-                            
-                            window.postMessage({
-                                type: 'REQ_FETCH_TREATMENT',
-                                rowId: rowId,
-                                requestId: requestId,
-                                token: token
-                            }, window.location.origin);
-                            
-                            setTimeout(() => {
-                                window.removeEventListener('message', listener);
-                                resolve({});
-                            }, 10000);
-                        });
-                    };
-
-                    const fetchClinicalSummaryFromBridge = (rowId) => {
-                        return new Promise((resolve) => {
-                            const requestId = 'clin_' + Date.now().toString() + Math.random().toString().slice(2);
-                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
-                            
-                            const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_CLINICAL_SUMMARY_RESULT' && event.data.requestId === requestId) {
-                                    window.removeEventListener('message', listener);
-                                    // sendResult spreads data fields directly — chanDoanMoiNhat is at event.data level
-                                    resolve(event.data);
-                                }
-                            };
-                            window.addEventListener('message', listener);
-                            
-                            window.postMessage({
-                                type: 'REQ_FETCH_CLINICAL_SUMMARY',
-                                rowId: rowId,
-                                requestId: requestId,
-                                token: token
-                            }, window.location.origin);
-                            
-                            setTimeout(() => {
-                                window.removeEventListener('message', listener);
-                                resolve({});
-                            }, 10000);
-                        });
-                    };
-
-                    const fetchDemographicsFromBridge = (rowId) => {
-                        return new Promise((resolve) => {
-                            const requestId = 'demo_' + Date.now().toString() + Math.random().toString().slice(2);
-                            const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
-                            
-                            const listener = (event) => {
-                                if (event.data && event.data.type === 'FETCH_PATIENT_DEMOGRAPHICS_RESULT' && event.data.requestId === requestId) {
-                                    window.removeEventListener('message', listener);
-                                    resolve(event.data.demographics || null);
-                                }
-                            };
-                            window.addEventListener('message', listener);
-                            
-                            window.postMessage({
-                                type: 'REQ_FETCH_PATIENT_DEMOGRAPHICS',
-                                rowId: rowId,
-                                requestId: requestId,
-                                token: token
-                            }, window.location.origin);
-                            
-                            setTimeout(() => {
-                                window.removeEventListener('message', listener);
-                                resolve(null);
-                            }, 5000);
-                        });
-                    };
+                    // Thin wrappers — mỗi hàm chỉ cần chỉ định types + cách extract data
+                    const fetchLabsFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_LABS', 'FETCH_LABS_RESULT', rowId,
+                        (d) => ({ labs: d.labsData || [], imaging: d.imagingData || [], patientName: d.patientName || '' }),
+                        20000
+                    );
+                    const fetchDrugsFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_DRUGS_CLS', 'FETCH_DRUGS_CLS_RESULT', rowId,
+                        (d) => ({ drugList: d.drugList || [] }),
+                        15000, 'drugs'
+                    );
+                    const fetchHistoryFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_HISTORY', 'FETCH_HISTORY_RESULT', rowId,
+                        (d) => d.history || {},
+                        10000, 'hist'
+                    );
+                    const fetchTreatmentFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_TREATMENT', 'FETCH_TREATMENT_RESULT', rowId,
+                        (d) => d || {},
+                        10000, 'treat'
+                    );
+                    const fetchClinicalSummaryFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_CLINICAL_SUMMARY', 'FETCH_CLINICAL_SUMMARY_RESULT', rowId,
+                        (d) => d,
+                        10000, 'clin'
+                    );
+                    const fetchDemographicsFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_PATIENT_DEMOGRAPHICS', 'FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId,
+                        (d) => d.demographics || null,
+                        5000, 'demo'
+                    );
 
                     const [result, drugsResult, historyData, treatmentResult, clinicalSummary, demographics] = await Promise.all([
                         fetchLabsFromBridge(pid),

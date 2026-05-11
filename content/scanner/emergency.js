@@ -281,7 +281,13 @@ const VNPTEmergency = (function () {
                 }
             }
 
-            // Nếu vẫn trống, thử lấy từ cột thời gian của grid
+            // Đề xuất 2: API-first (demographics từ Store) → DOM fallback → jqGrid fallback
+            if (!ngayDenKham) {
+                const storedDemo = window.VNPTStore.get('patientDemographics');
+                if (storedDemo && storedDemo.admissionDate) {
+                    ngayDenKham = storedDemo.admissionDate;
+                }
+            }
             if (!ngayDenKham && window.$) {
                 try {
                     const rowData = window.$('#grdBenhNhan').jqGrid('getRowData', pid);

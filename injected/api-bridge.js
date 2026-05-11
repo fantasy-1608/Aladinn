@@ -14,6 +14,11 @@
     // [P1-SEC-006] SECURITY: Get nonce assigned by extension for mandatory message validation
     const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : (window.__ALADINN_NONCE__ || null);
 
+    // Đề xuất 5: Diagnostic logging toggle — bật bằng window.__ALADINN_DEBUG__ = true
+    function debugLog(...args) {
+        if (window.__ALADINN_DEBUG__) console.log(...args);
+    }
+
     // Cache to prevent duplicate simultaneous requests from multiple modules
     const vitalsCache = {};
 
@@ -496,7 +501,23 @@
                 room, doctor, insuranceId, patientName
             };
 
-            console.log('[API-Bridge] Patient demographics:', demographics);
+            // Đề xuất 6: Auto-enrich age từ dob khi age rỗng
+            if (!demographics.age && demographics.dob) {
+                const dobStr = String(demographics.dob).trim();
+                let birthYear = 0;
+                // Format dd/mm/yyyy hoặc yyyy
+                if (dobStr.length === 4 && /^\d{4}$/.test(dobStr)) {
+                    birthYear = parseInt(dobStr, 10);
+                } else {
+                    const parts = dobStr.match(/(\d{4})/);
+                    if (parts) birthYear = parseInt(parts[1], 10);
+                }
+                if (birthYear > 1900 && birthYear <= new Date().getFullYear()) {
+                    demographics.age = String(new Date().getFullYear() - birthYear);
+                }
+            }
+
+            debugLog('[API-Bridge] Patient demographics:', demographics);
             sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics }, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchPatientDemographics error:', e);
@@ -533,7 +554,7 @@
 
             const now = Date.now();
             if (vitalsCache[rowId] && (now - vitalsCache[rowId].timestamp < 10000)) {
-                console.log(`[API-Bridge] Serving vitals for ${rowId} from cache.`);
+                debugLog(`[API-Bridge] Serving vitals for ${rowId} from cache.`);
                 sendResult('FETCH_VITALS_RESULT', rowId, { vitals: vitalsCache[rowId].data }, requestId);
                 return;
             }
@@ -965,7 +986,7 @@
 
             const tryNext = () => {
                 if (currentIndex >= candidates.length) {
-                    console.log('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
+                    debugLog('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
                     sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '' }, requestId);
                     return;
                 }
@@ -1037,7 +1058,7 @@
                                     });
 
                                     if (allDiagnoses.length > 0) {
-                                        console.log('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                                        debugLog('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
                                         sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
                                             diagnoses: allDiagnoses,
                                             patientId: benhnhanId,
@@ -1048,12 +1069,12 @@
                                     } else if (detailIds.length > 0) {
                                         // Mode 2: Gọi NT.024.2.DETAIL cho các tờ điều trị vừa tìm được
                                         detailIds = [...new Set(detailIds)].slice(0, 5); // Lấy tối đa 5 tờ gần nhất tránh đơ UI
-                                        console.log('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
+                                        debugLog('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
 
                                         for (let dId of detailIds) {
                                             try {
                                                 const resObj = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(dId), 0);
-                                                console.log('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
+                                                debugLog('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
 
                                                 let records = [];
                                                 if (typeof resObj === 'string' && resObj.trim() !== '') records = JSON.parse(resObj);
@@ -1119,7 +1140,7 @@
                                         }
 
                                         if (allDiagnoses.length > 0) {
-                                            console.log('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                                            debugLog('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
                                             sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
                                                 diagnoses: allDiagnoses,
                                                 patientId: benhnhanId,
@@ -1309,7 +1330,7 @@
                 '' // Thử case [0] rỗng để HIS tự resolve qua [3]=hsbaId
             ].filter(v => v !== undefined && v !== null);
             candidates = Array.from(new Set(candidates));
-            console.log(`[Aladinn Drug] Discovered ${candidates.length} candidate keys for fetching drug sheets:`, candidates);
+            debugLog(`[Aladinn Drug] Discovered ${candidates.length} candidate keys for fetching drug sheets:`, candidates);
 
             // --- Step 2: Fetch list of drug sheets — gộp TẤT CẢ candidates (nhiều khoa) ---
             let sheets = [];
@@ -1333,7 +1354,7 @@
                         const data = await res.json();
                         const rows = data.rows || [];
                         if (rows.length > 0) {
-                            console.log(`[Aladinn Drug] Step 1: Found ${rows.length} drug sheets via candidate ${testId} (dayFilter: ${dayFilter})`);
+                            debugLog(`[Aladinn Drug] Step 1: Found ${rows.length} drug sheets via candidate ${testId} (dayFilter: ${dayFilter})`);
                             for (const row of rows) {
                                 const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
                                 if (sid && !seenSheetIds.has(sid)) {
@@ -1364,7 +1385,7 @@
                         const data2 = await res2.json();
                         const rows2 = data2.rows || [];
                         if (rows2.length > 0) {
-                            console.log(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=''): Found ${rows2.length} sheets`);
+                            debugLog(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=''): Found ${rows2.length} sheets`);
                             for (const row of rows2) {
                                 const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
                                 if (sid && !seenSheetIds.has(sid)) {
@@ -1377,10 +1398,10 @@
                 } catch (_e) { /* silent */ }
             }
 
-            console.log(`[Aladinn Drug] Step 1 total: ${sheets.length} unique sheets from ${candidates.length} candidates`);
+            debugLog(`[Aladinn Drug] Step 1 total: ${sheets.length} unique sheets from ${candidates.length} candidates`);
             if (sheets.length > 0) {
                 const dates = sheets.map(s => s.NGAYMAUBENHPHAM_SUDUNG || s.NGAYSD || s.NGAYSUDUNG || s.NGAYMAUBENHPHAM || '').filter(Boolean);
-                console.log('[Aladinn Drug] Sheet dates:', dates);
+                debugLog('[Aladinn Drug] Sheet dates:', dates);
             }
 
             if (sheets.length === 0) {
@@ -1512,7 +1533,7 @@
             }
             allDrugs = uniqueDrugs;
 
-            console.log(`[Aladinn Drug] Step 2: Processed ${sheets.length} sheets`);
+            debugLog(`[Aladinn Drug] Step 2: Processed ${sheets.length} sheets`);
             sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
 
         } catch (_e) {
@@ -1663,7 +1684,7 @@
                         if (hidCDC) result.chanDoanBanDau = hidCDC + (cdcLabel ? '-' + cdcLabel : '');
                     }
 
-                    console.log('[API-Bridge] fetchClinicalSummary: DOM fallback used (outpatient mode)');
+                    debugLog('[API-Bridge] fetchClinicalSummary: DOM fallback used (outpatient mode)');
                 } catch (e) {
                     console.warn('[API-Bridge] fetchClinicalSummary DOM fallback error:', e);
                 }
@@ -1864,7 +1885,7 @@
                                                     result.chanDoanKemTheoTDT = allDiagStrings.slice(1).join('; ');
                                                 }
                                             }
-                                            console.log('[API-Bridge] TĐT DETAIL universal scan:', allDiagStrings);
+                                            debugLog('[API-Bridge] TĐT DETAIL universal scan:', allDiagStrings);
                                         }
 
                                         // Làm sạch và gộp chẩn đoán (theo yêu cầu user: "gộp chẩn đoán và chẩn đoán kèm theo thành 1 dòng, bỏ từ 'chẩn đoán kèm theo'")
@@ -1884,7 +1905,7 @@
                                         result.chanDoanMoiNhat = combined;
                                         result.chanDoanKemTheoTDT = ''; // Đã gộp nên xoá kèm theo để tránh hiển thị trùng
 
-                                        console.log('[API-Bridge] TĐT Summary extract:', result.chanDoanMoiNhat);
+                                        debugLog('[API-Bridge] TĐT Summary extract:', result.chanDoanMoiNhat);
                                     } catch (detErr) {
                                         console.warn('[API-Bridge] NT.024.2.DETAIL failed:', detErr);
                                     }
@@ -2363,7 +2384,7 @@
                 }
             }
 
-            console.log(`[API-Bridge] Found ${uniqueSheets.length} XN sheets, ${uniqueCdha.length} CĐHA sheets`);
+            debugLog(`[API-Bridge] Found ${uniqueSheets.length} XN sheets, ${uniqueCdha.length} CĐHA sheets`);
 
             if (uniqueSheets.length === 0 && uniqueCdha.length === 0) {
                 sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [] }, requestId);
@@ -2646,7 +2667,7 @@
                 }
             }
 
-            console.log(`[API-Bridge] BHYT Times: ${sheetRows.length} sheets → ${allResults.length} glucose tests for ${patientName}`);
+            debugLog(`[API-Bridge] BHYT Times: ${sheetRows.length} sheets → ${allResults.length} glucose tests for ${patientName}`);
             sendResult('FETCH_BHYT_TIMES_RESULT', rowId, { sheets: allResults, patientName, sheetCount: sheetRows.length }, requestId);
 
         } catch (err) {

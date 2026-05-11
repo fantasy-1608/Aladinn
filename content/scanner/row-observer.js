@@ -126,8 +126,43 @@ const VNPTRowObserver = (function () {
         startObserving();
     }
 
+    /**
+     * Đề xuất 1: Pre-fetch demographics khi chọn BN (ngầm, không mở UI)
+     * Lưu vào VNPTStore để history.js, emergency.js và các module khác dùng ngay
+     * Auto-hook: subscribe vào selectedPatientId → fetch ngầm demographics
+     */
+    let _lastDemoFetchId = '';
+    function prefetchDemographics(pid) {
+        if (!pid || pid === _lastDemoFetchId) return;
+        _lastDemoFetchId = pid;
+
+        if (!window.VNPTMessaging) return;
+        window.VNPTMessaging.sendRequest('REQ_FETCH_PATIENT_DEMOGRAPHICS', { rowId: pid }, 5000)
+            .then((res) => {
+                if (res && res.demographics) {
+                    window.VNPTStore?.set('patientDemographics', res.demographics);
+                }
+            })
+            .catch(() => { /* silent — DOM fallback vẫn hoạt động */ });
+    }
+
+    // Auto-hook: khi selectedPatientId thay đổi → prefetch ngầm
+    function autoHookDemographics() {
+        if (window.VNPTStore) {
+            window.VNPTStore.subscribe('selectedPatientId', (pid) => {
+                if (pid) prefetchDemographics(pid);
+            });
+        } else {
+            // Retry sau 2s nếu Store chưa sẵn sàng
+            setTimeout(autoHookDemographics, 2000);
+        }
+    }
+    // Khởi chạy auto-hook ngay khi module load
+    setTimeout(autoHookDemographics, 500);
+
     return {
-        init
+        init,
+        prefetchDemographics
     };
 })();
 
