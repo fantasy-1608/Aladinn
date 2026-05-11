@@ -269,7 +269,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             const listener = (event) => {
                                 if (event.data && event.data.type === 'FETCH_TREATMENT_RESULT' && event.data.requestId === requestId) {
                                     window.removeEventListener('message', listener);
-                                    resolve(event.data.treatmentList || []);
+                                    resolve(event.data || {});
                                 }
                             };
                             window.addEventListener('message', listener);
@@ -283,7 +283,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             
                             setTimeout(() => {
                                 window.removeEventListener('message', listener);
-                                resolve([]);
+                                resolve({});
                             }, 10000);
                         });
                     };
@@ -316,7 +316,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         });
                     };
 
-                    const [result, drugsResult, historyData, treatmentList, clinicalSummary] = await Promise.all([
+                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary] = await Promise.all([
                         fetchLabsFromBridge(pid),
                         fetchDrugsFromBridge(pid),
                         fetchHistoryFromBridge(pid),
@@ -326,6 +326,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
                     const drugs = drugsResult?.drugList || [];
+                    const treatmentList = treatmentResult?.treatmentList || [];
+                    const yLenhList = treatmentResult?.yLenhList || [];
                     
                     const storeName = window.VNPTStore?.get('selectedPatientName');
                     const patientName = storeName || result?.patientName || 'Bệnh Nhân';
@@ -388,7 +390,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         diagHistory,
                         clinicalData: {
                             history: historyData || {},
-                            treatments: treatmentList || []
+                            treatments: treatmentList || [],
+                            yLenhList,
+                            admissionTimes: clinicalSummary?.admissionTimes || {},
+                            treatmentContext: treatmentResult?.treatmentContext || clinicalSummary?.treatmentContext || {}
                         }
                     };
 
@@ -1483,6 +1488,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         // --- Combined Timeline (Diễn tiến & Thuốc) ---
         const treatments = patientInfo?.clinicalData?.treatments || [];
+        const yLenhList = patientInfo?.clinicalData?.yLenhList || treatments.filter(t => t.SOURCE_API === 'NGT02K015.YLENH' || t.SOURCE_API === 'NT.024.2.DETAIL');
+        const admissionTimes = patientInfo?.clinicalData?.admissionTimes || {};
+        const isOtherOrder = (item) => item?.SOURCE_API === 'NGT02K015.YLENH' || item?.SOURCE_API === 'NT.024.2.DETAIL';
         const treatmentsByDate = {};
         for (const tr of treatments) {
             const rawDate = tr.NGAYMAUBENHPHAM || '';
@@ -1540,6 +1548,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const isFirst = di === allDates.length - 1;
                 const dayDrugs = drugsByDate[dt] || [];
                 const dayTreatments = treatmentsByDate[dt] || [];
+                const dayOrders = dayTreatments.filter(t => isOtherOrder(t) && (t.YLENH || t.GHICHU));
+                const dayProgressTreatments = dayTreatments.filter(t => !isOtherOrder(t));
 
                 // Drug comparison
                 let prevDrugs = [];
@@ -1561,7 +1571,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const parts = dt.split('/');
                 const dateObj = parts.length === 3 ? new Date(+parts[2], +parts[1]-1, +parts[0]) : null;
                 const dowStr = dateObj ? dowMap[dateObj.getDay()] : '';
-                const doctorName = dayTreatments[0]?.NGUOITAO || '';
+                const doctorName = dayProgressTreatments[0]?.NGUOITAO || dayOrders[0]?.NGUOITAO || '';
                 const numColor = isFirst ? '#f59e0b' : isToday ? '#34d399' : '#d4a25a';
                 const stripBg = isFirst ? 'rgba(245,158,11,0.06)' : isToday ? 'rgba(16,185,129,0.07)' : 'rgba(212,162,90,0.05)';
 
@@ -1569,6 +1579,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const hasProgress = dayTreatments.some(t => t.DIENBIEN?.trim());
                 let pills = '';
                 if (hasProgress) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(96,165,250,0.12);color:#7ab8f5;border:1px solid rgba(96,165,250,0.2);">● Diễn tiến</span>';
+                if (dayOrders.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(16,185,129,0.1);color:#34d399;border:1px solid rgba(16,185,129,0.2);">▣ ${dayOrders.length} y lệnh</span>`;
                 if (diagChanged && !isFirst) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(167,139,250,0.1);color:#b79bfa;border:1px solid rgba(167,139,250,0.2);">↕ CĐ thay đổi</span>';
                 if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">📋 ${currDiags.size} CĐ</span>`;
                 if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(212,162,90,0.1);color:#c49a52;border:1px solid rgba(212,162,90,0.2);">💊 ${dayDrugs.length} thuốc</span>`;
@@ -1591,7 +1602,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                 // ── LEFT: Progress + Ghi chú + Diagnosis ──
                 combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04);">';
-                const progNotes = dayTreatments.filter(t => t.DIENBIEN?.trim());
+                const progNotes = dayProgressTreatments.filter(t => t.DIENBIEN?.trim());
                 if (progNotes.length > 0) {
                     for (const tr of progNotes) {
                         const timePart = (tr.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
@@ -1601,7 +1612,21 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 } else {
                     combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có ghi chú diễn tiến.</div>';
                 }
-                const ghichus = dayTreatments.filter(t => t.GHICHU?.trim());
+                if (dayOrders.length > 0) {
+                    combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.035);border-radius:0 5px 5px 0;">
+                      <div style="font-size:11.4px;color:#34d399;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
+                    for (const order of dayOrders.slice(0, 8)) {
+                        const orderTime = (order.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
+                        const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#6ee7b7;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.16);padding:1px 5px;border-radius:4px;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
+                        const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#8fbfae;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
+                        combinedTimelineHtml += `<div style="font-size:13.8px;color:#d8f3e7;line-height:1.55;margin-bottom:4px;">${orderTime ? `<span style="color:#34d399;font-weight:700;margin-right:5px;">${orderTime}</span>` : ''}${group}${escapeHtml(order.YLENH)}${note}</div>`;
+                    }
+                    if (dayOrders.length > 8) {
+                        combinedTimelineHtml += `<div style="font-size:12px;color:#6ee7b7;margin-top:3px;">+${dayOrders.length - 8} y lệnh khác</div>`;
+                    }
+                    combinedTimelineHtml += '</div>';
+                }
+                const ghichus = dayProgressTreatments.filter(t => t.GHICHU?.trim());
                 if (ghichus.length > 0) {
                     combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
                       <div style="font-size:11.4px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
@@ -1673,9 +1698,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
                     const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
                     const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
+                    const ksDays = drug.SOLAN_SD_KHANGSINH ? parseInt(drug.SOLAN_SD_KHANGSINH, 10) : 0;
+                    const ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(212,162,90,.18);color:#d4a25a;border:1px solid rgba(212,162,90,.3);margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
                     combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
                       <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
-                      <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${fullName}${newBadge}</span>
+                      <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#d4a25a;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
                       ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
                     </div>`;
                 }
@@ -1685,6 +1712,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         } else {
             combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#7a6e5e;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
         }
+
+        const sourcePills = [
+            { label: `${treatments.length} diễn tiến/y lệnh`, color: '#7ab8f5' },
+            { label: `${yLenhList.length} y lệnh khác`, color: '#34d399' },
+            { label: `${drugList.length} thuốc`, color: '#d4a25a' },
+            { label: `${labs.length} XN`, color: '#f472b6' },
+            { label: `${imgList.length} CĐHA`, color: '#60a5fa' }
+        ].map(item => `<span style="font-size:12.6px;font-weight:700;color:${item.color};background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:999px;padding:3px 8px;">${item.label}</span>`).join('');
+        const clinicalGuideHtml = `<div style="margin-bottom:10px;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${sourcePills}</div>`;
 
         // --- Khám vào viện (admission exam only) ---
         let khamVaoVienHtml = '';
@@ -1716,7 +1752,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
 
         // --- Lâm sàng & Thuốc: diễn tiến + thuốc (combined timeline) ---
-        const lamsangHtml = combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>';
+        const lamsangHtml = clinicalGuideHtml + (combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>');
 
         // --- Modal ---
         const modal = document.createElement('div');
@@ -1724,7 +1760,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         modal.className = 'vnpt-glass-overlay';
         modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147480000;';
 
-        const defaultActiveTab = 0;
+        const defaultActiveTab = 1;
 
         // Giới tính từ nhiều nguồn (DOM + patientInfo)
         let headerGender = '';
@@ -1927,12 +1963,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             </div>
                             <div>
                                 <div style="color:#D4A853;font-weight:700;font-size:16.8px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
-                                <div style="color:#6b7280;font-size:14.4px;line-height:1.5;">Nhấn <strong style="color:#c8a455;">Phân tích</strong> để AI tóm tắt hồ sơ bệnh nhân</div>
+                                <div style="color:#6b7280;font-size:14.4px;line-height:1.5;">Chưa cấu hình API. Copy prompt để dán sang ChatGPT/Gemini khác</div>
                             </div>
-                            <button id="btn-ai-start" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:15.6px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                                Phân tích ngay
-                            </button>
+                            <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                <button id="btn-ai-copy-prompt" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:15.6px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                                    Copy prompt
+                                </button>
+                                <button id="btn-ai-start" style="display:none;align-items:center;gap:7px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.25);color:#c8a455;border-radius:9px;padding:9px 18px;font-size:15.6px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;transition:all 0.2s;position:relative;overflow:hidden;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                    Phân tích ngay
+                                </button>
+                            </div>
                         </div>
                         <div id="ai-tab-loading" style="display:none; padding:20px 10px;">
                             <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
@@ -2038,7 +2080,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         tabLamsang?.addEventListener('click', () => activateTab(1));
         tabXn?.addEventListener('click', () => activateTab(2));
         tabCdha?.addEventListener('click', () => activateTab(3));
-        tabAI?.addEventListener('click', () => { activateTab(4); triggerAIIfNeeded(); });
+        tabAI?.addEventListener('click', () => { activateTab(4); handleAITabOpen(); });
 
         activateTab(defaultActiveTab);
 
@@ -2089,7 +2131,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const aiLinksWrap   = modal.querySelector('#ai-links-wrap');
         const btnStart      = modal.querySelector('#btn-ai-start');
         const btnRerun      = modal.querySelector('#btn-ai-rerun');
-
+        const btnCopyPrompt = modal.querySelector('#btn-ai-copy-prompt');
         let aiResultLoaded = false;
 
         function showAIState(state) {
@@ -2100,24 +2142,55 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (aiError)       aiError.style.display       = state === 'error'       ? 'block' : 'none';
         }
 
-        async function triggerAIIfNeeded() {
-            if (aiResultLoaded) return; // cached
-            await runAIAnalysis(false);
+        function setCopyPromptMode(enabled) {
+            if (btnCopyPrompt) btnCopyPrompt.style.display = enabled ? 'flex' : 'none';
+            if (btnStart) btnStart.style.display = enabled ? 'none' : 'flex';
         }
 
-        async function runAIAnalysis(forceRefresh = false) {
-            const unlocked = await window.HIS.ApiKeyService.ensureUnlocked();
-            if (!unlocked) {
-                showAIState('error');
-                if (aiError) {
-                    aiError.textContent = '⚠️ Chưa cấu hình API Key hoặc sai PIN. Vui lòng vào Cài đặt Aladinn để thiết lập.';
-                }
+        async function handleAITabOpen() {
+            if (aiResultLoaded) return;
+            let hasConfiguredApi = false;
+            try {
+                hasConfiguredApi = await window.HIS.ApiKeyService.hasKey();
+            } catch (_) { /* fallback to copy prompt */ }
+            if (hasConfiguredApi) {
+                setCopyPromptMode(false);
+                await runAIAnalysis(false);
                 return;
             }
+            setCopyPromptMode(true);
+            showAIState('placeholder');
+        }
 
-            showAIState('loading');
-            if (btnStart) btnStart.disabled = true;
-            if (btnRerun) btnRerun.disabled = true;
+        async function copyPromptToClipboard(prompt) {
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(prompt);
+                } else {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = prompt;
+                    textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    document.execCommand('copy');
+                    textarea.remove();
+                }
+                window.VNPTRealtime?.showToast?.('✅ Đã copy prompt. Dán sang ChatGPT/Gemini để hỏi tiếp.', 'success');
+            } catch (_e) {
+                window.VNPTRealtime?.showToast?.('❌ Không copy được prompt. Vui lòng thử lại.', 'warning');
+                throw new Error('Không copy được prompt.', { cause: _e });
+            }
+        }
+
+        async function runAIAnalysis(forceRefresh = false, copyOnly = false) {
+            if (copyOnly) {
+                if (btnCopyPrompt) btnCopyPrompt.disabled = true;
+            } else {
+                showAIState('loading');
+                if (btnStart) btnStart.disabled = true;
+                if (btnRerun) btnRerun.disabled = true;
+            }
 
             try {
                 // ── Ẩn danh hoá ─────────────────────────────────────────
@@ -2258,6 +2331,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
                 const contextProgress = progressLines.join('\n');
 
+                const yLenhLines = (yLenhList || []).slice(0, 12).map(order => {
+                    const date = order.NGAYMAUBENHPHAM || '';
+                    const group = order.NHOMYLENH ? `[${order.NHOMYLENH}] ` : '';
+                    const text = order.YLENH || order.GHICHU || '';
+                    if (!text) return null;
+                    return `- ${date ? date + ': ' : ''}${group}${String(text).slice(0, 180)}`;
+                }).filter(Boolean);
+                const contextOtherOrders = yLenhLines.join('\n');
+
+                const admissionTimelineParts = [];
+                if (admissionTimes.thoiGianVaoVien) admissionTimelineParts.push(`Vào viện: ${admissionTimes.thoiGianVaoVien}`);
+                if (admissionTimes.ngayVaoKhoa) admissionTimelineParts.push(`Vào khoa: ${admissionTimes.ngayVaoKhoa}`);
+                if (admissionTimes.thoiGianRaVien) admissionTimelineParts.push(`Ra viện: ${admissionTimes.thoiGianRaVien}`);
+                if (admissionTimes.soNgayDieuTri) admissionTimelineParts.push(`Số ngày điều trị: ${admissionTimes.soNgayDieuTri}`);
+                const contextAdmissionTimeline = admissionTimelineParts.join('; ');
+
                 // 7. CĐHA (mô tả kết quả)
                 const imagingLines = (imgList || []).slice(0, 5).map(img => {
                     const name = img.name || img.TENLOAI || img.TENKQ || img.TENXN || 'CĐHA';
@@ -2287,6 +2376,8 @@ CHẨN ĐOÁN: {{diagnosis}}
 
 {{recentProgress}}
 
+{{otherOrders}}
+
 XÉT NGHIỆM ({{labDate}}):
 {{fullLabs}}
 
@@ -2306,9 +2397,10 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
 
                 const admSection      = contextAdmission ? `KHÁM VÀO VIỆN:\n${contextAdmission}` : '';
                 const progressSection = contextProgress  ? `DIỄN TIẾN GẦN ĐÂY:\n${contextProgress}` : '';
+                const ordersSection   = contextOtherOrders ? `Y LỆNH KHÁC / CHẾ ĐỘ ĂN / CHĂM SÓC:\n${contextOtherOrders}` : '';
                 const imagingSection  = contextImaging   ? `CĐHA:\n${contextImaging}` : '';
                 const abnSection      = contextAbn       ? `XN BẤT THƯỜNG: ${contextAbn}` : '';
-                const treatmentDayStr = allDates.length > 0 ? `${allDates.length} ngày (từ ${allDates[allDates.length - 1]} đến ${allDates[0]})` : 'Chưa rõ';
+                const treatmentDayStr = contextAdmissionTimeline || (allDates.length > 0 ? `${allDates.length} ngày (từ ${allDates[allDates.length - 1]} đến ${allDates[0]})` : 'Chưa rõ');
 
                 const prompt = promptTemplate
                     .replace('{{patientRef}}',    patientRef)
@@ -2318,6 +2410,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     .replace('{{admissionExam}}', admSection)
                     .replace('{{vitalSigns}}',    contextVitals)
                     .replace('{{recentProgress}}',progressSection)
+                    .replace('{{otherOrders}}',   ordersSection)
                     .replace('{{labDate}}',       latestLabDate || 'không rõ')
                     .replace('{{fullLabs}}',      contextFullLabs || abnSection || 'Không có dữ liệu XN')
                     .replace('{{imaging}}',       imagingSection)
@@ -2326,6 +2419,19 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                     // backward compat với template cũ
                     .replace('{{abnormal}}',      abnSection)
                     .replace('{{keylabs}}',       '');
+
+                if (copyOnly) {
+                    await copyPromptToClipboard(prompt);
+                    return;
+                }
+
+                const unlocked = await window.HIS.ApiKeyService.ensureUnlocked();
+                if (!unlocked) {
+                    setCopyPromptMode(true);
+                    showAIState('placeholder');
+                    window.VNPTRealtime?.showToast?.('⚠️ Chưa mở khóa AI. Có thể copy prompt để dùng AI ngoài.', 'warning');
+                    return;
+                }
 
                 const model = await window.HIS.getAiModel();
                 const promptHash = await sha256Short(prompt);
@@ -2483,11 +2589,13 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
             } finally {
                 if (btnStart)  btnStart.disabled  = false;
                 if (btnRerun)  btnRerun.disabled  = false;
+                if (btnCopyPrompt) btnCopyPrompt.disabled = false;
             }
         }
 
         btnStart?.addEventListener('click', () => runAIAnalysis(false));
         btnRerun?.addEventListener('click', () => { aiResultLoaded = false; runAIAnalysis(true); });
+        btnCopyPrompt?.addEventListener('click', () => runAIAnalysis(false, true));
     }
 
 })();

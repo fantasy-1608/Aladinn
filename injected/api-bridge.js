@@ -90,6 +90,224 @@
         return EMPTY;
     }
 
+    function _cleanHisText(value) {
+        return String(value || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function _firstValue(row, keys) {
+        if (!row) return '';
+        for (const key of keys) {
+            const value = row[key];
+            if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+        }
+        return '';
+    }
+
+    function _parseHisRows(payload) {
+        if (!payload) return [];
+        let data = payload;
+        if (typeof payload === 'string' && payload.trim() !== '') {
+            try { data = JSON.parse(payload); } catch (_e) { return []; }
+        }
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data.rows)) return data.rows;
+        if (data.data && Array.isArray(data.data)) return data.data;
+        return typeof data === 'object' ? [data] : [];
+    }
+
+    function _fetchHisPagingRows(queryCode, options, rows = 500, sort = '') {
+        try {
+            const uuid = _jsonrpc?.AjaxJson?.uuid;
+            if (!uuid) return [];
+            const params = {
+                func: 'ajaxExecuteQueryPaging',
+                uuid,
+                params: [queryCode],
+                options
+            };
+            const sortPart = sort || 'sidx=&sord=desc';
+            const xhr = new XMLHttpRequest();
+            const url = `/vnpthis/RestService?_search=false&rows=${rows}&page=1&${sortPart}&postData=${encodeURIComponent(JSON.stringify(params))}`;
+            xhr.open('GET', url, false);
+            xhr.send();
+            if (xhr.status !== 200) return [];
+            return _parseHisRows(xhr.responseText);
+        } catch (_e) {
+            return [];
+        }
+    }
+
+    function _readActiveGridCell(rowId, fieldName) {
+        if (!_$ || !fieldName) return '';
+        try {
+            const { grid, effectiveRowId } = resolveActiveGrid(rowId);
+            if (!grid || !effectiveRowId) return '';
+            const value = grid.jqGrid('getCell', effectiveRowId, fieldName);
+            return value !== undefined && value !== null ? String(value).trim() : '';
+        } catch (_e) {
+            return '';
+        }
+    }
+
+    function _contextValue(rowData, rowId, keys) {
+        const fromRow = _firstValue(rowData, keys);
+        if (fromRow) return fromRow;
+        for (const key of keys) {
+            const fromCell = _readActiveGridCell(rowId, key);
+            if (fromCell) return fromCell;
+        }
+        return '';
+    }
+
+    function _buildContextCandidates(rowData, rowId) {
+        return [
+            _contextValue(rowData, rowId, ['KHAMBENHID']),
+            _contextValue(rowData, rowId, ['MADIEUTRI', 'KHAMBENHDTKHID']),
+            _contextValue(rowData, rowId, ['HOSOBENHANID', 'HSBAID']),
+            _contextValue(rowData, rowId, ['TIEPNHANID']),
+            _contextValue(rowData, rowId, ['BENHNHANID']),
+            rowId
+        ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+    }
+
+    function fetchPatientContextRows(rowData, rowId) {
+        const candidates = Array.from(new Set(_buildContextCandidates(rowData, rowId)));
+        const benhnhanId = rowData.BENHNHANID || '';
+        const optionSets = [];
+        for (const candidate of candidates) {
+            optionSets.push([
+                { name: '[0]', value: String(candidate) },
+                { name: '[1]', value: String(benhnhanId) },
+                { name: '[2]', value: '' },
+                { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.HSBAID || candidate) }
+            ]);
+            optionSets.push([{ name: '[0]', value: String(candidate) }]);
+        }
+
+        for (const options of optionSets) {
+            const rows = _fetchHisPagingRows('NGT02K016.EV003', options, 50);
+            if (rows.length > 0) return rows;
+        }
+        return [];
+    }
+
+    function resolveTreatmentContext(rowData, rowId) {
+        const rows = fetchPatientContextRows(rowData, rowId);
+        const first = rows[0] || {};
+        return {
+            sourceRows: rows.length,
+            KHAMBENHID: _firstValue(first, ['KHAMBENHID', 'KHAM_BENH_ID', 'MADIEUTRI', 'MA_DIEU_TRI']) || _contextValue(rowData, rowId, ['KHAMBENHID', 'MADIEUTRI', 'KHAMBENHDTKHID']),
+            HOSOBENHANID: _firstValue(first, ['HOSOBENHANID', 'HSBAID', 'HO_SO_BENH_AN_ID']) || _contextValue(rowData, rowId, ['HOSOBENHANID', 'HSBAID']),
+            BENHNHANID: _firstValue(first, ['BENHNHANID', 'MA_BENH_NHAN_ID']) || _contextValue(rowData, rowId, ['BENHNHANID']),
+            TIEPNHANID: _firstValue(first, ['TIEPNHANID', 'TIEP_NHAN_ID']) || _contextValue(rowData, rowId, ['TIEPNHANID'])
+        };
+    }
+
+    function fetchAdmissionTimes(rowData, rowId) {
+        const ctx = resolveTreatmentContext(rowData, rowId);
+        const candidates = Array.from(new Set([
+            ctx.KHAMBENHID,
+            ctx.HOSOBENHANID,
+            ctx.TIEPNHANID,
+            rowData.KHAMBENHID,
+            rowData.HOSOBENHANID,
+            rowData.TIEPNHANID,
+            rowId
+        ].filter(v => v !== undefined && v !== null && String(v).trim() !== '')));
+        const optionSets = [];
+        for (const candidate of candidates) {
+            optionSets.push([
+                { name: '[0]', value: String(candidate) },
+                { name: '[1]', value: String(ctx.BENHNHANID || rowData.BENHNHANID || '') },
+                { name: '[2]', value: '' },
+                { name: '[3]', value: String(ctx.HOSOBENHANID || candidate) }
+            ]);
+            optionSets.push([{ name: '[0]', value: String(candidate) }]);
+        }
+
+        for (const options of optionSets) {
+            const rows = _fetchHisPagingRows('NTU02D021.GET_TGVV', options, 50);
+            if (rows.length > 0) {
+                const first = rows[0] || {};
+                return {
+                    sourceRows: rows.length,
+                    thoiGianVaoVien: _firstValue(first, ['THOIGIANVAOVIEN', 'TGVV', 'NGAYVAOVIEN', 'NGAY_VAO_VIEN', 'NGAYTIEPNHAN']),
+                    thoiGianRaVien: _firstValue(first, ['THOIGIANRAVIEN', 'TGRV', 'NGAYRAVIEN', 'NGAY_RA_VIEN']),
+                    ngayVaoKhoa: _firstValue(first, ['NGAYVAOKHOA', 'NGAY_VAO_KHOA']),
+                    soNgayDieuTri: _firstValue(first, ['SONGAYDIEUTRI', 'SO_NGAY_DIEU_TRI', 'SNDT'])
+                };
+            }
+        }
+        return {
+            sourceRows: 0,
+            thoiGianVaoVien: _contextValue(rowData, rowId, ['THOIGIANVAOVIEN', 'NGAYTIEPNHAN']),
+            thoiGianRaVien: _contextValue(rowData, rowId, ['THOIGIANRAVIEN', 'NGAYRAVIEN']),
+            ngayVaoKhoa: _contextValue(rowData, rowId, ['NGAYVAOKHOA', 'NGAYVAOKHOA']),
+            soNgayDieuTri: _contextValue(rowData, rowId, ['SONGAYDIEUTRI', 'SNDT'])
+        };
+    }
+
+    function fetchNonDrugOrders(rowData, rowId) {
+        const ctx = resolveTreatmentContext(rowData, rowId);
+        const candidates = Array.from(new Set([
+            ctx.KHAMBENHID,
+            rowData.KHAMBENHID,
+            rowData.MADIEUTRI,
+            ctx.HOSOBENHANID,
+            rowData.HOSOBENHANID,
+            rowData.TIEPNHANID,
+            rowId
+        ].filter(v => v !== undefined && v !== null && String(v).trim() !== '')));
+        const optionSets = [];
+        for (const candidate of candidates) {
+            optionSets.push([
+                { name: '[0]', value: String(candidate) },
+                { name: '[1]', value: String(ctx.BENHNHANID || rowData.BENHNHANID || '') },
+                { name: '[2]', value: '' },
+                { name: '[3]', value: String(ctx.HOSOBENHANID || rowData.HOSOBENHANID || candidate) }
+            ]);
+            optionSets.push([{ name: '[0]', value: String(candidate) }]);
+        }
+
+        let rows = [];
+        for (const options of optionSets) {
+            rows = _fetchHisPagingRows('NGT02K015.YLENH', options, 500, 'sidx=NGAY_Y_LENH&sord=desc');
+            if (rows.length > 0) break;
+        }
+
+        const orders = [];
+        const seen = new Set();
+        for (const row of rows) {
+            const text = _cleanHisText(_firstValue(row, [
+                'YLENH', 'TENYLENH', 'NOIDUNGYLENH', 'NOIDUNG', 'TEN', 'TENDICHVU',
+                'CHE_DO_AN', 'CHEDOAN', 'CHEDO_AN', 'CHE_DO_CHAM_SOC', 'CHEDOCHAMSOC'
+            ]));
+            const group = _cleanHisText(_firstValue(row, [
+                'LOAIYLENH', 'NHOMYLENH', 'TENNHOM', 'NHOM', 'LOAI', 'TENLOAI'
+            ]));
+            const note = _cleanHisText(_firstValue(row, ['GHICHU', 'GHI_CHU', 'CHITIET', 'MOTA']));
+            const date = _firstValue(row, [
+                'NGAY_Y_LENH', 'NGAYYLENH', 'NGAYMAUBENHPHAM', 'NGAYTAO', 'NGAY', 'THOIGIAN'
+            ]);
+            if (!text && !note) continue;
+            const key = `${date}|${group}|${text}|${note}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            orders.push({
+                NGAYMAUBENHPHAM: String(date || ''),
+                YLENH: text || note,
+                NHOMYLENH: group,
+                GHICHU: note,
+                NGUOITAO: _firstValue(row, ['NGUOITAO', 'BACSI', 'TENBACSI', 'NGUOI_TAO']) || '',
+                SOURCE_API: 'NGT02K015.YLENH'
+            });
+        }
+        return orders;
+    }
+
     window.addEventListener('message', function (event) {
         // SECURITY: Allow local origin or any origin on the same domain if needed
         if (event.origin !== window.location.origin) return;
@@ -363,6 +581,8 @@
     }
 
     function fetchTreatment(rowId, requestId) {
+        let yLenhList = [];
+        let contextInfo = {};
         try {
             if (!_$) {
                 sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: [] }, requestId);
@@ -370,20 +590,29 @@
             }
             const { rowData } = resolveActiveGrid(rowId);
             const benhnhanId = rowData.BENHNHANID || '';
+            contextInfo = resolveTreatmentContext(rowData, rowId);
+            yLenhList = fetchNonDrugOrders(rowData, rowId);
 
             let candidates = [
+                contextInfo.HOSOBENHANID,
+                contextInfo.TIEPNHANID,
+                contextInfo.KHAMBENHID,
                 rowData.HOSOBENHANID,
                 rowData.TIEPNHANID,
                 rowData.KHAMBENHID,
                 rowData.MADIEUTRI
-            ].filter(v => v && v.trim() !== '');
+            ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
 
             candidates = Array.from(new Set(candidates));
 
             let currentIndex = 0;
             const tryNext = () => {
                 if (currentIndex >= candidates.length) {
-                    sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: [] }, requestId);
+                    sendResult('FETCH_TREATMENT_RESULT', rowId, {
+                        treatmentList: yLenhList,
+                        yLenhList,
+                        treatmentContext: contextInfo
+                    }, requestId);
                     return;
                 }
 
@@ -411,6 +640,8 @@
                                 const data = JSON.parse(xhr.responseText);
                                 const rows = data.rows || [];
                                 if (rows.length > 0) {
+                                    const detailOrders = [];
+                                    const seenDetailOrders = new Set();
                                     const treatments = rows.map(r => {
                                         const t = {
                                             DIENBIEN: r.DIENBIENBENH || r.NOIDUNG || '',
@@ -441,9 +672,8 @@
                                         return t;
                                     });
 
-                                    // Step 2: Fetch detail diagnosis from NT.024.2.DETAIL for each sheet
-                                    // that still has no CHANDOAN from the list-level data
-                                    const sheetsNeedDetail = treatments.filter(t => !t.CHANDOAN && t.MAUBENHPHAMID);
+                                    // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet.
+                                    const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
                                     // Limit to 10 to avoid performance issues
                                     const toFetch = sheetsNeedDetail.slice(0, 10);
                                     for (const sheet of toFetch) {
@@ -457,6 +687,32 @@
 
                                             for (const rec of records) {
                                                 if (!rec) continue;
+                                                const detailOrderText = _cleanHisText(_firstValue(rec, [
+                                                    'YLENH', 'Y_LENH', 'NOIDUNGYLENH', 'NOI_DUNG_Y_LENH',
+                                                    'CHIDINH', 'CHI_DINH', 'CHEDOAN', 'CHE_DO_AN',
+                                                    'CHAMSOC', 'CHAM_SOC', 'CHEDOCHAMSOC', 'CHE_DO_CHAM_SOC'
+                                                ]));
+                                                const detailOrderGroup = _cleanHisText(_firstValue(rec, [
+                                                    'LOAIYLENH', 'LOAI_Y_LENH', 'NHOMYLENH', 'NHOM_Y_LENH',
+                                                    'TENNHOM', 'TEN_NHOM', 'LOAI', 'TENLOAI'
+                                                ]));
+                                                const detailOrderNote = _cleanHisText(_firstValue(rec, [
+                                                    'GHICHUYLENH', 'GHI_CHU_Y_LENH', 'GHICHU', 'GHI_CHU'
+                                                ]));
+                                                if (detailOrderText || detailOrderNote) {
+                                                    const key = `${sheet.NGAYMAUBENHPHAM}|${detailOrderGroup}|${detailOrderText}|${detailOrderNote}`;
+                                                    if (!seenDetailOrders.has(key)) {
+                                                        seenDetailOrders.add(key);
+                                                        detailOrders.push({
+                                                            NGAYMAUBENHPHAM: sheet.NGAYMAUBENHPHAM || '',
+                                                            YLENH: detailOrderText || detailOrderNote,
+                                                            NHOMYLENH: detailOrderGroup || 'Phiếu điều trị',
+                                                            GHICHU: detailOrderNote,
+                                                            NGUOITAO: sheet.NGUOITAO || '',
+                                                            SOURCE_API: 'NT.024.2.DETAIL'
+                                                        });
+                                                    }
+                                                }
                                                 for (const k in rec) {
                                                     const uk = k.toUpperCase();
                                                     const val = rec[k];
@@ -480,7 +736,13 @@
                                         }
                                     }
 
-                                    sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: treatments }, requestId);
+                                    const allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+                                    const combinedTreatments = treatments.concat(allYLenh);
+                                    sendResult('FETCH_TREATMENT_RESULT', rowId, {
+                                        treatmentList: combinedTreatments,
+                                        yLenhList: allYLenh,
+                                        treatmentContext: contextInfo
+                                    }, requestId);
                                 } else {
                                     tryNext();
                                 }
@@ -496,7 +758,7 @@
             tryNext();
 
         } catch (_e) {
-            sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: [] }, requestId);
+            sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: yLenhList || [], yLenhList: yLenhList || [] }, requestId);
         }
     }
 
@@ -1121,6 +1383,21 @@
                             //     continue;
                             // }
 
+                            // Universal scan: tìm field liên quan đến kháng sinh
+                            let solanKS = '';
+                            let laKhangSinh = '';
+                            for (const k in item) {
+                                const uk = k.toUpperCase();
+                                const val = item[k];
+                                if (val === null || val === undefined || String(val).trim() === '') continue;
+                                if (uk.includes('SOLAN') && uk.includes('KHANGSINH') || uk === 'SOLAN_SD_KHANGSINH' || uk === 'SOLANSDKHANGSINH' || uk === 'SO_LAN_SD_KHANG_SINH' || uk === 'SONGAYSDKS') {
+                                    solanKS = String(val).trim();
+                                }
+                                if (uk === 'LAKHANGSINH' || uk === 'LA_KHANG_SINH' || uk === 'ISKHANGSINH' || uk === 'IS_KHANG_SINH' || uk === 'KHANGSINH' || uk === 'LOAIKHANGSINH') {
+                                    laKhangSinh = String(val).trim();
+                                }
+                            }
+
                             allDrugs.push({
                                 NGAYMAUBENHPHAM_SUDUNG: sheetDate,
                                 TENTHUOC: name,
@@ -1131,7 +1408,9 @@
                                 CACHDUNG: item.CACHDUNG || item.SOLO_CACHDUNG || item.SUDUNG || '',
                                 SOLUONG: item.SOLUONG || item.SOLUONG_SUDUNG || '',
                                 HOATCHAT: item.HOATCHAT || item.TENHOATCHAT || item.HOAT_CHAT || item.TEN_HOATCHAT || item.TENHC || item.TEN_HC || item.TENKHOAHOC || '',
-                                HAMLUONG: item.HAMLUONG || item.NONGDO || item.HAM_LUONG || item.NONG_DO || item.NDHL || ''
+                                HAMLUONG: item.HAMLUONG || item.NONGDO || item.HAM_LUONG || item.NONG_DO || item.NDHL || '',
+                                SOLAN_SD_KHANGSINH: solanKS,
+                                LAKHANGSINH: laKhangSinh
                             });
                         }
                 } catch (_e) { /* skip failed sheet */ }
@@ -1183,8 +1462,10 @@
                 return;
             }
 
-            const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
-            const benhnhanId = rowData.BENHNHANID || '';
+            const contextInfo = resolveTreatmentContext(rowData, rowId);
+            const admissionTimes = fetchAdmissionTimes(rowData, rowId);
+            const hsbaId = contextInfo.HOSOBENHANID || rowData.HOSOBENHANID || rowData.HSBAID || '';
+            const benhnhanId = contextInfo.BENHNHANID || rowData.BENHNHANID || '';
 
             const result = {
                 lyDoVaoVien: '',
@@ -1200,7 +1481,9 @@
                 huongXuLy: '',
                 dienBienBenh: '',
                 khamToanThanTDT: '',  // Khám toàn thân từ tờ điều trị mới nhất
-                sinhHieu: {}
+                sinhHieu: {},
+                treatmentContext: contextInfo,
+                admissionTimes
             };
 
             // === PHẦN 1: Bệnh sử từ HSBA API (Nội trú) ===
@@ -1310,8 +1593,10 @@
                 try {
                     let candidates = [
                         rowData.HOSOBENHANID, rowData.TIEPNHANID,
-                        rowData.KHAMBENHID, rowData.MADIEUTRI
-                    ].filter(v => v && v.trim() !== '');
+                        rowData.KHAMBENHID, rowData.MADIEUTRI,
+                        contextInfo.HOSOBENHANID, contextInfo.TIEPNHANID,
+                        contextInfo.KHAMBENHID
+                    ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
                     candidates = Array.from(new Set(candidates));
 
                     let foundTreatment = false;
