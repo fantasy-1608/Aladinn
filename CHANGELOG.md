@@ -7,6 +7,19 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.2.7] — 2026-05-11
+
+### 🚀 Nâng cấp Kiến trúc & Hiệu năng
+
+- **API-First Architecture**: Refactor hệ thống fetch dữ liệu với `bridgeFetch`, gom gọn các hàm API trùng lặp giúp giảm dung lượng file và dễ bảo trì.
+- **Auto-prefetch Demographics**: Tự động tải ngầm thông tin bệnh nhân qua `VNPTStore` ngay khi người dùng bấm chọn bệnh nhân, không cần chờ mở chức năng.
+- **Global Logs Toggle**: Bổ sung nút bật/tắt Logs (Debug Mode) trực tiếp trên Popup extension giúp giao diện console mượt mà và không bị spam log.
+- **Emergency Module**: Chuyển đổi module Cấp cứu sang ưu tiên cơ chế API-first, chỉ fallback về DOM khi cần thiết.
+- **Data Enrichment**: Tự động tính toán tuổi (`age`) từ ngày sinh (`dob`) ngay trong tầng API Bridge.
+- **Centralized Selectors**: Chuẩn hóa toàn bộ DOM selectors (Dashboard, History) về tập trung tại `VNPTConfig.selectors` giúp code ổn định hơn với các cập nhật UI của HIS.
+
+---
+
 ## [1.2.6] — 2026-05-09
 
 ### 🐛 Sửa lỗi
