@@ -21,11 +21,13 @@ Mỗi log entry sẽ được lưu dưới dạng JSON object với các trườ
 ```
 
 ## Các Quy tắc Bắt buộc (Mandatory Rules)
-1. **Tuyệt đối không lưu họ tên bệnh nhân, số điện thoại, CCCD, địa chỉ thật.** 
+
+1. **Tuyệt đối không lưu họ tên bệnh nhân, số điện thoại, CCCD, địa chỉ thật.**
 2. **Patient ID**: Chỉ được log dưới dạng hashed hoặc masked (Ví dụ: `P-****56`).
 3. **Nội dung bệnh án**: Không bao giờ log nguyên văn (raw transcript) hoặc toàn bộ JSON kết quả của AI.
 
 ## Các Event Mẫu
+
 - `ai_request_started`: Bắt đầu gửi file âm thanh / văn bản lên AI.
 - `ai_request_failed`: Lỗi khi gửi AI (kèm theo `error_code` như `AI_QUOTA_LIMIT`, `AI_NETWORK_ERROR`).
 - `export_confirmed`: Người dùng đã ấn nút đồng ý xuất dữ liệu JSON/CSV.

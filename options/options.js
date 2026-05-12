@@ -72,11 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const patch = { pin_hash: hash, pin_salt: salt };
                 if (encKey) patch.geminiApiKey_encrypted = encKey;
-                chrome.storage.local.set(patch);
-                chrome.storage.local.remove('dashboard_password');
-                localRes.pin_hash = hash;
-                localRes.pin_salt = salt;
-                if (encKey) localRes.geminiApiKey_encrypted = encKey;
+                chrome.storage.local.set(patch, () => {
+                    chrome.storage.local.remove(['dashboard_password', 'geminiApiKey'], () => {
+                        loadSettings(); // Reload UI with clean state
+                    });
+                });
+                return; // Stop execution, wait for reload
             }
 
             let hasValidApi = false;
@@ -663,8 +664,12 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSyncCds.innerHTML = '⏳ Đang yêu cầu đồng bộ...';
             btnSyncCds.disabled = true;
             
-            chrome.runtime.sendMessage({ type: 'FORCE_CDS_SYNC' }, (_response) => {
-                showToast('✅ Đã nạp lại Cấu trúc Cảnh báo Lâm sàng!');
+            chrome.runtime.sendMessage({ type: 'FORCE_CDS_SYNC' }, (response) => {
+                if (chrome.runtime.lastError || !response?.ok) {
+                    showToast('❌ Đồng bộ CDS thất bại' + (response?.error ? `: ${response.error}` : ''), true);
+                } else {
+                    showToast('✅ Đã nạp lại Cấu trúc Cảnh báo Lâm sàng!');
+                }
                 setTimeout(() => {
                     btnSyncCds.innerHTML = origText;
                     btnSyncCds.disabled = false;

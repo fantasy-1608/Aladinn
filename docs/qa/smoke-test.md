@@ -1,19 +1,32 @@
-# Smoke Test Checklist
+# Bảng Kiểm Thử Cục Bộ (Smoke Test) — Aladinn Extension
 
-Chạy danh sách kiểm tra sau trước mỗi đợt Release Pilot hoặc Deploy chính thức.
+> Yêu cầu thực hiện checklist này thủ công trước mỗi lần xuất bản phiên bản mới để đảm bảo tính sẵn sàng của sản phẩm.
 
-## Cài đặt & Khởi động
-- [ ] Cài Extension bản build `dist/` vào Chrome (Load unpacked).
-- [ ] Mở trang VNPT HIS, đăng nhập thành công.
-- [ ] Mở popup từ nút Extensions của Chrome — hiển thị bình thường.
-- [ ] Bấm Settings/Options mở ra màn hình tùy chỉnh extension.
+## 1. Cài đặt & Khởi chạy
+- [ ] Cài đặt extension bản build mới nhất qua tính năng "Load unpacked" ở thư mục `dist/`.
+- [ ] Extension cài đặt thành công, không văng lỗi ở Service Worker.
+- [ ] Mở trang VNPT HIS hợp lệ (login.jsp hoặc trang chính), extension kích hoạt (icon sáng).
+- [ ] Popup options load thành công, không gặp lỗi giao diện.
 
-## Các chức năng cốt lõi (Core Functions)
-- [ ] Gọi phím tắt khởi động Scanner (Ctrl+Shift+F) — Màn hình lọc bệnh nhân mở lên thành công.
-- [ ] Gọi tính năng yêu cầu AI bằng giọng nói — Dịch vụ gọi API chạy và trả lại kết quả (hoặc báo nhập PIN nếu thiếu).
-- [ ] Ghi nhận Logout HIS: Khi thoát tài khoản trên HIS, extension báo "Xóa Session & CryptoKey". Phải đăng nhập/nhập PIN lại nếu muốn sử dụng tiếp AI.
-- [ ] Thử tính năng Ký số Tự động (Auto-Sign): Phải hiển thị và click được nút dừng khẩn cấp (Emergency Stop).
+## 2. Quản lý Trạng thái & Bảo mật
+- [ ] Trang Options tải dữ liệu mượt mà, setting cũ được giữ nguyên.
+- [ ] Nhập mã PIN mở khóa AI thành công. API Key lưu ở dạng mã hóa.
+- [ ] Logout hệ thống HIS (vncare.vn/logout) -> Extension tự động xóa toàn bộ cache lưu trữ bệnh nhân tạm thời.
+- [ ] Mở tab mới, vào một trang không phải HIS -> Biểu tượng extension bị mờ đi (inactive), không chạy logic thừa.
 
-## Tránh Xung đột & An toàn Dữ liệu
-- [ ] Kiểm tra Slash Commands: Gõ `//` trong một textarea hoặc ô nhập liệu của HIS có xuất hiện Auto-complete. Không bị kích hoạt sai lệch bởi nhập ngày tháng bình thường (như `12/04/2026`).
-- [ ] Data Export: Khi click xuất dữ liệu phải hiển thị hộp thoại Consent hỏi sự đồng ý.
+## 3. Tính năng Cốt lõi
+- [ ] Nút "Scanner" mở được UI thu thập dữ liệu trong giao diện khám bệnh.
+- [ ] Thử thực hiện lệnh gửi AI (ví dụ tóm tắt bệnh sử hoặc AI prompt) -> AI request trả kết quả đúng, hiển thị ra giao diện.
+- [ ] Nút "Đồng bộ CDS" ở trang Options hoạt động, đồng bộ dữ liệu tĩnh và trả về `✅` hoặc `❌` đúng sự thật.
+- [ ] Tự động ký (Auto-sign) không tự động kích hoạt ngoài các trang chứng từ PDF được chỉ định.
+
+## 4. Tương tác đa cửa sổ (Multi-tab)
+- [ ] Di chuyển qua lại giữa các cửa sổ Chrome (Multi-window) -> Extension vẫn map đúng Window ID và không bị mất context.
+- [ ] Tính năng Auto-sign khi hoàn tất sẽ switch về đúng cửa sổ gọi lệnh, không nhầm sang Window khác.
+
+## 5. UI/UX & Ngoại lệ
+- [ ] Slash command (`/`) trên input fields không xung đột với các fields hệ thống như ngày giờ, số lượng.
+- [ ] Fallback AI model hoạt động khi gửi request rỗng model.
+- [ ] Nút Export Dữ liệu yêu cầu Consent xác nhận bảo mật.
+- [ ] Notification về Update Version mới hiện thông báo rõ ràng (khi test mock update).
+- [ ] Bấm Bỏ qua Update không bị lặp lại hộp thoại.

@@ -51,11 +51,13 @@
 ## 5. Sign Module (Ký số)
 
 ### 5.1. An toàn cơ bản
+
 - [ ] Không tự chạy ký khi mở trang ký số
 - [ ] Có xác nhận (dialog/popup) trước khi bắt đầu ký hàng loạt
 - [ ] Có nút DỪNG KHẨN CẤP hiển thị rõ ràng trong khi ký
 
 ### 5.2. Chức năng
+
 - [ ] Bấm "Lọc hồ sơ" → chỉ hiện hồ sơ của người dùng
 - [ ] Checkboxes xuất hiện trên grid → chọn/bỏ chọn được
 - [ ] Bắt đầu ký → ký tuần tự từng BN, tự động nhấn SmartCA
@@ -64,6 +66,7 @@
 - [ ] Bấm "Dừng" → dừng ngay lập tức
 
 ### 5.3. Ký nâng cao (Advanced Sign)
+
 - [ ] Bật "Ký số Nâng cao" trong Options → chế độ nâng cao hoạt động
 - [ ] Modal phiếu chưa ký hiển thị đúng danh sách
 - [ ] Safe Mode: tạm dừng khi CDS phát hiện tương tác thuốc nghiêm trọng
@@ -118,8 +121,8 @@
 - [ ] Trang HIS không chậm hơn đáng kể khi bật extension
 - [ ] Kiểm tra Console: không có log chứa tên BN, số BHYT, API key
 - [ ] `manifest.json` không thêm quyền mới so với phiên bản trước
-- [ ] Build production: `npm run build` pass không lỗi
-- [ ] Lint: `npm run lint` pass hoặc chỉ có warning không ảnh hưởng
+- [ ] Build production: `pnpm run build` pass không lỗi
+- [ ] Lint: `pnpm run lint` pass hoặc chỉ có warning không ảnh hưởng
 
 ---
 

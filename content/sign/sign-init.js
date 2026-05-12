@@ -12,6 +12,11 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
 
     const Logger = window.Aladinn?.Logger;
 
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 1: STATE & PAGE DETECTION                             ║
+    // ║  WARD_STATE singleton, waitForHIS(), initSign(), initAdvanced.  ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
     // Ward page batch signing state
     const WARD_STATE = {
         queue: [],
@@ -153,6 +158,12 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         interceptJWT();
     }
 
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 2: JWT INTERCEPTION & UTILITIES                       ║
+    // ║  interceptJWT(), showNotice(), delay().                         ║
+    // ║  Captures auth tokens from HIS inline scripts for API calls.   ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     /**
      * Intercept JWT token from HIS page for API usage.
@@ -415,9 +426,12 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         checkAndInjectCheckboxes();
     }
 
-    // ======================================================================
-    // ===                   WARD PAGE SIGNING WORKFLOW                 ===
-    // ======================================================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 3: WARD PAGE SIGNING WORKFLOW                         ║
+    // ║  Batch sign from Buồng Điều Trị: checkbox injection,            ║
+    // ║  queue management, QLBA auto-reopen, panel state machine.      ║
+    // ║  ~410 lines — largest section.                                  ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     /**
      * Inject checkboxes into ward page patient grid rows + select-all in header
@@ -846,9 +860,11 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         return '';
     }
 
-    // ======================================================================
-    // ===                   QLBA INTERACTION HELPERS                    ===
-    // ======================================================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 4: QLBA INTERACTION HELPERS                           ║
+    // ║  iframe detection, grid stability polling, filter injection,    ║
+    // ║  jBox modal close/wait, keyboard simulation for QLBA iframe.   ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     /**
      * Find the QLBA button on the HIS toolbar
@@ -1227,9 +1243,11 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         });
     }
 
-    // ======================================================================
-    // ===                    WARD WORKFLOW PANEL                        ===
-    // ======================================================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 5: WARD WORKFLOW PANEL (UI)                           ║
+    // ║  Desert Mystic themed draggable panel: start/process views,     ║
+    // ║  progress bar, stats grid, button bindings.                    ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     /**
      * Inject the ward workflow control panel
@@ -1487,9 +1505,11 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         if (bar) bar.style.width = `${pct}%`;
     }
 
-    // ======================================================================
-    // ===                    SIGN PAGE HELPERS                          ===
-    // ======================================================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 6: SIGN PAGE HELPERS & MESSAGE HANDLER                ║
+    // ║  Checkbox change handler, chrome.runtime message listener,      ║
+    // ║  window.Aladinn.Sign.init entry point.                         ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     function onCheckboxChange() {
         const UI = window.Aladinn?.Sign?.UI;

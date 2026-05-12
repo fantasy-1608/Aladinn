@@ -90,7 +90,7 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 ### 🐛 Sửa lỗi
 
 - **clinical-fill**: Lấy đúng tờ điều trị **mới nhất** (client-side sort) thay vì phụ thuộc server
-- **clinical-fill**: Gộp dữ liệu "Khám toàn thân" vào trường "Tóm tắt TT hiện tại" 
+- **clinical-fill**: Gộp dữ liệu "Khám toàn thân" vào trường "Tóm tắt TT hiện tại"
 - **template**: Slash command không hoạt động trong một số ô nhập liệu HIS đặc biệt
 
 ### 📊 Thống kê phiên bản

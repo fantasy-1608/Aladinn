@@ -6,7 +6,7 @@ Tài liệu này đối chiếu các tuyên bố về bảo mật trong README v
 | :--- | :--- | :--- | :--- |
 | **AES-256-GCM + PBKDF2 (310,000 iterations)** | `background/ai-client.js`, `shared/crypto.js` | ✅ Đúng | Trưởng nhóm Bảo mật |
 | **CryptoKey không bao giờ rời background worker** | `background/service-worker.js`, `background/ai-client.js` | ✅ Đúng (Chỉ trả về trạng thái `unlocked`) | Trưởng nhóm Bảo mật |
-| **Session timeout (30 phút idle)** | `background/ai-client.js` (SESSION_TIMEOUT_MS = 30 * 60 * 1000) | ✅ Đúng | Trưởng nhóm Bảo mật |
+| **Session timeout (30 phút idle)** | `background/ai-client.js` (SESSION_TIMEOUT_MS = 30 *60* 1000) | ✅ Đúng | Trưởng nhóm Bảo mật |
 | **Purge data khi HIS logout** | `background/service-worker.js` | ✅ Đúng (wipe keys & storage khi URL chứa `login.jsp`, `logout`, v.v.) | Trưởng nhóm Bảo mật |
 | **Endpoint allowlist (geminiBaseUrl)** | `background/ai-client.js`, `manifest.json` | ✅ Đúng (Chỉ `.googleapis.com`, `.vncare.vn`, `localhost`, `.githubusercontent.com`) | Trưởng nhóm Bảo mật |
 | **Nonce bắt buộc cho postMessage** | `content/scanner/messaging.js`, `content/cds/cds-cache.js` | ✅ Đúng (Các iframe listener đều yêu cầu `nonce === window.__ALADINN_NONCE__`) | Trưởng nhóm Bảo mật |

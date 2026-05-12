@@ -62,11 +62,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 // Initial badge + legacy cleanup
-chrome.storage.local.get(['aladinn_voice_enabled', 'geminiBaseUrl'], (result) => {
+chrome.storage.local.get(['aladinn_voice_enabled'], (result) => {
     updateBadge(result.aladinn_voice_enabled !== false);
-    if (result.geminiBaseUrl && result.geminiBaseUrl.includes('ngrok')) {
-        chrome.storage.local.remove('geminiBaseUrl');
-    }
 });
 
 // SECURITY: Auto-purge legacy plaintext API key if encrypted version exists
@@ -90,7 +87,7 @@ function updateBadge(_isEnabled) {
 // SIGN MODULE: Auto-Sign State & PDF Switch-Back
 // ========================================
 let autoSignEnabled = false;
-let lastActiveTabId = null; // Track the tab user was on before PDF opened
+const lastActiveTabByWindow = new Map(); // Track the tab user was on before PDF opened per window
 
 // Track active tab changes to remember the "previous" (non-PDF) tab
 chrome.tabs.onActivated.addListener((activeInfo) => {
@@ -100,13 +97,14 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
         const isPdf = tab.url.includes('blob:') || tab.url.includes('.pdf') ||
             tab.url.includes('pdf-viewer') || tab.url.includes('PrintPreview');
         if (!isPdf) {
-            lastActiveTabId = activeInfo.tabId;
+            lastActiveTabByWindow.set(tab.windowId, activeInfo.tabId);
         }
     });
 });
 
-function switchBackFromPdfTab(_pdfTabId) {
-    // Switch focus back to the last non-PDF tab
+function switchBackFromPdfTab(windowId) {
+    // Switch focus back to the last non-PDF tab in this window
+    const lastActiveTabId = lastActiveTabByWindow.get(windowId);
     if (lastActiveTabId != null) {
         chrome.tabs.update(lastActiveTabId, { active: true }).catch(() => { });
     }
@@ -175,11 +173,11 @@ function isValidSender(sender) {
 // SECURITY: Whitelist for GET_SETTINGS / SET_SETTINGS
 const SETTINGS_READ_WHITELIST = [
     'aladinn_voice_settings', 'aladinn_voice_enabled',
-    'selectedModel', 'geminiBaseUrl', 'aladinn_features'
+    'selectedModel', 'aladinn_features'
 ];
 const SETTINGS_WRITE_WHITELIST = [
     'aladinn_voice_settings', 'aladinn_voice_enabled',
-    'selectedModel', 'geminiBaseUrl', 'aladinn_features',
+    'selectedModel', 'aladinn_features',
     'aladinn_voice_appSettings'
 ];
 
@@ -443,10 +441,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Instead of closing PDF tabs, switch back to previous tab
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const tab = tabs?.[0];
-            if (tab) switchBackFromPdfTab(tab.id);
+            if (tab) switchBackFromPdfTab(tab.windowId);
         });
         sendResponse({ ok: true });
         return false;
+    }
+
+    // ---- CDS SYNC ----
+    if (type === 'FORCE_CDS_SYNC') {
+        chrome.storage.local.remove('vnpt_cds_data', () => {
+            const ok = !chrome.runtime.lastError;
+            const err = chrome.runtime.lastError?.message;
+            chrome.storage.local.set({
+                lastSuccessfulCdsSyncAt: ok ? new Date().toISOString() : null,
+                lastCdsSyncStatus: ok ? 'success' : 'error'
+            }, () => {
+                sendResponse({ ok, error: err });
+            });
+        });
+        return true;
     }
 
     // Auto-click: inject click script into ALL frames of the sender tab
@@ -503,7 +516,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && tab.url) {
         if (tab.url.includes('blob:') || tab.url.includes('.pdf') ||
             tab.url.includes('PrintPreview') || tab.url.includes('pdf-viewer')) {
-            setTimeout(() => switchBackFromPdfTab(tabId), 500);
+            setTimeout(() => switchBackFromPdfTab(tab.windowId), 500);
         }
     }
 });

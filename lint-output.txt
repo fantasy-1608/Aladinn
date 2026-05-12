@@ -1,0 +1,12 @@
+npm warn Unknown project config "block-exotic-subdeps". This will stop working in the next major version of npm.
+markdownlint-cli2 v0.22.1 (markdownlint v0.40.0)
+Finding: aladinn_roadmap_30_ngay.md BUG_AUDIT_Aladinn_2026-05-12.md docs/manual-test-checklist.md docs/SMOKE_TEST_CHECKLIST.md README.md
+Linting: 5 file(s)
+Summary: 7 error(s)
+aladinn_roadmap_30_ngay.md:55 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "4) Kế hoạch 30 ngày theo tuần"]
+aladinn_roadmap_30_ngay.md:419 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "5) Lịch 30 ngày chi tiết dạng ..."]
+aladinn_roadmap_30_ngay.md:480 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "6) Definition of Done (DoD) ch..."]
+aladinn_roadmap_30_ngay.md:484 error MD001/heading-increment Heading levels should only increment by one level at a time [Expected: h2; Actual: h3]
+aladinn_roadmap_30_ngay.md:518 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "7) Ưu tiên nếu thiếu thời gian"]
+aladinn_roadmap_30_ngay.md:539 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "8) Kỳ vọng điểm sau 30 ngày"]
+aladinn_roadmap_30_ngay.md:549 error MD025/single-title/single-h1 Multiple top-level headings in the same document [Context: "9) Chỉ thị ngắn gọn để giao ch..."]

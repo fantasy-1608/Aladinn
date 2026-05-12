@@ -17,16 +17,19 @@ python3 --version || python --version
 If Python is not installed, install it based on user's OS:
 
 **macOS:**
+
 ```bash
 brew install python3
 ```
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt update && sudo apt install python3
 ```
 
 **Windows:**
+
 ```powershell
 winget install Python.Python.3.12
 ```
@@ -40,6 +43,7 @@ When user requests UI/UX work (design, build, create, implement, review, fix, im
 ### Step 1: Analyze User Requirements
 
 Extract key information from user request:
+
 - **Product type**: SaaS, e-commerce, portfolio, dashboard, landing page, etc.
 - **Style keywords**: minimal, playful, professional, elegant, dark mode, etc.
 - **Industry**: healthcare, fintech, gaming, education, etc.
@@ -54,12 +58,14 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywo
 ```
 
 This command:
+
 1. Searches 5 domains in parallel (product, style, color, landing, typography)
 2. Applies reasoning rules from `ui-reasoning.csv` to select best matches
 3. Returns complete design system: pattern, style, colors, typography, effects
 4. Includes anti-patterns to avoid
 
 **Example:**
+
 ```bash
 python3 skills/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
 ```
@@ -73,18 +79,22 @@ python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persi
 ```
 
 This creates:
+
 - `design-system/MASTER.md` — Global Source of Truth with all design rules
 - `design-system/pages/` — Folder for page-specific overrides
 
 **With page-specific override:**
+
 ```bash
 python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persist -p "Project Name" --page "dashboard"
 ```
 
 This also creates:
+
 - `design-system/pages/dashboard.md` — Page-specific deviations from Master
 
 **How hierarchical retrieval works:**
+
 1. When building a specific page (e.g., "Checkout"), first check `design-system/pages/checkout.md`
 2. If the page file exists, its rules **override** the Master file
 3. If not, use `design-system/MASTER.md` exclusively
@@ -158,6 +168,7 @@ Available stacks: `html-tailwind`, `react`, `nextjs`, `vue`, `svelte`, `swiftui`
 **User request:** "Làm landing page cho dịch vụ chăm sóc da chuyên nghiệp"
 
 ### Step 1: Analyze Requirements
+
 - Product type: Beauty/Spa service
 - Style keywords: elegant, professional, soft
 - Industry: Beauty/Wellness
@@ -261,6 +272,7 @@ These are frequently overlooked issues that make UI look unprofessional:
 Before delivering UI code, verify these items:
 
 ### Visual Quality
+
 - [ ] No emojis used as icons (use SVG instead)
 - [ ] All icons from consistent icon set (Heroicons/Lucide)
 - [ ] Brand logos are correct (verified from Simple Icons)
@@ -268,24 +280,28 @@ Before delivering UI code, verify these items:
 - [ ] Use theme colors directly (bg-primary) not var() wrapper
 
 ### Interaction
+
 - [ ] All clickable elements have `cursor-pointer`
 - [ ] Hover states provide clear visual feedback
 - [ ] Transitions are smooth (150-300ms)
 - [ ] Focus states visible for keyboard navigation
 
 ### Light/Dark Mode
+
 - [ ] Light mode text has sufficient contrast (4.5:1 minimum)
 - [ ] Glass/transparent elements visible in light mode
 - [ ] Borders visible in both modes
 - [ ] Test both modes before delivery
 
 ### Layout
+
 - [ ] Floating elements have proper spacing from edges
 - [ ] No content hidden behind fixed navbars
 - [ ] Responsive at 375px, 768px, 1024px, 1440px
 - [ ] No horizontal scroll on mobile
 
 ### Accessibility
+
 - [ ] All images have alt text
 - [ ] Form inputs have labels
 - [ ] Color is not the only indicator

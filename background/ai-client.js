@@ -396,16 +396,7 @@ async function resolveApiKey(optionalApiKey = '') {
     return sanitizeKey(apiKey);
 }
 
-function getTrustedGeminiBaseUrl(rawBaseUrl) {
-    const fallback = 'https://generativelanguage.googleapis.com';
-    if (!rawBaseUrl) return fallback;
-    try {
-        const u = new URL(rawBaseUrl);
-        if (u.origin === fallback) return fallback;
-    } catch (_) { /* use fallback */ }
-    console.log('[Aladinn Security] ⛔ Blocked untrusted geminiBaseUrl:', rawBaseUrl);
-    return fallback;
-}
+// getTrustedGeminiBaseUrl removed as per BUG-03
 
 async function callGeminiGenerateContent({ prompt, model, requestId, generationConfig = {}, systemInstruction = null }) {
     if (!prompt || typeof prompt !== 'string') {
@@ -425,10 +416,10 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
     }
 
     try {
-        const stored = await chrome.storage.local.get(['geminiBaseUrl']);
         const apiVersion = 'v1beta';
-        const baseUrl = getTrustedGeminiBaseUrl(stored.geminiBaseUrl);
-        const modelUrl = `${baseUrl}/${apiVersion}/models/${model || 'gemini-2.0-flash'}:generateContent`;
+        const baseUrl = 'https://generativelanguage.googleapis.com';
+        const effectiveModel = model || 'gemini-2.0-flash';
+        const modelUrl = `${baseUrl}/${apiVersion}/models/${effectiveModel}:generateContent`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig
@@ -543,7 +534,6 @@ export async function listGeminiModels({ apiKey } = {}) {
  * @returns {Promise<Object>} - Parsed JSON result from Gemini
  */
 export async function requestAI({ text, model, requestId }) {
-    const result = await chrome.storage.local.get(['geminiBaseUrl']);
     const apiKey = await resolveApiKey();
 
     if (!apiKey) {
@@ -562,8 +552,9 @@ export async function requestAI({ text, model, requestId }) {
     try {
         const systemPrompt = buildSystemPrompt(text);
         const apiVersion = 'v1beta';
-        const baseUrl = getTrustedGeminiBaseUrl(result.geminiBaseUrl);
-        const modelUrl = `${baseUrl}/${apiVersion}/models/${model}:generateContent`;
+        const baseUrl = 'https://generativelanguage.googleapis.com';
+        const effectiveModel = model || 'gemini-2.0-flash';
+        const modelUrl = `${baseUrl}/${apiVersion}/models/${effectiveModel}:generateContent`;
 
         const payload = {
             contents: [{ parts: [{ text: systemPrompt }] }],

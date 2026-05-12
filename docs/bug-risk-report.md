@@ -18,9 +18,9 @@ Mức ưu tiên đề xuất:
 
 | Lệnh | Kết quả | Ghi chú |
 | --- | --- | --- |
-| `npm run build` | Pass | Vite build thành công. Có warning từ plugin `crx:content-scripts` về `rollupOptions` bị bỏ qua, chưa chặn build. |
-| `npm test` | Pass | Chỉ có 1 test Vitest placeholder trong `tests/basic.test.js`, nên giá trị bắt bug thấp. |
-| `npm run lint` | Fail | 1 error tại `content/scanner/clinical-fill.js:349`, kèm 23 warning unused. |
+| `pnpm run build` | Pass | Vite build thành công. Có warning từ plugin `crx:content-scripts` về `rollupOptions` bị bỏ qua, chưa chặn build. |
+| `pnpm run test` | N/A | Chưa có unit test script trong `package.json`. |
+| `pnpm run lint` | Fail | 1 error tại `content/scanner/clinical-fill.js:349`, kèm 23 warning unused. |
 
 ## Findings
 
@@ -30,7 +30,7 @@ Mức độ: Cao nếu CI/release yêu cầu lint pass; thấp về runtime.
 
 Vị trí: `content/scanner/clinical-fill.js:349`
 
-`buildHoiChanData()` khai báo `let chanDoanFull = ''`, sau đó mọi nhánh `if/else` đều gán lại trước khi đọc. ESLint 10 báo lỗi `no-useless-assignment`, khiến `npm run lint` exit code 1.
+`buildHoiChanData()` khai báo `let chanDoanFull = ''`, sau đó mọi nhánh `if/else` đều gán lại trước khi đọc. ESLint 10 báo lỗi `no-useless-assignment`, khiến `pnpm run lint` exit code 1.
 
 Tác động:
 
@@ -40,7 +40,7 @@ Tác động:
 Khuyến nghị:
 
 - Đổi thành `let chanDoanFull;` hoặc refactor thành biểu thức/khối helper tạo chẩn đoán.
-- Sau khi sửa, chạy lại `npm run lint`.
+- Sau khi sửa, chạy lại `pnpm run lint`.
 
 ### 2. Hỗ trợ Ngoại trú chưa nhất quán: row observer lấy `KHAMBENHID`, nhưng nhiều bridge vẫn hardcode `#grdBenhNhan`
 
@@ -195,11 +195,11 @@ Khuyến nghị:
 
 - `injected/api-bridge.js` đã dài hơn 2.000 dòng, chứa nhiều query và parsing heuristic. Nên tách theo domain (`vitals`, `labs`, `drugs`, `clinical-summary`, `cds-diagnoses`) để giảm rủi ro sửa một luồng ảnh hưởng luồng khác.
 - Có nhiều warning unused trong lint. Chưa chặn runtime nhưng làm nhiễu tín hiệu khi review lỗi mới.
-- `npm run build` có warning `rollupOptions` bị plugin bỏ qua. Chưa phải bug hiện tại, nhưng nên theo dõi nếu nâng Vite/CRX plugin tiếp.
+- `pnpm run build` có warning `rollupOptions` bị plugin bỏ qua. Chưa phải bug hiện tại, nhưng nên theo dõi nếu nâng Vite/CRX plugin tiếp.
 
 ## Đề xuất checklist sửa lỗi
 
-1. Sửa lint error tại `clinical-fill.js:349`, chạy lại `npm run lint`.
+1. Sửa lint error tại `clinical-fill.js:349`, chạy lại `pnpm run lint`.
 2. Viết helper resolve grid active cho nội trú/ngoại trú và thay các hardcode `#grdBenhNhan` trong bridge chính.
 3. Thay heuristic alias ID trong CDS cache bằng patient key chuẩn.
 4. Bổ sung timeout/error guard cho ClinicalFill.

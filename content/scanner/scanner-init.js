@@ -12,6 +12,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
     const Logger = window.Aladinn?.Logger;
 
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 1: PURE UTILITY FUNCTIONS                             ║
+    // ║  Pure transforms — no DOM, no state, no side effects.          ║
+    // ║  Safe to extract & unit-test independently.                    ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -116,6 +122,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             await storageLocalSet({ aladinn_ai_result_cache: cache });
         } catch (_) { /* cache is best-effort */ }
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 2: MODULE INITIALIZATION & EVENT WIRING               ║
+    // ║  Boots sub-modules, wires EventBus, registers shortcuts.       ║
+    // ║  DOM-dependent — NOT safe to extract without integration test. ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     window.Aladinn.Scanner.init = function () {
         if (Logger) Logger.info('Scanner.Init', 'Bắt đầu khởi tạo các module Scanner lõi...');
@@ -533,9 +545,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
     };
 
-    // ========================================
-    // BHYT TIME ERROR SCANNER (Live Report)
-    // ========================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 3: BHYT TIME ERROR SCANNER (Live Report)              ║
+    // ║  Scans BHYT insurance time errors across patient grid.          ║
+    // ║  Contains: _parseBhytDate (pure), analyzeBhytTimeErrors (pure),║
+    // ║  openBhytLiveReport (DOM), appendBhytResult (DOM),             ║
+    // ║  finalizeBhytReport (DOM).                                     ║
+    // ╚══════════════════════════════════════════════════════════════════╝
     let _bhytScanResults = [];
     let _bhytRawKeys = null;
 
@@ -883,9 +899,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (footerInfo) footerInfo.textContent = `Quét xong ${_bhytScanResults.length} BN • ${new Date().toLocaleTimeString('vi-VN')}`;
     }
 
-    // ========================================
-    // SCANNING ORCHESTRATION
-    // ========================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 4: SCANNING ORCHESTRATION                             ║
+    // ║  Coordinates VNPTScanFlow for room/vitals/drugs/bhyt scans.    ║
+    // ╚══════════════════════════════════════════════════════════════════╝
     async function startScanning(params) {
         let mode = params;
         let singleRow = false;
@@ -956,9 +973,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         });
     }
 
-    // ========================================
-    // UI HELPERS
-    // ========================================
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 5: UI BADGE INJECTION                                 ║
+    // ║  DOM helpers: room text, drug/PTTT/BHYT badges on grid rows.   ║
+    // ╚══════════════════════════════════════════════════════════════════╝
     function injectRoomText(tr, text, isReal) {
         const bedTd = tr.querySelector("td[aria-describedby$='_ICON1']");
         if (!bedTd) return;
@@ -1056,6 +1074,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             tr.style.backgroundColor = '';
         }
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 6: LAB DATA PROCESSING & CLASSIFICATION               ║
+    // ║  Pure functions: _parseLabDate, _shortDate, _isAbnormal,       ║
+    // ║  _statusColor, _classifyLab + LAB_CATEGORIES constants.        ║
+    // ║  Safe to extract & unit-test independently.                    ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     function _parseLabDate(dStr) {
         if (!dStr) return 0;
@@ -1156,6 +1181,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
         return 'Sinh hóa';
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║  SECTION 7: LAB TIMELINE MODAL (Full Clinical Dashboard)       ║
+    // ║  Renders the main patient data modal with tabs:                ║
+    // ║  Khám vào viện | Lâm sàng & Thuốc | XN | CĐHA | AI           ║
+    // ║  ~1400 lines — largest section, candidate for future split.    ║
+    // ╚══════════════════════════════════════════════════════════════════╝
 
     function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}) {
         const existing = document.getElementById('vnpt-lab-timeline-modal');

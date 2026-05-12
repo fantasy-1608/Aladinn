@@ -85,7 +85,8 @@ const VNPTMessaging = (function () {
                 type,
                 ...payload,
                 requestId,
-                token: window.__ALADINN_BRIDGE_TOKEN__
+                token: window.__ALADINN_BRIDGE_TOKEN__,
+                nonce: window.__ALADINN_NONCE__
             }, getAllowedOrigin());
 
             setTimeout(() => {

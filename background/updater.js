@@ -15,7 +15,7 @@ const UPDATE_CONFIG = {
     // Fallback: file update.json trên GitHub Pages
     // Format: https://<owner>.github.io/<repo>/update.json
     // Nếu bạn không dùng GitHub Pages, để null
-    updateJsonUrl: null
+    updateJsonUrl: 'https://raw.githubusercontent.com/fantasy-1608/Aladinn/main/update.json'
 };
 
 /**
@@ -99,6 +99,13 @@ async function checkForUpdate() {
 
         if (!latestRelease) {
             console.log('[Aladinn Updater] Không thể kiểm tra update');
+            return null;
+        }
+
+        // Đọc aladinn_update_dismissed để skip
+        const { aladinn_update_dismissed } = await chrome.storage.local.get(['aladinn_update_dismissed']);
+        if (aladinn_update_dismissed === latestRelease.version) {
+            console.log(`[Aladinn Updater] Phiên bản ${latestRelease.version} đã bị người dùng bỏ qua.`);
             return null;
         }
 

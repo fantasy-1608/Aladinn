@@ -2,10 +2,10 @@
 
 <div align="center">
 
-**v1.2.5** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v1.3.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
-[![Version](https://img.shields.io/badge/version-1.2.5-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
 [![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
 
 > Tích hợp AI · Bảo mật y tế · Desert Mystic Design
@@ -117,8 +117,8 @@ Aladinn được kiểm toán bảo mật toàn diện với 8 điểm được 
 ```bash
 git clone https://github.com/fantasy-1608/Aladinn.git
 cd Aladinn
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 Sau đó load thư mục `dist/` trong `chrome://extensions`.
@@ -193,6 +193,18 @@ Aladinn/
 
 ## 📦 Changelog
 
+### v1.3.0 (12/05/2026) — Stabilization & Hardening
+
+**Tính năng & Ổn định:**
+
+- Sửa lỗi updater, hỗ trợ dual-endpoint cho GitHub API và fallback JSON.
+- Tối ưu `FORCE_CDS_SYNC` để trả kết quả chuẩn xác.
+- Sửa state migration, load đúng cấu hình mã hoá PIN.
+- Dẹp bỏ `geminiBaseUrl` giả, bắt buộc dùng Google API để tránh block.
+- Khắc phục lỗi nhầm tab ở Multi-window khi ký số bằng cách track theo `windowId`.
+- Tăng cường bảo mật bridge message bằng cách xác thực qua cả `token` lẫn `nonce`.
+- Bổ sung fallback AI model trong requestAI (`gemini-2.0-flash`).
+
 ### v1.2.1 (03/05/2026) — SmartCA Guard & CDS Expansion
 
 **Tính năng mới:**
@@ -235,16 +247,16 @@ Aladinn/
 ## 🔧 Development
 
 ```bash
-npm run dev      # Vite watch mode (reload extension thủ công)
-npm run build    # Production build → dist/
-npm run lint     # ESLint check
-npm run release  # Build + đóng gói zip + tạo GitHub Release
+pnpm run dev      # Vite watch mode (reload extension thủ công)
+pnpm run build    # Production build → dist/
+pnpm run lint     # ESLint check
+pnpm run release  # Build + đóng gói zip + tạo GitHub Release
 ```
 
 **Quy tắc bắt buộc:**
 
 - Không commit API key hay dữ liệu bệnh nhân thật
-- Chạy `npm run build` sau mỗi thay đổi source trước khi test
+- Chạy `pnpm run build` sau mỗi thay đổi source trước khi test
 - Animation chỉ dùng `transform` / `opacity` (GPU-accelerated)
 - Palette: Desert Mystic — `#d4a25a` gold · `#1a1410` dark · `#e8dcc8` text
 - Mọi component mới phải tham chiếu `design_tokens.md` và `animation_tokens.md`
