@@ -7,6 +7,17 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.3.1] — 2026-05-15
+
+### 🔐 Bảo mật & Toàn vẹn Dữ liệu (Integrity Hardening)
+
+- **Scanner Context Guard**: Loại bỏ triệt để các biến global dùng chung (`patientDemographics`). Tất cả dữ liệu hành chính và lịch sử khám hiện lưu theo khóa mã hóa `patientKey`, chống nhiễm chéo dữ liệu bệnh án khi bác sĩ chuyển bệnh nhân liên tục.
+- **Iframe Form Security**: Truyền `contextToken` và `expectedPatientName` từ Scanner xuống tất cả các iframe helpers. Các iframe tự động kiểm chứng với tên trên form DOM và từ chối điền dữ liệu nếu phát hiện sai lệch.
+- **Fail-secure Medical History**: Bỏ cache fallback dựa trên `pid` của lịch sử khám. API thất bại sẽ báo lỗi trực tiếp thay vì bốc nhầm hồ sơ cũ.
+- Chuẩn bị đầy đủ cơ sở hạ tầng an toàn cho việc cấp quyền ký số tự động mở rộng.
+
+---
+
 ## [1.2.7] — 2026-05-11
 
 ### 🚀 Nâng cấp Kiến trúc & Hiệu năng
