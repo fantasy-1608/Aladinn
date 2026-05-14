@@ -23,4 +23,5 @@ import './emergency.js';
 import './clinical-fill.js';
 import './quick-time-edit.js';
 import './smartca-guard.js';
+import './patient-context-guard.js';
 import './scanner-init.js';

@@ -137,10 +137,32 @@ const VNPTRowObserver = (function () {
         _lastDemoFetchId = pid;
 
         if (!window.VNPTMessaging) return;
-        window.VNPTMessaging.sendRequest('REQ_FETCH_PATIENT_DEMOGRAPHICS', { rowId: pid }, 5000)
+
+        let token = null;
+        if (window.VNPTPatientContextGuard) {
+            token = window.VNPTPatientContextGuard.captureGridOnly(pid);
+        }
+
+        window.VNPTMessaging.sendRequest('REQ_FETCH_PATIENT_DEMOGRAPHICS', { rowId: pid, contextToken: token }, 5000)
             .then((res) => {
+                if (token && window.VNPTPatientContextGuard) {
+                    if (!window.VNPTPatientContextGuard.validate(token, { allowGridOnly: true })) {
+                        console.warn('[Aladinn] Drop stale demographics result', pid);
+                        return;
+                    }
+                }
+
                 if (res && res.demographics) {
-                    window.VNPTStore?.set('patientDemographics', res.demographics);
+                    // Update map
+                    if (window.VNPTPatientContextGuard && window.VNPTStore?.actions?.updatePatientDemographics) {
+                        const patientKey = window.VNPTPatientContextGuard.hashIdentity({
+                            rowId: pid,
+                            khambenhId: res?._context?.KHAMBENHID,
+                            hosobenhanId: res?._context?.HOSOBENHANID,
+                            benhnhanId: res?._context?.BENHNHANID
+                        });
+                        window.VNPTStore.actions.updatePatientDemographics(patientKey, res.demographics);
+                    }
                 }
             })
             .catch(() => { /* silent — DOM fallback vẫn hoạt động */ });

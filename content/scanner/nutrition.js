@@ -194,7 +194,12 @@ const VNPTNutrition = (function () {
             fab.innerHTML = '⏳';
 
             try {
-                await doFillForm(iframe);
+                let token = null;
+                if (window.VNPTPatientContextGuard) {
+                    token = await window.VNPTPatientContextGuard.capture(iframe, 'nutrition');
+                }
+
+                await doFillForm(iframe, token);
                 fab.className = 'done';
                 fab.innerHTML = '✅';
                 fab.setAttribute('data-tooltip', '✅ Đã điền DD-03 xong!');
@@ -235,8 +240,9 @@ const VNPTNutrition = (function () {
      * Điền form DD-03
      * Tự động quét vitals nếu chưa có dữ liệu
      * @param {HTMLIFrameElement} [iframe]
+     * @param {any} [contextToken]
      */
-    async function doFillForm(iframe) {
+    async function doFillForm(iframe, contextToken = null) {
         const target = iframe || currentFormIframe;
         if (!target) {
             window.VNPTRealtime?.showToast('⚠️ Không tìm thấy form DD-03!', 'warning');
@@ -255,6 +261,10 @@ const VNPTNutrition = (function () {
                 return;
             }
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'nutrition_start' });
+            }
+
             // Ưu tiên: cachedVitals (tự quét khi chọn BN) → store → API → đọc form
             let vitals = cachedVitals;
 
@@ -264,8 +274,12 @@ const VNPTNutrition = (function () {
 
             if (!vitals || !vitals.weight || !vitals.height || vitals.height === '0') {
                 window.VNPTRealtime?.showToast('⏳ Đang quét chỉ số chiều cao/cân nặng...', 'info');
-                vitals = await fetchVitalsForPatient(patientId);
+                vitals = await fetchVitalsForPatient(patientId, contextToken);
                 if (vitals && vitals.weight) cachedVitals = vitals;
+            }
+
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'nutrition_after_vitals' });
             }
 
             // Fallback: đọc trực tiếp từ form (HIS tự điền sẵn)
@@ -329,12 +343,18 @@ const VNPTNutrition = (function () {
                 if (!admissionDate) console.log('[Nutrition] Không tìm thấy Ngày nhập khoa ở API lẫn DOM. Sẽ chuyển giao cho Iframe Helper.');
             } catch (_e) { console.warn('[Nutrition] Lỗi nội bộ khi dò parse Ngày nhập viện', _e); }
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'nutrition_before_fill' });
+            }
+
             // Gửi lệnh điền — gửi cả weight/bloodPressure + admissionDate
             await sendCmd(target, 'NUTRITION_FILL_FORM', {
                 weight: vitals?.weight || '',
                 height: hMeter,
                 bloodPressure: vitals?.bloodPressure || '',
-                admissionDate: admissionDate
+                admissionDate: admissionDate,
+                contextToken: contextToken,
+                expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'NUTRITION_FILL_RESULT');
 
             window.VNPTRealtime?.showToast('✅ Đã điền xong phiếu DD-03!', 'success');
@@ -351,12 +371,13 @@ const VNPTNutrition = (function () {
     /**
      * Fetch vitals cho bệnh nhân qua injected.js (jsonrpc API)
      * @param {string} rowId
-     * @returns {Promise<{weight: string, height: string, bmi?: string, bloodPressure?: string, pulse?: string, temperature?: string} | null>}
+     * @param {any} [contextToken]
+     * @returns {Promise<{weight: string, height: string, bmi?: string, bloodPressure?: string, pulse?: string, temperature?: string, admissionDate?: string} | null>}
      */
-    async function fetchVitalsForPatient(rowId) {
+    async function fetchVitalsForPatient(rowId, contextToken = null) {
         if (!window.VNPTMessaging) return null;
         try {
-            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId }, 5000);
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId, contextToken }, 5000);
             return res.vitals || null;
         } catch (_e) {
             return null;

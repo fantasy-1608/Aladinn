@@ -41,9 +41,10 @@
      * 🔍 Resolve active patient grid — Hỗ trợ cả Nội trú và Ngoại trú
      * Tìm grid thực sự chứa rowId hoặc có selrow, ưu tiên grid có dữ liệu.
      * @param {string|null} rowId - Row ID từ content script
+     * @param {{ strict?: boolean }} options - Tùy chọn, strict: true sẽ không fallback sang selrow nếu rowId fail
      * @returns {{ grid: any, rowData: Object, isOutpatient: boolean, effectiveRowId: string|null }}
      */
-    function resolveActiveGrid(rowId) {
+    function resolveActiveGrid(rowId, options = { strict: false }) {
         const EMPTY = { grid: null, rowData: {}, isOutpatient: false, effectiveRowId: null };
         if (!_$) return EMPTY;
 
@@ -83,12 +84,14 @@
             }
         }
 
-        // 2. Fallback: lấy selrow từ grid có row đang chọn
-        for (const [g, isOp] of [[inGrid, false], [outGrid, true]]) {
-            const sel = getSelRow(g);
-            if (sel) {
-                const rd = tryGrid(g, sel);
-                if (rd) return { grid: g, rowData: rd, isOutpatient: isOp, effectiveRowId: sel };
+        // 2. Fallback: lấy selrow từ grid có row đang chọn (nếu không ở mode strict)
+        if (!options.strict) {
+            for (const [g, isOp] of [[inGrid, false], [outGrid, true]]) {
+                const sel = getSelRow(g);
+                if (sel) {
+                    const rd = tryGrid(g, sel);
+                    if (rd) return { grid: g, rowData: rd, isOutpatient: isOp, effectiveRowId: sel };
+                }
             }
         }
 
@@ -390,14 +393,14 @@
     function fetchHistory(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_HISTORY_RESULT', rowId, { history: {} }, requestId);
+                sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID;
 
             if (!hsbaId) {
-                sendResult('FETCH_HISTORY_RESULT', rowId, { history: {} }, requestId);
+                sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
                 return;
             }
 
@@ -431,10 +434,19 @@
                 }
             }
 
-            sendResult('FETCH_HISTORY_RESULT', rowId, { history: historyData }, requestId);
+            sendResult('FETCH_HISTORY_RESULT', rowId, { 
+                history: historyData,
+                _context: {
+                    rowId,
+                    KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                    HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                    BENHNHANID: rowData.BENHNHANID || '',
+                    patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+                }
+            }, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchHistory error:', e);
-            sendResult('FETCH_HISTORY_RESULT', rowId, { history: {} }, requestId);
+            sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
         }
     }
 
@@ -445,12 +457,12 @@
     function fetchPatientDemographics(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
+                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null, _context: null }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
             if (!rowData) {
-                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
+                sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null, _context: null }, requestId);
                 return;
             }
 
@@ -523,10 +535,19 @@
             }
 
             debugLog('[API-Bridge] Patient demographics:', demographics);
-            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics }, requestId);
+            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { 
+                demographics,
+                _context: {
+                    rowId,
+                    KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                    HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                    BENHNHANID: rowData.BENHNHANID || '',
+                    patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+                }
+            }, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchPatientDemographics error:', e);
-            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null }, requestId);
+            sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null, _context: null }, requestId);
         }
     }
 
@@ -560,13 +581,13 @@
             const now = Date.now();
             if (vitalsCache[rowId] && (now - vitalsCache[rowId].timestamp < 10000)) {
                 debugLog(`[API-Bridge] Serving vitals for ${rowId} from cache.`);
-                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: vitalsCache[rowId].data }, requestId);
+                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: vitalsCache[rowId].data, _context: vitalsCache[rowId]._context }, requestId);
                 return;
             }
 
-            const { grid, rowData, effectiveRowId } = resolveActiveGrid(rowId);
+            const { grid, rowData, effectiveRowId } = resolveActiveGrid(rowId, { strict: true });
             if (!grid || !effectiveRowId) {
-                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
+                sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null, _context: null }, requestId);
                 return;
             }
             let finalVitals = { pulse: '', temperature: '', bloodPressure: '', weight: '', height: '', bmi: '', respiratoryRate: '', spo2: '' };
@@ -680,11 +701,19 @@
             // Phase 2: Thêm admissionDate vào vitals result (thay thế DOM read trong nutrition.js)
             finalVitals.admissionDate = rowData.THOIGIANVAOVIEN || rowData.NGAYVAOKHOA || rowData.NGAYTIEPNHAN || rowData.NGAYNHAPKHOA || '';
 
-            vitalsCache[rowId] = { data: finalVitals, timestamp: Date.now() };
-            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: finalVitals }, requestId);
+            const _context = {
+                rowId,
+                KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                BENHNHANID: rowData.BENHNHANID || '',
+                patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+            };
+
+            vitalsCache[rowId] = { data: finalVitals, _context: _context, timestamp: Date.now() };
+            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: finalVitals, _context }, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchVitals error:', e);
-            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
+            sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null, _context: null }, requestId);
         }
     }
 
@@ -1557,16 +1586,16 @@
     function fetchClinicalSummary(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_CLINICAL_SUMMARY_RESULT', rowId, {}, requestId);
+                sendResult('FETCH_CLINICAL_SUMMARY_RESULT', rowId, { _context: null }, requestId);
                 return;
             }
 
-            // Resolve grid: tự động chọn Nội trú hoặc Ngoại trú
-            const { rowData, isOutpatient, effectiveRowId } = resolveActiveGrid(rowId);
+            // Resolve grid: tự động chọn Nội trú hoặc Ngoại trú với strict mode
+            const { rowData, isOutpatient, effectiveRowId, _context } = resolveActiveGrid(rowId, { strict: true });
 
             if (!effectiveRowId) {
                 console.warn('[API-Bridge] fetchClinicalSummary: Không tìm thấy bệnh nhân đang chọn');
-                sendResult('FETCH_CLINICAL_SUMMARY_RESULT', null, {}, requestId);
+                sendResult('FETCH_CLINICAL_SUMMARY_RESULT', null, { _context: null }, requestId);
                 return;
             }
 
@@ -1591,7 +1620,8 @@
                 khamToanThanTDT: '',  // Khám toàn thân từ tờ điều trị mới nhất
                 sinhHieu: {},
                 treatmentContext: contextInfo,
-                admissionTimes
+                admissionTimes,
+                _context              // Bổ sung ContextGuard token
             };
 
             // === PHẦN 1: Bệnh sử từ HSBA API (Nội trú) ===
@@ -1973,7 +2003,7 @@
             sendResult('FETCH_CLINICAL_SUMMARY_RESULT', effectiveRowId, result, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchClinicalSummary error:', e);
-            sendResult('FETCH_CLINICAL_SUMMARY_RESULT', rowId, {}, requestId);
+            sendResult('FETCH_CLINICAL_SUMMARY_RESULT', rowId, { _context: null }, requestId);
         }
     }
 

@@ -294,7 +294,12 @@ const VNPTClinicalFill = (function () {
             fab.innerHTML = '⏳';
 
             try {
-                await doFill(iframe, type);
+                let token = null;
+                if (window.VNPTPatientContextGuard) {
+                    token = await window.VNPTPatientContextGuard.capture(iframe, type);
+                }
+
+                await doFill(iframe, type, token);
                 fab.className = 'done';
                 fab.innerHTML = '✅';
                 fab.setAttribute('data-tooltip', '✅ Đã điền xong!');
@@ -329,9 +334,9 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     // FETCH CLINICAL DATA
     // ==========================================
-    async function fetchClinicalData(pid) {
+    async function fetchClinicalData(pid, contextToken = null) {
         if (!window.VNPTMessaging) throw new Error('Messaging bridge chưa sẵn sàng');
-        const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_CLINICAL_SUMMARY', { rowId: pid }, 12000);
+        const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_CLINICAL_SUMMARY', { rowId: pid, contextToken }, 12000);
         return res;
     }
 
@@ -552,7 +557,7 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     // MAIN FILL FLOW
     // ==========================================
-    async function doFill(iframe, type) {
+    async function doFill(iframe, type, contextToken = null) {
         const target = iframe || currentFormIframe;
         if (!target) throw new Error('Không tìm thấy form!');
 
@@ -560,9 +565,17 @@ const VNPTClinicalFill = (function () {
         // Nếu null → gửi null cho api-bridge, api-bridge sẽ tự đọc selrow từ grid
         const pid = window.VNPTStore?.get('selectedPatientId') || null;
 
+        if (window.VNPTPatientContextGuard && contextToken) {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_start' });
+        }
+
         window.VNPTRealtime?.showToast('⏳ Đang trích xuất dữ liệu lâm sàng...', 'info');
 
-        const raw = await fetchClinicalData(pid);
+        const raw = await fetchClinicalData(pid, contextToken);
+
+        if (window.VNPTPatientContextGuard && contextToken) {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_after_fetch' });
+        }
 
         // Guard: bridge timeout hoặc lỗi kết nối
         if (raw.timeout || raw.success === false) {
@@ -589,7 +602,17 @@ const VNPTClinicalFill = (function () {
         const mapping = isHC ? HOICHAN_MAPPING : CHUYENVIEN_MAPPING;
 
         await injectHelper(target, helperFile, isHC ? 'vnpt-hoichan-helper' : 'vnpt-chuyenvien-helper');
-        await sendCmd(target, messageType, { mapping, clinicalData: formData }, responseType);
+
+        if (window.VNPTPatientContextGuard && contextToken) {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_before_fill' });
+        }
+
+        await sendCmd(target, messageType, { 
+            mapping, 
+            clinicalData: formData,
+            contextToken: contextToken,
+            expectedPatientName: window.VNPTStore?.get('selectedPatientName')
+        }, responseType);
 
         const label = isHC ? 'Hội chẩn' : 'Chuyển viện';
         window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu ${label}!`, 'success');

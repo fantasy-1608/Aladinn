@@ -22,6 +22,21 @@ import '../debug-init.js';
         if (!event.data || (event.data.type !== 'EMERGENCY_FILL_FORM' && event.data.type !== 'EMERGENCY_FILL_FORM_API')) return;
 
         try {
+            if (event.data.contextToken) {
+                var expectedName = event.data.expectedPatientName || '';
+                // Thường form cấp cứu có txtTENBENHNHAN hoặc nhãn BN
+                var patientNameEl = document.getElementById('txtTENBENHNHAN') || document.getElementById('txtHoTen') || document.querySelector('input[name="TENBENHNHAN"]') || document.querySelector('input[name="HOTEN"]');
+                if (patientNameEl && expectedName) {
+                    var nameOnForm = (patientNameEl.value || patientNameEl.textContent || '').trim().toUpperCase();
+                    var nameExpected = expectedName.trim().toUpperCase();
+                    if (nameOnForm && nameExpected && nameOnForm.indexOf(nameExpected) === -1 && nameExpected.indexOf(nameOnForm) === -1) {
+                        console.error('[VNPT-Helper] BLOCK FILL: Mismatch detected! Form name:', nameOnForm, 'Expected:', nameExpected);
+                        window.parent.postMessage({ type: 'EMERGENCY_FILL_RESULT', success: false, error: 'FORM_CONTEXT_MISMATCH' }, PARENT_ORIGIN);
+                        return;
+                    }
+                }
+            }
+
             var d = event.data;
             var admissionDate = d.admissionDate || d.ngayDenKham || '';
             var temp = d.temperature || '';

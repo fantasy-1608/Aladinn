@@ -189,7 +189,12 @@ const VNPTEmergency = (function () {
             fab.innerHTML = '⏳';
 
             try {
-                await doFillForm(iframe);
+                let token = null;
+                if (window.VNPTPatientContextGuard) {
+                    token = await window.VNPTPatientContextGuard.capture(iframe, 'emergency');
+                }
+
+                await doFillForm(iframe, token);
                 fab.className = 'done';
                 fab.innerHTML = '✅';
                 fab.setAttribute('data-tooltip', '✅ Đã điền xong!');
@@ -226,7 +231,7 @@ const VNPTEmergency = (function () {
 
 
 
-    async function doFillForm(targetIframe) {
+    async function doFillForm(targetIframe, contextToken = null) {
         const target = targetIframe || currentFormIframe;
         if (!target) {
             window.VNPTRealtime?.showToast('⚠️ Không tìm thấy form Cấp cứu!', 'warning');
@@ -245,6 +250,10 @@ const VNPTEmergency = (function () {
                 return;
             }
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'emergency_start' });
+            }
+
             let vitals = cachedVitals;
             
             // Try fallback to VNPTStore
@@ -256,11 +265,15 @@ const VNPTEmergency = (function () {
             // Fetch if still missing
             if (!vitals || !vitals.pulse || !vitals.temperature || !vitals.bloodPressure) {
                 window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
-                const fresh = await fetchVitalsForPatient(pid);
+                const fresh = await fetchVitalsForPatient(pid, contextToken);
                 if (fresh) {
                     vitals = fresh;
                     cachedVitals = vitals;
                 }
+            }
+
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'emergency_after_vitals' });
             }
 
             const patientData = window.VNPTStore.get('patientDataMap')?.[pid] || {};
@@ -283,7 +296,14 @@ const VNPTEmergency = (function () {
 
             // Đề xuất 2: API-first (demographics từ Store) → DOM fallback → jqGrid fallback
             if (!ngayDenKham) {
-                const storedDemo = window.VNPTStore.get('patientDemographics');
+                let storedDemo = null;
+                if (window.VNPTPatientContextGuard) {
+                    const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                    const map = window.VNPTStore?.get('patientDemographicsMap');
+                    if (map && map[patientKey]) {
+                        storedDemo = map[patientKey].data;
+                    }
+                }
                 if (storedDemo && storedDemo.admissionDate) {
                     ngayDenKham = storedDemo.admissionDate;
                 }
@@ -309,7 +329,14 @@ const VNPTEmergency = (function () {
             // Lấy Lý do vào viện - cùng nguồn với Bệnh án (medicalHistoryMap từ API NT.006.HSBA.HIS)
             let lyDoVaoVien = '';
             const historyMap = window.VNPTStore.get('medicalHistoryMap') || {};
-            const historyData = historyMap[pid];
+            let historyData = null;
+            if (window.VNPTPatientContextGuard) {
+                const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                historyData = historyMap[patientKey];
+            } else {
+                historyData = historyMap[pid];
+            }
+            
             if (historyData && historyData.LYDOVAOVIEN) {
                 lyDoVaoVien = historyData.LYDOVAOVIEN;
             }
@@ -340,6 +367,10 @@ const VNPTEmergency = (function () {
 
             await injectHelperIntoIframe(target);
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'emergency_before_fill' });
+            }
+
             await sendCmd(target, 'EMERGENCY_FILL_FORM_API', {
                 pulse: vitals?.pulse || '',
                 temperature: vitals?.temperature || '',
@@ -348,7 +379,9 @@ const VNPTEmergency = (function () {
                 spo2: vitals?.spo2 || '',
                 bmi: vitals?.bmi || '',
                 ngayDenKham: ngayDenKham,
-                lyDoVaoVien: lyDoVaoVien
+                lyDoVaoVien: lyDoVaoVien,
+                contextToken: contextToken,
+                expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'EMERGENCY_FILL_RESULT');
 
             window.VNPTRealtime?.showToast('✅ Đã điền xong phiếu cấp cứu!', 'success');
@@ -360,10 +393,10 @@ const VNPTEmergency = (function () {
         }
     }
 
-    async function fetchVitalsForPatient(pid) {
+    async function fetchVitalsForPatient(pid, contextToken = null) {
         if (!window.VNPTMessaging) return null;
         try {
-            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId: pid }, 5000);
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId: pid, contextToken }, 5000);
             return res.vitals || null;
         } catch (_e) {
             return null;

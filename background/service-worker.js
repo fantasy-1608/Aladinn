@@ -425,6 +425,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // ---- SIGN MODULE: Auto-Sign Control ----
     if (action === 'enableAutoSign') {
         autoSignEnabled = true;
+        globalThis._currentSignSessionId = message.sessionId;
         AuditEvents.autosignStarted();
         sendResponse({ ok: true });
         return false;
@@ -432,12 +433,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (action === 'disableAutoSign') {
         autoSignEnabled = false;
+        globalThis._currentSignSessionId = null;
         AuditEvents.autosignStopped('manual');
         sendResponse({ ok: true });
         return false;
     }
 
     if (action === 'closePdfTab') {
+        if (!message.sessionId || message.sessionId !== globalThis._currentSignSessionId) {
+            console.log('[Aladinn BG] closePdfTab ignored: sessionId mismatch or missing');
+            sendResponse({ ok: false, error: 'SESSION_MISMATCH' });
+            return false;
+        }
         // Instead of closing PDF tabs, switch back to previous tab
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const tab = tabs?.[0];

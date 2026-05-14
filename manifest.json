@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Aladinn - VNPT HIS AI Assistant",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "Tiện ích mở rộng hỗ trợ y bác sĩ trên hệ thống VNPT HIS: Nhập liệu giọng nói AI, Quét dữ liệu lâm sàng, Ký số tự động",
     "author": "Huỳnh Trung Anh",
     "permissions": [
@@ -61,6 +61,10 @@
             "matches": [
                 "https://*.vncare.vn/*"
             ],
+            "exclude_matches": [
+                "*://*.vncare.vn/*/jasper/*",
+                "*://*.vncare.vn/**/*.pdf"
+            ],
             "js": [
                 "lib/jquery.min.js",
                 "content/main.js"
@@ -71,6 +75,10 @@
         {
             "matches": [
                 "https://*.vncare.vn/*"
+            ],
+            "exclude_matches": [
+                "*://*.vncare.vn/*/jasper/*",
+                "*://*.vncare.vn/**/*.pdf"
             ],
             "js": [
                 "content/scanner/history-iframe-helper.js",
@@ -86,6 +94,10 @@
         {
             "matches": [
                 "https://*.vncare.vn/*"
+            ],
+            "exclude_matches": [
+                "*://*.vncare.vn/*/jasper/*",
+                "*://*.vncare.vn/**/*.pdf"
             ],
             "js": [
                 "content/sign/auto-click-helper.js"

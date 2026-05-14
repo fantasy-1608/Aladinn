@@ -547,12 +547,23 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
      * Start ward batch signing for selected patient rows
      */
     function startWardBatchSigning(patientRows) {
+        if (!confirm(`Bạn đã chọn ${patientRows.length} bệnh nhân.\nTôi đã kiểm tra kỹ — Bắt đầu phiên ký?`)) {
+            return;
+        }
+
         WARD_STATE.queue = patientRows;
         WARD_STATE.currentIndex = -1;
         WARD_STATE.isActive = true;
         WARD_STATE.stats = { completed: 0, skipped: 0, failed: 0 };
 
         const count = patientRows.length;
+        const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+        if (SessionGuard) {
+            SessionGuard.startSession(count, 'WARD');
+        } else {
+            window.__aladinnSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
         showNotice(`⚡ Bắt đầu ký cho ${count} bệnh nhân...`);
         if (Logger) Logger.info('Sign', `Ward batch signing started: ${count} patients`);
 
@@ -829,6 +840,9 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         showNotice(`✅ Hoàn thành! Ký: ${s.completed}, Bỏ qua: ${s.skipped}, Lỗi: ${s.failed}`);
         WARD_STATE.isActive = false;
 
+        const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+        if (SessionGuard) SessionGuard.stopSession();
+
         // Uncheck all
         document.querySelectorAll('.aladinn-ward-cb:checked').forEach(cb => { cb.checked = false; });
         updateWardBtnState();
@@ -853,7 +867,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         const regex = /Người dùng:\s*([^-]+)\s*-/i;
         const match = footerText.match(regex);
         if (match && match[1]) {
-            const name = match[1].trim();
+            const name = match[1].replace(/[\r\n\t\u21b5\u23ce\u21a9↵🧞]/gu, '').trim();
             if (input) input.value = name;
             return name;
         }

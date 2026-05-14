@@ -345,8 +345,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     };
 
                     // Phase 1: Cache demographics vào Store cho history.js và các module khác sử dụng
-                    if (demographics) {
-                        window.VNPTStore?.set('patientDemographics', demographics);
+                    if (demographics && window.VNPTPatientContextGuard && window.VNPTStore?.actions?.updatePatientDemographics) {
+                        const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                        window.VNPTStore.actions.updatePatientDemographics(patientKey, demographics);
                     }
 
                     if (labs.length === 0 && imaging.length === 0 && drugs.length === 0 && (!historyData || Object.keys(historyData).length === 0)) {

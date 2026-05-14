@@ -85,7 +85,11 @@ const VNPTHistory = (function () {
                 console.log('[History] Dữ liệu khám trích xuất thành công:', pid, history);
                 const store = (/** @type {any} */ (window)).VNPTStore;
                 if (store && store.actions && typeof store.actions.updateMedicalHistory === 'function') {
-                    store.actions.updateMedicalHistory(pid, history);
+                    let patientKey = pid;
+                    if (window.VNPTPatientContextGuard) {
+                        patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                    }
+                    store.actions.updateMedicalHistory(patientKey, history);
                 }
             }
         } catch (e) {
@@ -312,7 +316,12 @@ const VNPTHistory = (function () {
             fab.innerHTML = '⏳';
 
             try {
-                await doFillForm(iframe);
+                let token = null;
+                if (window.VNPTPatientContextGuard) {
+                    token = await window.VNPTPatientContextGuard.capture(iframe, 'history');
+                }
+
+                await doFillForm(iframe, token);
                 fab.className = 'done';
                 fab.innerHTML = '✅';
                 fab.setAttribute('data-tooltip', '✅ Đã điền xong!');
@@ -359,8 +368,9 @@ const VNPTHistory = (function () {
     /**
      * Điền form Bệnh án
      * @param {HTMLIFrameElement} [iframe]
+     * @param {any} [contextToken]
      */
-    async function doFillForm(iframe) {
+    async function doFillForm(iframe, contextToken = null) {
         const target = iframe || currentFormIframe;
         if (!target) return;
 
@@ -376,23 +386,21 @@ const VNPTHistory = (function () {
                 return;
             }
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'history_start' });
+            }
+
             // LUÔN fetch mới từ API — tránh lấy nhầm data BN cũ từ cache
             // Cache medicalHistoryMap có thể stale khi chuyển BN nhanh
             window.VNPTRealtime?.showToast('⏳ Đang lấy dữ liệu bệnh nhân...', 'info');
-            let history = await fetchHistoryForPatient(pid);
+            let history = await fetchHistoryForPatient(pid, contextToken);
             
-            // Fallback: chỉ dùng cache nếu API thất bại hoàn toàn
-            if (!history) {
-                const cachedHistory = window.VNPTStore?.get('medicalHistoryMap')?.[pid];
-                if (cachedHistory) {
-                    console.warn('[History] ⚠️ API fetch failed, using cached data for', pid);
-                    history = cachedHistory;
-                }
-            }
+            // KHÔNG dùng cache (medicalHistoryMap) khi fill bệnh án để chống lỗi lấy nhầm dữ liệu bệnh nhân cũ khi trùng pid (row index)
 
-            // Cập nhật cache cho lần sau
-            if (history && window.VNPTStore?.actions?.updateMedicalHistory) {
-                window.VNPTStore.actions.updateMedicalHistory(pid, history);
+            // Cập nhật cache cho lần sau (Sử dụng patientKey để đảm bảo an toàn)
+            if (history && window.VNPTStore?.actions?.updateMedicalHistory && window.VNPTPatientContextGuard) {
+                const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                window.VNPTStore.actions.updateMedicalHistory(patientKey, history);
             }
 
             if (!history) {
@@ -400,11 +408,15 @@ const VNPTHistory = (function () {
                 return;
             }
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'history_after_fetch' });
+            }
+
             // Đồng bộ hoá Cân nặng, Chiều cao từ module Sinh hiệu (Vitals) sang Bệnh án
             try {
                 // LUÔN fetch mới sinh hiệu — tránh lấy nhầm data BN cũ
                 window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
-                let vitals = await fetchVitalsForPatient(pid);
+                let vitals = await fetchVitalsForPatient(pid, contextToken);
                 
                 // Fallback: dùng cache nếu API thất bại
                 if (!vitals) {
@@ -633,8 +645,12 @@ const VNPTHistory = (function () {
 
             // Lấy dữ liệu tờ điều trị cho Bất cứ Tab nào Nếu VIP được Bật (hoặc là Tab B mặc định)
             if (isSummaryTab || isVipActive) {
+                if (window.VNPTPatientContextGuard && contextToken) {
+                    await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'history_before_treatments' });
+                }
+
                 console.log('[History] Đang lấy thêm dữ liệu tờ điều trị...');
-                const treatments = await fetchTreatmentForPatient(pid);
+                const treatments = await fetchTreatmentForPatient(pid, contextToken);
                 if (treatments && treatments.length > 0) {
                     hasTreatments = true;
                     // Hàm helper tính độ tương tự giữa 2 chuỗi (Jaccard Similarity đơn giản)
@@ -847,12 +863,19 @@ const VNPTHistory = (function () {
             // Tab B đã dùng KHAMBENH_TINHTRANG_RAVIEN thay vì Tóm tắt Bệnh án ngắn
 
             console.log('[History] Gửi lệnh fill với các field IDs:', Object.values(finalMapping));
+            
+            if (window.VNPTPatientContextGuard && contextToken) {
+                await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'history_before_fill' });
+            }
+
             await sendCmd(target, 'HISTORY_FILL_FORM', {
                 history: { ...history, GENERATED_SUMMARY: summary },
                 mapping: finalMapping,
                 specializedFields: specializedFields,
                 defaultMsg: 'Chưa ghi nhận bất thường',
-                useAiTyping: !!(settingsInfo && settingsInfo.aiEnabled)
+                useAiTyping: !!(settingsInfo && settingsInfo.aiEnabled),
+                contextToken: contextToken,
+                expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'HISTORY_FILL_RESULT');
 
             window.VNPTRealtime?.showToast('✅ Đã điền xong Bệnh án!', 'success');
@@ -865,30 +888,30 @@ const VNPTHistory = (function () {
         }
     }
 
-    async function fetchHistoryForPatient(rowId) {
+    async function fetchHistoryForPatient(rowId, contextToken = null) {
         if (!window.VNPTMessaging) return null;
         try {
-            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_HISTORY', { rowId }, 5000);
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_HISTORY', { rowId, contextToken }, 5000);
             return res.history || null;
         } catch (_err) {
             return null;
         }
     }
 
-    async function fetchTreatmentForPatient(rowId) {
+    async function fetchTreatmentForPatient(rowId, contextToken = null) {
         if (!window.VNPTMessaging) return [];
         try {
-            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_TREATMENT', { rowId }, 8000);
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_TREATMENT', { rowId, contextToken }, 8000);
             return res.treatmentList || [];
         } catch (_err) {
             return [];
         }
     }
 
-    async function fetchVitalsForPatient(rowId) {
+    async function fetchVitalsForPatient(rowId, contextToken = null) {
         if (!window.VNPTMessaging) return null;
         try {
-            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId }, 5000);
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_VITALS', { rowId, contextToken }, 5000);
             return res.vitals || null;
         } catch (_e) {
             return null;
@@ -966,7 +989,14 @@ const VNPTHistory = (function () {
 
         // Nguồn 1: VNPTStore demographics (đã fetch từ API bridge)
         try {
-            const storedDemo = window.VNPTStore?.get('patientDemographics');
+            let storedDemo = null;
+            if (window.VNPTPatientContextGuard) {
+                const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                const map = window.VNPTStore?.get('patientDemographicsMap');
+                if (map && map[patientKey]) {
+                    storedDemo = map[patientKey].data;
+                }
+            }
             if (storedDemo) {
                 const gRaw = storedDemo.gender || '';
                 if (gRaw) {

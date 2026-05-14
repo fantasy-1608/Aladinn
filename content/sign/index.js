@@ -3,6 +3,7 @@ import './utils.js';
 import './smart-detection.js';
 import './filter.js';
 import './ui.js';
+import './sign-session-guard.js';
 import './signing.js';
 import './advanced-sign.js';
 import './advanced-sign-ui.js';

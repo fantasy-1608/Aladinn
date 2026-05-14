@@ -38,6 +38,9 @@ const VNPTStore = (function () {
         patientDataMap: {},
         vitalsDataMap: {}, // patientId -> {weight, height, bmi, bloodPressure, pulse, temperature}
         medicalHistoryMap: {}, // patientId -> {full history object}
+        patientDemographicsMap: {}, // patientKey -> {data, timestamp}
+        activePatientContext: null,
+        activeFillTransaction: null,
 
         // Connection state
         isOnline: true,
@@ -329,6 +332,21 @@ const VNPTStore = (function () {
             const newMap = { ...state.medicalHistoryMap };
             newMap[patientId] = history;
             setState({ medicalHistoryMap: newMap });
+        },
+
+        /**
+         * Update patient demographics using map
+         */
+        updatePatientDemographics(patientKey, demographics) {
+            setState({
+                patientDemographicsMap: {
+                    ...state.patientDemographicsMap,
+                    [patientKey]: {
+                        data: demographics,
+                        timestamp: Date.now()
+                    }
+                }
+            });
         }
     };
 

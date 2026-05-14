@@ -9,7 +9,7 @@
     let lastConfirmClick = 0;
     let lastOkClick = 0;
     let isSignModuleEnabled = true; // Default to true, updated via storage
-    let remoteAutoSignEnabled = true; // Remote Kill Switch — default ON (fail-open)
+    let remoteAutoSignEnabled = false; // Remote Kill Switch — default OFF (fail-closed)
 
     console.log('[Aladinn/AutoClick] 🔄 Helper loaded in frame:', window.location.href.substring(0, 80));
 
@@ -62,7 +62,7 @@
     }
 
 
-    setInterval(() => {
+    function handleAutoClicks() {
         if (!isSignModuleEnabled) return;
         if (!remoteAutoSignEnabled) return; // Remote Kill Switch
         // Khi signing session đang chạy, signing.js quản lý auto-click riêng
@@ -76,9 +76,12 @@
         if (now - lastConfirmClick > 2000) {
             const confirmBtn = findInShadowRoots('#btnConfirm');
             if (confirmBtn && !confirmBtn.dataset.aladinnClicked) {
+                // Container Scoping: Ensure it's inside a valid container
+                const container = confirmBtn.closest('.modal-content, .modal-dialog, body');
+                if (!container) return;
+
                 // Kiểm tra điều kiện: Nếu có nhiều hộp chọn (nhiều mức ký) hoặc chưa chọn -> Dừng lại chờ user
-                const doc = confirmBtn.ownerDocument || document;
-                const selects = doc.querySelectorAll('select');
+                const selects = container.querySelectorAll('select');
                 let visibleCount = 0;
                 let hasUnselected = false;
                 for (const el of selects) {
@@ -104,17 +107,31 @@
 
         // Auto-click #alertify-ok (HIS "Đồng ý" success dialog)
         if (now - lastOkClick > 3000) {
-            const okBtn = findInShadowRoots('#alertify-ok') ||
-                          findInShadowRoots('.alertify-button-ok');
-            if (okBtn && !okBtn.dataset.aladinnClicked) {
-                okBtn.dataset.aladinnClicked = '1';
-                okBtn.click();
-                lastOkClick = now;
-                
-                // Không tự động đóng Modal chính của HIS ở đây!
-                // HIS sẽ tiếp tục chạy vòng lặp nội bộ (nếu có nhiều phiếu),
-                // hoặc user sẽ tự kiểm tra và đóng/chuyển bệnh nhân.
+            // Container Scoping: Only look inside .alertify
+            const alertifyModal = document.querySelector('.alertify');
+            if (alertifyModal) {
+                const okBtn = alertifyModal.querySelector('#alertify-ok') ||
+                              alertifyModal.querySelector('.alertify-button-ok');
+                if (okBtn && !okBtn.dataset.aladinnClicked) {
+                    okBtn.dataset.aladinnClicked = '1';
+                    okBtn.click();
+                    lastOkClick = now;
+                    
+                    // Không tự động đóng Modal chính của HIS ở đây!
+                    // HIS sẽ tiếp tục chạy vòng lặp nội bộ (nếu có nhiều phiếu),
+                    // hoặc user sẽ tự kiểm tra và đóng/chuyển bệnh nhân.
+                }
             }
         }
-    }, 1000);
+    }
+
+    if (document.body) {
+        const observer = new MutationObserver(handleAutoClicks);
+        observer.observe(document.body, { childList: true, subtree: true });
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new MutationObserver(handleAutoClicks);
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    }
 })();

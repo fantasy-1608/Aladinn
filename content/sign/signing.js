@@ -56,8 +56,19 @@ window.Aladinn.Sign.Signing = (function () {
 
         if (WORKFLOW.queue.length === 0) return;
 
+        if (!confirm(`Bạn đã chọn ${WORKFLOW.queue.length} bệnh nhân.\nTôi đã kiểm tra kỹ — Bắt đầu phiên ký?`)) {
+            WORKFLOW.queue = [];
+            return;
+        }
+
         WORKFLOW.isActive = true;
         window.__aladinnSigningActive = true;
+        const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+        if (SessionGuard) {
+            SessionGuard.startSession(WORKFLOW.queue.length, 'SIGN_PAGE');
+        } else {
+            window.__aladinnSessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
         WORKFLOW.currentIndex = -1;
         WORKFLOW.stats.completed = 0;
         WORKFLOW.stats.skipped = 0;
@@ -83,9 +94,11 @@ window.Aladinn.Sign.Signing = (function () {
      */
     function stopSession() {
         const UI = _ui();
+        const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
         WORKFLOW.isActive = false;
         window.__aladinnSigningActive = false;
         WORKFLOW.queue = [];
+        if (SessionGuard) SessionGuard.stopSession();
 
         // Close any open modal/dialog before stopping
         tryCloseModal();
@@ -190,6 +203,9 @@ window.Aladinn.Sign.Signing = (function () {
                 WORKFLOW.stats.completed++;
                 if (UI) UI.addPatientToHistory(prevPatientName, 'signed');
                 saveToSessionHistory(prevPatientName);
+
+                const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+                if (SessionGuard) SessionGuard.logEvent('PATIENT_SIGNED', { rowId: prevRowId, patientName: prevPatientName });
             } else if (isAutoSkip) {
                 if (prevRow) {
                     prevRow.classList.add('his-skipped-row');
@@ -197,6 +213,12 @@ window.Aladinn.Sign.Signing = (function () {
                     if (cb) cb.checked = false;
                 }
                 WORKFLOW.stats.skipped++;
+
+                const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+                if (SessionGuard) SessionGuard.logEvent('PATIENT_SKIPPED', { rowId: prevRowId, patientName: prevPatientName });
+            } else {
+                const SessionGuard = window.Aladinn?.Sign?.SessionGuard;
+                if (SessionGuard) SessionGuard.logEvent('PATIENT_FAILED', { rowId: prevRowId, patientName: prevPatientName });
             }
         }
 
@@ -623,7 +645,7 @@ window.Aladinn.Sign.Signing = (function () {
         if (AUTO_SIGN.observer) return;
 
         // Also notify background to enable PDF tab auto-close
-        chrome.runtime.sendMessage({ action: 'enableAutoSign' });
+        chrome.runtime.sendMessage({ action: 'enableAutoSign', sessionId: window.__aladinnSessionId });
 
         let _debounceTimer = null;
         function debouncedCheck() {
@@ -739,7 +761,7 @@ window.Aladinn.Sign.Signing = (function () {
                 AUTO_SIGN.hasClickedConfirm = true;
                 AUTO_SIGN.lastConfirmTime = now;
                 if (UI) UI.showToast('🖊️ Đang ký...');
-                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab' }); } catch (_e) { /* */ } }, 800);
+                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab', sessionId: window.__aladinnSessionId }); } catch (_e) { /* */ } }, 800);
                 return;
             }
         }
@@ -761,7 +783,7 @@ window.Aladinn.Sign.Signing = (function () {
                 AUTO_SIGN.lastOkTime = now;
                 AUTO_SIGN.signCompleted = true;
                 if (UI) UI.showToast('✅ Ký thành công!');
-                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab' }); } catch (_e) { /* */ } }, 800);
+                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab', sessionId: window.__aladinnSessionId }); } catch (_e) { /* */ } }, 800);
             }
         }
     }, 400);

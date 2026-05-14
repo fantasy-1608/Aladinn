@@ -168,8 +168,8 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 <div align="center">
 
-*Built with ❤️ for Vietnamese clinicians*
+<p><em>Built with ❤️ for Vietnamese clinicians</em></p>
 
-**Tác giả: Bác sĩ Huỳnh Trung Anh** · Powered by Gemini AI
+<p><strong>Tác giả: Bác sĩ Huỳnh Trung Anh</strong> · Powered by Gemini AI</p>
 
 </div>

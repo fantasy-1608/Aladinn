@@ -395,12 +395,12 @@ window.Aladinn.Sign.UI = (function () {
         const footerTexts = document.body.innerText;
         const regex = /Người dùng:\s*([^-]+)\s*-/i;
         const match = footerTexts.match(regex);
-        if (match && match[1]) return match[1].trim();
+        if (match && match[1]) return match[1].replace(/[\r\n\t\u21b5\u23ce\u21a9↵🧞]/gu, '').trim();
 
         const statusElements = document.querySelectorAll('.ui-jqgrid-status-bar, [class*="footer"], [id*="footer"]');
         for (const el of statusElements) {
             const m = el.innerText.match(regex);
-            if (m && m[1]) return m[1].trim();
+            if (m && m[1]) return m[1].replace(/[\r\n\t\u21b5\u23ce\u21a9↵🧞]/gu, '').trim();
         }
         return null;
     }

@@ -34,6 +34,21 @@ import '../debug-init.js';
         if (event.data.type !== 'HISTORY_FILL_FORM') return;
 
         try {
+            if (event.data.contextToken) {
+                var expectedName = event.data.expectedPatientName || '';
+                var patientNameEl = document.getElementById('txtTENBENHNHAN') || document.getElementById('txtHoTen') || document.querySelector('input[name="TENBENHNHAN"]') || document.querySelector('input[name="HOTEN"]');
+                if (patientNameEl && expectedName) {
+                    var nameOnForm = (patientNameEl.value || patientNameEl.textContent || '').trim().toUpperCase();
+                    var nameExpected = expectedName.trim().toUpperCase();
+                    // So sánh linh hoạt hơn một chút vì tên có thể có tiền tố/hậu tố
+                    if (nameOnForm && nameExpected && nameOnForm.indexOf(nameExpected) === -1 && nameExpected.indexOf(nameOnForm) === -1) {
+                        console.error('[VNPT-Helper] BLOCK FILL: Mismatch detected! Form name:', nameOnForm, 'Expected:', nameExpected);
+                        sendResponse(false, 'FORM_CONTEXT_MISMATCH');
+                        return;
+                    }
+                }
+            }
+
             var data = event.data.history || {};
 
             // Log ALL IDs for mapping help if needed
