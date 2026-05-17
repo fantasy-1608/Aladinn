@@ -245,6 +245,10 @@ window.Aladinn.Sign.Signing = (function () {
             const patientName = getPatientNameFromRow(row);
             if (patientName && UI) UI.setCurrentPatientName(patientName);
 
+            if (window.VNPTPatientContextGuard) {
+                WORKFLOW.currentContextToken = window.VNPTPatientContextGuard.captureGridOnly(rowId);
+            }
+
             setTimeout(() => {
                 const creatorInput = document.getElementById('his-creator-filter');
                 const creatorName = creatorInput ? creatorInput.value.trim() : '';
@@ -721,6 +725,18 @@ window.Aladinn.Sign.Signing = (function () {
         const UI = _ui();
 
         // STEP 1: Auto-click "Xác nhận" (#btnConfirm)
+        // 🛡️ Patient Context Guard: Block auto-click if patient mismatched
+        if (window.VNPTPatientContextGuard && WORKFLOW.currentContextToken) {
+            const isValid = window.VNPTPatientContextGuard.validate(WORKFLOW.currentContextToken, { allowGridOnly: true });
+            if (!isValid) {
+                if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
+                    UI.showToast('🚨 LỖI CONTEXT: Bệnh nhân hiện tại không khớp với bệnh nhân đang ký. Đã chặn tự động ký!', 'error');
+                    AUTO_SIGN.lastConfirmTime = now;
+                }
+                return;
+            }
+        }
+
         // 🛡️ SmartCA Guard: Block auto-click if signer name mismatch
         if (window.__aladinnSmartCAMismatch) {
             if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {

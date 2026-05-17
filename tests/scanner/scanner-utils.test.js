@@ -259,8 +259,8 @@ describe('classifyLab', () => {
 // SECTION 6: LAB_CATEGORIES constant integrity
 // ═══════════════════════════════════════════════════════════════
 describe('LAB_CATEGORIES', () => {
-    it('has 3 categories', () => {
-        expect(Object.keys(LAB_CATEGORIES)).toHaveLength(3);
+    it('has 4 categories', () => {
+        expect(Object.keys(LAB_CATEGORIES)).toHaveLength(4);
     });
 
     it('Huyết học has WBC, PLT, and coagulation markers', () => {
