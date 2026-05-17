@@ -14,7 +14,11 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
      */
     function init() {
         // Dùng setInterval để đảm bảo nút luôn xuất hiện kể cả khi lưới render lại
-        setInterval(injectButton, 1500);
+        // Thêm guard: tạm dừng khi tab ẩn để tiết kiệm CPU
+        setInterval(() => {
+            if (document.hidden) return;
+            injectButton();
+        }, 1500);
     }
 
     /**

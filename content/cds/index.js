@@ -351,8 +351,10 @@ export async function initCDS(enabled = true, filter = true) {
 
     // setInterval fallback: bắt khi jBox mở bên trong iframe lồng (ifmView, v.v.)
     // modalObserver không thể detect DOM changes trong inner frame
+    // Tăng interval lên 3s + thêm guard tạm dừng khi tab ẩn
     if (!window._cdsScanContextInterval) {
         window._cdsScanContextInterval = setInterval(() => {
+            if (document.hidden) return;
             const ctx = detectScanContext();
             if (!ctx.enabled && isModalOpen) {
                 // Form đã đóng, không còn context nào → dừng hẳn
@@ -367,7 +369,7 @@ export async function initCDS(enabled = true, filter = true) {
                     startScanning(ctx.mode);
                 }
             }
-        }, 1500);
+        }, 3000);
     }
 
     // Kiểm tra ngay
@@ -462,7 +464,8 @@ document.addEventListener('click', (e) => {
             type: 'REQ_PREFETCH_DIAGNOSES',
             requestId: reqId,
             rowId: tr.id,
-            token: document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || '')
+            token: document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || ''),
+            nonce: window.__ALADINN_NONCE__
         }, window.location.origin);
     }
 });

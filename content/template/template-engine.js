@@ -27,9 +27,10 @@ class TemplateEngine {
             subtree: true,
         });
 
-        // Scan ngay lập tức và poll nhẹ để bắt iframe lazy-load
+        // Scan ngay lập tức và thêm 1 lần scan sau 3s cho iframe lazy-load
+        // MutationObserver đã cover việc detect iframe mới — không cần poll vĩnh viễn
         this._scanIframes(document);
-        setInterval(() => this._scanIframes(document), 2000);
+        setTimeout(() => this._scanIframes(document), 3000);
     }
 
     /** Attach listener vào 1 document (top hoặc iframe) */

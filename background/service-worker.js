@@ -424,6 +424,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // ---- SIGN MODULE: Auto-Sign Control ----
     if (action === 'enableAutoSign') {
+        if (!message.sessionId) {
+            sendResponse({ ok: false, error: 'MISSING_SESSION_ID' });
+            return false;
+        }
         autoSignEnabled = true;
         globalThis._currentSignSessionId = message.sessionId;
         AuditEvents.autosignStarted();
@@ -432,6 +436,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (action === 'disableAutoSign') {
+        if (!message.sessionId || message.sessionId !== globalThis._currentSignSessionId) {
+            sendResponse({ ok: false, error: 'SESSION_MISMATCH' });
+            return false;
+        }
         autoSignEnabled = false;
         globalThis._currentSignSessionId = null;
         AuditEvents.autosignStopped('manual');
@@ -511,6 +519,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: true, config });
         });
         return true;
+    }
+
+    // ---- POPUP → Content Script command relay (replaces ISOLATED world executeScript) ----
+    if (type === 'POPUP_COMMAND' || type === 'POPUP_SHOW_DASHBOARD' || type === 'POPUP_SET_DEBUG') {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, message, (response) => {
+                    if (chrome.runtime.lastError) {
+                        sendResponse({ success: false, error: 'F5_REQUIRED' });
+                    } else {
+                        sendResponse(response || { success: true });
+                    }
+                });
+            } else {
+                sendResponse({ success: false, error: 'NO_ACTIVE_TAB' });
+            }
+        });
+        return true; // async
     }
 
     return false;

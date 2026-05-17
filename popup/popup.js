@@ -79,27 +79,16 @@ async function initPopup() {
     });
 
     function executeContentFunction(funcName, arg = null, errMsg = '⚠️ Vui lòng F5 tải lại trang VNPT HIS (Do Extension vừa được cập nhật)') {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                world: 'ISOLATED',
-                func: (fName, fArg) => {
-                    if (window.Aladinn && window.Aladinn.Scanner) {
-                        if (typeof window.Aladinn.Scanner[fName] === 'function') {
-                            window.Aladinn.Scanner[fName](fArg);
-                            return true;
-                        }
-                    }
-                    return false;
-                },
-                args: [funcName, arg]
-            }).then((results) => {
-                if (results && results[0] && results[0].result === false) {
-                    showError(errMsg);
-                }
-            }).catch((_err) => {
-                showError('⚠️ Lỗi: Không thể thực thi. Bạn hãy F5 lại trang HIS.');
-            });
+        chrome.runtime.sendMessage({
+            type: 'POPUP_COMMAND',
+            funcName: funcName,
+            funcArg: arg
+        }).then((response) => {
+            if (response && response.success === false) {
+                showError(response.error === 'F5_REQUIRED' ? errMsg : errMsg);
+            }
+        }).catch(() => {
+            showError('⚠️ Lỗi: Không thể thực thi. Bạn hãy F5 lại trang HIS.');
         });
     }
 
@@ -136,29 +125,12 @@ async function initPopup() {
     // Dashboard
     const showDashBtn = document.getElementById('show-dashboard-btn');
     if(showDashBtn) showDashBtn.addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    world: 'ISOLATED',
-                    func: () => { 
-                        if (window.VNPTDashboard) {
-                            window.VNPTDashboard.show();
-                            return true;
-                        } else if (window.Aladinn && window.Aladinn.Scanner && window.Aladinn.Scanner.UI && window.Aladinn.Scanner.UI.Dashboard) {
-                            window.Aladinn.Scanner.UI.Dashboard.show(); 
-                            return true;
-                        }
-                        return false;
-                    }
-                }).then((results) => {
-                    if (results && results[0] && results[0].result === false) {
-                        showError('⚠️ Không tìm thấy Module Dashboard.');
-                    }
-                }).catch(() => {
-                    showError('⚠️ Vui lòng mở trang VNPT HIS');
-                });
+        chrome.runtime.sendMessage({ type: 'POPUP_SHOW_DASHBOARD' }).then((response) => {
+            if (response && response.success === false) {
+                showError('⚠️ Không tìm thấy Module Dashboard.');
             }
+        }).catch(() => {
+            showError('⚠️ Vui lòng mở trang VNPT HIS');
         });
     });
 
@@ -186,21 +158,7 @@ async function initPopup() {
                 debugBtn.style.background = newState ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
                 
                 // Notify content script
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                    if (tabs[0]) {
-                        chrome.scripting.executeScript({
-                            target: { tabId: tabs[0].id, allFrames: true },
-                            world: 'ISOLATED',
-                            func: (debugState) => {
-                                if (window.VNPTConfig) window.VNPTConfig.DEBUG = debugState;
-                                // Pass to Main World (api-bridge)
-                                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: debugState }, '*');
-                                return true;
-                            },
-                            args: [newState]
-                        }).catch(() => {});
-                    }
-                });
+                chrome.runtime.sendMessage({ type: 'POPUP_SET_DEBUG', state: newState }).catch(() => {});
             });
         });
     }

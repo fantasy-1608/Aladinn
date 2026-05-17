@@ -1,4 +1,3 @@
-import '../debug-init.js';
 /**
  * VNPT HIS Smart Scanner v4.0.1
  * History Iframe Helper
@@ -8,7 +7,7 @@ import '../debug-init.js';
 (function () {
     'use strict';
     var PARENT_ORIGIN = '*';
-    var $ = window.jQuery || window.$;
+    var _$ = window.jQuery || window.$;
 
     if (window._vnptHistoryHandler) {
         window.removeEventListener('message', window._vnptHistoryHandler);
@@ -40,11 +39,22 @@ import '../debug-init.js';
                 if (patientNameEl && expectedName) {
                     var nameOnForm = (patientNameEl.value || patientNameEl.textContent || '').trim().toUpperCase();
                     var nameExpected = expectedName.trim().toUpperCase();
-                    // So sánh linh hoạt hơn một chút vì tên có thể có tiền tố/hậu tố
                     if (nameOnForm && nameExpected && nameOnForm.indexOf(nameExpected) === -1 && nameExpected.indexOf(nameOnForm) === -1) {
                         console.error('[VNPT-Helper] BLOCK FILL: Mismatch detected! Form name:', nameOnForm, 'Expected:', nameExpected);
                         sendResponse(false, 'FORM_CONTEXT_MISMATCH');
                         return;
+                    }
+                }
+
+                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
+                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN');
+                if (recordIdEl && expectedRecordId) {
+                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
+                    // So sánh lỏng hơn một chút: if idOnForm exists and does not include expectedRecordId or vice versa
+                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
+                        // Do mã trên form và rowId có thể khác loại (MABENHNHAN vs MAVAOVIEN), chúng ta chỉ warn nếu thực sự có thông tin nhưng hoàn toàn không khớp. 
+                        // Tạm thời log warning thay vì block cứng nếu không chắc chắn 100%, nhưng tên BN thì block cứng.
+                        console.warn('[VNPT-Helper] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
                     }
                 }
             }
@@ -80,6 +90,16 @@ import '../debug-init.js';
                 }
             }
 
+            // --- ĐIỀN CHẨN ĐOÁN VÀO KHOA BẰNG COMBOGRID ---
+            if (data.mainDiag) {
+                setComboGrid('txtMABENHCHINH', data.mainDiag.code);
+                setVal('txtBENHCHINH', data.mainDiag.text);
+            }
+            if (data.subDiag) {
+                setComboGrid('txtMABENHKEMTHEO', data.subDiag.code);
+                setVal('txtBENHKEMTHEO', data.subDiag.text);
+            }
+
             sendResponse(true);
         } catch (e) {
             sendResponse(false, e.message);
@@ -97,19 +117,24 @@ import '../debug-init.js';
         'txtHDTVACDT': ['Hướng điều trị', 'chế độ tiếp theo']
     };
 
-    function getFieldElement(fieldIdStr) {
-        if (!fieldIdStr) return null;
+    function getFieldElements(fieldIdStr) {
+        if (!fieldIdStr) return [];
         var ids = fieldIdStr.split('|');
-        var el = null;
-        var targetId = ids[0];
+        var els = [];
 
         for (var i = 0; i < ids.length; i++) {
             var currId = ids[i];
-            el = document.getElementById(currId) || document.querySelector('[name="' + currId + '"]');
-            if (el) return { el: el, targetId: currId };
+            var byId = document.getElementById(currId);
+            if (byId && !els.includes(byId)) els.push(byId);
+            
+            var byName = document.querySelectorAll('[name="' + currId + '"]');
+            for(var n = 0; n < byName.length; n++) {
+                if (!els.includes(byName[n])) els.push(byName[n]);
+            }
+            if (els.length > 0) return els;
         }
 
-        if (!el && LABEL_HINTS[ids[0]]) {
+        if (els.length === 0 && LABEL_HINTS[ids[0]]) {
             var hints = LABEL_HINTS[ids[0]];
             var allTextareas = document.querySelectorAll('textarea');
             for (var t = 0; t < allTextareas.length; t++) {
@@ -123,38 +148,49 @@ import '../debug-init.js';
 
                 var matched = hints.every(function (hint) { return searchText.includes(hint); });
                 if (matched) {
-                    console.log('[VNPT-Helper] Found "' + targetId + '" via label search:', ta.id || ta.name || '(no id)');
-                    return { el: ta, targetId: targetId };
+                    els.push(ta);
+                    return els;
                 }
             }
         }
-        return null;
+        return els;
     }
 
-
+    function setComboGrid(id, code) {
+        if (!code) return;
+        try {
+            var els = getFieldElements(id);
+            for(var i = 0; i < els.length; i++) {
+                var el = els[i];
+                var jEl = window.$ ? window.$(el) : null;
+                if (jEl && jEl.data('combogrid')) {
+                    jEl.combogrid('setValue', code);
+                    jEl.val(code);
+                } else {
+                    el.value = code;
+                }
+            }
+        } catch(_e) {}
+    }
 
     function setVal(fieldIdStr, val) {
         if (val === undefined || val === null) return;
-        var found = getFieldElement(fieldIdStr);
+        var els = getFieldElements(fieldIdStr);
 
-        if (!found) {
+        if (els.length === 0) {
             console.log('[VNPT-Helper] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
-            var tas = document.querySelectorAll('textarea');
-            var idx = [];
-            for (var j = 0; j < tas.length; j++) {
-                if (tas[j].id) idx.push(tas[j].id);
-            }
-            if (idx.length > 0) console.log('[VNPT-Helper] Available textarea IDs:', idx);
             return;
         }
 
-        var el = found.el;
-        el.value = val;
-        if ($) {
-            $(el).trigger('change').trigger('input');
-        } else {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            el.dispatchEvent(new Event('input', { bubbles: true }));
+        for (var i = 0; i < els.length; i++) {
+            var el = els[i];
+            el.value = val;
+            if (window.$) {
+                window.$(el).trigger('change').trigger('input');
+            } else {
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         }
     }
 

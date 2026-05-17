@@ -355,10 +355,10 @@
                 uiRetries++;
                 let found = false;
                 
-                // Tìm tất cả các element ở footer để apply hiệu ứng Aladinn
-                const elements = document.querySelectorAll('*');
+                // Tìm element "Người dùng:" ở footer/status bar của HIS
+                // Dùng selector cụ thể thay vì querySelectorAll('*') — giảm từ ~5000 xuống ~200 elements
+                const elements = document.querySelectorAll('span, div, td, label, a, li, p, strong, em, b');
                 for (const el of elements) {
-                    if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') continue;
                     
                     if (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
                         const text = el.textContent.trim();
@@ -542,6 +542,40 @@
                 if (window.Aladinn?.Sign?.Signing?.processNextPatient) {
                     window.Aladinn.Sign.Signing.processNextPatient(true);
                 }
+                sendResponse({ success: true });
+            }
+
+            // Popup scanner commands (routed via background SW, no more ISOLATED world executeScript)
+            if (type === 'POPUP_COMMAND') {
+                const funcName = message.funcName;
+                const funcArg = message.funcArg || null;
+                let result = false;
+                if (window.Aladinn?.Scanner) {
+                    if (typeof window.Aladinn.Scanner[funcName] === 'function') {
+                        window.Aladinn.Scanner[funcName](funcArg);
+                        result = true;
+                    }
+                }
+                sendResponse({ success: result });
+            }
+
+            // Popup dashboard command
+            if (type === 'POPUP_SHOW_DASHBOARD') {
+                let result = false;
+                if (window.VNPTDashboard) {
+                    window.VNPTDashboard.show();
+                    result = true;
+                } else if (window.Aladinn?.Scanner?.UI?.Dashboard) {
+                    window.Aladinn.Scanner.UI.Dashboard.show();
+                    result = true;
+                }
+                sendResponse({ success: result });
+            }
+
+            // Popup debug toggle
+            if (type === 'POPUP_SET_DEBUG') {
+                if (window.VNPTConfig) window.VNPTConfig.DEBUG = message.state;
+                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: message.state }, '*');
                 sendResponse({ success: true });
             }
 

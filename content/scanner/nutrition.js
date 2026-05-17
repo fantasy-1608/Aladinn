@@ -69,11 +69,17 @@ const VNPTNutrition = (function () {
             const currentPid = window.VNPTStore.get('selectedPatientId');
             if (currentPid) onPatientSelected(currentPid);
         } else {
-            // Fallback to polling if store not yet ready
-            setInterval(async () => {
+            // Fallback to polling if store not yet ready — auto-cleanup khi store sẵn sàng
+            const fallbackTimer = setInterval(async () => {
+                if (document.hidden) return;
                 if (!window.VNPTStore) return;
+                // Store đã sẵn sàng → subscribe + clear timer
+                window.VNPTStore.subscribe('selectedPatientId', (pid) => {
+                    if (pid) onPatientSelected(pid);
+                });
                 const pid = window.VNPTStore.get('selectedPatientId');
                 if (pid) onPatientSelected(pid);
+                clearInterval(fallbackTimer);
             }, 2000);
         }
 
@@ -294,6 +300,14 @@ const VNPTNutrition = (function () {
 
             window.VNPTRealtime?.showToast('⏳ Đang điền phiếu...', 'info');
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
+                if (!confirmed) {
+                    window.VNPTRealtime?.showToast('ℹ️ Đã hủy.', 'info');
+                    return;
+                }
+            }
+
             // Inject helper vào iframe
             await injectHelper(target);
 
@@ -357,14 +371,18 @@ const VNPTNutrition = (function () {
                 expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'NUTRITION_FILL_RESULT');
 
-            window.VNPTRealtime?.showToast('✅ Đã điền xong phiếu DD-03!', 'success');
+            const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu DD-03 cho bệnh nhân: ${ptName}`, 'success');
 
             // Ẩn button sau khi điền xong
             hideFillButton();
         } catch (e) {
             console.error('[Nutrition] Lỗi:', e);
-            const msg = (e instanceof Error) ? e.message : 'Lỗi';
-            window.VNPTRealtime?.showToast('❌ ' + msg, 'warning');
+            let msg = (e instanceof Error) ? e.message : 'Lỗi';
+            if (msg === 'FORM_CONTEXT_MISMATCH') {
+                msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
+            }
+            window.VNPTRealtime?.showToast('❌ ' + msg, 'error');
         }
     }
 

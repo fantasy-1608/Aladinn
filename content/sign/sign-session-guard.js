@@ -149,8 +149,42 @@ window.Aladinn.Sign.SessionGuard = (function () {
         return currentSession?.id || null;
     }
 
+    function getSession() {
+        return currentSession ? { ...currentSession } : null;
+    }
+
+    function isSessionValid() {
+        if (!currentSession) return false;
+        if (currentSession.state !== 'ACTIVE') return false;
+        if (Date.now() - currentSession.startedAt > SESSION_TTL_MS) return false;
+        return true;
+    }
+
     function getState() {
         return currentSession?.state || 'STOPPED';
+    }
+
+    function rotateStepNonce() {
+        if (!currentSession) return null;
+        currentSession.stepNonce = _generateId();
+        return currentSession.stepNonce;
+    }
+
+    function markStepCompleted(step) {
+        if (!currentSession) return;
+        currentSession.lastStepCompleted = step;
+    }
+
+    function assertCanAutoClick(actionContext) {
+        if (!isSessionValid()) return false;
+        
+        const policy = window.Aladinn.Sign.Policy?.get();
+        if (policy) {
+            if (actionContext.action === 'closePdfTab' && !policy.allowAutoClosePdfTab) return false;
+            if (actionContext.action === 'click_smartCAConfirm' && !policy.allowConfirmAutoClick) return false;
+            if (actionContext.action === 'click_hisSuccessOk' && !policy.allowOkAutoClick) return false;
+        }
+        return true;
     }
 
     return {
@@ -160,7 +194,12 @@ window.Aladinn.Sign.SessionGuard = (function () {
         resumeSession,
         ping,
         getSessionId,
+        getSession,
+        isSessionValid,
         getState,
+        rotateStepNonce,
+        markStepCompleted,
+        assertCanAutoClick,
         logEvent: _auditLog
     };
 })();

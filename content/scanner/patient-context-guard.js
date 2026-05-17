@@ -7,8 +7,14 @@
 
 window.VNPTPatientContextGuard = (function () {
     let activeFillTokens = new Map();
+    let globalAbortController = null;
 
     async function capture(formIframe, formType) {
+        if (globalAbortController) {
+            globalAbortController.abort('NEW_FILL_STARTED');
+        }
+        globalAbortController = new AbortController();
+
         const store = window.VNPTStore?.getState() || {};
         const pid = store.selectedPatientId;
         
@@ -86,6 +92,14 @@ window.VNPTPatientContextGuard = (function () {
             token.invalidateReason = reason;
         }
         activeFillTokens.clear();
+        if (globalAbortController) {
+            globalAbortController.abort(reason);
+            globalAbortController = null;
+        }
+    }
+
+    function getActiveSignal() {
+        return globalAbortController ? globalAbortController.signal : null;
     }
 
     function getCurrentContext() {
@@ -95,6 +109,29 @@ window.VNPTPatientContextGuard = (function () {
     function hashIdentity(identity) {
         if (!identity) return 'unknown';
         return `${identity.rowId || ''}_${identity.khambenhId || ''}_${identity.hosobenhanId || ''}_${identity.benhnhanId || ''}`;
+    }
+
+    function showContextConfirmDialog(token) {
+        return new Promise((resolve) => {
+            const store = window.VNPTStore?.getState() || {};
+            const patientName = store.selectedPatientName || 'Không rõ';
+            const currentPid = window.VNPTStore?.get('selectedPatientId');
+            
+            // Xác minh lại lần cuối
+            if (currentPid === token.initialSelectedPatientId) {
+                if (window.VNPTRealtime && typeof window.VNPTRealtime.showToast === 'function') {
+                    window.VNPTRealtime.showToast(`✅ Đã xác minh: Thông tin điền khớp 100% với bệnh nhân hiện tại (${patientName}).`, 'success');
+                } else {
+                    console.log(`[ContextGuard] Đã xác minh khớp 100% bệnh nhân: ${patientName}`);
+                }
+                resolve(true);
+            } else {
+                if (window.VNPTRealtime && typeof window.VNPTRealtime.showToast === 'function') {
+                    window.VNPTRealtime.showToast('❌ CẢNH BÁO: Thông tin điền KHÔNG KHỚP với bệnh nhân hiện tại. Đã chặn!', 'error');
+                }
+                resolve(false);
+            }
+        });
     }
 
     // Auto-invalidate when patient changes
@@ -110,7 +147,9 @@ window.VNPTPatientContextGuard = (function () {
         validate,
         assertValidOrThrow,
         invalidateAll,
+        getActiveSignal,
         getCurrentContext,
-        hashIdentity
+        hashIdentity,
+        showContextConfirmDialog
     };
 })();

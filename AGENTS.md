@@ -41,3 +41,76 @@ This project is indexed by GitNexus as **Aladinn** (5073 symbols, 7953 relations
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+# AGENTS.md — Aladinn AI Coding Rules
+
+## Project
+Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians with clinical data scanning, AI summarization, voice input, auto-fill, CDS alerts, PACS view, and controlled auto-sign workflows.
+
+## Non-negotiable safety rules (Aladinn Core)
+1. Never bypass VNPT HIS permission boundaries.
+2. Never access APIs unavailable to the currently logged-in user.
+3. Never write directly to HIS without patient-context verification.
+4. Never send identifiable PHI to LLM providers.
+5. Never store raw HIS tokens, API keys, or patient identifiers in logs.
+6. Never expand Chrome permissions without documenting why.
+7. Never change auto-fill or auto-sign behavior without tests.
+8. Never use LLM output as the sole authority for writeback.
+9. Fail closed on uncertainty.
+10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
+
+## Extension Architecture & Coding Patterns (Sourced from ECC)
+1. **Immutability (CRITICAL):** Always create new objects, never mutate existing patient states or data payloads. Return new copies with changes applied. This prevents patient data cross-contamination.
+2. **Fail Fast & Validate Boundaries:** Validate all user input and HIS DOM/API data at system boundaries. Use schema-based validation. Never trust external data.
+3. **Error Handling:** Handle errors at every level. Log securely (PHI redacted). Never silently swallow errors.
+4. **File Organization:** High cohesion, low coupling. Functions <50 lines, files focused (<800 lines max). No deep nesting (>4 levels).
+
+## Required workflow before coding
+1. **Plan:** Identify dependencies, risks, and break into phases. Inspect relevant files.
+2. **TDD (Test-Driven Development):** Write tests before implementation (RED -> GREEN -> IMPROVE). 80%+ coverage required.
+3. **Execute:** Implement minimal change safely.
+4. **Review & Validate:** Run lint, test, build. Verify against safety rules.
+5. **Document:** Update docs and changelog.
+
+## High-risk modules
+- content/voice/autofill.js
+- content/scanner/clinical-fill.js
+- content/sign/*
+- content/cds/*
+- injected/api-bridge.js
+- injected/ajax-interceptor.js
+- injected/grid-hook.js
+- background/ai-client.js
+- background/service-worker.js
+- background/updater.js
+- options/*
+- manifest.json
+
+## Required tests for high-risk changes
+- Patient context changed before write.
+- Missing patientId blocks write.
+- EncounterId mismatch blocks write.
+- LLM malformed response blocks auto-fill.
+- PHI redaction before AI request.
+- Endpoint allowlist blocks non-approved domain.
+- Auto-sign stops when tab/window changes.
+- Cache is keyed by composite patient key.
+- Logs do not contain raw PHI.
+
+## Commands
+Run before finalizing:
+```bash
+pnpm run lint
+pnpm run test
+pnpm run test:coverage
+pnpm run build
+```
+
+## Output expectation
+For every task, provide:
+1. Files changed.
+2. Why changed.
+3. Safety impact.
+4. Tests added/updated.
+5. Commands run.
+6. Remaining risks.

@@ -125,6 +125,9 @@ export const LAB_CATEGORIES = {
         'Protein niệu','Glucose niệu','Hồng cầu niệu','Bạch cầu niệu',
         'Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng'
     ],
+    'Khí máu': [
+        'pH','pCO2','pO2','HCO3act','HCO3std','BE(ecf)','BE(B)','ctCO2','O2SAT','pO2/FIO2','pO2(A-a)(T)','pO2(a/A)(T)','Temp','ctHb','FIO2','RI'
+    ],
     'Sinh hóa': [
         'Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT',
         'Bilirubin','Protein','Albumin','CRP','LDH','CK','Amylase','Lipase',
@@ -162,8 +165,10 @@ export function classifyLab(code, testName, value) {
     if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
     if (combined.includes('HUYẾT ĐỒ') || combined.includes('TẾ BÀO MÁU') || combined.includes('CÔNG THỨC MÁU') ||
         combined.includes('ĐÔNG MÁU') || combined.includes('NHÓM MÁU') || combined.includes('HUYẾT HỌC')) return 'Huyết học';
+    if (combined.includes('KHÍ MÁU') || combined.includes('KHI MAU')) return 'Khí máu';
     if (combined.includes('SINH HÓA') || combined.includes('HÓA SINH') || combined.includes('HOẠT ĐỘ') ||
         combined.includes('ĐỊNH LƯỢNG') || combined.includes('ĐỘ LỌC') || combined.includes('ĐIỆN GIẢI')) return 'Sinh hóa';
+
 
     // 4. Keyword list matching
     for (const [cat, keywords] of Object.entries(LAB_CATEGORIES)) {

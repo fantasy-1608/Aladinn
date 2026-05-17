@@ -20,12 +20,54 @@
     }
 
     // Cache to prevent duplicate simultaneous requests from multiple modules
+    // LRU eviction: max 30 entries, tự động xoá cũ nhất khi đầy
+    const VITALS_CACHE_MAX = 30;
+    const VITALS_CACHE_TTL = 5 * 60 * 1000; // 5 phút
     const vitalsCache = {};
+    
+    function _evictVitalsCache() {
+        const keys = Object.keys(vitalsCache);
+        if (keys.length <= VITALS_CACHE_MAX) return;
+        // Xoá các entry hết hạn trước
+        const now = Date.now();
+        for (const key of keys) {
+            if (vitalsCache[key] && now - vitalsCache[key].timestamp > VITALS_CACHE_TTL) {
+                delete vitalsCache[key];
+            }
+        }
+        // Nếu vẫn quá max → xoá cũ nhất
+        const remaining = Object.keys(vitalsCache);
+        if (remaining.length > VITALS_CACHE_MAX) {
+            remaining.sort((a, b) => (vitalsCache[a].timestamp || 0) - (vitalsCache[b].timestamp || 0));
+            const toRemove = remaining.length - VITALS_CACHE_MAX;
+            for (let i = 0; i < toRemove; i++) {
+                delete vitalsCache[remaining[i]];
+            }
+        }
+    }
 
-    // SECURITY: Rate-limiting to prevent request flooding
+    // SECURITY: Rate-limiting to prevent request flooding (Cross-tab sync via BroadcastChannel)
     const _rateLimit = { count: 0, resetTime: Date.now() + 10000 };
-    const RATE_LIMIT_MAX = 150; // Tăng lên 150 để quét phòng lớn không bị đứng
+    const RATE_LIMIT_MAX = 150; // Quét phòng lớn
     const RATE_LIMIT_WINDOW = 10000;
+    let _rateLimitChannel = null;
+
+    try {
+        _rateLimitChannel = new BroadcastChannel('aladinn_rate_limit');
+        _rateLimitChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'increment') {
+                const now = Date.now();
+                if (now > _rateLimit.resetTime) {
+                    _rateLimit.count = 1;
+                    _rateLimit.resetTime = now + RATE_LIMIT_WINDOW;
+                } else {
+                    _rateLimit.count++;
+                }
+            }
+        };
+    } catch (_e) {
+        console.warn('[Aladinn] BroadcastChannel not supported, falling back to local rate limit.');
+    }
 
     function checkRateLimit() {
         const now = Date.now();
@@ -34,6 +76,12 @@
             _rateLimit.resetTime = now + RATE_LIMIT_WINDOW;
         }
         _rateLimit.count++;
+        
+        // Notify other tabs
+        if (_rateLimitChannel) {
+            _rateLimitChannel.postMessage({ type: 'increment' });
+        }
+        
         return _rateLimit.count <= RATE_LIMIT_MAX;
     }
 
@@ -126,26 +174,69 @@
         return typeof data === 'object' ? [data] : [];
     }
 
-    function _fetchHisPagingRows(queryCode, options, rows = 500, sort = '') {
-        try {
-            const uuid = _jsonrpc?.AjaxJson?.uuid;
-            if (!uuid) return [];
-            const params = {
-                func: 'ajaxExecuteQueryPaging',
-                uuid,
-                params: [queryCode],
-                options
-            };
-            const sortPart = sort || 'sidx=&sord=desc';
-            const xhr = new XMLHttpRequest();
-            const url = `/vnpthis/RestService?_search=false&rows=${rows}&page=1&${sortPart}&postData=${encodeURIComponent(JSON.stringify(params))}`;
-            xhr.open('GET', url, false);
-            xhr.send();
-            if (xhr.status !== 200) return [];
-            return _parseHisRows(xhr.responseText);
-        } catch (_e) {
-            return [];
-        }
+    async function _fetchHisPagingRows(queryCode, options, rows = 500, sort = '') {
+        return new Promise((resolve) => {
+            try {
+                const uuid = _jsonrpc?.AjaxJson?.uuid;
+                if (!uuid) return resolve([]);
+                const params = {
+                    func: 'ajaxExecuteQueryPaging',
+                    uuid,
+                    params: [queryCode],
+                    options
+                };
+                const sortPart = sort || 'sidx=&sord=desc';
+                const xhr = new XMLHttpRequest();
+                const url = `/vnpthis/RestService?_search=false&rows=${rows}&page=1&${sortPart}&postData=${encodeURIComponent(JSON.stringify(params))}`;
+                xhr.open('GET', url, true); // Chuyển sang async
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            resolve(_parseHisRows(xhr.responseText));
+                        } else {
+                            resolve([]);
+                        }
+                    }
+                };
+                xhr.send();
+            } catch (_e) {
+                resolve([]);
+            }
+        });
+    }
+
+    async function _asyncCallSpO(sp, params, cache = 0) {
+        return new Promise((resolve) => {
+            try {
+                // Try jabsorb async callback pattern (standard for jabsorb 1.3+)
+                // If the first argument is a function, jabsorb makes an asynchronous XHR call.
+                try {
+                    _jsonrpc.AjaxJson.ajaxCALL_SP_O(function(result, exception) {
+                        if (exception) {
+                            console.warn('[API-Bridge] Async jabsorb exception:', exception);
+                            resolve(null);
+                        } else {
+                            resolve(result);
+                        }
+                    }, sp, params, cache);
+                    return; // Async call initiated successfully
+                } catch (_e) {
+                    // Fallback to manual fetch if callback pattern is not supported by this proxy version
+                    if (!_asyncCallSpO._warnedSps) _asyncCallSpO._warnedSps = new Set();
+                    if (!_asyncCallSpO._warnedSps.has(sp)) {
+                        _asyncCallSpO._warnedSps.add(sp);
+                        console.warn('[API-Bridge] jabsorb async failed for', sp, '- using sync fallback (further warnings suppressed)');
+                    }
+                }
+
+                // Fallback: synchronous wrapper (will block main thread, but better than nothing)
+                const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
+                resolve(result);
+            } catch (e) {
+                console.error('[API-Bridge] Sync jabsorb fallback failed:', e);
+                resolve(null);
+            }
+        });
     }
 
     function _readActiveGridCell(rowId, fieldName) {
@@ -181,7 +272,7 @@
         ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
     }
 
-    function fetchPatientContextRows(rowData, rowId) {
+    async function fetchPatientContextRows(rowData, rowId) {
         const candidates = Array.from(new Set(_buildContextCandidates(rowData, rowId)));
         const benhnhanId = rowData.BENHNHANID || '';
         const optionSets = [];
@@ -196,14 +287,14 @@
         }
 
         for (const options of optionSets) {
-            const rows = _fetchHisPagingRows('NGT02K016.EV003', options, 50);
+            const rows = await _fetchHisPagingRows('NGT02K016.EV003', options, 50);
             if (rows.length > 0) return rows;
         }
         return [];
     }
 
-    function resolveTreatmentContext(rowData, rowId) {
-        const rows = fetchPatientContextRows(rowData, rowId);
+    async function resolveTreatmentContext(rowData, rowId) {
+        const rows = await fetchPatientContextRows(rowData, rowId);
         const first = rows[0] || {};
         return {
             sourceRows: rows.length,
@@ -214,8 +305,8 @@
         };
     }
 
-    function fetchAdmissionTimes(rowData, rowId) {
-        const ctx = resolveTreatmentContext(rowData, rowId);
+    async function fetchAdmissionTimes(rowData, rowId) {
+        const ctx = await resolveTreatmentContext(rowData, rowId);
         const candidates = Array.from(new Set([
             ctx.KHAMBENHID,
             ctx.HOSOBENHANID,
@@ -237,7 +328,7 @@
         }
 
         for (const options of optionSets) {
-            const rows = _fetchHisPagingRows('NTU02D021.GET_TGVV', options, 50);
+            const rows = await _fetchHisPagingRows('NTU02D021.GET_TGVV', options, 50);
             if (rows.length > 0) {
                 const first = rows[0] || {};
                 return {
@@ -258,8 +349,8 @@
         };
     }
 
-    function fetchNonDrugOrders(rowData, rowId) {
-        const ctx = resolveTreatmentContext(rowData, rowId);
+    async function fetchNonDrugOrders(rowData, rowId) {
+        const ctx = await resolveTreatmentContext(rowData, rowId);
         const candidates = Array.from(new Set([
             ctx.KHAMBENHID,
             rowData.KHAMBENHID,
@@ -282,7 +373,7 @@
 
         let rows = [];
         for (const options of optionSets) {
-            rows = _fetchHisPagingRows('NGT02K015.YLENH', options, 500, 'sidx=NGAY_Y_LENH&sord=desc');
+            rows = await _fetchHisPagingRows('NGT02K015.YLENH', options, 500, 'sidx=NGAY_Y_LENH&sord=desc');
             if (rows.length > 0) break;
         }
 
@@ -332,10 +423,14 @@
             return;
         }
 
-        // SECURITY: Verify token for requests
-        if (event.data.type.startsWith('REQ_')) {
+        // SECURITY: Verify token and nonce for requests
+        if (event.data.type.startsWith('REQ_') || event.data.type === 'TRIGGER_PTTT_PRINT') {
             if (!SECURE_TOKEN || event.data.token !== SECURE_TOKEN) {
                 console.warn('[Aladinn API-Bridge] Unauthorized request blocked (Invalid token)');
+                return;
+            }
+            if (!ALADINN_NONCE || event.data.nonce !== ALADINN_NONCE) {
+                console.warn('[Aladinn API-Bridge] Unauthorized request blocked (Invalid nonce)');
                 return;
             }
         }
@@ -390,7 +485,7 @@
         }
     });
 
-    function fetchHistory(rowId, requestId) {
+    async function fetchHistory(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
@@ -405,7 +500,7 @@
             }
 
             const params = JSON.stringify({ HOSOBENHANID: hsbaId });
-            const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.006.HSBA.HIS', params, 0);
+            const result = await _asyncCallSpO('NT.006.HSBA.HIS', params, 0);
             const data = (typeof result === 'string' && result.trim() !== '') ? JSON.parse(result) : result;
             const records = Array.isArray(data) ? data : [data];
 
@@ -419,17 +514,38 @@
                 if (rec.KHAMBENH_TOANTHAN && !historyData.KHAMBENH_TOANTHAN) historyData.KHAMBENH_TOANTHAN = rec.KHAMBENH_TOANTHAN;
                 if (rec.KHAMBENH_BOPHAN && !historyData.KHAMBENH_BOPHAN) historyData.KHAMBENH_BOPHAN = rec.KHAMBENH_BOPHAN;
                 if (rec.TOMTATKQCANLAMSANG && !historyData.TOMTATKQCANLAMSANG) historyData.TOMTATKQCANLAMSANG = rec.TOMTATKQCANLAMSANG;
-                // Universal scan: Extract CHANDOAN from any field containing "CHANDOAN" or "CHAN_DOAN"
+                // Universal scan: Extract CHANDOAN and MABENHCHINH
                 if (!historyData.CHANDOAN) {
+                    let tempChanDoan = '';
+                    let tempMa = '';
+                    let tempChanDoanPhu = '';
+                    let tempMaPhu = '';
+
                     for (const k in rec) {
                         const uk = k.toUpperCase();
-                        if ((uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN')) && rec[k] && String(rec[k]).trim().length > 1) {
+                        const val = rec[k] ? String(rec[k]).trim() : '';
+                        if (!val || val.length < 2) continue;
+
+                        if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN')) {
                             if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
-                                if (!historyData.CHANDOAN_KEMTHEO) historyData.CHANDOAN_KEMTHEO = String(rec[k]).trim();
+                                tempChanDoanPhu = val;
                             } else {
-                                historyData.CHANDOAN = String(rec[k]).trim();
+                                tempChanDoan = val;
                             }
                         }
+                        if (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH') {
+                            tempMa = val;
+                        }
+                        if (uk === 'MABENHKEMTHEO' || uk === 'MA_BENHKEMTHEO' || uk === 'MACDCKEMTHEO') {
+                            tempMaPhu = val;
+                        }
+                    }
+
+                    if (tempChanDoan) {
+                        historyData.CHANDOAN = (tempMa && !tempChanDoan.includes(tempMa)) ? `${tempMa}-${tempChanDoan}` : tempChanDoan;
+                    }
+                    if (tempChanDoanPhu && !historyData.CHANDOAN_KEMTHEO) {
+                        historyData.CHANDOAN_KEMTHEO = (tempMaPhu && !tempChanDoanPhu.includes(tempMaPhu)) ? `${tempMaPhu}-${tempChanDoanPhu}` : tempChanDoanPhu;
                     }
                 }
             }
@@ -454,7 +570,7 @@
     // Phase 1: FETCH_PATIENT_DEMOGRAPHICS — Thay thế DOM reads cho
     // giới tính, tuổi, năm sinh, chẩn đoán, ngày nhập viện, phòng, BS
     // ══════════════════════════════════════════════════════════════
-    function fetchPatientDemographics(rowId, requestId) {
+    async function fetchPatientDemographics(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_PATIENT_DEMOGRAPHICS_RESULT', rowId, { demographics: null, _context: null }, requestId);
@@ -467,7 +583,7 @@
             }
 
             // Universal scan: tìm tất cả field liên quan đến nhân khẩu học
-            let gender = '', age = '', dob = '', diagnosis = '', admissionDate = '', room = '', doctor = '', insuranceId = '', patientName = '';
+            let gender = '', age = '', dob = '', diagnosis = '', maBenhChinh = '', chanDoanKemTheo = '', maBenhKemTheo = '', admissionDate = '', room = '', doctor = '', insuranceId = '', patientName = '';
 
             for (const k in rowData) {
                 const uk = k.toUpperCase();
@@ -487,9 +603,21 @@
                 if (!dob && (uk === 'NGAYSINH' || uk === 'NAMSINH' || uk === 'NGAY_SINH' || uk === 'NAM_SINH' || uk === 'DOB' || uk === 'BIRTHDAY')) {
                     dob = sv;
                 }
-                // Chẩn đoán
-                if (!diagnosis && (uk === 'CHANDOAN' || uk === 'CHAN_DOAN' || uk === 'CHANDOANCHINH' || uk === 'CHANDOAN_CHINH')) {
+                // Chẩn đoán chính
+                if (!diagnosis && (uk === 'CHANDOAN' || uk === 'CHAN_DOAN' || uk === 'CHANDOANCHINH' || uk === 'CHANDOAN_CHINH' || uk === 'TENBENHCHINH' || uk === 'TEN_BENHCHINH')) {
                     diagnosis = sv;
+                }
+                // Mã bệnh chính (ICD)
+                if (!maBenhChinh && (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH' || uk === 'MACHANDOANVAOKHOA')) {
+                    maBenhChinh = sv;
+                }
+                // Chẩn đoán kèm theo
+                if (!chanDoanKemTheo && (uk === 'CHANDOANKEMTHEO' || uk === 'CHAN_DOAN_KEM_THEO' || uk === 'BENHKEMTHEO' || uk === 'TENBENHKEMTHEO')) {
+                    chanDoanKemTheo = sv;
+                }
+                // Mã bệnh kèm theo
+                if (!maBenhKemTheo && (uk === 'MABENHKEMTHEO' || uk === 'MA_BENHKEMTHEO' || uk === 'MACDCKEMTHEO' || uk === 'MACHANDOANVAOKHOA_KEMTHEO')) {
+                    maBenhKemTheo = sv;
                 }
                 // Ngày nhập viện / vào khoa
                 if (!admissionDate && (uk === 'THOIGIANVAOVIEN' || uk === 'NGAYVAOKHOA' || uk === 'NGAYTIEPNHAN' || uk === 'NGAYNHAPKHOA' || uk === 'NGAY_VAO_VIEN' || uk === 'THOIGIAN_VAOVIEN')) {
@@ -513,8 +641,18 @@
                 }
             }
 
+            // Gộp mã bệnh chính và tên bệnh chính vào diagnosis nếu có mã nhưng chưa gộp
+            if (maBenhChinh && diagnosis && !diagnosis.includes(maBenhChinh)) {
+                diagnosis = maBenhChinh + '-' + diagnosis;
+            }
+
+            // Gộp mã bệnh kèm theo và tên bệnh kèm theo nếu có
+            if (maBenhKemTheo && chanDoanKemTheo && !chanDoanKemTheo.includes(maBenhKemTheo)) {
+                chanDoanKemTheo = maBenhKemTheo + '-' + chanDoanKemTheo;
+            }
+
             const demographics = {
-                gender, age, dob, diagnosis, admissionDate,
+                gender, age, dob, diagnosis, maBenhChinh, chanDoanKemTheo, maBenhKemTheo, admissionDate,
                 room, doctor, insuranceId, patientName
             };
 
@@ -551,7 +689,7 @@
         }
     }
 
-    function fetchRoom(rowId, requestId) {
+    async function fetchRoom(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_ROOM_RESULT', rowId, { giuong: '' }, requestId);
@@ -560,7 +698,7 @@
             const { rowData } = resolveActiveGrid(rowId);
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
 
-            const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.005', khambenhId, 0);
+            const result = await _asyncCallSpO('NT.005', khambenhId, 0);
             let giuong = '';
             if (Array.isArray(result) && result.length > 0) giuong = result[0].GIUONG;
             else if (result && result.GIUONG) giuong = result.GIUONG;
@@ -571,7 +709,7 @@
         }
     }
 
-    function fetchVitals(rowId, requestId) {
+    async function fetchVitals(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_VITALS_RESULT', rowId, { vitals: null }, requestId);
@@ -673,10 +811,10 @@
                     }
                 }
 
-                const trySP = (sp, p) => {
+                const trySP = async (sp, p) => {
                     try {
                         const params = (typeof p === 'object') ? JSON.stringify(p) : p;
-                        const res = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, 0);
+                        const res = await _asyncCallSpO(sp, params, 0);
                         if (!res) return;
                         const data = (typeof res === 'string' && res.trim() !== '') ? JSON.parse(res) : res;
                         const recs = Array.isArray(data) ? data : [data];
@@ -684,9 +822,9 @@
                     } catch (_e) { }
                 };
 
-                if (kbIdHienTai) trySP('NT.006', { KHAMBENHID: kbIdHienTai });
-                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && hosobenhanid) trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hosobenhanid });
-                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && kbIdHienTai) trySP('NT.005', kbIdHienTai);
+                if (kbIdHienTai) await trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && hosobenhanid) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hosobenhanid });
+                if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && kbIdHienTai) await trySP('NT.005', kbIdHienTai);
             }
 
             // Clean up
@@ -710,6 +848,7 @@
             };
 
             vitalsCache[rowId] = { data: finalVitals, _context: _context, timestamp: Date.now() };
+            _evictVitalsCache();
             sendResult('FETCH_VITALS_RESULT', rowId, { vitals: finalVitals, _context }, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchVitals error:', e);
@@ -717,9 +856,9 @@
         }
     }
 
-    function fetchTreatment(rowId, requestId) {
+    async function fetchTreatment(rowId, requestId) {
         let yLenhList = [];
-        let contextInfo = {};
+        let contextInfo;
         try {
             if (!_$) {
                 sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: [] }, requestId);
@@ -727,8 +866,8 @@
             }
             const { rowData } = resolveActiveGrid(rowId);
             const benhnhanId = rowData.BENHNHANID || '';
-            contextInfo = resolveTreatmentContext(rowData, rowId);
-            yLenhList = fetchNonDrugOrders(rowData, rowId);
+            contextInfo = await resolveTreatmentContext(rowData, rowId);
+            yLenhList = await fetchNonDrugOrders(rowData, rowId);
 
             let candidates = [
                 contextInfo.HOSOBENHANID,
@@ -742,157 +881,216 @@
 
             candidates = Array.from(new Set(candidates));
 
-            let currentIndex = 0;
-            const tryNext = () => {
-                if (currentIndex >= candidates.length) {
-                    sendResult('FETCH_TREATMENT_RESULT', rowId, {
-                        treatmentList: yLenhList,
-                        yLenhList,
-                        treatmentContext: contextInfo
-                    }, requestId);
-                    return;
-                }
+            let foundRows = false;
+            for (let testId of candidates) {
+                const options = [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '4' },
+                    { name: '[3]', value: String(testId) }
+                ];
 
-                const testId = candidates[currentIndex++];
-                const params = {
-                    func: 'ajaxExecuteQueryPaging',
-                    uuid: _jsonrpc.AjaxJson.uuid,
-                    params: ['NT.024.DSPHIEU'],
-                    options: [
-                        { name: '[0]', value: '' },
-                        { name: '[1]', value: String(benhnhanId) },
-                        { name: '[2]', value: '4' },
-                        { name: '[3]', value: String(testId) }
-                    ]
-                };
+                const rows = await _fetchHisPagingRows('NT.024.DSPHIEU', options, 500, 'sidx=NGAYMAUBENHPHAM&sord=desc');
 
-                const xhr = new XMLHttpRequest();
-                const url = `/vnpthis/RestService?_search=false&rows=500&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+                if (rows && rows.length > 0) {
+                    foundRows = true;
+                    const detailOrders = [];
+                    const seenDetailOrders = new Set();
+                    const treatments = rows.map(r => {
+                        const t = {
+                            DIENBIEN: r.DIENBIENBENH || r.NOIDUNG || '',
+                            GHICHU: r.GHICHUPDT || r.GHICHU || r.CHITIETGHICHU || '',
+                            NGUOITAO: r.NGUOITAO || '',
+                            NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || r.NGAY_Y_LENH || '',
+                            MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                            CHANDOAN: '',
+                            CHANDOANKEMTHEO: ''
+                        };
+                        // Universal scan for diagnosis fields in sheet list
+                        for (const k in r) {
+                            const uk = k.toUpperCase();
+                            const val = r[k];
+                            if (!val || String(val).trim().length < 2) continue;
 
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const data = JSON.parse(xhr.responseText);
-                                const rows = data.rows || [];
-                                if (rows.length > 0) {
-                                    const detailOrders = [];
-                                    const seenDetailOrders = new Set();
-                                    const treatments = rows.map(r => {
-                                        const t = {
-                                            DIENBIEN: r.DIENBIENBENH || r.NOIDUNG || '',
-                                            GHICHU: r.GHICHUPDT || r.GHICHU || r.CHITIETGHICHU || '',
-                                            NGUOITAO: r.NGUOITAO || '',
-                                            NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || r.NGAY_Y_LENH || '',
-                                            MAUBENHPHAMID: r.MAUBENHPHAMID || '',
-                                            CHANDOAN: '',
-                                            CHANDOANKEMTHEO: ''
-                                        };
-                                        // Universal scan for diagnosis fields in sheet list
-                                        for (const k in r) {
-                                            const uk = k.toUpperCase();
-                                            const val = r[k];
-                                            if (!val || String(val).trim().length < 2) continue;
+                            // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
+                            if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
 
-                                            // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
-                                            if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
+                            if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH')) {
+                                if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
+                                    if (!t.CHANDOANKEMTHEO) t.CHANDOANKEMTHEO = String(val).trim();
+                                } else {
+                                    if (!t.CHANDOAN) t.CHANDOAN = String(val).trim();
+                                }
+                            }
+                        }
+                        // Fallback: universal scan cho bất kỳ field nào chứa ICD pattern hoặc text dài (case-insensitive)
+                        if (!t.CHANDOAN) {
+                            const icdPat = /\b[A-Z]\d{2}(?:\.\d{1,2})?\b/i;
+                            for (const k in r) {
+                                const uk = k.toUpperCase();
+                                const val = r[k];
+                                if (!val || typeof val !== 'string') continue;
+                                const sv = val.trim();
+                                if (sv.length < 3) continue;
+                                // Skip known non-diagnosis fields
+                                if (uk.includes('DIENBIEN') || uk.includes('GHICHU') || uk === 'NGUOITAO' || uk.includes('BARCODE') || uk.includes('NGAY') || uk.includes('SOPHIEU') || uk.includes('PHONG') || uk.includes('KHOA') || uk.includes('TRANGTHA') || uk.includes('BENHNHAN') || uk.includes('TIEPNHAN') || uk.includes('HOSOBE') || uk.includes('KHAMBE') || uk.includes('MAUBENH') || uk === 'RN' || uk.includes('DOITUONG') || uk.includes('TOTAL') || uk.includes('FLAG') || uk.includes('LOAI') || uk.includes('DICHVU') || uk.includes('TENNGH') || uk.includes('SLTHANG')) continue;
+                                // Check if value contains ICD code pattern (K35.9, I64, R51 etc.)
+                                if (icdPat.test(sv) && sv.length > 3) {
+                                    if (!t.CHANDOAN) t.CHANDOAN = sv;
+                                    else if (!t.CHANDOANKEMTHEO) t.CHANDOANKEMTHEO = sv;
+                                }
+                            }
+                        }
+                        return t;
+                    });
+                    console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
+                    // ── jqGrid Scraping: Lấy chẩn đoán per-sheet từ form HIS ──
+                    // Textarea #tcDieuTritxtCHUANDOAN chỉ tồn tại khi tab "Điều trị" đã được kích hoạt
+                    try {
+                        const dtGrid = _$ && _$('#tcDieuTrigrdDieuTri');
+                        let diagEl = document.getElementById('tcDieuTritxtCHUANDOAN');
 
-                                            if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH')) {
-                                                if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
-                                                    if (!t.CHANDOANKEMTHEO) t.CHANDOANKEMTHEO = String(val).trim();
-                                                } else {
-                                                    if (!t.CHANDOAN) t.CHANDOAN = String(val).trim();
-                                                }
-                                            }
-                                        }
-                                        return t;
-                                    });
+                        // If textarea doesn't exist, we skip DOM scraping instead of switching tabs
+                        // to ensure the summary is non-blocking.
+                        if (!diagEl) {
+                            console.log('[ALADINN-DIAG] Textarea tcDieuTritxtCHUANDOAN not found. Skipping DOM scrape fallback.');
+                        }
 
-                                    // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet.
-                                    const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
-                                    // Limit to 10 to avoid performance issues
-                                    const toFetch = sheetsNeedDetail.slice(0, 10);
-                                    for (const sheet of toFetch) {
-                                        try {
-                                            const detailRes = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0);
-                                            let records = [];
-                                            if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
-                                            else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
-                                            if (records && records.rows && Array.isArray(records.rows)) records = records.rows;
-                                            else if (!Array.isArray(records)) records = [records];
+                        const diagKTEl = document.getElementById('tcDieuTritxtBENHKEMTHEO');
 
-                                            for (const rec of records) {
-                                                if (!rec) continue;
-                                                const detailOrderText = _cleanHisText(_firstValue(rec, [
-                                                    'YLENH', 'Y_LENH', 'NOIDUNGYLENH', 'NOI_DUNG_Y_LENH',
-                                                    'CHIDINH', 'CHI_DINH', 'CHEDOAN', 'CHE_DO_AN',
-                                                    'CHAMSOC', 'CHAM_SOC', 'CHEDOCHAMSOC', 'CHE_DO_CHAM_SOC'
-                                                ]));
-                                                const detailOrderGroup = _cleanHisText(_firstValue(rec, [
-                                                    'LOAIYLENH', 'LOAI_Y_LENH', 'NHOMYLENH', 'NHOM_Y_LENH',
-                                                    'TENNHOM', 'TEN_NHOM', 'LOAI', 'TENLOAI'
-                                                ]));
-                                                const detailOrderNote = _cleanHisText(_firstValue(rec, [
-                                                    'GHICHUYLENH', 'GHI_CHU_Y_LENH', 'GHICHU', 'GHI_CHU'
-                                                ]));
-                                                if (detailOrderText || detailOrderNote) {
-                                                    const key = `${sheet.NGAYMAUBENHPHAM}|${detailOrderGroup}|${detailOrderText}|${detailOrderNote}`;
-                                                    if (!seenDetailOrders.has(key)) {
-                                                        seenDetailOrders.add(key);
-                                                        detailOrders.push({
-                                                            NGAYMAUBENHPHAM: sheet.NGAYMAUBENHPHAM || '',
-                                                            YLENH: detailOrderText || detailOrderNote,
-                                                            NHOMYLENH: detailOrderGroup || 'Phiếu điều trị',
-                                                            GHICHU: detailOrderNote,
-                                                            NGUOITAO: sheet.NGUOITAO || '',
-                                                            SOURCE_API: 'NT.024.2.DETAIL'
-                                                        });
-                                                    }
-                                                }
-                                                for (const k in rec) {
-                                                    const uk = k.toUpperCase();
-                                                    const val = rec[k];
-                                                    if (!val || String(val).trim().length < 2) continue;
+                        if (dtGrid && dtGrid.jqGrid && diagEl) {
+                            const gridRowIds = dtGrid.jqGrid('getDataIDs');
+                            const mbpMap = {};
+                            for (const rid of gridRowIds) {
+                                const rd = dtGrid.jqGrid('getRowData', rid);
+                                if (rd.MAUBENHPHAMID) mbpMap[rd.MAUBENHPHAMID] = rid;
+                            }
+                            const origSel = dtGrid.jqGrid('getGridParam', 'selrow');
+                            let matchCount = 0;
 
-                                                    // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
-                                                    if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
+                            for (const t of treatments) {
+                                if (!t.MAUBENHPHAMID || t.CHANDOAN) continue;
+                                const gRowId = mbpMap[t.MAUBENHPHAMID];
+                                if (!gRowId) continue;
 
-                                                    if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH') || uk === 'TENCHANDOAN' || uk === 'TEN_CHANDOAN') {
-                                                        if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
-                                                            if (!sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = String(val).trim();
-                                                        } else {
-                                                            if (!sheet.CHANDOAN) sheet.CHANDOAN = String(val).trim();
-                                                        }
-                                                    }
-                                                }
-                                                if (sheet.CHANDOAN) break; // Got it, no need to scan more records
-                                            }
-                                        } catch (_detailErr) {
-                                            console.warn('[API-Bridge] Detail fetch failed for sheet', sheet.MAUBENHPHAMID);
+                                const rowEl = _$('#tcDieuTrigrdDieuTri tr#' + gRowId);
+                                if (rowEl.length) {
+                                    if (diagEl) diagEl.value = ''; // clear before click
+                                    if (diagKTEl) diagKTEl.value = '';
+                                    rowEl.find('td:first').trigger('click');
+                                    let cv = '';
+                                    let ktv = '';
+                                    for (let i = 0; i < 5; i++) {
+                                        await new Promise(r => setTimeout(r, 200));
+                                        cv = (diagEl.value || '').trim();
+                                        ktv = (diagKTEl?.value || '').trim();
+                                        if (cv && cv !== '-' && cv !== t.CHANDOAN) break;
+                                    }
+                                    if (cv) {
+                                        t.CHANDOAN = cv;
+                                        if (ktv) t.CHANDOANKEMTHEO = ktv;
+                                        matchCount++;
+                                    }
+                                }
+                            }
+                            // Restore original grid selection
+                            if (origSel) {
+                                const origRow = _$('#tcDieuTrigrdDieuTri tr#' + origSel);
+                                if (origRow.length) origRow.find('td:first').trigger('click');
+                            }
+                            console.log('[ALADINN-DIAG] ✓ jqGrid scrape:', matchCount, '/', treatments.length, 'sheets got diagnosis');
+                        } else {
+                            console.log('[ALADINN-DIAG] ✗ Grid/textarea not available. grid:', !!dtGrid?.jqGrid, 'textarea:', !!diagEl);
+                        }
+
+
+                    } catch (domErr) {
+                        console.warn('[ALADINN-DIAG] jqGrid scrape failed:', domErr.message);
+                    }
+
+                    // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet.
+                    const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
+                    // Limit to 10 to avoid performance issues
+                    const toFetch = sheetsNeedDetail.slice(0, 10);
+                    await Promise.all(toFetch.map(async (sheet) => {
+                        try {
+                            const detailRes = await _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0);
+                            let records = [];
+                            if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
+                            else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
+                            if (records && records.rows && Array.isArray(records.rows)) records = records.rows;
+                            else if (!Array.isArray(records)) records = [records];
+
+                            for (const rec of records) {
+                                if (!rec) continue;
+                                const detailOrderText = _cleanHisText(_firstValue(rec, [
+                                    'YLENH', 'Y_LENH', 'NOIDUNGYLENH', 'NOI_DUNG_Y_LENH',
+                                    'CHIDINH', 'CHI_DINH', 'CHEDOAN', 'CHE_DO_AN',
+                                    'CHAMSOC', 'CHAM_SOC', 'CHEDOCHAMSOC', 'CHE_DO_CHAM_SOC'
+                                ]));
+                                const detailOrderGroup = _cleanHisText(_firstValue(rec, [
+                                    'LOAIYLENH', 'LOAI_Y_LENH', 'NHOMYLENH', 'NHOM_Y_LENH',
+                                    'TENNHOM', 'TEN_NHOM', 'LOAI', 'TENLOAI'
+                                ]));
+                                const detailOrderNote = _cleanHisText(_firstValue(rec, [
+                                    'GHICHUYLENH', 'GHI_CHU_Y_LENH', 'GHICHU', 'GHI_CHU'
+                                ]));
+                                if (detailOrderText || detailOrderNote) {
+                                    const key = `${sheet.NGAYMAUBENHPHAM}|${detailOrderGroup}|${detailOrderText}|${detailOrderNote}`;
+                                    if (!seenDetailOrders.has(key)) {
+                                        seenDetailOrders.add(key);
+                                        detailOrders.push({
+                                            NGAYMAUBENHPHAM: sheet.NGAYMAUBENHPHAM || '',
+                                            YLENH: detailOrderText || detailOrderNote,
+                                            NHOMYLENH: detailOrderGroup || 'Phiếu điều trị',
+                                            GHICHU: detailOrderNote,
+                                            NGUOITAO: sheet.NGUOITAO || '',
+                                            SOURCE_API: 'NT.024.2.DETAIL'
+                                        });
+                                    }
+                                }
+                                for (const k in rec) {
+                                    const uk = k.toUpperCase();
+                                    const val = rec[k];
+                                    if (!val || String(val).trim().length < 2) continue;
+
+                                    // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
+                                    if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
+
+                                    if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH') || uk === 'TENCHANDOAN' || uk === 'TEN_CHANDOAN') {
+                                        if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
+                                            if (!sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = String(val).trim();
+                                        } else {
+                                            if (!sheet.CHANDOAN) sheet.CHANDOAN = String(val).trim();
                                         }
                                     }
-
-                                    const allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
-                                    const combinedTreatments = treatments.concat(allYLenh);
-                                    sendResult('FETCH_TREATMENT_RESULT', rowId, {
-                                        treatmentList: combinedTreatments,
-                                        yLenhList: allYLenh,
-                                        treatmentContext: contextInfo
-                                    }, requestId);
-                                } else {
-                                    tryNext();
                                 }
-                            } catch (_e) { tryNext(); }
-                        } else {
-                            tryNext();
+                                if (sheet.CHANDOAN) break; // Got it, no need to scan more records
+                            }
+                        } catch (_detailErr) {
+                            console.warn('[API-Bridge] Detail fetch failed for sheet', sheet.MAUBENHPHAMID);
                         }
-                    }
-                };
-                xhr.send();
-            };
+                    }));
 
-            tryNext();
+                    const allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+                    const combinedTreatments = treatments.concat(allYLenh);
+                    sendResult('FETCH_TREATMENT_RESULT', rowId, {
+                        treatmentList: combinedTreatments,
+                        yLenhList: allYLenh,
+                        treatmentContext: contextInfo
+                    }, requestId);
+                    
+                    break; // stop on first success
+                }
+            }
+
+            if (!foundRows) {
+                sendResult('FETCH_TREATMENT_RESULT', rowId, {
+                    treatmentList: yLenhList,
+                    yLenhList,
+                    treatmentContext: contextInfo
+                }, requestId);
+            }
 
         } catch (_e) {
             sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: yLenhList || [], yLenhList: yLenhList || [] }, requestId);
@@ -902,7 +1100,7 @@
     // SECURITY: callSP() has been removed. All data access is now routed through
     // dedicated, validated handlers (fetchVitals, fetchHistory, fetchRoom, fetchTreatment, fetchDrugs).
 
-    function fetchDiagnosesForCDS(rowId, benhnhanId, khambenhId, requestId) {
+    async function fetchDiagnosesForCDS(rowId, benhnhanId, khambenhId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [] }, requestId);
@@ -918,67 +1116,46 @@
                 return;
             }
 
-            const params = {
-                func: 'ajaxExecuteQueryPaging',
-                uuid: _jsonrpc.AjaxJson.uuid,
-                params: ['NT.024.DSPHIEU'],
-                options: [
-                    { name: '[0]', value: '' },
-                    { name: '[1]', value: String(benhnhanId) },
-                    { name: '[2]', value: '4' },
-                    { name: '[3]', value: String(khambenhId) }
-                ]
-            };
+            const options = [
+                { name: '[0]', value: '' },
+                { name: '[1]', value: String(benhnhanId) },
+                { name: '[2]', value: '4' },
+                { name: '[3]', value: String(khambenhId) }
+            ];
 
-            const xhr = new XMLHttpRequest();
-            const url = `/vnpthis/RestService?_search=false&rows=50&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+            const rows = await _fetchHisPagingRows('NT.024.DSPHIEU', options, 50, 'sidx=NGAYMAUBENHPHAM&sord=desc');
+            if (rows && rows.length > 0) {
+                let allDiagnoses = [];
+                rows.forEach(item => {
+                    const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
+                    const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
+                    const rawName = item.CHANDOAN || item.TENBENH || '';
+                    const rawNameSub = item.CHANDOAN_KEMTHEO || item.TENBENHKEMTHEO || '';
 
-            xhr.open('GET', url, true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            const rows = response.rows || [];
-                            let allDiagnoses = [];
-
-                            rows.forEach(item => {
-                                const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
-                                const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
-                                const rawName = item.CHANDOAN || item.TENBENH || '';
-                                const rawNameSub = item.CHANDOAN_KEMTHEO || item.TENBENHKEMTHEO || '';
-
-                                const extractMatches = (icdStr, nameStr, isPrimary) => {
-                                    const matches = icdStr.toUpperCase().match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
-                                    if (matches) {
-                                        const names = nameStr.split(/;-?/).map(s => s.trim()).filter(s => s);
-                                        matches.forEach((code, idx) => {
-                                            if (!allDiagnoses.some(d => d.code === code)) {
-                                                allDiagnoses.push({
-                                                    code: code,
-                                                    name: names[idx] || names[0] || nameStr,
-                                                    is_primary: isPrimary && allDiagnoses.length === 0
-                                                });
-                                            }
-                                        });
-                                    }
-                                };
-
-                                extractMatches(rawIcd, rawName, true);
-                                extractMatches(rawIcdSub, rawNameSub, false);
+                    const extractMatches = (icdStr, nameStr, isPrimary) => {
+                        const matches = icdStr.toUpperCase().match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                        if (matches) {
+                            const names = nameStr.split(/;-?/).map(s => s.trim()).filter(s => s);
+                            matches.forEach((code, idx) => {
+                                if (!allDiagnoses.some(d => d.code === code)) {
+                                    allDiagnoses.push({
+                                        code: code,
+                                        name: names[idx] || names[0] || nameStr,
+                                        is_primary: isPrimary && allDiagnoses.length === 0
+                                    });
+                                }
                             });
-
-                            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: allDiagnoses }, requestId);
-                        } catch (_e) {
-                            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
                         }
-                    } else {
-                        sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
-                    }
-                }
-            };
-            xhr.send(null);
+                    };
 
+                    extractMatches(rawIcd, rawName, true);
+                    extractMatches(rawIcdSub, rawNameSub, false);
+                });
+
+                sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: allDiagnoses }, requestId);
+            } else {
+                sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+            }
         } catch (_e) {
             sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
         }
@@ -988,7 +1165,7 @@
      * Pre-fetch chẩn đoán từ tờ điều trị cho BN đang chọn trong grid.
      * Được gọi từ CDS module khi chọn BN hoặc khi mở tab.
      */
-    function prefetchDiagnosesFromGrid(rowId, requestId) {
+    async function prefetchDiagnosesFromGrid(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
@@ -1016,195 +1193,163 @@
                 return;
             }
 
-            let currentIndex = 0;
+            for (let testId of candidates) {
+                const options = [
+                    { name: '[0]', value: '' },
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '4' },
+                    { name: '[3]', value: String(testId) }
+                ];
 
-            const tryNext = () => {
-                if (currentIndex >= candidates.length) {
-                    debugLog('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
-                    sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '' }, requestId);
-                    return;
-                }
+                const rows = await _fetchHisPagingRows('NT.024.DSPHIEU', options, 500, 'sidx=NGAYMAUBENHPHAM&sord=desc');
 
-                const testId = candidates[currentIndex++];
-                const params = {
-                    func: 'ajaxExecuteQueryPaging',
-                    uuid: _jsonrpc.AjaxJson.uuid,
-                    params: ['NT.024.DSPHIEU'],
-                    options: [
-                        { name: '[0]', value: '' },
-                        { name: '[1]', value: String(benhnhanId) },
-                        { name: '[2]', value: '4' },
-                        { name: '[3]', value: String(testId) }
-                    ]
-                };
+                if (rows && rows.length > 0) {
+                    let allDiagnoses = [];
+                    let detailIds = [];
 
-                const xhr = new XMLHttpRequest();
-                const url = `/vnpthis/RestService?_search=false&rows=500&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
+                    rows.forEach(item => {
+                        const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
+                        const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
+                        const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
 
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
+                        const diagnosisText = item.CHANDOAN || item.CHUANDOAN || item.BENHCHINH || '';
+                        const subDiagnosisText = item.BENHKEMTHEO || item.CHANDOANKEMTHEO || item.PHU || '';
+                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join('; ');
+
+                        const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
+                        if (matches) {
+                            matches.forEach((code, idx) => {
+                                const exists = allDiagnoses.some(d => d.code.startsWith(code));
+                                if (!exists) {
+                                    let displayCode = code;
+                                    if (idx === 0 && diagnosisText) {
+                                        displayCode = code + ' - ' + diagnosisText;
+                                    } else if (idx > 0 && subDiagnosisText) {
+                                        displayCode = code + ' - ' + subDiagnosisText;
+                                    } else if (combinedText) {
+                                        displayCode = code + ' - ' + combinedText;
+                                    }
+                                    allDiagnoses.push({ code: displayCode, is_primary: allDiagnoses.length === 0 });
+                                }
+                            });
+                        } else if (combinedText) {
+                            if (!allDiagnoses.some(d => d.code === combinedText)) {
+                                allDiagnoses.push({ code: combinedText, is_primary: allDiagnoses.length === 0 });
+                            }
+                        }
+
+                        // Thu thập ID tờ điều trị cho Mode 2
+                        if (item.MADIEUTRI) detailIds.push(item.MADIEUTRI);
+                        if (item.PHIEUDIEUTRIID) detailIds.push(item.PHIEUDIEUTRIID);
+                        if (item.MAUBENHPHAMID) detailIds.push(item.MAUBENHPHAMID);
+                        if (item.ID_PHIEU_DIEU_TRI) detailIds.push(item.ID_PHIEU_DIEU_TRI);
+                    });
+
+                    if (allDiagnoses.length > 0) {
+                        debugLog('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                        sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
+                            diagnoses: allDiagnoses,
+                            patientId: benhnhanId,
+                            khambenhId: testId,
+                            patientName: patientName
+                        }, requestId);
+                        return;
+                    } else if (detailIds.length > 0) {
+                        // Mode 2: Gọi NT.024.2.DETAIL cho các tờ điều trị vừa tìm được
+                        detailIds = [...new Set(detailIds)].slice(0, 5); // Lấy tối đa 5 tờ gần nhất tránh đơ UI
+                        debugLog('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
+
+                        for (let dId of detailIds) {
                             try {
-                                const response = JSON.parse(xhr.responseText);
-                                const rows = response.rows || [];
+                                const resObj = await _asyncCallSpO('NT.024.2.DETAIL', String(dId), 0);
+                                debugLog('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
 
-                                if (rows.length > 0) {
-                                    let allDiagnoses = [];
-                                    let detailIds = [];
+                                let records = [];
+                                if (typeof resObj === 'string' && resObj.trim() !== '') records = JSON.parse(resObj);
+                                else if (typeof resObj === 'object' && resObj !== null) records = resObj;
 
-                                    rows.forEach(item => {
-                                        const rawIcd = item.MAICD || item.ICD || item.MA_ICD || '';
-                                        const rawIcdSub = item.MAICD_KEMTHEO || item.MABENHKEMTHEO || item.ICD_KEMTHEO || item.MA_ICDKEMTHEO || '';
-                                        const combinedIcd = (rawIcd + ',' + rawIcdSub).toUpperCase();
+                                // Handle nested rows array if exists
+                                if (records && records.rows && Array.isArray(records.rows)) {
+                                    records = records.rows;
+                                } else if (!Array.isArray(records)) {
+                                    records = [records];
+                                }
 
-                                        const diagnosisText = item.CHANDOAN || item.CHUANDOAN || item.BENHCHINH || '';
-                                        const subDiagnosisText = item.BENHKEMTHEO || item.CHANDOANKEMTHEO || item.PHU || '';
-                                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join('; ');
+                                var icdPatternExact = /^[A-Z]\d{2}(\.\d{1,2})?$/i;
+                                var icdPatternContains = /(^|\s|\(|\[|-)[A-Z]\d{2}(\.\d{1,2})?($|\s|\)|\]|-)/i;
+                                var potentialTexts = [];
 
-                                        const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
-                                        if (matches) {
-                                            matches.forEach((code, idx) => {
-                                                const exists = allDiagnoses.some(d => d.code.startsWith(code));
-                                                if (!exists) {
-                                                    let displayCode = code;
-                                                    if (idx === 0 && diagnosisText) {
-                                                        displayCode = code + ' - ' + diagnosisText;
-                                                    } else if (idx > 0 && subDiagnosisText) {
-                                                        displayCode = code + ' - ' + subDiagnosisText;
-                                                    } else if (combinedText) {
-                                                        displayCode = code + ' - ' + combinedText;
-                                                    }
-                                                    allDiagnoses.push({ code: displayCode, is_primary: allDiagnoses.length === 0 });
-                                                }
-                                            });
-                                        } else if (combinedText) {
-                                            if (!allDiagnoses.some(d => d.code === combinedText)) {
-                                                allDiagnoses.push({ code: combinedText, is_primary: allDiagnoses.length === 0 });
-                                            }
-                                        }
-
-                                        // Thu thập ID tờ điều trị cho Mode 2
-                                        if (item.MADIEUTRI) detailIds.push(item.MADIEUTRI);
-                                        if (item.PHIEUDIEUTRIID) detailIds.push(item.PHIEUDIEUTRIID);
-                                        if (item.MAUBENHPHAMID) detailIds.push(item.MAUBENHPHAMID);
-                                        if (item.ID_PHIEU_DIEU_TRI) detailIds.push(item.ID_PHIEU_DIEU_TRI);
-                                    });
-
-                                    if (allDiagnoses.length > 0) {
-                                        debugLog('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
-                                        sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
-                                            diagnoses: allDiagnoses,
-                                            patientId: benhnhanId,
-                                            khambenhId: testId,
-                                            patientName: patientName
-                                        }, requestId);
-                                        return;
-                                    } else if (detailIds.length > 0) {
-                                        // Mode 2: Gọi NT.024.2.DETAIL cho các tờ điều trị vừa tìm được
-                                        detailIds = [...new Set(detailIds)].slice(0, 5); // Lấy tối đa 5 tờ gần nhất tránh đơ UI
-                                        debugLog('[API-Bridge] Mode 1 empty, switching to Mode 2 (NT.024.2.DETAIL) for sheet IDs:', detailIds);
-
-                                        for (let dId of detailIds) {
-                                            try {
-                                                const resObj = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(dId), 0);
-                                                debugLog('[API-Bridge] Raw Mode 2 response for ID', dId, ':', resObj);
-
-                                                let records = [];
-                                                if (typeof resObj === 'string' && resObj.trim() !== '') records = JSON.parse(resObj);
-                                                else if (typeof resObj === 'object' && resObj !== null) records = resObj;
-
-                                                // Handle nested rows array if exists
-                                                if (records && records.rows && Array.isArray(records.rows)) {
-                                                    records = records.rows;
-                                                } else if (!Array.isArray(records)) {
-                                                    records = [records];
-                                                }
-
-                                                var icdPatternExact = /^[A-Z]\d{2}(\.\d{1,2})?$/i;
-                                                var icdPatternContains = /(^|\s|\(|\[|-)[A-Z]\d{2}(\.\d{1,2})?($|\s|\)|\]|-)/i;
-                                                var potentialTexts = [];
-
-                                                for (var ri = 0; ri < records.length; ri++) {
-                                                    var rec = records[ri];
-                                                    if (!rec) continue;
-                                                    for (var rk in rec) {
-                                                        var ruk = rk.toUpperCase();
-                                                        var rv = String(rec[rk] || '').trim();
-                                                        if (rv.length < 2) continue;
-                                                        if (ruk.includes('HINHANH') || ruk.includes('QUANGTUYEN') || ruk.includes('YEUCAU') || ruk.includes('CDHA') || ruk.includes('DICHVU') || ruk.includes('PHONGKHAM') || ruk === 'TEN') continue;
-                                                        potentialTexts.push(rv);
-                                                    }
-                                                }
-
-                                                for (var i = 0; i < potentialTexts.length; i++) {
-                                                    var curText = potentialTexts[i];
-                                                    if (curText.length <= 6 && icdPatternExact.test(curText) && !curText.toUpperCase().startsWith('NK')) {
-                                                        var desc = '';
-                                                        for (var j = i - 1; j >= Math.max(0, i - 5); j--) {
-                                                            var t = potentialTexts[j];
-                                                            if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
-                                                        }
-                                                        if (!desc) {
-                                                            for (j = i + 1; j <= Math.min(potentialTexts.length - 1, i + 5); j++) {
-                                                                t = potentialTexts[j];
-                                                                if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
-                                                            }
-                                                        }
-
-                                                        // Strip prefixes to match user request "bỏ từ chẩn đoán kèm theo phía trước đi"
-                                                        if (desc) {
-                                                            desc = desc.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
-                                                        }
-
-                                                        var codeStr = desc ? curText + ' - ' + desc : curText;
-                                                        if (!allDiagnoses.some(d => d.code === codeStr || d.code.startsWith(curText + ' -'))) {
-                                                            allDiagnoses.push({ code: codeStr, is_primary: allDiagnoses.length === 0 });
-                                                        }
-                                                    } else if (curText.length > 6 && icdPatternContains.test(curText)) {
-                                                        var cleanedRv = curText.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
-                                                        if (!allDiagnoses.some(d => d.code === cleanedRv)) {
-                                                            allDiagnoses.push({ code: cleanedRv, is_primary: allDiagnoses.length === 0 });
-                                                        }
-                                                    }
-                                                }
-                                            } catch (err) {
-                                                console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
-                                            }
-                                        }
-
-                                        if (allDiagnoses.length > 0) {
-                                            debugLog('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
-                                            sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
-                                                diagnoses: allDiagnoses,
-                                                patientId: benhnhanId,
-                                                khambenhId: testId,
-                                                patientName: patientName
-                                            }, requestId);
-                                            return;
-                                        }
+                                for (var ri = 0; ri < records.length; ri++) {
+                                    var rec = records[ri];
+                                    if (!rec) continue;
+                                    for (var rk in rec) {
+                                        var ruk = rk.toUpperCase();
+                                        var rv = String(rec[rk] || '').trim();
+                                        if (rv.length < 2) continue;
+                                        if (ruk.includes('HINHANH') || ruk.includes('QUANGTUYEN') || ruk.includes('YEUCAU') || ruk.includes('CDHA') || ruk.includes('DICHVU') || ruk.includes('PHONGKHAM') || ruk === 'TEN') continue;
+                                        potentialTexts.push(rv);
                                     }
                                 }
 
-                                // Nếu không có data hoặc có data nhưng không có ICD -> Thử ID khác
-                                tryNext();
-                            } catch (_e) { tryNext(); }
-                        } else {
-                            tryNext();
+                                for (var i = 0; i < potentialTexts.length; i++) {
+                                    var curText = potentialTexts[i];
+                                    if (curText.length <= 6 && icdPatternExact.test(curText) && !curText.toUpperCase().startsWith('NK')) {
+                                        var desc = '';
+                                        for (var j = i - 1; j >= Math.max(0, i - 5); j--) {
+                                            var t = potentialTexts[j];
+                                            if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
+                                        }
+                                        if (!desc) {
+                                            for (j = i + 1; j <= Math.min(potentialTexts.length - 1, i + 5); j++) {
+                                                t = potentialTexts[j];
+                                                if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
+                                            }
+                                        }
+
+                                        // Strip prefixes to match user request "bỏ từ chẩn đoán kèm theo phía trước đi"
+                                        if (desc) {
+                                            desc = desc.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
+                                        }
+
+                                        var codeStr = desc ? curText + ' - ' + desc : curText;
+                                        if (!allDiagnoses.some(d => d.code === codeStr || d.code.startsWith(curText + ' -'))) {
+                                            allDiagnoses.push({ code: codeStr, is_primary: allDiagnoses.length === 0 });
+                                        }
+                                    } else if (curText.length > 6 && icdPatternContains.test(curText)) {
+                                        var cleanedRv = curText.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
+                                        if (!allDiagnoses.some(d => d.code === cleanedRv)) {
+                                            allDiagnoses.push({ code: cleanedRv, is_primary: allDiagnoses.length === 0 });
+                                        }
+                                    }
+                                }
+                            } catch (err) {
+                                console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
+                            }
+                        }
+
+                        if (allDiagnoses.length > 0) {
+                            debugLog('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                            sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
+                                diagnoses: allDiagnoses,
+                                patientId: benhnhanId,
+                                khambenhId: testId,
+                                patientName: patientName
+                            }, requestId);
+                            return;
                         }
                     }
-                };
-                xhr.send(null);
-            };
+                }
+            }
 
-            tryNext();
+            debugLog('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
+            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '' }, requestId);
 
         } catch (_e) {
             sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '' }, requestId);
         }
     }
 
-    function fetchDrugs(rowId, requestId) {
+    async function fetchDrugs(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
@@ -1217,70 +1362,44 @@
                 rowData.MADIEUTRI,
                 rowData.HOSOBENHANID,
                 rowData.TIEPNHANID
-            ].filter(v => v && v.trim() !== '');
+            ].filter(v => v && String(v).trim() !== '');
 
             candidates = Array.from(new Set(candidates));
-
-            let currentIndex = 0;
             const benhnhanId = rowData.BENHNHANID || '';
 
-            const tryNext = () => {
-                if (currentIndex >= candidates.length) {
-                    sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
-                    return;
+            let foundRows = false;
+            for (let testId of candidates) {
+                const options = [
+                    { name: '[0]', value: String(testId) }, // e.g. KHAMBENHID
+                    { name: '[1]', value: String(benhnhanId) }, // BENHNHANID
+                    { name: '[2]', value: '365;' }, // bao phủ toàn đợt nằm viện
+                    { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.TIEPNHANID || testId) }
+                ];
+
+                const rows = await _fetchHisPagingRows('NT.024.DSTHUOCVT', options, 100, 'sidx=&sord=desc');
+
+                if (rows && rows.length > 0) {
+                    foundRows = true;
+                    const drugs = rows.map(r => ({
+                        NGAYMAUBENHPHAM_SUDUNG: r.NGAYMAUBENHPHAM_SUDUNG || r.NGAYSD || r.NGAYSUDUNG || '',
+                        TENTHUOC: r.TENDICHVU || r.TENTHUOC || '',
+                        MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                        LIEUDUNG: r.LIEUDUNG || r.LIEU || '',
+                        DONVITINH: r.DONVITINH || r.DONVI || '',
+                        DUONGDUNG: r.DUONGDUNG || r.TENDUONGDUNG || '',
+                        CACHDUNG: r.CACHDUNG || r.SOLO_CACHDUNG || r.SUDUNG || '',
+                        SOLUONG: r.SOLUONG || r.SOLUONG_SUDUNG || '',
+                        HOATCHAT: r.HOATCHAT || r.TENHOATCHAT || r.HOAT_CHAT || r.TEN_HOATCHAT || r.TENHC || r.TEN_HC || r.TENKHOAHOC || '',
+                        HAMLUONG: r.HAMLUONG || r.NONGDO || r.HAM_LUONG || r.NONG_DO || r.NDHL || ''
+                    }));
+                    sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs }, requestId);
+                    break;
                 }
+            }
 
-                const testId = candidates[currentIndex++];
-                const params = {
-                    func: 'ajaxExecuteQueryPaging',
-                    uuid: _jsonrpc.AjaxJson.uuid,
-                    params: ['NT.024.DSTHUOCVT'],
-                    options: [
-                        { name: '[0]', value: String(testId) }, // e.g. KHAMBENHID
-                        { name: '[1]', value: String(benhnhanId) }, // BENHNHANID
-                        { name: '[2]', value: '365;' }, // bao phủ toàn đợt nằm viện
-                        { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.TIEPNHANID || testId) }
-                    ]
-                };
-
-                const xhr = new XMLHttpRequest();
-                const url = `/vnpthis/RestService?_search=false&rows=100&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
-
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const data = JSON.parse(xhr.responseText);
-                                const rows = data.rows || [];
-                                if (rows.length > 0) {
-                                    const drugs = rows.map(r => ({
-                                        NGAYMAUBENHPHAM_SUDUNG: r.NGAYMAUBENHPHAM_SUDUNG || r.NGAYSD || r.NGAYSUDUNG || '',
-                                        TENTHUOC: r.TENDICHVU || r.TENTHUOC || '',
-                                        MAUBENHPHAMID: r.MAUBENHPHAMID || '',
-                                        LIEUDUNG: r.LIEUDUNG || r.LIEU || '',
-                                        DONVITINH: r.DONVITINH || r.DONVI || '',
-                                        DUONGDUNG: r.DUONGDUNG || r.TENDUONGDUNG || '',
-                                        CACHDUNG: r.CACHDUNG || r.SOLO_CACHDUNG || r.SUDUNG || '',
-                                        SOLUONG: r.SOLUONG || r.SOLUONG_SUDUNG || '',
-                                        HOATCHAT: r.HOATCHAT || r.TENHOATCHAT || r.HOAT_CHAT || r.TEN_HOATCHAT || r.TENHC || r.TEN_HC || r.TENKHOAHOC || '',
-                                        HAMLUONG: r.HAMLUONG || r.NONGDO || r.HAM_LUONG || r.NONG_DO || r.NDHL || ''
-                                    }));
-                                    sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs }, requestId);
-                                } else {
-                                    tryNext();
-                                }
-                            } catch (_e) { tryNext(); }
-                        } else {
-                            tryNext();
-                        }
-                    }
-                };
-                xhr.send();
-            };
-
-            tryNext();
-
+            if (!foundRows) {
+                sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
+            }
         } catch (_e) {
             sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
         }
@@ -1583,7 +1702,7 @@
      * Hỗ trợ cả Nội trú (#grdBenhNhan) và Ngoại trú (#grdDSBenhNhan).
      * Ngoại trú không có tờ điều trị → đọc data từ DOM tab "Bệnh án".
      */
-    function fetchClinicalSummary(rowId, requestId) {
+    async function fetchClinicalSummary(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_CLINICAL_SUMMARY_RESULT', rowId, { _context: null }, requestId);
@@ -1599,8 +1718,8 @@
                 return;
             }
 
-            const contextInfo = resolveTreatmentContext(rowData, rowId);
-            const admissionTimes = fetchAdmissionTimes(rowData, rowId);
+            const contextInfo = await resolveTreatmentContext(rowData, rowId);
+            const admissionTimes = await fetchAdmissionTimes(rowData, rowId);
             const hsbaId = contextInfo.HOSOBENHANID || rowData.HOSOBENHANID || rowData.HSBAID || '';
             const benhnhanId = contextInfo.BENHNHANID || rowData.BENHNHANID || '';
 
@@ -1628,7 +1747,7 @@
             if (hsbaId) {
                 try {
                     const params = JSON.stringify({ HOSOBENHANID: hsbaId });
-                    const hsbaRes = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.006.HSBA.HIS', params, 0);
+                    const hsbaRes = await _asyncCallSpO('NT.006.HSBA.HIS', params, 0);
                     const data = (typeof hsbaRes === 'string' && hsbaRes.trim() !== '') ? JSON.parse(hsbaRes) : hsbaRes;
                     const records = Array.isArray(data) ? data : [data];
 
@@ -1740,78 +1859,67 @@
                     let foundTreatment = false;
                     for (const testId of candidates) {
                         if (foundTreatment) break;
-                        const tParams = {
-                            func: 'ajaxExecuteQueryPaging',
-                            uuid: _jsonrpc.AjaxJson.uuid,
-                            params: ['NT.024.DSPHIEU'],
-                            options: [
-                                { name: '[0]', value: '' },
-                                { name: '[1]', value: String(benhnhanId) },
-                                { name: '[2]', value: '4' },
-                                { name: '[3]', value: String(testId) }
-                            ]
-                        };
+                        const options = [
+                            { name: '[0]', value: '' },
+                            { name: '[1]', value: String(benhnhanId) },
+                            { name: '[2]', value: '4' },
+                            { name: '[3]', value: String(testId) }
+                        ];
 
-                        const xhr = new XMLHttpRequest();
-                        const url = '/vnpthis/RestService?_search=false&rows=5&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=' + encodeURIComponent(JSON.stringify(tParams));
-                        xhr.open('GET', url, false); // Synchronous — OK vì chạy trong injected script
-                        xhr.send();
+                        const rows = await _fetchHisPagingRows('NT.024.DSPHIEU', options, 5, 'sidx=NGAYMAUBENHPHAM&sord=desc');
 
-                        if (xhr.status === 200) {
-                            const tData = JSON.parse(xhr.responseText);
-                            const rows = tData.rows || [];
-                            if (rows.length > 0) {
-                                // Sort client-side theo ngày giảm dần vì API đôi khi bỏ qua sidx=NGAYMAUBENHPHAM
-                                // Format ngày HIS: "DD/MM/YYYY HH:MM:SS"
-                                function _parseTDTDate(str) {
-                                    if (!str) return 0;
-                                    var p = str.split(/[/\s:]/);
-                                    if (p.length >= 5) {
-                                        return new Date(p[2], parseInt(p[1]) - 1, p[0], p[3], p[4], p[5] || 0).getTime();
-                                    }
-                                    return 0;
+                        if (rows && rows.length > 0) {
+                            // Sort client-side theo ngày giảm dần vì API đôi khi bỏ qua sidx=NGAYMAUBENHPHAM
+                            // Format ngày HIS: "DD/MM/YYYY HH:MM:SS"
+                            function _parseTDTDate(str) {
+                                if (!str) return 0;
+                                var p = str.split(/[/\s:]/);
+                                if (p.length >= 5) {
+                                    return new Date(p[2], parseInt(p[1]) - 1, p[0], p[3], p[4], p[5] || 0).getTime();
                                 }
-                                rows.sort(function(a, b) {
-                                    return _parseTDTDate(b.NGAYMAUBENHPHAM || b.NGAY_Y_LENH || b.NGAY || '')
-                                         - _parseTDTDate(a.NGAYMAUBENHPHAM || a.NGAY_Y_LENH || a.NGAY || '');
-                                });
-                                foundTreatment = true;
-                                const latest = rows[0];
-                                result.dienBienBenh = latest.DIENBIENBENH || latest.NOIDUNG || '';
+                                return 0;
+                            }
+                            rows.sort(function(a, b) {
+                                return _parseTDTDate(b.NGAYMAUBENHPHAM || b.NGAY_Y_LENH || b.NGAY || '')
+                                     - _parseTDTDate(a.NGAYMAUBENHPHAM || a.NGAY_Y_LENH || a.NGAY || '');
+                            });
+                            foundTreatment = true;
+                            const latest = rows[0];
+                            result.dienBienBenh = latest.DIENBIENBENH || latest.NOIDUNG || '';
 
-                                // Trích xuất Khám toàn thân từ tờ điều trị
-                                var kttKeys = ['KHAMTOANHAN', 'KHAMBENHTOANTHAN', 'KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'TOANTHAN'];
-                                for (var ki2 = 0; ki2 < kttKeys.length; ki2++) {
-                                    var kv = latest[kttKeys[ki2]];
-                                    if (kv && String(kv).trim().length > 1) {
-                                        result.khamToanThanTDT = String(kv).trim();
-                                        break;
-                                    }
+                            // Trích xuất Khám toàn thân từ tờ điều trị
+                            var kttKeys = ['KHAMTOANHAN', 'KHAMBENHTOANTHAN', 'KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'TOANTHAN'];
+                            for (var ki2 = 0; ki2 < kttKeys.length; ki2++) {
+                                var kv = latest[kttKeys[ki2]];
+                                if (kv && String(kv).trim().length > 1) {
+                                    result.khamToanThanTDT = String(kv).trim();
+                                    break;
                                 }
-                                // Fallback: universal scan nếu không tìm thấy theo key chuẩn
-                                if (!result.khamToanThanTDT) {
-                                    for (var fkk in latest) {
-                                        var fuk2 = fkk.toUpperCase();
-                                        if (fuk2.includes('KHAMTOAN') || fuk2.includes('TOANTHAN') || fuk2 === 'KHAMBENH_TOANTHAN') {
-                                            var fvv = latest[fkk];
-                                            if (fvv && String(fvv).trim().length > 1) {
-                                                result.khamToanThanTDT = String(fvv).trim();
-                                                break;
-                                            }
+                            }
+                            // Fallback: universal scan nếu không tìm thấy theo key chuẩn
+                            if (!result.khamToanThanTDT) {
+                                for (var fkk in latest) {
+                                    var fuk2 = fkk.toUpperCase();
+                                    if (fuk2.includes('KHAMTOAN') || fuk2.includes('TOANTHAN') || fuk2 === 'KHAMBENH_TOANTHAN') {
+                                        var fvv = latest[fkk];
+                                        if (fvv && String(fvv).trim().length > 1) {
+                                            result.khamToanThanTDT = String(fvv).trim();
+                                            break;
                                         }
                                     }
                                 }
+                            }
 
-                                // === Bước 2a: Gọi NT.024.2.DETAIL để lấy chẩn đoán đầy đủ (có ICD) ===
-                                var detailSheetId = latest.MAUBENHPHAMID || latest.PHIEUID || latest.ID;
-                                if (detailSheetId && typeof _jsonrpc !== 'undefined' && _jsonrpc.AjaxJson) {
-                                    try {
-                                        var detailRes = _jsonrpc.AjaxJson.ajaxCALL_SP_O('NT.024.2.DETAIL', String(detailSheetId), 0);
-                                        var records = [];
-                                        if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
-                                        else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
-                                        if (records && records.rows && Array.isArray(records.rows)) records = records.rows;
-                                        else if (!Array.isArray(records)) records = [records];
+                            // === Bước 2a: Gọi NT.024.2.DETAIL để lấy chẩn đoán đầy đủ (có ICD) ===
+                            var detailSheetId = latest.MAUBENHPHAMID || latest.PHIEUID || latest.ID;
+                            if (detailSheetId && typeof _jsonrpc !== 'undefined' && _jsonrpc.AjaxJson) {
+                                try {
+                                    var detailRes = await _asyncCallSpO('NT.024.2.DETAIL', String(detailSheetId), 0);
+                                    var records = [];
+                                    if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
+                                    else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
+                                    if (records && records.rows && Array.isArray(records.rows)) records = records.rows;
+                                    else if (!Array.isArray(records)) records = [records];
 
                                         // === LẤY CHẨN ĐOÁN: Ưu tiên lấy từ tờ điều trị tổng hợp (latest) vì nó chứa chuỗi hoàn chỉnh giống trên giao diện ===
                                         var foundChanDoan = false;
@@ -1944,9 +2052,6 @@
                                     } catch (detErr) {
                                         console.warn('[API-Bridge] NT.024.2.DETAIL failed:', detErr);
                                     }
-                                }
-
-
                             }
                         }
                     }
@@ -2213,7 +2318,7 @@
         }
     }
 
-    function fetchPttt(rowId, requestId) {
+    async function fetchPttt(rowId, requestId) {
         try {
             if (!_$) {
                 sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: [] }, requestId);
@@ -2230,64 +2335,34 @@
 
             candidates = Array.from(new Set(candidates));
 
-            let currentIndex = 0;
             let allPttt = [];
             const benhnhanId = rowData.BENHNHANID || '';
 
-            const tryNext = () => {
-                if (currentIndex >= candidates.length) {
+            for (let testId of candidates) {
+                const options = [
+                    { name: '[0]', value: String(testId) }, // KHAMBENHID or alternative
+                    { name: '[1]', value: String(benhnhanId) },
+                    { name: '[2]', value: '5' }, // 5 = PTTT (Chuyên Khoa)
+                    { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.TIEPNHANID || testId) }
+                ];
+
+                const rows = await _fetchHisPagingRows('NT.024.DSPHIEUCLS', options, 100, 'sidx=NGAYMAUBENHPHAM&sord=desc');
+                if (rows && rows.length > 0) {
+                    const pttts = rows.map(r => ({
+                        SOPHIEU: r.SOPHIEU || '',
+                        NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || '',
+                        MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                        KHOACHIDINH: r.KHOACHIDINH || '',
+                        PHONGCHIDINH: r.PHONGCHIDINH || ''
+                    }));
+                    allPttt = allPttt.concat(pttts);
+                    // Found PTTT, send result
                     sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: allPttt }, requestId);
                     return;
                 }
+            }
 
-                const testId = candidates[currentIndex++];
-
-                const params = {
-                    func: 'ajaxExecuteQueryPaging',
-                    uuid: _jsonrpc.AjaxJson.uuid,
-                    params: ['NT.024.DSPHIEUCLS'],
-                    options: [
-                        { name: '[0]', value: String(testId) }, // KHAMBENHID or alternative
-                        { name: '[1]', value: String(benhnhanId) },
-                        { name: '[2]', value: '5' }, // 5 = PTTT (Chuyên Khoa)
-                        { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.TIEPNHANID || testId) }
-                    ]
-                };
-
-                const xhr = new XMLHttpRequest();
-                const url = `/vnpthis/RestService?_search=false&rows=100&page=1&sidx=NGAYMAUBENHPHAM&sord=desc&postData=${encodeURIComponent(JSON.stringify(params))}`;
-
-                xhr.open('GET', url, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            try {
-                                const data = JSON.parse(xhr.responseText);
-                                const rows = data.rows || [];
-                                if (rows.length > 0) {
-                                    const pttts = rows.map(r => ({
-                                        SOPHIEU: r.SOPHIEU || '',
-                                        NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || '',
-                                        MAUBENHPHAMID: r.MAUBENHPHAMID || '',
-                                        KHOACHIDINH: r.KHOACHIDINH || '',
-                                        PHONGCHIDINH: r.PHONGCHIDINH || ''
-                                    }));
-                                    allPttt = allPttt.concat(pttts);
-                                    // Found PTTT, send result
-                                    sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: allPttt }, requestId);
-                                } else {
-                                    tryNext();
-                                }
-                            } catch (_e) { tryNext(); }
-                        } else {
-                            tryNext();
-                        }
-                    }
-                };
-                xhr.send();
-            };
-
-            tryNext();
+            sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: allPttt }, requestId);
 
         } catch (_e) {
             sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: [] }, requestId);

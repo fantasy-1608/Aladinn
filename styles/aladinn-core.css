@@ -3,6 +3,10 @@
    Source of Truth — All CSS Custom Properties & Shared Utilities
    ============================================================ */
 
+/* ── Fonts: Injected via JS using chrome.runtime.getURL() ──
+   (See content/main.js — @font-face removed from CSS to prevent
+    relative-path resolution errors in content scripts) */
+
 /* ── Design Tokens ── */
 :root {
     /* Backgrounds */

@@ -1,4 +1,3 @@
-import '../debug-init.js';
 /**
  * VNPT HIS Smart Scanner v4.0.1
  * Emergency Iframe Helper
@@ -24,7 +23,6 @@ import '../debug-init.js';
         try {
             if (event.data.contextToken) {
                 var expectedName = event.data.expectedPatientName || '';
-                // Thường form cấp cứu có txtTENBENHNHAN hoặc nhãn BN
                 var patientNameEl = document.getElementById('txtTENBENHNHAN') || document.getElementById('txtHoTen') || document.querySelector('input[name="TENBENHNHAN"]') || document.querySelector('input[name="HOTEN"]');
                 if (patientNameEl && expectedName) {
                     var nameOnForm = (patientNameEl.value || patientNameEl.textContent || '').trim().toUpperCase();
@@ -33,6 +31,15 @@ import '../debug-init.js';
                         console.error('[VNPT-Helper] BLOCK FILL: Mismatch detected! Form name:', nameOnForm, 'Expected:', nameExpected);
                         window.parent.postMessage({ type: 'EMERGENCY_FILL_RESULT', success: false, error: 'FORM_CONTEXT_MISMATCH' }, PARENT_ORIGIN);
                         return;
+                    }
+                }
+
+                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
+                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN');
+                if (recordIdEl && expectedRecordId) {
+                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
+                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
+                        console.warn('[VNPT-Helper] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
                     }
                 }
             }

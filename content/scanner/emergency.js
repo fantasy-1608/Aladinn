@@ -45,10 +45,17 @@ const VNPTEmergency = (function () {
             const currentPid = window.VNPTStore.get('selectedPatientId');
             if (currentPid) onPatientSelected(currentPid);
         } else {
-            setInterval(async () => {
+            // Fallback to polling if store not yet ready — auto-cleanup khi store sẵn sàng
+            const fallbackTimer = setInterval(async () => {
+                if (document.hidden) return;
                 if (!window.VNPTStore) return;
+                // Store đã sẵn sàng → subscribe + clear timer
+                window.VNPTStore.subscribe('selectedPatientId', (pid) => {
+                    if (pid) onPatientSelected(pid);
+                });
                 const pid = window.VNPTStore.get('selectedPatientId');
                 if (pid) onPatientSelected(pid);
+                clearInterval(fallbackTimer);
             }, 2000);
         }
 
@@ -365,6 +372,14 @@ const VNPTEmergency = (function () {
 
             window.VNPTRealtime?.showToast('⏳ Đang tạo phiếu qua API...', 'info');
 
+            if (window.VNPTPatientContextGuard && contextToken) {
+                const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
+                if (!confirmed) {
+                    window.VNPTRealtime?.showToast('ℹ️ Đã hủy.', 'info');
+                    return;
+                }
+            }
+
             await injectHelperIntoIframe(target);
 
             if (window.VNPTPatientContextGuard && contextToken) {
@@ -384,12 +399,16 @@ const VNPTEmergency = (function () {
                 expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'EMERGENCY_FILL_RESULT');
 
-            window.VNPTRealtime?.showToast('✅ Đã điền xong phiếu cấp cứu!', 'success');
+            const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu cấp cứu cho bệnh nhân: ${ptName}`, 'success');
             hideFillButton(); // Ẩn button sau khi điền
         } catch (e) {
             console.error('[Emergency] Lỗi:', e);
-            const msg = e instanceof Error ? e.message : 'Lỗi';
-            window.VNPTRealtime?.showToast(`❌ ${msg}`, 'warning');
+            let msg = e instanceof Error ? e.message : 'Lỗi';
+            if (msg === 'FORM_CONTEXT_MISMATCH') {
+                msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
+            }
+            window.VNPTRealtime?.showToast(`❌ ${msg}`, 'error');
         }
     }
 

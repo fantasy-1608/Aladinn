@@ -10,6 +10,247 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 (function () {
     'use strict';
 
+    function _showABGPopup(pH, pCO2, HCO3, pO2, FiO2, BE, Na, Cl) {
+        let step1Html;
+        let phStatus;
+        let isAcidemia = false;
+        let isAlkalemia = false;
+
+        if (pH !== null && !isNaN(pH)) {
+            if (pH < 7.35) { phStatus = '<span style="color:#ef4444">Toan máu (Acidemia)</span>'; isAcidemia = true; }
+            else if (pH > 7.45) { phStatus = '<span style="color:#60a5fa">Kiềm máu (Alkalemia)</span>'; isAlkalemia = true; }
+            else { phStatus = '<span style="color:#4ade80">Bình thường</span>'; }
+            step1Html = `<div style="margin-bottom:12px;">
+                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:14px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                    pH = <b>${pH}</b> ➔ <b>${phStatus}</b>
+                </div>
+            </div>`;
+        } else {
+            step1Html = '<div style="margin-bottom:12px;"><div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div><div style="color:#a18764; font-size:13px;">(Không có dữ liệu pH)</div></div>';
+        }
+
+        let step2Html;
+        let direction = '';
+        if (pH !== null && pCO2 !== null && HCO3 !== null && !isNaN(pH) && !isNaN(pCO2) && !isNaN(HCO3)) {
+            let pco2Dir = pCO2 > 45 ? 'Toan hô hấp' : (pCO2 < 35 ? 'Kiềm hô hấp' : 'Bình thường');
+            let hco3Dir = HCO3 < 22 ? 'Toan chuyển hóa' : (HCO3 > 26 ? 'Kiềm chuyển hóa' : 'Bình thường');
+            
+            let primary = '';
+            if (isAcidemia) {
+                if (pCO2 > 45 && HCO3 >= 22) { primary = '<span style="color:#ef4444">Toan hô hấp</span>'; direction = 'toan_ho_hap'; }
+                else if (HCO3 < 22 && pCO2 <= 45) { primary = '<span style="color:#ef4444">Toan chuyển hóa</span>'; direction = 'toan_chuyen_hoa'; }
+                else if (pCO2 > 45 && HCO3 < 22) { primary = '<span style="color:#ef4444">Toan hỗn hợp (Hô hấp + Chuyển hóa)</span>'; direction = 'toan_hon_hop'; }
+            } else if (isAlkalemia) {
+                if (pCO2 < 35 && HCO3 <= 26) { primary = '<span style="color:#60a5fa">Kiềm hô hấp</span>'; direction = 'kiem_ho_hap'; }
+                else if (HCO3 > 26 && pCO2 >= 35) { primary = '<span style="color:#60a5fa">Kiềm chuyển hóa</span>'; direction = 'kiem_chuyen_hoa'; }
+                else if (pCO2 < 35 && HCO3 > 26) { primary = '<span style="color:#60a5fa">Kiềm hỗn hợp (Hô hấp + Chuyển hóa)</span>'; direction = 'kiem_hon_hop'; }
+            } else {
+                if (pCO2 > 45 && HCO3 > 26) { primary = pH < 7.4 ? '<span style="color:#4ade80">Toan hô hấp bù trừ hoàn toàn</span>' : '<span style="color:#4ade80">Kiềm chuyển hóa bù trừ hoàn toàn</span>'; direction = pH < 7.4 ? 'toan_ho_hap' : 'kiem_chuyen_hoa'; }
+                else if (pCO2 < 35 && HCO3 < 22) { primary = pH > 7.4 ? '<span style="color:#4ade80">Kiềm hô hấp bù trừ hoàn toàn</span>' : '<span style="color:#4ade80">Toan chuyển hóa bù trừ hoàn toàn</span>'; direction = pH > 7.4 ? 'kiem_ho_hap' : 'toan_chuyen_hoa'; }
+                else { primary = '<span style="color:#4ade80">Thăng bằng kiềm toan bình thường</span>'; direction = 'binh_thuong'; }
+            }
+
+            step2Html = `<div style="margin-bottom:12px;">
+                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                    <ul style="margin:0; padding-left:16px; margin-bottom:6px;">
+                        <li>pCO2 = ${pCO2} mmHg ➔ Hướng <b>${pco2Dir}</b></li>
+                        <li>HCO3 = ${HCO3} mmol/L ➔ Hướng <b>${hco3Dir}</b></li>
+                    </ul>
+                    Kết luận: <b>${primary}</b>
+                </div>
+            </div>`;
+        } else {
+             step2Html = '<div style="margin-bottom:12px;"><div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div><div style="color:#a18764; font-size:13px;">(Thiếu dữ liệu pCO2, HCO3)</div></div>';
+        }
+
+        let step3Html = '';
+        if (direction && direction !== 'binh_thuong' && direction !== 'toan_hon_hop' && direction !== 'kiem_hon_hop') {
+            let compDetails = '';
+            if (direction === 'toan_chuyen_hoa') {
+                const expectedPCO2 = (1.5 * HCO3) + 8;
+                compDetails += `<div style="margin-bottom:6px;"><b>Winters Formula (pCO2 bù trừ kỳ vọng):</b> ${expectedPCO2.toFixed(1)} ± 2 mmHg</div>`;
+                if (pCO2 > expectedPCO2 + 2) compDetails += `↳ pCO2 thực tế (${pCO2}) cao hơn ➔ <b>Kèm Toan Hô Hấp</b>`;
+                else if (pCO2 < expectedPCO2 - 2) compDetails += `↳ pCO2 thực tế (${pCO2}) thấp hơn ➔ <b>Kèm Kiềm Hô Hấp</b>`;
+                else compDetails += '↳ Bù trừ hô hấp phù hợp (Đơn thuần).';
+            } else if (direction === 'kiem_chuyen_hoa') {
+                const expectedPCO2 = (0.7 * HCO3) + 21;
+                compDetails += `<div style="margin-bottom:6px;"><b>pCO2 bù trừ kỳ vọng:</b> ${expectedPCO2.toFixed(1)} ± 2 mmHg</div>`;
+                if (pCO2 > expectedPCO2 + 2) compDetails += '↳ pCO2 thực tế cao hơn ➔ <b>Kèm Toan Hô Hấp</b>';
+                else if (pCO2 < expectedPCO2 - 2) compDetails += '↳ pCO2 thực tế thấp hơn ➔ <b>Kèm Kiềm Hô Hấp</b>';
+                else compDetails += '↳ Bù trừ hô hấp phù hợp.';
+            } else if (direction === 'toan_ho_hap') {
+                const expectedHco3Acute = 24 + ((pCO2 - 40) / 10);
+                const expectedHco3Chronic = 24 + 3.5 * ((pCO2 - 40) / 10);
+                compDetails += `<div style="margin-bottom:6px;"><b>HCO3 bù trừ kỳ vọng:</b><br/>- Cấp tính: ~${expectedHco3Acute.toFixed(1)}<br/>- Mạn tính: ~${expectedHco3Chronic.toFixed(1)}</div>`;
+                compDetails += `↳ Đối chiếu với HCO3 thực tế (${HCO3}) để phân biệt Cấp/Mạn hoặc rối loạn hỗn hợp.`;
+            } else if (direction === 'kiem_ho_hap') {
+                const expectedHco3Acute = 24 - 2 * ((40 - pCO2) / 10);
+                const expectedHco3Chronic = 24 - 4 * ((40 - pCO2) / 10);
+                compDetails += `<div style="margin-bottom:6px;"><b>HCO3 bù trừ kỳ vọng:</b><br/>- Cấp tính: ~${expectedHco3Acute.toFixed(1)}<br/>- Mạn tính: ~${expectedHco3Chronic.toFixed(1)}</div>`;
+                compDetails += `↳ Đối chiếu với HCO3 thực tế (${HCO3}) để phân biệt Cấp/Mạn hoặc rối loạn hỗn hợp.`;
+            }
+            
+            if (BE !== null && !isNaN(BE)) {
+                compDetails += `<div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);"><b>Base Excess (BE):</b> ${BE} mmol/L ` + (BE < -2 ? '(<span style="color:#ef4444">Thiếu kiềm</span>)' : (BE > 2 ? '(<span style="color:#60a5fa">Thừa kiềm</span>)' : '(<span style="color:#4ade80">Bình thường</span>)')) + '</div>';
+            }
+
+            step3Html = `<div style="margin-bottom:12px;">
+                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">3️⃣ Bước 3: Đánh giá bù trừ & Hỗn hợp</div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                    ${compDetails}
+                </div>
+            </div>`;
+        }
+
+        let step4Html = '';
+        if (direction === 'toan_chuyen_hoa' || direction === 'toan_hon_hop') {
+            let agDetails = '';
+            if (Na !== null && Cl !== null && !isNaN(Na) && !isNaN(Cl)) {
+                const AG = Na - (Cl + HCO3);
+                agDetails += `<div style="margin-bottom:6px;"><b>Anion Gap (AG):</b> ${AG.toFixed(1)} mmol/L ` + (AG > 12 ? '(<span style="color:#ef4444">Tăng</span>)' : '(<span style="color:#4ade80">Bình thường</span>)') + '</div>';
+                
+                if (AG > 12) {
+                    agDetails += '↳ <b>Nguyên nhân (MUDPILES):</b> Toan ceton, Toan lactic, Suy thận, Ngộ độc...<br/>';
+                    const deltaAG = AG - 12;
+                    const deltaHCO3 = 24 - HCO3;
+                    const deltaRatio = deltaAG / deltaHCO3;
+                    agDetails += `<div style="margin-top:6px;"><b>Delta Ratio (ΔAG/ΔHCO3):</b> ${deltaRatio.toFixed(2)}</div>`;
+                    if (deltaRatio < 0.4) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường (Hyperchloremic)';
+                    else if (deltaRatio < 1) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường';
+                    else if (deltaRatio > 2) agDetails += '↳ Toan CH tăng AG + Kiềm CH';
+                    else agDetails += '↳ Toan CH tăng AG đơn thuần';
+                } else {
+                    agDetails += '↳ <b>Nguyên nhân (HARDUP):</b> Tiêu chảy, RTA (Toan ống thận), Dò tiêu hóa...';
+                }
+            } else {
+                agDetails = '<span style="color:#a18764; font-style:italic;">(Cần xét nghiệm Na, Cl bên bảng Sinh hóa cùng ngày để tính Anion Gap)</span>';
+            }
+
+            const agStepNum = step3Html ? 4 : 3;
+            step4Html = `<div style="margin-bottom:12px;">
+                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${agStepNum}️⃣ Bước ${agStepNum}: Khoảng trống Anion (AG)</div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                    ${agDetails}
+                </div>
+            </div>`;
+        }
+
+        let step5Html;
+        let oxyStatus;
+        let pfRatio;
+        if (pO2 !== null && !isNaN(pO2)) {
+            if (FiO2 !== null && !isNaN(FiO2)) {
+                let fVal = FiO2 > 1 ? FiO2 / 100 : FiO2;
+                pfRatio = pO2 / fVal;
+                if (pfRatio >= 400) oxyStatus = `<span style="color:#4ade80">✅ Oxy hóa máu tốt (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else if (pfRatio >= 300) oxyStatus = `<span style="color:#fbbf24">⚠️ Oxy hóa máu ranh giới (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else if (pfRatio >= 200) oxyStatus = `<span style="color:#ef4444">🚨 ARDS Nhẹ (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else if (pfRatio >= 100) oxyStatus = `<span style="color:#ef4444">🆘 ARDS Trung bình (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else oxyStatus = `<span style="color:#ef4444">💀 ARDS Nặng (P/F = ${pfRatio.toFixed(0)})</span>`;
+                oxyStatus += ` <span style="font-size:12px; color:#7a6e5e;">(FiO2: ${FiO2}%)</span>`;
+            } else {
+                if (pO2 >= 80) oxyStatus = '<span style="color:#4ade80">✅ Oxy hóa máu bình thường (80-100 mmHg)</span>';
+                else if (pO2 >= 60) oxyStatus = '<span style="color:#fbbf24">⚠️ Thiếu oxy máu nhẹ (60-79 mmHg)</span>';
+                else if (pO2 >= 40) oxyStatus = '<span style="color:#ef4444">🚨 Thiếu oxy máu trung bình (40-59 mmHg)</span>';
+                else oxyStatus = '<span style="color:#ef4444">🆘 Thiếu oxy máu nặng (<40 mmHg)</span>';
+                oxyStatus += ' <span style="font-size:12px; color:#7a6e5e;">(Không có FiO2 để tính P/F)</span>';
+            }
+        } else oxyStatus = '<span style="color:#a18764">Không có dữ liệu pO2</span>';
+
+        const oxyStepNum = (step3Html ? 3 : 2) + (step4Html ? 1 : 0) + 1;
+        step5Html = `<div style="margin-bottom:12px;">
+            <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${oxyStepNum}️⃣ Bước ${oxyStepNum}: Tình trạng Oxy hóa</div>
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:14px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                ${oxyStatus}
+            </div>
+        </div>`;
+
+        let suggestHtml = '';
+        if (direction === 'toan_ho_hap') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải phóng đường thở, thở oxy (mục tiêu SpO2 88-92% nếu COPD).<br/>- Chỉ định thông khí nhân tạo (NIV/BIPAP hoặc Đặt NKQ) khi pH < 7.25, pCO2 > 50mmHg.<br/>- Điều trị nguyên nhân: Giãn phế quản, Corticosteroid, Kháng sinh (nếu có nhiễm khuẩn).';
+        else if (direction === 'toan_chuyen_hoa') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- <b>Ưu tiên:</b> Điều trị nguyên nhân gốc (truyền Insulin cho DKA, bù dịch/vận mạch cho sốc, hồi sức sepsis).<br/>- <b>Bù NaHCO3 tĩnh mạch:</b> Chỉ định khi pH < 7.15 (hoặc 7.2 tùy nguyên nhân) hoặc HCO3 < 10 mmol/L.<br/>- Bù dịch tinh thể tích cực, theo dõi sát điện giải đồ (đặc biệt Kali máu).';
+        else if (direction === 'kiem_ho_hap') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải quyết nguyên nhân gây tăng thông khí: Liệu pháp oxy, Giảm đau, Hạ sốt.<br/>- Trấn an, cân nhắc dùng an thần (Diazepam) nếu do lo âu, hoảng sợ.<br/>- Nếu đang thở máy: Chỉnh giảm thể tích khí lưu thông (Vt) hoặc tần số thở (f).';
+        else if (direction === 'kiem_chuyen_hoa') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Bồi hoàn thể tích tuần hoàn bằng dung dịch NaCl 0.9%.<br/>- Bù Kali Clorua (KCl) tĩnh mạch tích cực theo mức độ hạ Kali máu.<br/>- Ngừng/giảm liều thuốc lợi tiểu mất Kali. Cân nhắc PPI/Kháng H2 nếu mất acid do nôn/hút dịch dạ dày.';
+        else if (direction === 'toan_hon_hop') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Tình trạng cấp cứu nặng):</b><br/>- Hỗ trợ hô hấp khẩn cấp (Đặt NKQ, thở máy) kết hợp hồi sức tuần hoàn (bù dịch, thuốc vận mạch).<br/>- Xử trí nguyên nhân gốc (sốc nhiễm khuẩn, ngưng tim, suy đa tạng). Cân nhắc lọc máu CRRT nếu có chỉ định.';
+        else if (direction === 'kiem_hon_hop') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Điều chỉnh giảm ngay thông khí trên máy thở.<br/>- Bù dịch NaCl 0.9% và KCl tích cực.<br/>- Cân nhắc lợi tiểu Acetazolamide (Diamox) nếu người bệnh thừa nước kèm kiềm chuyển hóa nặng cản trở cai máy thở.';
+
+        if (suggestHtml) {
+             let searchLink = '';
+             let directionName = '';
+             if (direction === 'toan_ho_hap') directionName = 'Toan hô hấp';
+             else if (direction === 'toan_chuyen_hoa') directionName = 'Toan chuyển hóa';
+             else if (direction === 'kiem_ho_hap') directionName = 'Kiềm hô hấp';
+             else if (direction === 'kiem_chuyen_hoa') directionName = 'Kiềm chuyển hóa';
+             else if (direction === 'toan_hon_hop') directionName = 'Toan hỗn hợp';
+             else if (direction === 'kiem_hon_hop') directionName = 'Kiềm hỗn hợp';
+             
+             if (directionName) {
+                 const query = encodeURIComponent(`Phác đồ điều trị ${directionName} Bộ y tế`);
+                 searchLink = `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(212,162,90,0.2); text-align:right;">
+                     <a href="https://www.google.com/search?q=${query}" target="_blank" style="color:#60a5fa; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:4px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                         🔍 Tra cứu phác đồ ${directionName} trên Google ↗
+                     </a>
+                 </div>`;
+             }
+
+             suggestHtml = `<div style="margin-top:16px;">
+                <div style="color:#d4a25a; font-size:12px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">💡 Phân tích nguyên nhân & Hướng xử trí:</div>
+                <div style="background:rgba(212,162,90,0.08); border:1px solid rgba(212,162,90,0.2); padding:10px; border-radius:6px; color:#cbd5e1; font-size:13px; line-height:1.6;">
+                    ${suggestHtml}
+                    ${searchLink}
+                </div>
+            </div>`;
+        }
+
+        const modalHtml = `<div id="abg-popup-modal" onclick="if(event.target===this) this.remove()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:2147483647; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+            <div style="background:#1a1510; border:1px solid rgba(212,162,90,0.3); border-radius:12px; width:480px; max-width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.5); overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-height:90vh; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(212,162,90,0.1); border-bottom:1px solid rgba(212,162,90,0.2); flex-shrink:0;">
+                    <h3 style="margin:0; color:#d4a25a; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">🫁 Phân Tích Khí Máu (Step-by-Step)</h3>
+                    <button onclick="document.getElementById('abg-popup-modal').remove()" style="background:none; border:none; color:#a18764; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+                </div>
+                <div style="padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(212,162,90,0.3) transparent;">
+                    ${step1Html}
+                    ${step2Html}
+                    ${step3Html}
+                    ${step4Html}
+                    ${step5Html}
+                    ${suggestHtml}
+                    <div style="margin-top:16px; padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px dashed rgba(161,135,100,0.3);">
+                        <div style="color:#7a6e5e; font-size:11px; line-height:1.5; text-align:center;">⚠️ Kết quả chỉ mang tính <b>gợi ý tham khảo</b>, không thay thế chẩn đoán lâm sàng.<br/>Bác sĩ điều trị chịu trách nhiệm quyết định cuối cùng.</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    document.addEventListener('click', function(e) {
+        const abgBtn = e.target.closest('.aladinn-abg-btn');
+        if (abgBtn) {
+            e.preventDefault();
+            const pH = parseFloat(abgBtn.getAttribute('data-ph'));
+            const pCO2 = parseFloat(abgBtn.getAttribute('data-pco2'));
+            const HCO3 = parseFloat(abgBtn.getAttribute('data-hco3'));
+            const pO2 = parseFloat(abgBtn.getAttribute('data-po2'));
+            const FiO2 = parseFloat(abgBtn.getAttribute('data-fio2'));
+            const BE = parseFloat(abgBtn.getAttribute('data-be'));
+            const Na = parseFloat(abgBtn.getAttribute('data-na'));
+            const Cl = parseFloat(abgBtn.getAttribute('data-cl'));
+            
+            _showABGPopup(
+                isNaN(pH) ? null : pH, 
+                isNaN(pCO2) ? null : pCO2, 
+                isNaN(HCO3) ? null : HCO3, 
+                isNaN(pO2) ? null : pO2,
+                isNaN(FiO2) ? null : FiO2,
+                isNaN(BE) ? null : BE,
+                isNaN(Na) ? null : Na,
+                isNaN(Cl) ? null : Cl
+            );
+        }
+    });
+
     const Logger = window.Aladinn?.Logger;
 
     // ╔══════════════════════════════════════════════════════════════════╗
@@ -210,7 +451,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 type: reqType,
                                 rowId: rowId,
                                 requestId: requestId,
-                                token: token
+                                token: token,
+                                nonce: window.__ALADINN_NONCE__
                             }, window.location.origin);
                             
                             setTimeout(() => {
@@ -239,7 +481,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const fetchTreatmentFromBridge = (rowId) => bridgeFetch(
                         'REQ_FETCH_TREATMENT', 'FETCH_TREATMENT_RESULT', rowId,
                         (d) => d || {},
-                        10000, 'treat'
+                        20000, 'treat'
                     );
                     const fetchClinicalSummaryFromBridge = (rowId) => bridgeFetch(
                         'REQ_FETCH_CLINICAL_SUMMARY', 'FETCH_CLINICAL_SUMMARY_RESULT', rowId,
@@ -352,21 +594,29 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                     if (labs.length === 0 && imaging.length === 0 && drugs.length === 0 && (!historyData || Object.keys(historyData).length === 0)) {
                         window.VNPTRealtime?.showToast('⚠️ Không tìm thấy dữ liệu CLS / Thuốc / Bệnh án của bệnh nhân này.', 'warning');
-                        return;
+                        return false;
                     }
 
-                    window.VNPTRealtime?.showToast('🪄 Đang vẽ biểu đồ...', 'info');
-                    
+                    // Hiển thị trực tiếp thay vì chờ người dùng click widget
                     if (typeof showLabTimelineModal === 'function') {
                         showLabTimelineModal(labs, imaging, drugs, patientName, patientInfo);
                     }
-                    window.VNPTRealtime?.showToast('✅ Đã tải dữ liệu thành công!', 'success');
+                    
+                    // Reset trạng thái nút trên lưới
+                    const inlineBtn = document.querySelector('.his-inline-summary-btn.loading');
+                    if (inlineBtn) {
+                        inlineBtn.classList.remove('loading');
+                        inlineBtn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                        inlineBtn.title = 'Xem tóm tắt Cận lâm sàng & Thuốc (Aladinn)';
+                    }
+
+                    return true;
                 } catch (err) {
                     console.error('[AI Lab] Lỗi:', err);
                     window.VNPTRealtime?.showToast('❌ Lỗi tạo tóm tắt: ' + (err.message || 'Lỗi không xác định'), 'warning');
+                    return false;
                 }
             }
-
             // 5. Patient Selection — subscribe to shared Event Bus
             if (HIS?.EventBus && window.VNPTStore) {
                 HIS.EventBus.on('patient:selected', (data) => {
@@ -457,9 +707,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                     };
 
-                    document.addEventListener('click', () => {
-                        if (dropdown.style.display !== 'none') dropdown.style.display = 'none';
-                    });
+                    // Đóng dropdown khi click ra ngoài — chỉ đăng ký 1 lần
+                    if (!document._aladinnDropdownClickGuard) {
+                        document._aladinnDropdownClickGuard = true;
+                        document.addEventListener('click', () => {
+                            const dd = document.getElementById(dropdown.id) || dropdown;
+                            if (dd && dd.style.display !== 'none') dd.style.display = 'none';
+                        });
+                    }
                     
                     // Stop column sorting/resizing when interacting with the elements
                     ['mousedown', 'mouseup', 'dblclick'].forEach(evt => {
@@ -511,13 +766,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     btn.addEventListener('click', async (e) => {
                         e.preventDefault(); // Prevent form submission
                         e.stopPropagation(); // Prevent row click event
+                        
+                        // Nếu đang tải thì bỏ qua
+                        if (btn.classList.contains('loading')) return;
+
                         btn.classList.add('loading');
                         btn.innerHTML = '<span class="his-spinner-inline"></span>';
                         
-                        await showAiLabSummary();
+                        const success = await showAiLabSummary();
                         
-                        btn.classList.remove('loading');
-                        btn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                        if (!success) {
+                            btn.classList.remove('loading');
+                            btn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                        }
+                        // Nếu success, showAiLabSummary sẽ tự update nút thành ready
                     });
 
                     // Stop jqGrid from interpreting clicks on the button as row interactions
@@ -1036,7 +1298,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 window.postMessage({
                     type: 'TRIGGER_PTTT_PRINT',
                     rowId: tr.id,
-                    token: window.__ALADINN_BRIDGE_TOKEN__
+                    token: window.__ALADINN_BRIDGE_TOKEN__,
+                    nonce: window.__ALADINN_NONCE__
                 }, window.location.origin);
                 
                 // Add a small animation 
@@ -1122,6 +1385,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             'Protein niệu','Glucose niệu','Hồng cầu niệu','Bạch cầu niệu',
             'Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng'
         ],
+        'Khí máu': [
+            'pH','pCO2','pO2','HCO3act','HCO3std','BE(ecf)','BE(B)','ctCO2','O2SAT','pO2/FIO2','pO2(A-a)(T)','pO2(a/A)(T)','Temp','ctHb','FIO2','RI'
+        ],
         'Sinh hóa': [
             'Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT',
             'Bilirubin','Protein','Albumin','CRP','LDH','CK','Amylase','Lipase',
@@ -1141,6 +1407,16 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const tUp = (testName || '').toUpperCase();
         const vUp = (value || '').toUpperCase().trim();
         const combined = cUp + ' ' + tUp;
+
+        // Xử lý riêng pH vì rất dễ nhầm giữa Nước tiểu và Khí máu
+        if (cUp === 'PH' || tUp === 'PH') {
+            if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
+            if (combined.includes('MÁU') || combined.includes('KHÍ') || combined.includes('BLOOD')) return 'Khí máu';
+            // Khí máu pH thường có nhiều chữ số thập phân (vd: 7.539, 7.35), còn nước tiểu thường ngắn (6.0, 7.5)
+            if (vUp && vUp.includes('.') && vUp.split('.')[1].length >= 2) return 'Khí máu';
+            // Default to Nước tiểu if no other clue
+            return 'Nước tiểu';
+        }
 
         // 1. Explicit urine short codes
         if (URINE_CODES.has(cUp)) return 'Nước tiểu';
@@ -1166,6 +1442,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
         if (combined.includes('HUYẾT ĐỒ') || combined.includes('TẾ BÀO MÁU') || combined.includes('CÔNG THỨC MÁU') ||
             combined.includes('ĐÔNG MÁU') || combined.includes('NHÓM MÁU') || combined.includes('HUYẾT HỌC')) return 'Huyết học';
+        if (combined.includes('KHÍ MÁU') || combined.includes('KHI MAU')) return 'Khí máu';
         if (combined.includes('SINH HÓA') || combined.includes('HÓA SINH') || combined.includes('HOẠT ĐỘ') ||
             combined.includes('ĐỊNH LƯỢNG') || combined.includes('ĐỘ LỌC') || combined.includes('ĐIỆN GIẢI')) return 'Sinh hóa';
 
@@ -1191,8 +1468,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // ╚══════════════════════════════════════════════════════════════════╝
 
     function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}) {
-        const existing = document.getElementById('vnpt-lab-timeline-modal');
+        let targetDoc = document;
+        try { if (window.top && window.top.document) targetDoc = window.top.document; } catch(_e) {}
+        
+        const existing = targetDoc.getElementById('vnpt-lab-timeline-modal');
         if (existing) existing.remove();
+        
         const imgList = imaging || [];
 
         // ─── Helper: Lấy PACS URL qua bridge (getHashRIS trong HIS tab) ───
@@ -1211,7 +1492,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     sheetId: String(pacsConfig.sheetId || pacsConfig),
                     pacsConfig: typeof pacsConfig === 'object' ? pacsConfig : null,
                     requestId,
-                    token: window.__ALADINN_BRIDGE_TOKEN__
+                    token: window.__ALADINN_BRIDGE_TOKEN__,
+                    nonce: window.__ALADINN_NONCE__
                 }, window.location.origin);
                 setTimeout(() => { window.removeEventListener('message', listener); resolve(null); }, 12000);
             });
@@ -1248,9 +1530,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             masterGrouped[mCat][cat] = grouped[cat];
         }
 
-        const mCatOrder = ['Huyết học', 'Sinh hóa', 'Nước tiểu'];
+        const mCatOrder = ['Huyết học', 'Sinh hóa', 'Khí máu', 'Nước tiểu'];
         const sortedMCats = Object.keys(masterGrouped).sort((a,b) => mCatOrder.indexOf(a) === -1 ? 1 : mCatOrder.indexOf(b) === -1 ? -1 : mCatOrder.indexOf(a) - mCatOrder.indexOf(b));
-        const catIcons = { 'Huyết học':'🩸', 'Sinh hóa':'🧪', 'Nước tiểu':'💧' };
+        const catIcons = { 'Huyết học':'🩸', 'Sinh hóa':'🧪', 'Nước tiểu':'💧', 'Khí máu':'🫁' };
 
         // --- Summary Cards ---
         const summaryCards = `<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
@@ -1333,7 +1615,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 });
 
                 let rowIdx = 0;
-                for (const [cName, data] of sortedIndicators) {
+                for (let [cName, data] of sortedIndicators) {
                     const rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
                     const rowHasAbn = Object.values(data.values).some(v => _isAbnormal(v.status));
                     const leftBorder = rowHasAbn ? 'border-left:3px solid #f87171;' : 'border-left:3px solid transparent;';
@@ -1349,22 +1631,117 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     // HIS data for Urine 10 parameters is often corrupted (e.g., '84 - 00' instead of '0.84'). Normalizing here.
                     if (mCat.toLowerCase().includes('nước tiểu')) {
                         const uCode = cName.toUpperCase();
-                        if (uCode === 'GLU') refText = '0 - 0.84 mmol/L';
-                        if (uCode === 'BIL') refText = '0 - 3.4 µmol/L';
-                        if (uCode === 'KET') refText = '0 - 5 mmol/L';
+                        if (uCode === 'GLU') refText = '< 0.84 mmol/L';
+                        if (uCode === 'BIL') refText = '< 3.4 µmol/L';
+                        if (uCode === 'KET') refText = '< 0.5 mmol/L';
                         if (uCode === 'SG') refText = '1.015 - 1.025';
-                        if (uCode === 'BLD') refText = '0 - 5 RBC/µL';
+                        if (uCode === 'BLD') refText = '< 5 RBC/µL';
                         if (uCode === 'PH') refText = '4.8 - 7.4';
-                        if (uCode === 'PRO') refText = '0 - 0.1 g/L';
-                        if (uCode === 'UBG') refText = '0 - 16.9 µmol/L';
+                        if (uCode === 'PRO') refText = '< 0.1 g/L';
+                        if (uCode === 'UBG') refText = '< 16.9 µmol/L';
                         if (uCode === 'NIT') refText = 'Âm tính';
-                        if (uCode === 'LEU') refText = '0 - 10 WBC/µL';
+                        if (uCode === 'LEU') refText = '< 10 WBC/µL';
+                    }
+
+                    // HIS Sinh hóa often missing reference ranges — fill from standard values
+                    if (mCat.toLowerCase().includes('sinh hóa') || mCat.toLowerCase().includes('sinh hoa')) {
+                        const sCode = cName.toUpperCase();
+                        const hasNoRef = !refText || refText === data.unit || /^\s*(lần|ml|µmol|mmol)\/?/i.test(refText.trim());
+                        if (hasNoRef) {
+                            if (sCode.includes('CREATININ')) refText = '45 - 84 µmol/L';
+                            else if (sCode.includes('EGFR') || sCode.includes('ĐỘ LỌC CẦU THẬN')) refText = '≥ 60 ml/ph/1.73m²';
+                            else if (sCode.includes('GLUCOSE') || sCode.includes('ĐƯỜNG HUYẾT')) refText = '3.9 - 6.4 mmol/L';
+                            else if (sCode.includes('HBA1C')) refText = '< 6.5 %';
+                            else if (sCode.includes('AST') || sCode.includes('GOT')) refText = '≤ 37 U/L';
+                            else if (sCode.includes('ALT') || sCode.includes('GPT')) refText = '≤ 40 U/L';
+                            else if (sCode.includes('GGT') || sCode.includes('GAMA GLUTAMYL')) refText = '7 - 50 U/L';
+                            else if (sCode === 'NA') refText = '135 - 145 mmol/L';
+                            else if (sCode === 'K') refText = '3.5 - 5.0 mmol/L';
+                            else if (sCode === 'CL') refText = '98 - 106 mmol/L';
+                            else if (sCode.includes('URE') || sCode.includes('URÊ') || sCode.includes('UREA') || sCode.includes('BUN')) refText = '2.5 - 7.5 mmol/L';
+                            else if (sCode.includes('BILIRUBIN') && (sCode.includes('TP') || sCode.includes('TOÀN PHẦN') || sCode.includes('TOAN PHAN'))) refText = '≤ 17 µmol/L';
+                            else if (sCode.includes('BILIRUBIN') && (sCode.includes('TT') || sCode.includes('TRỰC TIẾP') || sCode.includes('TRUC TIEP'))) refText = '≤ 4.3 µmol/L';
+                            else if (sCode.includes('BILIRUBIN') && (sCode.includes('GT') || sCode.includes('GIÁN TIẾP') || sCode.includes('GIAN TIEP'))) refText = '≤ 12.7 µmol/L';
+                            else if (sCode.includes('PROTEIN') && sCode.includes('TP')) refText = '60 - 80 g/L';
+                            else if (sCode.includes('ALBUMIN')) refText = '35 - 50 g/L';
+                            else if (sCode.includes('CRP')) refText = '< 5 mg/L';
+                            else if (sCode.includes('ACID URIC') || sCode.includes('URIC')) refText = '150 - 420 µmol/L';
+                            else if (sCode.includes('CHOLESTEROL') && sCode.includes('TP')) refText = '< 5.2 mmol/L';
+                            else if (sCode.includes('TRIGLYCERID')) refText = '< 1.7 mmol/L';
+                            else if (sCode.includes('HDL')) refText = '> 1.0 mmol/L';
+                            else if (sCode.includes('LDL')) refText = '< 3.4 mmol/L';
+                            else if (sCode.includes('CA') && !sCode.includes('CALCIUM') && sCode.length <= 3) refText = '2.15 - 2.55 mmol/L';
+                            else if (sCode.includes('CALCIUM') || sCode.includes('CANXI')) refText = '2.15 - 2.55 mmol/L';
+                            else if (sCode.includes('TRANSFERRIN')) refText = '2.0 - 3.6 g/L';
+                            else if (sCode.includes('SẮT') || sCode.includes('SAT') || sCode.includes('IRON') || sCode.includes('FE')) refText = '10.7 - 32.2 µmol/L';
+                            else if (sCode.includes('FERRITIN')) refText = '10 - 150 ng/ml';
+                            else if (sCode.includes('FT4') || sCode.includes('FREE THYROXINE')) refText = '0.88 - 1.50 ng/dL';
+                            else if (sCode.includes('FT3') || sCode.includes('FREE TRIIODOTHYRONINE')) refText = '2.14 - 4.09 pg/mL';
+                            else if (sCode.includes('TROPONIN')) refText = '< 11.6 pg/mL';
+                            else if (sCode.includes('TSH')) refText = '0.56 - 4.27 µIU/mL';
+                        }
+                    } else if (mCat.toLowerCase().includes('khí máu') || mCat.toLowerCase().includes('khi mau')) {
+                        const sCode = cName.toUpperCase().trim();
+                        const hasNoRef = !refText || refText === data.unit || /^\s*(lần|g\/l|t\/l|g\/dl|fl|pg|%|s)\/?/i.test(refText.trim());
+                        if (hasNoRef) {
+                            if (sCode === 'PH') refText = '7.35 - 7.45';
+                            else if (sCode === 'PCO2') refText = '35 - 45 mmHg';
+                            else if (sCode === 'PO2') refText = '80 - 100 mmHg';
+                            else if (sCode === 'HCO3ACT') refText = '21 - 26 mmol/L';
+                            else if (sCode === 'HCO3STD') refText = '22 - 26 mmol/L';
+                            else if (sCode === 'BE(ECF)') refText = '-2 - 2 mmol/L';
+                            else if (sCode === 'BE(B)') refText = '-2 - 2 mmol/L';
+                            else if (sCode === 'CTCO2') refText = '24 - 28 mmol/L';
+                            else if (sCode === 'O2SAT') refText = '94 - 100 %';
+                            else if (sCode === 'PO2(A-A)(T)') refText = '10 - 60 mmHg';
+                            else if (sCode === 'CTHB') refText = '120 - 174 g/L';
+                        }
+                    } else if (mCat.toLowerCase().includes('huyết học') || mCat.toLowerCase().includes('huyet hoc')) {
+                        const sCode = cName.toUpperCase().trim();
+                        const hasNoRef = !refText || refText === data.unit || /^\s*(lần|g\/l|t\/l|g\/dl|fl|pg|%|s)\/?/i.test(refText.trim());
+                        if (hasNoRef) {
+                            if (sCode === 'WBC') refText = '4.0 - 10.0 G/L';
+                            else if (sCode === 'NEU%') refText = '50.0 - 70.0 %';
+                            else if (sCode === 'LYM%') refText = '20.0 - 40.0 %';
+                            else if (sCode === 'MONO%') refText = '3.0 - 12.0 %';
+                            else if (sCode === 'EOS%') refText = '0.5 - 5.0 %';
+                            else if (sCode === 'BASO%') refText = '0.0 - 1.0 %';
+                            else if (sCode === 'NEU') refText = '2.0 - 7.0 G/L';
+                            else if (sCode === 'LYM') refText = '0.8 - 4.0 G/L';
+                            else if (sCode === 'MONO') refText = '0.12 - 1.2 G/L';
+                            else if (sCode === 'EOS') refText = '0.2 - 0.5 G/L';
+                            else if (sCode === 'BASO') refText = '0.0 - 0.1 G/L';
+                            else if (sCode === 'RBC') refText = '3.9 - 5.4 T/L';
+                            else if (sCode === 'HGB') refText = '125 - 145 g/L';
+                            else if (sCode === 'HCT') refText = '37.0 - 54.0 %';
+                            else if (sCode === 'MCV') refText = '80.0 - 100.0 fL';
+                            else if (sCode === 'MCH') refText = '27.0 - 34.0 pg';
+                            else if (sCode === 'MCHC') refText = '320 - 360 g/L';
+                            else if (sCode === 'RDW-CV' || sCode === 'RDW') refText = '11.0 - 16.0 %';
+                            else if (sCode === 'PLT') refText = '100 - 300 G/L';
+                            else if (sCode === 'MPV') refText = '6.5 - 12.0 fL';
+                            else if (sCode === 'PT S' || sCode === 'PT(S)') refText = '10 - 15 s';
+                            else if (sCode === 'PT %' || sCode === 'PT(%)' || sCode === 'PT') refText = '70 - 140 %';
+                            else if (sCode === 'PT INR') refText = '0.8 - 1.2';
+                            else if (sCode === 'PT RATE') refText = '< 1.2';
+                            else if (sCode === 'APTT S' || sCode === 'APTT(S)' || sCode === 'APTT') refText = '25 - 39 s';
+                            else if (sCode === 'APTT RATE') refText = '< 1.3';
+                        }
+                    }
+                    
+                    // Rút gọn tên xét nghiệm quá dài
+                    let displayName = cName;
+                    const cNameUpper = cName.toUpperCase();
+                    if (cNameUpper.includes('THỜI GIAN PROTHROMBIN') || cNameUpper.includes('PT: PROTHROMBIN TIME')) {
+                        displayName = 'TQ (Thời gian prothrombin)';
+                    } else if (cNameUpper.includes('THỜI GIAN THROMBOPLASTIN') || cNameUpper.includes('APTT:')) {
+                        displayName = 'TCK (APTT)';
                     }
                     
                     const stickyBg = rowBg === 'transparent' ? '#1a1510' : '#1e1913';
 
                     mRowsHtml += `<tr style="background:${rowBg}; ${leftBorder}">`;
-                    mRowsHtml += `<td style="padding:6px 10px; color:#e8dcc8; font-weight:${rowHasAbn ? '600' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1;">${cName}</td>`;
+                    mRowsHtml += `<td style="padding:6px 10px; color:#e8dcc8; font-weight:${rowHasAbn ? '600' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1;">${displayName}</td>`;
                     mRowsHtml += `<td style="padding:6px 8px; color:#7a6e5e; font-size:12px; white-space:nowrap; background:${stickyBg};">${refText}</td>`;
 
                     for (const d of sortedDates) {
@@ -1389,14 +1766,45 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (mIndicatorsCount > 0) {
                 const icon = catIcons[mCat] || '📋';
                 tablesHtml += '<div style="margin-bottom:14px; border:1px solid rgba(212,162,90,0.2); border-radius:10px; overflow:hidden;">';
+                
+                let abgButtonHtml = '';
+                if (mCat === 'Khí máu') {
+                    let val_pH = 'null', val_pCO2 = 'null', val_HCO3 = 'null', val_pO2 = 'null', val_FiO2 = 'null', val_BE = 'null', val_Na = 'null', val_Cl = 'null';
+                    const latestD = sortedDates[sortedDates.length - 1];
+                    if (latestD) {
+                        for (const sc of Object.keys(subCats)) {
+                            for (const k of Object.keys(subCats[sc])) {
+                                const up = k.toUpperCase();
+                                if (up === 'PH' && subCats[sc][k].values[latestD]) val_pH = parseFloat(subCats[sc][k].values[latestD].value);
+                                if (up === 'PCO2' && subCats[sc][k].values[latestD]) val_pCO2 = parseFloat(subCats[sc][k].values[latestD].value);
+                                if ((up === 'HCO3ACT' || up === 'HCO3STD') && subCats[sc][k].values[latestD]) val_HCO3 = parseFloat(subCats[sc][k].values[latestD].value);
+                                if (up === 'PO2' && subCats[sc][k].values[latestD]) val_pO2 = parseFloat(subCats[sc][k].values[latestD].value);
+                                if (up === 'FIO2' && subCats[sc][k].values[latestD]) val_FiO2 = parseFloat(subCats[sc][k].values[latestD].value);
+                                if ((up === 'BE(B)' || up === 'BE(ECF)') && subCats[sc][k].values[latestD]) val_BE = parseFloat(subCats[sc][k].values[latestD].value);
+                            }
+                        }
+                        if (masterGrouped['Sinh hóa']) {
+                            for (const sc of Object.keys(masterGrouped['Sinh hóa'])) {
+                                for (const k of Object.keys(masterGrouped['Sinh hóa'][sc])) {
+                                    const up = k.toUpperCase();
+                                    if (up === 'NA' && masterGrouped['Sinh hóa'][sc][k].values[latestD]) val_Na = parseFloat(masterGrouped['Sinh hóa'][sc][k].values[latestD].value);
+                                    if (up === 'CL' && masterGrouped['Sinh hóa'][sc][k].values[latestD]) val_Cl = parseFloat(masterGrouped['Sinh hóa'][sc][k].values[latestD].value);
+                                }
+                            }
+                        }
+                    }
+                    abgButtonHtml = `<button class="aladinn-abg-btn" data-ph="${val_pH}" data-pco2="${val_pCO2}" data-hco3="${val_HCO3}" data-po2="${val_pO2}" data-fio2="${val_FiO2}" data-be="${val_BE}" data-na="${val_Na}" data-cl="${val_Cl}" style="margin-left:auto; background:rgba(212,162,90,0.2); border:1px solid rgba(212,162,90,0.4); color:#d4a25a; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.2);" onmouseover="this.style.background='rgba(212,162,90,0.3)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(212,162,90,0.2)'; this.style.transform='scale(1)';" title="Mở Popup phân tích Khí máu ngày gần nhất">⚡️ Đọc Nâng Cao</button>`;
+                }
+
                 tablesHtml += `<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(212,162,90,0.08); border-bottom:1px solid rgba(212,162,90,0.15);">
                   <span style="font-size:16.8px;">${icon}</span>
                   <span style="font-size:15.6px; font-weight:700; color:#d4a25a;">${mCat}</span>
                   <span style="font-size:12px; color:#a18764; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:10px;">${mIndicatorsCount} chỉ số</span>
                   ${mHasAbn ? '<span style="font-size:12px; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 8px; border-radius:10px;">⚠ Bất thường</span>' : ''}
+                  ${abgButtonHtml}
                 </div>`;
                 
-                tablesHtml += '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:14.4px;">';
+                tablesHtml += '<div style="overflow-x:auto;"><table class="aladinn-lab-table" style="width:100%; border-collapse:collapse; font-size:14.4px;">';
                 tablesHtml += `<thead><tr>
                   <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#a0937e; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2;">Chỉ số</th>
                   <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#7a6e5e; font-size:12px; font-weight:600; position:sticky; left:0; z-index:2;">Ref</th>`;
@@ -1418,20 +1826,29 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 <span style="font-size:15.6px; font-weight:700; color:#60a5fa;">Chẩn đoán hình ảnh</span>
                 <span style="font-size:12px; color:#6b8ab5; background:rgba(96,165,250,0.15); padding:2px 8px; border-radius:10px;">${imgList.length} phiếu</span>
               </div>
-              <div style="padding:8px 14px;">
-                ${imgList.map(img => {
+              <div style="padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+                ${imgList.map((img, idx) => {
                     const statusColor = (img.status || '').includes('Đang') ? '#fbbf24' : '#22c55e';
-                    const conclusionHtml = img.conclusion ? `<div style="color:#c8b89a; font-size:13.2px; margin-top:6px; padding:6px 10px; background:rgba(212,162,90,0.06); border-left:2px solid rgba(96,165,250,0.4); border-radius:0 6px 6px 0; line-height:1.5;">${img.conclusion}</div>` : '';
-                    return `<div style="padding:10px 0; border-bottom:1px solid rgba(96,165,250,0.08);">
-                      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div style="flex:1;">
-                          <div style="color:#e8dcc8; font-size:15.6px; font-weight:600;">${img.name || 'CĐHA'} ${img.code ? '<span style="color:#6b8ab5; font-size:12px; font-weight:400;">(' + img.code + ')</span>' : ''}</div>
-                          <div style="color:#7a6e5e; font-size:12px; margin-top:2px;">${img.department || ''}</div>
+                    const statusBg = (img.status || '').includes('Đang') ? 'rgba(251,191,36,0.08)' : 'rgba(34,197,94,0.08)';
+                    const conclusionHtml = img.conclusion 
+                        ? `<div style="color:#c8b89a; font-size:13px; margin-top:8px; padding:8px 12px; background:rgba(96,165,250,0.06); border-left:3px solid rgba(96,165,250,0.5); border-radius:0 8px 8px 0; line-height:1.6; font-style:italic;">${img.conclusion}</div>` 
+                        : '';
+                    const dept = (img.department || '').split('-').map(s => s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase()).join(' · ');
+                    return `<div class="aladinn-cdha-card" style="padding:12px 14px; background:rgba(96,165,250,${idx % 2 === 0 ? '0.03' : '0.06'}); border:1px solid rgba(96,165,250,0.1); border-radius:10px; transition:all 0.15s ease;">
+                      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                        <div style="flex:1; min-width:0;">
+                          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <span style="color:#e8dcc8; font-size:14px; font-weight:600; line-height:1.4;">${img.name || 'CĐHA'}</span>
+                            ${img.code ? `<span style="color:#6b8ab5; font-size:11px; font-weight:500; background:rgba(96,165,250,0.1); padding:1px 6px; border-radius:4px; white-space:nowrap;">${img.code}</span>` : ''}
+                          </div>
+                          ${dept ? `<div style="color:#5a6e85; font-size:11.5px; margin-top:3px;">${dept}</div>` : ''}
                         </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; margin-left:12px;">
-                          <div style="color:#60a5fa; font-size:13.2px; font-weight:600;">${_shortDate(img.sheetDate)}</div>
-                          <div style="font-size:12px; color:${statusColor};">${img.status || ''}</div>
-                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:linear-gradient(135deg,rgba(96,165,250,0.15),rgba(96,165,250,0.08)); border:1px solid rgba(96,165,250,0.4); color:#60a5fa; padding:4px 10px; border-radius:6px; font-size:13.2px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap;" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
+                          <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="color:#60a5fa; font-size:12.5px; font-weight:600;">${_shortDate(img.sheetDate)}</span>
+                          </div>
+                          <span style="font-size:11px; color:${statusColor}; background:${statusBg}; padding:1px 8px; border-radius:10px; font-weight:500;">${img.status || ''}</span>
+                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:linear-gradient(135deg,rgba(96,165,250,0.2),rgba(96,165,250,0.08)); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap;" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
                         </div>
                       </div>
                       ${conclusionHtml}
@@ -1571,116 +1988,195 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     </div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
                   </div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;">`;
+                  <div style="display:flex;flex-direction:column;">`;
 
-                // ── LEFT: Progress + Ghi chú + Diagnosis ──
-                combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04);">';
-                const progNotes = dayProgressTreatments.filter(t => t.DIENBIEN?.trim());
-                if (progNotes.length > 0) {
-                    for (const tr of progNotes) {
-                        const timePart = (tr.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
-                        const timeTag = timePart ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${timePart}</span>` : '';
-                        combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${timePart?'<br>':''}<span style="font-size:14.4px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span></div>`;
+                // 1) Find all unique times for this day
+                const dayTimesSet = new Set();
+                dayTreatments.forEach(t => {
+                    const tp = (t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5);
+                    if (tp) dayTimesSet.add(tp);
+                });
+                dayDrugs.forEach(d => {
+                    const tp = (d.NGAYMAUBENHPHAM_SUDUNG || '').split(' ')[1]?.substring(0,5);
+                    if (tp) dayTimesSet.add(tp);
+                });
+                let dayTimes = Array.from(dayTimesSet).sort((a,b) => b.localeCompare(a));
+                if (dayTimes.length === 0) dayTimes.push(''); // fallback for items without time
+
+                let _prevNoteDiagKey = '';
+                if (di + 1 < allDates.length) {
+                    const prevDayTr = (treatmentsByDate[allDates[di + 1]] || []).filter(t => !isOtherOrder(t) && t.DIENBIEN?.trim());
+                    if (prevDayTr.length > 0) {
+                        const ptr = prevDayTr[prevDayTr.length - 1];
+                        _prevNoteDiagKey = (ptr.CHANDOAN || '').trim();
+                        if (ptr.CHANDOANKEMTHEO?.trim()) _prevNoteDiagKey += '|' + ptr.CHANDOANKEMTHEO.trim();
                     }
-                } else {
-                    combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có ghi chú diễn tiến.</div>';
                 }
-                if (dayOrders.length > 0) {
-                    combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.035);border-radius:0 5px 5px 0;">
-                      <div style="font-size:11.4px;color:#34d399;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
-                    for (const order of dayOrders.slice(0, 8)) {
-                        const orderTime = (order.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '';
-                        const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#6ee7b7;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.16);padding:1px 5px;border-radius:4px;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
-                        const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#8fbfae;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
-                        combinedTimelineHtml += `<div style="font-size:13.8px;color:#d8f3e7;line-height:1.55;margin-bottom:4px;">${orderTime ? `<span style="color:#34d399;font-weight:700;margin-right:5px;">${orderTime}</span>` : ''}${group}${escapeHtml(order.YLENH)}${note}</div>`;
-                    }
-                    if (dayOrders.length > 8) {
-                        combinedTimelineHtml += `<div style="font-size:12px;color:#6ee7b7;margin-top:3px;">+${dayOrders.length - 8} y lệnh khác</div>`;
-                    }
-                    combinedTimelineHtml += '</div>';
-                }
-                const ghichus = dayProgressTreatments.filter(t => t.GHICHU?.trim());
-                if (ghichus.length > 0) {
-                    combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
-                      <div style="font-size:11.4px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
-                      <div style="font-size:13.8px;color:#b89a70;line-height:1.5;font-style:italic;">${ghichus[0].GHICHU}</div>
-                    </div>`;
-                }
-                // Diagnosis
-                combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">
-                  <div style="font-size:11.4px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
-                if (currDiags.size > 0) {
-                    for (const d of currDiags) {
-                        const isNewD = !isFirst && !prevDiags.has(d);
-                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
-                          <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
-                        </div>`;
-                    }
-                    if (!isFirst) {
-                        for (const d of prevDiags) {
-                            if (!currDiags.has(d)) {
-                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
-                                  <span style="flex:1;">${d}</span>
-                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+
+                let legendRendered = false;
+
+                for (let ti = 0; ti < dayTimes.length; ti++) {
+                    const tp = dayTimes[ti];
+                    const isLastTime = ti === dayTimes.length - 1;
+                    
+                    const timeProgress = dayProgressTreatments.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp && t.DIENBIEN?.trim());
+                    const timeOrders = dayOrders.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp);
+                    const timeGhichus = dayProgressTreatments.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp && t.GHICHU?.trim());
+                    const timeDrugs = dayDrugs.filter(d => ((d.NGAYMAUBENHPHAM_SUDUNG || '').split(' ')[1]?.substring(0,5) || '') === tp);
+                    
+                    if (timeProgress.length === 0 && timeOrders.length === 0 && timeGhichus.length === 0 && timeDrugs.length === 0 && !isLastTime) continue;
+
+                    combinedTimelineHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;${!isLastTime ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : ''}">`;
+                    
+                    // --- LEFT COLUMN (Notes) ---
+                    combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04);">';
+                    
+                    if (timeProgress.length > 0) {
+                        for (const tr of timeProgress) {
+                            const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span>` : '';
+                            
+                            let inlineDiagHtml = '';
+                            let noteDiagKey = (tr.CHANDOAN || '').trim();
+                            if (tr.CHANDOANKEMTHEO?.trim()) noteDiagKey += '|' + tr.CHANDOANKEMTHEO.trim();
+                            
+                            if (noteDiagKey && noteDiagKey !== _prevNoteDiagKey) {
+                                const mainD = (tr.CHANDOAN || '').trim();
+                                const subD = (tr.CHANDOANKEMTHEO || '').trim();
+                                let diagLabel = mainD;
+                                if (subD) diagLabel += `<span style="color:#a78bfa;opacity:.7;font-size:11.4px;"> · Kèm: ${subD}</span>`;
+                                inlineDiagHtml = `<div style="margin-top:6px;padding:5px 8px;background:rgba(139,124,248,0.05);border:1px solid rgba(139,124,248,0.12);border-radius:6px;">
+                                  <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">⟳ CĐ${_prevNoteDiagKey ? ' (Thay đổi)' : ' (Nhập viện)'}</div>
+                                  <div style="font-size:12.6px;color:#c4b5fd;line-height:1.4;">${diagLabel}</div>
                                 </div>`;
                             }
+                            _prevNoteDiagKey = noteDiagKey || _prevNoteDiagKey;
+                            
+                            combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${tp?'<br>':''}<span style="font-size:14.4px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span>${inlineDiagHtml}</div>`;
                         }
+                    } else if (timeDrugs.length > 0 || timeOrders.length > 0 || timeGhichus.length > 0) {
+                        const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span><br>` : '';
+                        combinedTimelineHtml += `${timeTag}<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>`;
                     }
-                } else {
-                    combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
-                }
-                combinedTimelineHtml += '</div></div>';
-
-                // ── RIGHT: Drugs ──
-                combinedTimelineHtml += '<div style="padding:10px 12px;">';
-                if (dayDrugs.length > 0 || prevDrugs.length > 0) {
-                    combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;">
-                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;"></span>Mới</span>
-                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#6b7280;display:inline-block;"></span>Tiếp tục</span>
-                      <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;"></span>Ngưng</span>
-                    </div>`;
-                }
-                // Stopped drugs
-                if (!isFirst) {
-                    for (const pd of prevDrugs) {
-                        if (!currDrugNames.has(pd.TENTHUOC)) {
-                            _totalStopped++;
-                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);opacity:.75;">
-                              <span style="width:6px;height:6px;border-radius:50%;background:#f87171;flex-shrink:0;margin-top:5px;"></span>
-                              <span style="flex:1;font-size:14.4px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
-                              <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                    
+                    if (timeOrders.length > 0) {
+                        combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.035);border-radius:0 5px 5px 0;">
+                          <div style="font-size:11.4px;color:#34d399;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
+                        for (const order of timeOrders) {
+                            const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#6ee7b7;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.16);padding:1px 5px;border-radius:4px;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
+                            const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#8fbfae;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
+                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#d8f3e7;line-height:1.55;margin-bottom:4px;">${group}${escapeHtml(order.YLENH)}${note}</div>`;
+                        }
+                        combinedTimelineHtml += '</div>';
+                    }
+                    
+                    if (timeGhichus.length > 0) {
+                        for (const gc of timeGhichus) {
+                            combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
+                              <div style="font-size:11.4px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
+                              <div style="font-size:13.8px;color:#b89a70;line-height:1.5;font-style:italic;">${gc.GHICHU}</div>
                             </div>`;
                         }
                     }
+
+                    // Render Day's Diagnosis at the bottom of the left column (only on the LAST time block of the day)
+                    if (isLastTime) {
+                        if (dayProgressTreatments.filter(t => t.DIENBIEN?.trim()).length === 0 && diagChanged && currDiags.size > 0) {
+                            let diagItems = '';
+                            for (const d of currDiags) diagItems += `<div style="font-size:12.6px;color:#c4b5fd;line-height:1.35;margin-bottom:2px;">${d}</div>`;
+                            combinedTimelineHtml += `<div style="margin-top:6px;padding:5px 8px;background:rgba(139,124,248,0.05);border:1px solid rgba(139,124,248,0.12);border-radius:6px;">
+                              <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">⟳ Chẩn đoán${isFirst?' (Nhập viện)':' (Thay đổi)'}</div>
+                              ${diagItems}
+                            </div>`;
+                        }
+                        
+                        combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">
+                          <div style="font-size:11.4px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
+                        if (currDiags.size > 0) {
+                            for (const d of currDiags) {
+                                const isNewD = !isFirst && !prevDiags.has(d);
+                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
+                                  <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
+                                </div>`;
+                            }
+                            if (!isFirst) {
+                                for (const d of prevDiags) {
+                                    if (!currDiags.has(d)) {
+                                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
+                                          <span style="flex:1;">${d}</span>
+                                          <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                        </div>`;
+                                    }
+                                }
+                            }
+                        } else {
+                            combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
+                        }
+                        combinedTimelineHtml += '</div>';
+                    }
+                    combinedTimelineHtml += '</div>'; // End Left column
+                    
+                    // --- RIGHT COLUMN (Drugs) ---
+                    combinedTimelineHtml += '<div style="padding:10px 12px;">';
+                    
+                    // Legend
+                    if (!legendRendered && (timeDrugs.length > 0 || (isLastTime && prevDrugs.length > 0))) {
+                        combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;">
+                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;"></span>Mới</span>
+                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#6b7280;display:inline-block;"></span>Tiếp tục</span>
+                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;"></span>Ngưng</span>
+                        </div>`;
+                        legendRendered = true;
+                    }
+                    
+                    if (timeDrugs.length > 0) {
+                        for (const drug of timeDrugs) {
+                            const name = drug.TENTHUOC || '—';
+                            const isNew = !isFirst && prevDrugs.length > 0 && !prevDrugNames.has(name);
+                            if (isNew) _totalAdded++;
+                            let fullName = name;
+                            if (drug.HOATCHAT && drug.HOATCHAT.trim().toLowerCase() !== fullName.trim().toLowerCase()) fullName += ` (${drug.HOATCHAT.trim()})`;
+                            if (drug.HAMLUONG?.trim()) { const hl = drug.HAMLUONG.trim(); fullName += hl.startsWith('(')&&hl.endsWith(')')?` ${hl}`:`  (${hl})`; }
+                            let totalDose;
+                            const dm = (drug.LIEUDUNG||'').match(/\[(.*?)\]/);
+                            if (dm?.[1]) totalDose = dm[1];
+                            else if (drug.SOLUONG) totalDose = `${drug.SOLUONG} ${drug.DONVITINH||''}/ngày`.trim();
+                            else totalDose = drug.LIEUDUNG || '';
+                            const dotC = (isNew||isFirst)?'#34d399':'#6b7280';
+                            const nameC = (isNew||isFirst)?'#d0f0e4':'#9ca3af';
+                            const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
+                            const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
+                            const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
+                            const ksDays = drug.SOLAN_SD_KHANGSINH ? parseInt(drug.SOLAN_SD_KHANGSINH, 10) : 0;
+                            const _ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(212,162,90,.18);color:#d4a25a;border:1px solid rgba(212,162,90,.3);margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
+                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
+                              <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
+                              <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#d4a25a;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
+                              ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
+                            </div>`;
+                        }
+                    } else if (timeProgress.length > 0 || timeOrders.length > 0) {
+                        combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">(Không có y lệnh thuốc)</div>';
+                    }
+                    
+                    // Render stopped drugs ONLY at the last time block of the day
+                    if (isLastTime && !isFirst) {
+                        let hasStopped = false;
+                        for (const pd of prevDrugs) {
+                            if (!currDrugNames.has(pd.TENTHUOC)) {
+                                _totalStopped++;
+                                combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-top:${hasStopped?'4px':'12px'};margin-bottom:4px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);opacity:.75;">
+                                  <span style="width:6px;height:6px;border-radius:50%;background:#f87171;flex-shrink:0;margin-top:5px;"></span>
+                                  <span style="flex:1;font-size:14.4px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
+                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                </div>`;
+                                hasStopped = true;
+                            }
+                        }
+                    }
+
+                    combinedTimelineHtml += '</div></div>'; // End Right column and Grid row
                 }
-                // Current drugs
-                for (const drug of dayDrugs) {
-                    const name = drug.TENTHUOC || '—';
-                    const isNew = !isFirst && prevDrugs.length > 0 && !prevDrugNames.has(name);
-                    if (isNew) _totalAdded++;
-                    let fullName = name;
-                    if (drug.HOATCHAT && drug.HOATCHAT.trim().toLowerCase() !== fullName.trim().toLowerCase()) fullName += ` (${drug.HOATCHAT.trim()})`;
-                    if (drug.HAMLUONG?.trim()) { const hl = drug.HAMLUONG.trim(); fullName += hl.startsWith('(')&&hl.endsWith(')')?` ${hl}`:`  (${hl})`; }
-                    let totalDose;
-                    const dm = (drug.LIEUDUNG||'').match(/\[(.*?)\]/);
-                    if (dm?.[1]) totalDose = dm[1];
-                    else if (drug.SOLUONG) totalDose = `${drug.SOLUONG} ${drug.DONVITINH||''}/ngày`.trim();
-                    else totalDose = drug.LIEUDUNG || '';
-                    const dotC = (isNew||isFirst)?'#34d399':'#6b7280';
-                    const nameC = (isNew||isFirst)?'#d0f0e4':'#9ca3af';
-                    const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
-                    const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
-                    const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
-                    const ksDays = drug.SOLAN_SD_KHANGSINH ? parseInt(drug.SOLAN_SD_KHANGSINH, 10) : 0;
-                    const _ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(212,162,90,.18);color:#d4a25a;border:1px solid rgba(212,162,90,.3);margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
-                    combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
-                      <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
-                      <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#d4a25a;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
-                      ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
-                    </div>`;
-                }
-                if (dayDrugs.length === 0) combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">Không có y lệnh thuốc.</div>';
-                combinedTimelineHtml += '</div></div></div>';
+                combinedTimelineHtml += '</div></div>'; // End Day card
             }
         } else {
             combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#7a6e5e;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
@@ -1991,11 +2487,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     </div>
                 </div>
                 <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid rgba(212,162,90,0.2); padding-top:12px;">
-                    <button style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); color:#d4a25a; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(212,162,90,0.2)'" onmouseout="this.style.background='rgba(212,162,90,0.1)'" onclick="document.getElementById('vnpt-lab-timeline-modal').remove()">Đóng</button>
+                    <button style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); color:#d4a25a; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(212,162,90,0.2)'" onmouseout="this.style.background='rgba(212,162,90,0.1)'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng</button>
                 </div>
             </div>`;
 
-        document.documentElement.appendChild(modal);
+        targetDoc.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
 
         // ── Tab logic (4 tabs: Lâm sàng, XN, CĐHA, AI) ─────────────────────

@@ -711,63 +711,202 @@ body.vnpt-native-active #vnpt-scanner-ui {
 }
 
 /* ========================================
-   Toast Notifications
+   Lab Table Row Hover — Highlight Effect
+   Pure CSS, zero performance cost
+======================================== */
+.aladinn-lab-table tbody tr {
+    transition: background 0.15s ease, transform 0.15s ease;
+    cursor: default;
+}
+
+/* Hover: sáng lên + zoom nhẹ */
+.aladinn-lab-table tbody tr:hover {
+    background: rgba(212, 162, 90, 0.18) !important;
+    transform: scale(1.012);
+    position: relative;
+    z-index: 1;
+}
+
+/* Tất cả cells đều sáng đồng đều khi hover */
+.aladinn-lab-table tbody tr:hover td {
+    color: #fff !important;
+    background: rgba(212, 162, 90, 0.15) !important;
+    filter: brightness(1.4);
+}
+
+/* ========================================
+   CĐHA Card Hover Effect
+======================================== */
+.aladinn-cdha-card:hover {
+    background: rgba(96, 165, 250, 0.1) !important;
+    border-color: rgba(96, 165, 250, 0.3) !important;
+    transform: scale(1.005);
+}
+
+/* ========================================
+   Toast Notifications — Bottom-Right, Fly-Up
+   Max 3, fly up + fade to dismiss
 ======================================== */
 .vnpt-toast-container {
     position: fixed;
-    bottom: 24px;
-    left: 24px;
+    bottom: 16px;
+    right: 16px;
     z-index: 2147483647 !important;
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 6px;
+    pointer-events: none;
+    max-width: 380px;
 }
 
 .vnpt-toast {
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    font-size: 13px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 32px 8px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
     font-weight: 500;
-    animation: vnpt-toast-in 0.3s ease;
-    cursor: pointer;
-    color: #fff;
-    backdrop-filter: blur(8px);
+    line-height: 1.4;
+    pointer-events: auto;
+    cursor: default;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.05);
+    border: none;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    white-space: nowrap;
 }
 
+/* --- Enter: slide up from bottom --- */
+.vnpt-toast-enter {
+    animation: vnpt-toast-slide-in 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+@keyframes vnpt-toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* --- Exit: FLY UP + fade away --- */
+.vnpt-toast-exit {
+    animation: vnpt-toast-fly-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes vnpt-toast-fly-up {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    60% {
+        opacity: 0.5;
+        transform: translateY(-30px) scale(0.95);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-60px) scale(0.9);
+    }
+}
+
+/* --- Type: Info --- */
 .vnpt-toast-info {
-    background: rgba(23, 162, 184, 0.95);
+    background: rgba(30, 41, 59, 0.92);
+    color: #94a3b8;
 }
+.vnpt-toast-info .vnpt-toast-icon { color: #60a5fa; }
 
-.vnpt-toast-warning {
-    background: rgba(255, 193, 7, 0.95);
-    color: #000;
-}
-
+/* --- Type: Success --- */
 .vnpt-toast-success {
-    background: rgba(40, 167, 69, 0.95);
+    background: rgba(20, 40, 30, 0.92);
+    color: #86efac;
+}
+.vnpt-toast-success .vnpt-toast-icon { color: #22c55e; }
+
+/* --- Type: Warning --- */
+.vnpt-toast-warning {
+    background: rgba(50, 35, 15, 0.92);
+    color: #fbbf24;
+}
+.vnpt-toast-warning .vnpt-toast-icon { color: #f59e0b; }
+
+/* --- Type: Error --- */
+.vnpt-toast-error {
+    background: rgba(50, 20, 20, 0.92);
+    color: #fca5a5;
+}
+.vnpt-toast-error .vnpt-toast-icon { color: #f87171; }
+
+/* --- Icon --- */
+.vnpt-toast-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
 }
 
-@keyframes vnpt-toast-in {
-    from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+/* --- Content --- */
+.vnpt-toast-content {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
 }
 
-@keyframes vnpt-toast-out {
-    from {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-    }
+.vnpt-toast-message {
+    word-break: break-word;
+}
+
+/* --- Duplicate badge --- */
+.vnpt-toast-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.7;
+}
+
+/* --- Close button (X) --- */
+.vnpt-toast-close {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.3;
+    transition: all 0.15s ease;
+}
+
+.vnpt-toast-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 /* ========================================
@@ -1051,30 +1190,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
     100% { background-position: -200% 0; }
 }
 
-/* --- Enhanced Toast Notifications --- */
-.vnpt-toast {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid transparent;
-}
-
-.vnpt-toast-info {
-    background: rgba(96, 165, 250, 0.15);
-    color: #60a5fa;
-    border-color: rgba(96, 165, 250, 0.3);
-}
-
-.vnpt-toast-success {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.3);
-}
-
-.vnpt-toast-warning {
-    background: rgba(248, 113, 113, 0.15);
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.3);
-}
+/* --- Enhanced Toast: styles consolidated into main toast section above --- */
 
 /* --- Sparkle Inline Button Enhancement --- */
 .his-inline-summary-btn:hover::before {

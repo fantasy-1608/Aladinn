@@ -47,7 +47,11 @@ const VNPTHistory = (function () {
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         
         // Bổ sung setInterval để bypass giới hạn MutationObserver không xuyên qua iframe
-        setInterval(checkForBMForm, 1500);
+        // Thêm guard: tạm dừng khi tab ẩn (tiết kiệm CPU)
+        setInterval(() => {
+            if (document.hidden) return;
+            checkForBMForm();
+        }, 2000);
         checkForBMForm();
 
         // Shortcut to log fields for mapping (Support Mac Meta key)
@@ -451,7 +455,109 @@ const VNPTHistory = (function () {
                 console.warn('[History] Lỗi đồng bộ Sinh hiệu:', e);
             }
 
+            // Đồng bộ hoá Chẩn đoán ban đầu từ dữ liệu Lâm sàng (để điền Bệnh án)
+            try {
+                window.VNPTRealtime?.showToast('⏳ Đang lấy chẩn đoán...', 'info');
+                const cRes = await window.VNPTMessaging.sendRequest('REQ_FETCH_CLINICAL_SUMMARY', { rowId: pid, contextToken }, 5000);
+                
+                let mainDiagStr = '';
+                let subDiagStr = '';
+
+                if (cRes && cRes.clinical) {
+                    mainDiagStr = cRes.clinical.chanDoanBanDau || '';
+                    subDiagStr = cRes.clinical.chanDoanKemTheo || '';
+                }
+
+                // Fallback 0: Quét trực tiếp DOM của Bệnh án Ngoại khoa để tìm thẻ DIV chứa Chẩn đoán
+                try {
+                    if (!mainDiagStr || !subDiagStr) {
+                        const allEls = document.querySelectorAll('div, td, th, span');
+                        
+                        for (let i = 0; i < allEls.length; i++) {
+                            const el = allEls[i];
+                            const text = (el.innerText || '').trim();
+                            
+                            // Tìm nhãn "Bệnh chính"
+                            if (!mainDiagStr && (text === 'Bệnh chính' || text === 'Bệnh chính:' || text === '+ Bệnh chính:')) {
+                                let nextEl = el.nextElementSibling;
+                                if (!nextEl && el.parentElement) nextEl = el.parentElement.nextElementSibling;
+                                
+                                if (nextEl && nextEl.innerText) {
+                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?[^a-zA-Z0-9]+.*)/i);
+                                    if (match) mainDiagStr = match[1].split('\n')[0].trim();
+                                }
+                            }
+                            
+                            // Tìm nhãn "Bệnh kèm theo"
+                            if (!subDiagStr && (text === 'Bệnh kèm theo' || text === 'Bệnh kèm theo:' || text === '+ Bệnh kèm theo:')) {
+                                let nextEl = el.nextElementSibling;
+                                if (!nextEl && el.parentElement) nextEl = el.parentElement.nextElementSibling;
+                                
+                                if (nextEl && nextEl.innerText) {
+                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?[^a-zA-Z0-9]+.*)/i);
+                                    if (match) subDiagStr = match[1].split('\n')[0].trim();
+                                }
+                            }
+                        }
+
+                    }
+                } catch(e) {
+                    console.warn('[History] Lỗi lấy CĐ vào khoa từ DOM DIV:', e);
+                }
+
+                // Fallback 1: Lấy chẩn đoán từ thông tin hành chính (patientDemographicsMap)
+                if ((!mainDiagStr || !subDiagStr) && window.VNPTPatientContextGuard && window.VNPTStore) {
+                    const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                    const demoMap = window.VNPTStore.get('patientDemographicsMap');
+                    if (demoMap && demoMap[patientKey] && demoMap[patientKey].data) {
+                        const dData = demoMap[patientKey].data;
+                        if (!mainDiagStr && dData.diagnosis) mainDiagStr = dData.diagnosis;
+                        if (!subDiagStr && dData.chanDoanKemTheo) subDiagStr = dData.chanDoanKemTheo;
+                    }
+                }
+
+                // Fallback 2: Từ history
+                if ((!mainDiagStr || !subDiagStr) && history) {
+                    if (!mainDiagStr && history.CHANDOAN) mainDiagStr = history.CHANDOAN;
+                    if (!subDiagStr && history.CHANDOAN_KEMTHEO) subDiagStr = history.CHANDOAN_KEMTHEO;
+                }
+
+                let diagSource = mainDiagStr;
+                if (subDiagStr) {
+                    diagSource += (diagSource ? '; ' : '') + subDiagStr;
+                }
+                
+                if (diagSource) {
+                    const parts = diagSource.split(';');
+                    const mainMatch = parts[0].match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+                    history.mainDiag = mainMatch 
+                        ? { code: mainMatch[1].trim(), text: mainMatch[2].trim() }
+                        : { code: '', text: parts[0].trim() };
+                        
+                    if (parts.length > 1) {
+                        const subRaw = parts.slice(1).map(p => p.trim()).join('; ');
+                        const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+                        history.subDiag = subMatch
+                            ? { code: subMatch[1].trim(), text: subMatch[2].trim() }
+                            : { code: '', text: subRaw };
+                    }
+                    console.log('[History] Đã đồng bộ Chẩn đoán vào Bệnh án:', history.mainDiag, history.subDiag);
+                } else {
+                    console.warn('[History] Không lấy được dữ liệu chẩn đoán từ API hay Cache.');
+                }
+            } catch (e) {
+                console.warn('[History] Lỗi đồng bộ Chẩn đoán:', e);
+            }
+
             window.VNPTRealtime?.showToast('⏳ Đang điền bệnh án...', 'info');
+
+            if (window.VNPTPatientContextGuard && contextToken) {
+                const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
+                if (!confirmed) {
+                    window.VNPTRealtime?.showToast('ℹ️ Đã hủy.', 'info');
+                    return;
+                }
+            }
 
             // Inject helper
             await injectHelper(target);
@@ -878,13 +984,17 @@ const VNPTHistory = (function () {
                 expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'HISTORY_FILL_RESULT');
 
-            window.VNPTRealtime?.showToast('✅ Đã điền xong Bệnh án!', 'success');
+            const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.showToast(`✅ Đã điền xong Bệnh án cho bệnh nhân: ${ptName}`, 'success');
             console.log('[History] Đã gửi lệnh fill cho các trường:', Object.keys(mapping));
 
         } catch (e) {
             console.error('[History] Lỗi:', e);
-            const msg = (/** @type {any} */(e)).message || 'Lỗi';
-            window.VNPTRealtime?.showToast('❌ ' + msg, 'warning');
+            let msg = (/** @type {any} */(e)).message || 'Lỗi';
+            if (msg === 'FORM_CONTEXT_MISMATCH') {
+                msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
+            }
+            window.VNPTRealtime?.showToast('❌ ' + msg, 'error');
         }
     }
 

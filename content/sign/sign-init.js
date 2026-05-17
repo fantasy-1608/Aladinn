@@ -212,6 +212,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
 
         let retries = 0;
         const interval = setInterval(() => {
+            if (document.hidden) return; // Pause when tab is backgrounded
             retries++;
             if (AdvSign.getJwtToken() || retries > 30) { clearInterval(interval); return; }
             const token = scanForJWT();
@@ -405,6 +406,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         // Retry periodically until grid has data (max 10 attempts over 10 seconds)
         let retryCount = 0;
         const retryInterval = setInterval(() => {
+            if (document.hidden) return; // Pause when tab is backgrounded
             retryCount++;
             const success = checkAndInjectCheckboxes();
             if (success || retryCount >= 10) {
@@ -702,6 +704,8 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         let reopenTimer = null;
 
         WARD_STATE._qlbaWatcher = setInterval(() => {
+            if (document.hidden) return; // Pause when tab is backgrounded
+            
             // Stop watching if the session moved on or is no longer active
             if (!WARD_STATE.isActive || WARD_STATE.currentIndex !== expectedIndex) {
                 stopQlbaAutoReopen();
@@ -923,6 +927,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         return new Promise((resolve) => {
             const startTime = Date.now();
             const timer = setInterval(() => {
+                if (document.hidden) return; // Pause when tab is backgrounded
                 const iframe = document.querySelector('#divDlgBAifmView, .jBox-container iframe');
                 if (iframe) {
                     clearInterval(timer);
@@ -944,6 +949,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         return new Promise((resolve) => {
             const startTime = Date.now();
             const timer = setInterval(() => {
+                if (document.hidden) return; // Pause when tab is backgrounded
                 try {
                     const iDoc = iframe.contentDocument || iframe.contentWindow.document;
                     if (iDoc && iDoc.readyState === 'complete') {
@@ -968,6 +974,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         return new Promise((resolve) => {
             const startTime = Date.now();
             const timer = setInterval(() => {
+                if (document.hidden) return; // Pause when tab is backgrounded
                 try {
                     const iDoc = iframe.contentDocument || iframe.contentWindow.document;
                     if (iDoc) {
@@ -1016,6 +1023,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             let stableChecks = 0;
 
             const timer = setInterval(() => {
+                if (document.hidden) return; // Pause when tab is backgrounded
                 const count = countDomRows(iframe);
 
                 if (count === lastCount && count >= 0) {
@@ -1059,6 +1067,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
                     // Step 2: AJAX is running — wait for it to finish
                     if (Logger) Logger.info('Sign', `QLBA: Waiting for AJAX (${$.active} active)...`);
                     const ajaxTimer = setInterval(() => {
+                        if (document.hidden) return; // Pause when tab is backgrounded
                         if ($.active === 0) {
                             clearInterval(ajaxTimer);
                             if (Logger) Logger.info('Sign', 'QLBA: AJAX complete');
@@ -1089,6 +1098,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         let stableStart = Date.now();
 
         const timer = setInterval(() => {
+            if (document.hidden) return; // Pause when tab is backgrounded
             const count = countDomRows(iframe);
             if (count !== lastCount) {
                 lastCount = count;

@@ -103,7 +103,8 @@ export const CDSExtractor = {
                 benhnhanId: benhnhanId,
                 khambenhId: khambenhId,
                 requestId: reqId,
-                token: token
+                token: token,
+                nonce: window.__ALADINN_NONCE__
             }, window.location.origin);
         });
     },

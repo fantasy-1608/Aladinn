@@ -1,4 +1,3 @@
-import '../debug-init.js';
 /**
  * VNPT HIS Smart Scanner v4.0.1
  * Chuyen Vien (Transfer) Iframe Helper
@@ -31,6 +30,15 @@ import '../debug-init.js';
                         console.error('[VNPT-Helper] BLOCK FILL: Mismatch detected! Form name:', nameOnForm, 'Expected:', nameExpected);
                         sendResponse(false, 0, 'FORM_CONTEXT_MISMATCH');
                         return;
+                    }
+                }
+
+                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
+                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN');
+                if (recordIdEl && expectedRecordId) {
+                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
+                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
+                        console.warn('[VNPT-Helper] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
                     }
                 }
             }
