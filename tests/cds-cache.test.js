@@ -59,4 +59,33 @@ describe('CDS Cache Manager', () => {
         expect(data.diagnoses).toHaveLength(1); // Should not be 2!
         expect(data.diagnoses[0].code).toBe('J01');
     });
+
+    it('should clear cache when receiving SESSION_LOGOUT', () => {
+        // Setup initial data
+        CDSCache.handleData({
+            benhnhanId: 'BN123',
+            khambenhId: 'KB456',
+            diagnoses: [{ code: 'M15', is_primary: true }]
+        });
+        
+        expect(CDSCache.get().benhnhanId).toBe('BN123');
+
+        // Mock chrome API if not exists
+        if (!global.chrome) global.chrome = { runtime: { onMessage: { addListener: () => {} } } };
+
+        // Simulate logout event 
+        const listeners = [];
+        global.chrome.runtime.onMessage.addListener = (fn) => listeners.push(fn);
+        
+        // Re-setup listener to bind to our mock
+        CDSCache.setupListener();
+        
+        // Fire event
+        listeners.forEach(fn => fn({ type: 'SESSION_LOGOUT' }));
+
+        // Assert reset
+        const data = CDSCache.get();
+        expect(data.benhnhanId).toBeNull();
+        expect(data.diagnoses).toHaveLength(0);
+    });
 });

@@ -56,6 +56,16 @@ class CDSCacheManager {
             console.log('[Aladinn CDS] 🔄 Manual Force Reset Cache triggered by user!');
             this.reset();
         });
+
+        // Listen for HIS logout event to purge patient data
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((message) => {
+                if (message && message.type === 'SESSION_LOGOUT') {
+                    console.log('[Aladinn CDS] 🔒 Received SESSION_LOGOUT. Purging CDS Cache.');
+                    this.reset();
+                }
+            });
+        }
     }
 
     handleData(payload) {
