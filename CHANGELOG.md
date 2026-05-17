@@ -7,8 +7,18 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
-## [1.3.1] — 2026-05-15
+## [1.4.0] — 2026-05-17
 
+### 🔐 Bảo mật AI & Lâm sàng (Antigravity Phase 3 & 4)
+
+- **PHI Redactor**: Tự động nhận diện và xóa thông tin định danh (Tên, CCCD, BHYT, SĐT, Địa chỉ) khỏi prompt trước khi gửi cho AI (Fail-Closed bảo vệ dữ liệu).
+- **JSON Schema Validator**: Bắt buộc mọi phản hồi lâm sàng từ AI phải đúng cấu trúc (Schema Validated) trước khi Auto-fill để tránh lỗi dữ liệu.
+- **Auto-Flush CDS Cache**: Cache cảnh báo lâm sàng tự động được dọn sạch ngay khi người dùng đăng xuất (Logout) khỏi VNPT HIS, tránh lộ thông tin bệnh án giữa các phiên làm việc.
+- **Chuẩn bị Release Gate**: Bổ sung Checklist QA và Checklist Release chặt chẽ cho toàn bộ dự án.
+
+---
+
+## [1.3.1] — 2026-05-15
 ### 🔐 Bảo mật & Toàn vẹn Dữ liệu (Integrity Hardening)
 
 - **Scanner Context Guard**: Loại bỏ triệt để các biến global dùng chung (`patientDemographics`). Tất cả dữ liệu hành chính và lịch sử khám hiện lưu theo khóa mã hóa `patientKey`, chống nhiễm chéo dữ liệu bệnh án khi bác sĩ chuyển bệnh nhân liên tục.
