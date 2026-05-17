@@ -4,6 +4,9 @@
  * Only runs in background service worker context.
  */
 
+import { PHIRedactor } from './phi-redactor.js';
+import { SchemaValidator } from './schema-validator.js';
+
 // ========================================
 // Crypto Helper (for decrypting API key in background context)
 // SECURITY: PIN is never stored. Only the derived CryptoKey (non-extractable) is cached.
@@ -403,6 +406,13 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
         throw aiError('Prompt không hợp lệ.', 'AI_INVALID_PAYLOAD');
     }
 
+    // 🛡️ SECURITY GUARD: Redact PHI before sending to external AI API
+    const redactedPrompt = PHIRedactor.redact(prompt);
+    if (PHIRedactor.containsPHI(redactedPrompt)) {
+        console.warn('[Aladinn Security] Blocked AI request due to remaining PHI detection.');
+        throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
+    }
+
     const apiKey = await resolveApiKey();
     if (!apiKey) {
         throw aiError('Chưa cấu hình API Key hoặc phiên đã khóa. Vui lòng nhập PIN.', 'AI_LOCKED');
@@ -421,7 +431,7 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
         const effectiveModel = model || 'gemini-2.0-flash';
         const modelUrl = `${baseUrl}/${apiVersion}/models/${effectiveModel}:generateContent`;
         const payload = {
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts: [{ text: redactedPrompt }] }],
             generationConfig
         };
         if (systemInstruction) {
@@ -549,8 +559,15 @@ export async function requestAI({ text, model, requestId }) {
         _abortControllers.set(requestId, controller);
     }
 
+    // 🛡️ SECURITY GUARD: Redact PHI
+    const redactedPrompt = PHIRedactor.redact(text);
+    if (PHIRedactor.containsPHI(redactedPrompt)) {
+        console.warn('[Aladinn Security] Blocked Voice AI request due to remaining PHI detection.');
+        throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
+    }
+
     try {
-        const systemPrompt = buildSystemPrompt(text);
+        const systemPrompt = buildSystemPrompt(redactedPrompt);
         const apiVersion = 'v1beta';
         const baseUrl = 'https://generativelanguage.googleapis.com';
         const effectiveModel = model || 'gemini-2.0-flash';
@@ -578,6 +595,12 @@ export async function requestAI({ text, model, requestId }) {
         const data = await response.json();
         const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         const parsed = parseAIResponse(resultText);
+
+        // Validate JSON Schema
+        const validation = SchemaValidator.validateVoiceClinical(parsed);
+        if (!validation.isValid) {
+            throw aiError(`Lỗi định dạng AI: ${validation.error}`, 'AI_SCHEMA_INVALID');
+        }
 
         // Attach token usage for cost estimation
         const usage = data.usageMetadata || {};
