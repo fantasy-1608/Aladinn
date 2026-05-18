@@ -19,6 +19,7 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 ---
 
 ## [1.3.1] — 2026-05-15
+
 ### 🔐 Bảo mật & Toàn vẹn Dữ liệu (Integrity Hardening)
 
 - **Scanner Context Guard**: Loại bỏ triệt để các biến global dùng chung (`patientDemographics`). Tất cả dữ liệu hành chính và lịch sử khám hiện lưu theo khóa mã hóa `patientKey`, chống nhiễm chéo dữ liệu bệnh án khi bác sĩ chuyển bệnh nhân liên tục.

@@ -917,6 +917,11 @@ const VNPTHistory = (function () {
                 }
             }
 
+            // Gộp Khám bộ phận vào Khám toàn thân nếu có
+            if (history.KHAMBENH_BOPHAN) {
+                history.KHAMBENH_TOANTHAN = (history.KHAMBENH_TOANTHAN ? history.KHAMBENH_TOANTHAN + '\n- Khám bộ phận: ' : '- Khám bộ phận: ') + history.KHAMBENH_BOPHAN;
+            }
+
             // Cập nhật history object để chuẩn bị gửi sang Injected
             if (isSummaryTab) {
                 if (hasTreatments) {
@@ -955,6 +960,8 @@ const VNPTHistory = (function () {
             }
 
             // Gán giá trị mặc định cho các cơ quan quan trọng nếu trống
+            history.TIENSUBENH_BANTHAN = history.TIENSUBENH_BANTHAN || 'Chưa ghi nhận bệnh lý liên quan.';
+            history.TIENSUBENH_GIADINH = history.TIENSUBENH_GIADINH || 'Chưa ghi nhận bệnh lý liên quan.';
             history.KHAMBENH_TUANHOAN = history.KHAMBENH_TUANHOAN || 'Tim đều';
             history.KHAMBENH_HOHAP = history.KHAMBENH_HOHAP || 'Phổi thô';
             history.KHAMBENH_TIEUHOA = history.KHAMBENH_TIEUHOA || 'Bụng mềm';

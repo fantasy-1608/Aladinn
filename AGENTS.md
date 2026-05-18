@@ -42,12 +42,14 @@ This project is indexed by GitNexus as **Aladinn** (5073 symbols, 7953 relations
 
 <!-- gitnexus:end -->
 
-# AGENTS.md — Aladinn AI Coding Rules
+## AGENTS.md — Aladinn AI Coding Rules
 
-## Project
+### Project
+
 Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians with clinical data scanning, AI summarization, voice input, auto-fill, CDS alerts, PACS view, and controlled auto-sign workflows.
 
-## Non-negotiable safety rules (Aladinn Core)
+### Non-negotiable safety rules (Aladinn Core)
+
 1. Never bypass VNPT HIS permission boundaries.
 2. Never access APIs unavailable to the currently logged-in user.
 3. Never write directly to HIS without patient-context verification.
@@ -59,20 +61,23 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
 
-## Extension Architecture & Coding Patterns (Sourced from ECC)
+### Extension Architecture & Coding Patterns (Sourced from ECC)
+
 1. **Immutability (CRITICAL):** Always create new objects, never mutate existing patient states or data payloads. Return new copies with changes applied. This prevents patient data cross-contamination.
 2. **Fail Fast & Validate Boundaries:** Validate all user input and HIS DOM/API data at system boundaries. Use schema-based validation. Never trust external data.
 3. **Error Handling:** Handle errors at every level. Log securely (PHI redacted). Never silently swallow errors.
 4. **File Organization:** High cohesion, low coupling. Functions <50 lines, files focused (<800 lines max). No deep nesting (>4 levels).
 
-## Required workflow before coding
+### Required workflow before coding
+
 1. **Plan:** Identify dependencies, risks, and break into phases. Inspect relevant files.
 2. **TDD (Test-Driven Development):** Write tests before implementation (RED -> GREEN -> IMPROVE). 80%+ coverage required.
 3. **Execute:** Implement minimal change safely.
 4. **Review & Validate:** Run lint, test, build. Verify against safety rules.
 5. **Document:** Update docs and changelog.
 
-## High-risk modules
+### High-risk modules
+
 - content/voice/autofill.js
 - content/scanner/clinical-fill.js
 - content/sign/*
@@ -86,7 +91,8 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 - options/*
 - manifest.json
 
-## Required tests for high-risk changes
+### Required tests for high-risk changes
+
 - Patient context changed before write.
 - Missing patientId blocks write.
 - EncounterId mismatch blocks write.
@@ -97,8 +103,10 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 - Cache is keyed by composite patient key.
 - Logs do not contain raw PHI.
 
-## Commands
+### Commands
+
 Run before finalizing:
+
 ```bash
 pnpm run lint
 pnpm run test
@@ -106,8 +114,10 @@ pnpm run test:coverage
 pnpm run build
 ```
 
-## Output expectation
+### Output expectation
+
 For every task, provide:
+
 1. Files changed.
 2. Why changed.
 3. Safety impact.
