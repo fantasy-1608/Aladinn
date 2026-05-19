@@ -13,6 +13,7 @@ console.log('[Aladinn CDS] 📦 Module loaded.');
 
 let isCDSEnabled = true;
 let filterLow = true;
+let isShadowMode = false;
 let isKBLoaded = false;
 let scanTimer = null;
 let modalObserver = null;
@@ -116,6 +117,22 @@ async function runScan() {
         const critical_count = result.alerts.filter(a => a.severity === 'high').length;
         const warning_count = result.alerts.filter(a => a.severity === 'medium').length;
         const info_count = result.alerts.filter(a => a.severity === 'low' || a.severity === 'info').length;
+
+        if (critical_count > 0 || warning_count > 0) {
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'LOG_AUDIT',
+                        auditType: 'cds_alert',
+                        details: {
+                            critical: critical_count,
+                            warning: warning_count,
+                            rules: result.alerts.map(a => a.rule_code)
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
 
         CDSUI.update({
             summary: { critical_count, warning_count, info_count, total_scanned: context.medications.length },
@@ -297,9 +314,10 @@ function detectScanContext() {
 }
 
 // ===== INIT =====
-export async function initCDS(enabled = true, filter = true) {
+export async function initCDS(enabled = true, filter = true, shadow = false) {
     isCDSEnabled = enabled;
     filterLow = filter;
+    isShadowMode = shadow;
 
     if (!isCDSEnabled) {
         stopScanning();
@@ -311,7 +329,9 @@ export async function initCDS(enabled = true, filter = true) {
     }
 
     const drawer = document.getElementById('aladinn-cds-drawer');
-    if (drawer) drawer.style.display = '';
+    if (drawer) {
+        drawer.style.display = isShadowMode ? 'none' : '';
+    }
 
     // Load Knowledge Base (1 lần duy nhất)
     if (!isKBLoaded) {
@@ -327,6 +347,10 @@ export async function initCDS(enabled = true, filter = true) {
         
         try {
             CDSUI.init();
+            const newDrawer = document.getElementById('aladinn-cds-drawer');
+            if (newDrawer) {
+                newDrawer.style.display = isShadowMode ? 'none' : '';
+            }
             const meta = await getCrawlMetadata();
             CDSUI.showCrawlDate(meta);
         } catch (err) {

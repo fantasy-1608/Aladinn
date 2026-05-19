@@ -47,6 +47,32 @@ describe('PHIRedactor', () => {
         expect(redacted).not.toContain('Nguyễn Văn A');
     });
 
+    it('should redact addresses with phuong/xa', () => {
+        const text = 'Bệnh nhân ngụ tại Địa chỉ: Phường 1, Quận 2, TPHCM; Có tiền sử bệnh.';
+        const redacted = PHIRedactor.redact(text);
+        expect(redacted).toContain('[ADDRESS]');
+        expect(redacted).not.toContain('Phường 1');
+        expect(redacted).not.toContain('Quận 2');
+        expect(redacted).not.toContain('TPHCM');
+    });
+
+    it('should redact date of birth', () => {
+        const text = 'Ngày sinh: 15/05/1990 và Sinh năm: 1985.';
+        const redacted = PHIRedactor.redact(text);
+        expect(redacted).toContain('[DOB]');
+        expect(redacted).not.toContain('15/05/1990');
+        expect(redacted).not.toContain('1985');
+    });
+
+    it('should redact inline occurrences and all caps names', () => {
+        const text = 'Hôm nay Bệnh nhân NGUYỄN VĂN B đến khám, có số điện thoại 0912345678 liền mạch.';
+        const redacted = PHIRedactor.redact(text);
+        expect(redacted).toContain('[NAME]');
+        expect(redacted).toContain('[PHONE]');
+        expect(redacted).not.toContain('NGUYỄN VĂN B');
+        expect(redacted).not.toContain('0912345678');
+    });
+
     it('should detect remaining PHI', () => {
         expect(PHIRedactor.containsPHI('0912345678')).toBe(true);
         expect(PHIRedactor.containsPHI('test@hospital.vn')).toBe(true);

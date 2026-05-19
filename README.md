@@ -2,10 +2,10 @@
 
 <div align="center">
 
-**v1.3.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v1.4.1** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
-[![Version](https://img.shields.io/badge/version-1.3.0-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
+[![Version](https://img.shields.io/badge/version-1.4.1-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
 [![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
 
 > Tích hợp AI · Bảo mật y tế · Desert Mystic Design
@@ -192,6 +192,13 @@ Aladinn/
 ---
 
 ## 📦 Changelog
+
+### v1.4.1 (18/05/2026) — Safety Lock & Testing Release
+
+**Bảo mật & An toàn lâm sàng (Clinical Safety):**
+- Tắt mặc định Auto-Sign, Voice, CDS để đảm bảo an toàn tối đa khi cài mới (chỉ bật Scanner).
+- Bổ sung tài liệu An Toàn Lâm Sàng (Clinical Safety).
+- Chuẩn bị nền tảng cho PHI Redactor, JSON Schema Validator và Patient Context Guard.
 
 ### v1.3.0 (12/05/2026) — Stabilization & Hardening
 

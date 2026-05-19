@@ -60,17 +60,22 @@ export class PHIRedactor {
 
         // Best effort: Remove lines that look like "Họ tên: Nguyễn Văn A"
         // Regex looks for "Họ tên", "Tên", "Bệnh nhân" followed by colon and text
-        redacted = redacted.replace(/(?:Họ\s*và\s*tên|Họ\s*tên|Tên\s*bệnh\s*nhân|Bệnh\s*nhân|BN)[\s:]+([A-ZÀ-Ỹ][a-zà-ỹ]*\s*)+/gi, (match) => {
+        redacted = redacted.replace(/(?:Họ\s*và\s*tên|Họ\s*tên|Tên\s*bệnh\s*nhân|Bệnh\s*nhân|BN)[\s:]+([A-ZÀ-Ỹa-zà-ỹ\s]{2,50})(?=[,.;\n]|$)/gi, (match) => {
             const prefixMatch = match.match(/(?:Họ\s*và\s*tên|Họ\s*tên|Tên\s*bệnh\s*nhân|Bệnh\s*nhân|BN)[\s:]+/i);
             const prefix = prefixMatch ? prefixMatch[0] : 'Họ tên: ';
-            return prefix + '[NAME] ';
+            return prefix + '[NAME]';
         });
 
         // Best effort: Remove lines that look like address
-        redacted = redacted.replace(/(?:Địa\s*chỉ)[\s:]+([^\n,]+)/gi, (match) => {
+        redacted = redacted.replace(/(?:Địa\s*chỉ)[\s:]+([^\n.;]+)/gi, (match) => {
             const prefixMatch = match.match(/(?:Địa\s*chỉ)[\s:]+/i);
             const prefix = prefixMatch ? prefixMatch[0] : 'Địa chỉ: ';
             return prefix + '[ADDRESS]';
+        });
+
+        // Best effort: Remove Date of birth
+        redacted = redacted.replace(/(?:Ngày\s*sinh|Sinh\s*ngày|DOB|Sinh\s*năm)[\s:]*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[0-9]{4})/gi, (match, datePart) => {
+            return match.replace(datePart, '[DOB]');
         });
 
         return redacted;

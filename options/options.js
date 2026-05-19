@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         aiModel: document.getElementById('opt-ai-model'),
         scanTooltip: document.getElementById('opt-scan-tooltip'),
         cdsFilterLow: document.getElementById('opt-cds-filter-low'),
+        cdsShadowMode: document.getElementById('opt-cds-shadow-mode'),
         signSafeMode: document.getElementById('opt-sign-safemode'),
         signAdvanced: document.getElementById('opt-sign-advanced'),
         pin: document.getElementById('opt-pin'),
@@ -142,10 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Load CDS settings
         chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
             if (elements.cdsFilterLow) {
                 elements.cdsFilterLow.checked = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
+            }
+            if (elements.cdsShadowMode) {
+                elements.cdsShadowMode.checked = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
             }
         });
 
@@ -283,7 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoForm: true // Always enabled
             },
             vnpt_cds_settings: {
-                filterLow: elements.cdsFilterLow.checked
+                filterLow: elements.cdsFilterLow.checked,
+                shadowMode: elements.cdsShadowMode ? elements.cdsShadowMode.checked : false
             }
         };
 

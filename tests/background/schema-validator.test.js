@@ -52,4 +52,25 @@ describe('SchemaValidator', () => {
         expect(result.isValid).toBe(false);
         expect(result.error).toContain('phải có code và name');
     });
+
+    it('should reject payload with fields outside whitelist', () => {
+        const payload = { lyDoVaoVien: "Đau", hackField: "malicious" };
+        const result = SchemaValidator.validateVoiceClinical(payload);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toContain('không nằm trong whitelist');
+    });
+
+    it('should reject payload containing prompt injection scripts', () => {
+        const payload = { lyDoVaoVien: "Đau <script>alert(1)</script>" };
+        const result = SchemaValidator.validateVoiceClinical(payload);
+        expect(result.isValid).toBe(false);
+        expect(result.error).toContain('Prompt injection');
+    });
+
+    it('should reject markdown instead of JSON', () => {
+        // usually parse will fail, but if somehow passed as string
+        const result = SchemaValidator.validateVoiceClinical("```json\n{}\n```");
+        expect(result.isValid).toBe(false);
+        expect(result.error).toContain('không phải là JSON object');
+    });
 });

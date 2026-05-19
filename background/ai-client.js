@@ -410,6 +410,15 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
     const redactedPrompt = PHIRedactor.redact(prompt);
     if (PHIRedactor.containsPHI(redactedPrompt)) {
         console.warn('[Aladinn Security] Blocked AI request due to remaining PHI detection.');
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({
+                    type: 'LOG_AUDIT',
+                    auditType: 'phi_redaction_blocked',
+                    details: { context: 'callGeminiGenerateContent' }
+                });
+            }
+        } catch (e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -563,6 +572,15 @@ export async function requestAI({ text, model, requestId }) {
     const redactedPrompt = PHIRedactor.redact(text);
     if (PHIRedactor.containsPHI(redactedPrompt)) {
         console.warn('[Aladinn Security] Blocked Voice AI request due to remaining PHI detection.');
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({
+                    type: 'LOG_AUDIT',
+                    auditType: 'phi_redaction_blocked',
+                    details: { context: 'requestAI' }
+                });
+            }
+        } catch (e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -599,6 +617,15 @@ export async function requestAI({ text, model, requestId }) {
         // Validate JSON Schema
         const validation = SchemaValidator.validateVoiceClinical(parsed);
         if (!validation.isValid) {
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'LOG_AUDIT',
+                        auditType: 'ai_schema_error',
+                        details: { error: validation.error }
+                    });
+                }
+            } catch (e) {}
             throw aiError(`Lỗi định dạng AI: ${validation.error}`, 'AI_SCHEMA_INVALID');
         }
 

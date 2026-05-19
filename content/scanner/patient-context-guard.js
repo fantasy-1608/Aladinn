@@ -82,6 +82,19 @@ window.VNPTPatientContextGuard = (function () {
                     tokenId: token?.tokenId
                 });
             }
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'LOG_AUDIT',
+                        auditType: 'patient_mismatch',
+                        details: {
+                            stage: options.stage,
+                            tokenFormType: token?.formType,
+                            expectedPidHash: token?.initialSelectedPatientId ? btoa(token.initialSelectedPatientId).substring(0, 8) : null
+                        }
+                    });
+                }
+            } catch (e) {}
             throw new Error(`PATIENT_CONTEXT_MISMATCH_${options.stage || 'UNKNOWN'}`);
         }
     }

@@ -396,15 +396,27 @@ export async function importCrawledDrugs(drugs) {
     };
 }
 
-/**
- * Lấy thông tin metadata crawl gần nhất
- */
 export async function getCrawlMetadata() {
     const db = await openDatabase();
+    
+    let remoteMeta = {};
+    try {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+            const url = chrome.runtime.getURL('cds-data/metadata.json');
+            const res = await fetch(url);
+            if (res.ok) remoteMeta = await res.json();
+        }
+    } catch (e) {
+        console.warn('[Aladinn CDS] Could not fetch cds-data/metadata.json', e);
+    }
+
     return {
         lastCrawlDate: await getMetaValue(db, 'lastCrawlDate'),
         lastCrawlCount: await getMetaValue(db, 'lastCrawlCount'),
         seededAt: await getMetaValue(db, 'seededAt'),
-        seedVersion: await getMetaValue(db, 'seedVersion')
+        seedVersion: await getMetaValue(db, 'seedVersion'),
+        ruleset_version: remoteMeta.ruleset_version || null,
+        ruleset_source: remoteMeta.ruleset_source || null,
+        last_updated: remoteMeta.last_updated || null
     };
 }

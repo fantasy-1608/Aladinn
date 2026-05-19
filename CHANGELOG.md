@@ -7,6 +7,18 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.4.1] — 2026-05-19
+
+### 🕵️‍♂️ Audit Logging & Ruleset Versioning (Pilot Readiness)
+
+- **Audit Telemetry (Shadow Logging)**: Bổ sung hệ thống Audit Logger ẩn (lưu qua IndexedDB), ghi nhận các lỗi dữ liệu quan trọng, cảnh báo thuốc (Critical/Warning) và lỗi Schema AI mà **không** chứa dữ liệu định danh bệnh nhân (PHI-Free).
+- **CDS Shadow Mode**: Thêm cấu hình chạy ngầm hệ thống cảnh báo lâm sàng (chẩn đoán, tương tác thuốc) nhưng không hiển thị giao diện để thu thập dữ liệu an toàn mà không làm phiền bác sĩ.
+- **Ruleset Versioning**: Hiển thị phiên bản bộ luật (Ruleset version) lấy từ file metadata, giúp kiểm soát tốt hơn các phiên bản luật CDS đang được áp dụng tại từng máy trạm.
+- **Fail-Closed Patient Context**: Đưa các sự kiện "Patient Mismatch" (khi dữ liệu bệnh nhân bị sai lệch) vào log an toàn để giám sát từ xa.
+- **Default Feature Toggle**: Đảm bảo cài đặt mặc định khi cài tiện ích lần đầu là chỉ bật module Scanner, các module khác (Voice, Sign, CDS) tắt để an toàn.
+
+---
+
 ## [1.4.0] — 2026-05-17
 
 ### 🔐 Bảo mật AI & Lâm sàng (Antigravity Phase 3 & 4)

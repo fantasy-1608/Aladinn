@@ -26,6 +26,18 @@ export class SchemaValidator {
             }
         }
 
+        const allowedFields = new Set([...stringFields, 'sinhHieu', 'icd10Suggest']);
+        for (const key of Object.keys(data)) {
+            if (!allowedFields.has(key)) {
+                return { isValid: false, error: `Trường ${key} không nằm trong whitelist` };
+            }
+        }
+
+        const jsonStr = JSON.stringify(data).toLowerCase();
+        if (jsonStr.includes('<script>') || jsonStr.includes('javascript:')) {
+            return { isValid: false, error: 'Phát hiện nội dung độc hại (Prompt injection)' };
+        }
+
         // Validate Sinh Hieu
         if (data.sinhHieu) {
             if (typeof data.sinhHieu !== 'object') {

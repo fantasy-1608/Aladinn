@@ -751,14 +751,14 @@ export const CDSUI = {
         }, 30000);
     },
 
-    /**
-     * Hiển thị ngày cập nhật từ metadata
-     */
     showCrawlDate(meta) {
         const infoEl = document.getElementById('cds-crawl-info');
         if (!infoEl) return;
         
-        if (meta?.lastCrawlDate) {
+        if (meta?.ruleset_version) {
+            infoEl.innerHTML = `📚 Tập luật: <b style="color: #60a5fa">${meta.ruleset_version}</b>`;
+            infoEl.title = `Nguồn: ${meta.ruleset_source || 'Unknown'} | Cập nhật: ${meta.last_updated ? new Date(meta.last_updated).toLocaleDateString('vi-VN') : 'Unknown'}`;
+        } else if (meta?.lastCrawlDate) {
             // Hiện ngày cào gần nhất
             const d = new Date(meta.lastCrawlDate);
             const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });

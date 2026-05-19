@@ -267,7 +267,8 @@
                 if (window.Aladinn?.CDS?.init) {
                     chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                         const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
-                        window.Aladinn.CDS.init(true, filterLow);
+                        const shadowMode = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
+                        window.Aladinn.CDS.init(true, filterLow, shadowMode);
                         if (Logger) Logger.success('Main', '🧠 CDS module ✅');
                     });
                 } else {
@@ -276,7 +277,8 @@
                         if (window.Aladinn?.CDS?.init) {
                             chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                                 const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
-                                window.Aladinn.CDS.init(true, filterLow);
+                                const shadowMode = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
+                                window.Aladinn.CDS.init(true, filterLow, shadowMode);
                                 if (Logger) Logger.success('Main', '🧠 CDS module (delayed) ✅');
                             });
                         } else {
@@ -476,6 +478,17 @@
                 } else if (window.Aladinn?.Scanner?.Settings?.init) {
                     window.Aladinn.Scanner.Settings.init();
                 }
+                
+                // Update CDS settings
+                if (window.Aladinn?.CDS?.init) {
+                    const cdsEnabled = window.Aladinn.features?.cds === true;
+                    chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
+                        const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
+                        const shadowMode = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
+                        window.Aladinn.CDS.init(cdsEnabled, filterLow, shadowMode);
+                    });
+                }
+                
                 sendResponse({ success: true });
             }
 
@@ -516,7 +529,8 @@
                     const cdsEnabled = message.features.cds === true;
                     chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
                         const filterLow = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
-                        window.Aladinn.CDS.init(cdsEnabled, filterLow);
+                        const shadowMode = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
+                        window.Aladinn.CDS.init(cdsEnabled, filterLow, shadowMode);
                     });
                 }
 

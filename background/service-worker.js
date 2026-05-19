@@ -25,6 +25,7 @@ import { checkForUpdate, scheduleUpdateCheck, dismissUpdate, getCurrentVersion }
 import { scheduleRemoteConfigRefresh, handleRemoteConfigAlarm, getRemoteConfig, refreshRemoteConfig } from './remote-config.js';
 // Import audit telemetry (local-only, no PHI)
 import { AuditEvents } from '../shared/audit-telemetry.js';
+import './audit-logger.js';
 
 // ========================================
 // INSTALLATION & STARTUP
@@ -32,8 +33,8 @@ import { AuditEvents } from '../shared/audit-telemetry.js';
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
         chrome.storage.local.set({
-            aladinn_features: { voice: true, scanner: true, sign: true },
-            aladinn_voice_enabled: true,
+            aladinn_features: { voice: false, scanner: true, sign: false, cds: false },
+            aladinn_voice_enabled: false,
             aladinn_voice_settings: { language: 'vi-VN', autoProcess: false, theme: 'dark' }
         });
     }
