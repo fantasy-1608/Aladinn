@@ -7,6 +7,19 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.5.0] — 2026-05-21
+
+### ✨ Tính năng mới & Cải tiến Giao diện Nổi bật
+
+- **Giao diện Kính mờ sang trọng mới**: Nâng cấp toàn diện nút nổi thành dạng kính mờ (Glassmorphism) cực kỳ đẹp mắt, sử dụng các biểu tượng sắc nét, có phản hồi rung động lực bấm êm ái khi nhấp chuột.
+- **Tự động lọc nút thông minh**: Tự ẩn/hiện nút phù hợp nhất với bảng HIS đang mở (ví dụ: chỉ hiện duy nhất nút "Điền Xử trí" trên bảng Xử trí, ẩn hoàn toàn các nút khác để tránh rối mắt).
+- **Hỗ trợ toàn diện cho Ngoại trú**: Khắc phục triệt để lỗi bảng xem trước bị trống thông tin ở phân hệ khám Ngoại trú. Tiện ích hiện đã lấy đầy đủ lý do khám, tiền sử, diễn biến bệnh và sinh hiệu... từ tab "Bệnh án".
+- **Điền Xử trí nhanh 1-Click**: Tự động điền thẳng thông tin lâm sàng vào phiếu Xử trí của HIS mà không cần thông qua bảng xem trước trung gian, giúp tiết kiệm tối đa thao tác cho bác sĩ.
+- **Giữ bảng xem trước cho Hội chẩn & Chuyển viện**: Cho phép bác sĩ xem, chỉnh sửa trực tiếp và kiểm tra dữ liệu cẩn thận trước khi điền chính thức.
+- **Sửa lỗi điền bệnh kèm theo**: Cải tiến logic điền thông tin tự động mở khóa ô nhập bệnh kèm theo và đồng bộ mã bệnh chính xác với hệ thống HIS.
+
+---
+
 ## [1.4.1] — 2026-05-19
 
 ### 🕵️‍♂️ Audit Logging & Ruleset Versioning (Pilot Readiness)

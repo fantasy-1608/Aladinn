@@ -35,6 +35,7 @@
 
         // 2. Wrap Callbacks
         options.success = function (data, _textStatus, _jqXHR) {
+
             // --- Heuristic Snooping for CDS ---
             try {
                 let payload = { patientId: null, benhnhanId: null, khambenhId: null, maBa: null, weight: null, diagnoses: [], medications: [], labs: [] };

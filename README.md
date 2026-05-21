@@ -2,10 +2,10 @@
 
 <div align="center">
 
-**v1.4.1** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v1.5.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
-[![Version](https://img.shields.io/badge/version-1.4.1-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
 [![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
 
 > Tích hợp AI · Bảo mật y tế · Desert Mystic Design
@@ -192,6 +192,16 @@ Aladinn/
 ---
 
 ## 📦 Changelog
+
+### v1.5.0 (21/05/2026) — Giao diện Glassmorphism mới & Hỗ trợ Ngoại trú toàn diện
+
+**Giao diện & Tiện ích:**
+- **Nút nổi Kính mờ (Glassmorphism)**: Giao diện premium hiện đại bằng kính mờ sang trọng, bộ icon SVG sắc nét, đi kèm hiệu ứng nhấn đàn hồi vật lý và phát sáng êm ái.
+- **Tự động lọc nút thông minh**: Tự ẩn/hiện nút phù hợp nhất với bảng HIS đang mở (ví dụ: chỉ hiện duy nhất nút "Điền Xử trí" trên bảng Xử trí, ẩn các nút khác để tránh rối mắt).
+- **Hỗ trợ toàn diện cho Ngoại trú**: Sửa lỗi bảng xem trước rỗng thông tin ở phân hệ khám Ngoại trú. Tiện ích hiện đã lấy đầy đủ lý do khám, tiền sử, sinh hiệu... từ tab "Bệnh án".
+- **Điền Xử trí nhanh 1-Click**: Tự động điền thẳng thông tin lâm sàng vào phiếu Xử trí của HIS mà không cần thông qua bảng xem trước trung gian để tiết kiệm thao tác.
+- **Giữ bảng xem trước cho Hội chẩn & Chuyển viện**: Cho phép bác sĩ xem, chỉnh sửa trực tiếp và kiểm tra dữ liệu cẩn thận trước khi điền chính thức.
+- **Sửa lỗi điền bệnh kèm theo**: Cải tiến logic điền thông tin tự động mở khóa ô nhập bệnh kèm theo và đồng bộ mã bệnh chính xác.
 
 ### v1.4.1 (18/05/2026) — Safety Lock & Testing Release
 

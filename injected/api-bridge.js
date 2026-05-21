@@ -94,10 +94,44 @@
      */
     function resolveActiveGrid(rowId, options = { strict: false }) {
         const EMPTY = { grid: null, rowData: {}, isOutpatient: false, effectiveRowId: null };
-        if (!_$) return EMPTY;
 
-        const inGrid = _$('#grdBenhNhan');
-        const outGrid = _$('#grdDSBenhNhan');
+        let activeGrid = null;
+        let active_$ = null;
+        let isOutpatient = false;
+
+        const frames = [window, ...Array.from(document.querySelectorAll('iframe')).map(f => f.contentWindow).filter(Boolean)];
+
+        for (const win of frames) {
+            try {
+                if (win.$) {
+                    const grid = win.$('#grdBenhNhan');
+                    if (grid && grid.length > 0) {
+                        activeGrid = grid;
+                        active_$ = win.$;
+                        isOutpatient = false;
+                        break;
+                    }
+                }
+            } catch (_e) {}
+        }
+
+        if (!activeGrid) {
+            for (const win of frames) {
+                try {
+                    if (win.$) {
+                        const grid = win.$('#grdDSBenhNhan');
+                        if (grid && grid.length > 0) {
+                            activeGrid = grid;
+                            active_$ = win.$;
+                            isOutpatient = true;
+                            break;
+                        }
+                    }
+                } catch (_e) {}
+            }
+        }
+
+        if (!activeGrid || !active_$) return EMPTY;
 
         // Helper: thử lấy rowData từ grid
         function tryGrid(grid, rid) {
@@ -116,34 +150,84 @@
             catch (_e) { return null; }
         }
 
-        // 1. Nếu có rowId: thử tìm chính xác ở Nội trú trước
-        if (rowId) {
-            const rdIn = tryGrid(inGrid, rowId);
-            if (rdIn) return { grid: inGrid, rowData: rdIn, isOutpatient: false, effectiveRowId: rowId };
+        // Standardize rowId to clean up stringified null/undefined
+        const cleanRowId = (rowId !== null && rowId !== undefined && rowId !== 'null' && rowId !== 'undefined') ? String(rowId).trim() : null;
 
-            // Ngoại trú: rowId có thể là KHAMBENHID (không phải jqGrid row id)
-            // Thử lấy selrow từ outGrid và check KHAMBENHID match
-            const outSel = getSelRow(outGrid);
-            if (outSel) {
-                const rdOut = tryGrid(outGrid, outSel);
-                if (rdOut && (rdOut.KHAMBENHID === rowId || outSel === rowId)) {
-                    return { grid: outGrid, rowData: rdOut, isOutpatient: true, effectiveRowId: outSel };
+        // 1. Thử tìm chính xác theo rowId
+        if (cleanRowId) {
+            if (!isOutpatient) {
+                const rdIn = tryGrid(activeGrid, cleanRowId);
+                if (rdIn) return { grid: activeGrid, rowData: rdIn, isOutpatient: false, effectiveRowId: cleanRowId };
+            } else {
+                // Ngoại trú: cleanRowId có thể là KHAMBENHID, BENHNHANID, MABENHNHAN, MAHOSOBENHAN hoặc jqGrid row index.
+                // Thử lấy selrow từ outGrid và check khớp
+                const outSel = getSelRow(activeGrid);
+                if (outSel) {
+                    const rdOut = tryGrid(activeGrid, outSel);
+                    if (rdOut && (
+                        String(rdOut.KHAMBENHID || '').trim() === cleanRowId ||
+                        String(rdOut.BENHNHANID || '').trim() === cleanRowId ||
+                        String(rdOut.MABENHNHAN || '').trim() === cleanRowId ||
+                        String(rdOut.MAHOSOBENHAN || '').trim() === cleanRowId ||
+                        String(outSel).trim() === cleanRowId
+                    )) {
+                        return { grid: activeGrid, rowData: rdOut, isOutpatient: true, effectiveRowId: outSel };
+                    }
                 }
+
+                // Nếu selrow không khớp, quét toàn bộ grid tìm dòng có ID khớp
+                try {
+                    const rowIds = activeGrid.jqGrid('getDataIDs') || [];
+                    for (const rId of rowIds) {
+                        const rd = tryGrid(activeGrid, rId);
+                        if (rd && (
+                            String(rd.KHAMBENHID || '').trim() === cleanRowId ||
+                            String(rd.BENHNHANID || '').trim() === cleanRowId ||
+                            String(rd.MABENHNHAN || '').trim() === cleanRowId ||
+                            String(rd.MAHOSOBENHAN || '').trim() === cleanRowId ||
+                            String(rId).trim() === cleanRowId
+                        )) {
+                            return { grid: activeGrid, rowData: rd, isOutpatient: true, effectiveRowId: rId };
+                        }
+                    }
+                } catch (e) {
+                    debugLog('[API-Bridge] Error scanning outpatient grid rows:', e);
+                }
+
+                // Fallback direct lookup bằng tryGrid(activeGrid, cleanRowId)
+                const rdOutDirect = tryGrid(activeGrid, cleanRowId);
+                if (rdOutDirect) return { grid: activeGrid, rowData: rdOutDirect, isOutpatient: true, effectiveRowId: cleanRowId };
             }
         }
 
-        // 2. Fallback: lấy selrow từ grid có row đang chọn (nếu không ở mode strict)
-        if (!options.strict) {
-            for (const [g, isOp] of [[inGrid, false], [outGrid, true]]) {
-                const sel = getSelRow(g);
-                if (sel) {
-                    const rd = tryGrid(g, sel);
-                    if (rd) return { grid: g, rowData: rd, isOutpatient: isOp, effectiveRowId: sel };
-                }
+        // 2. Fallback: Lấy selrow từ grid đang chọn (nếu không ở strict mode HOẶC nếu ở Ngoại trú)
+        // Vì Ngoại trú chỉ hiển thị và trích xuất dữ liệu lâm sàng từ DOM của bệnh nhân đang chọn trên màn hình,
+        // việc fallback về selrow ở Ngoại trú là tuyệt đối an toàn và chính xác để đồng bộ với DOM.
+        if (!options.strict || isOutpatient) {
+            const sel = getSelRow(activeGrid);
+            if (sel) {
+                const rd = tryGrid(activeGrid, sel);
+                if (rd) return { grid: activeGrid, rowData: rd, isOutpatient, effectiveRowId: sel };
             }
         }
 
         return EMPTY;
+    }
+
+    function _findDomElement(id) {
+        var el = document.getElementById(id);
+        if (el) return el;
+        var iframes = document.querySelectorAll('iframe');
+        for (var i = 0; i < iframes.length; i++) {
+            try {
+                var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                if (doc) {
+                    var innerEl = doc.getElementById(id);
+                    if (innerEl) return innerEl;
+                }
+            } catch (_e) {}
+        }
+        return null;
     }
 
     function _cleanHisText(value) {
@@ -526,7 +610,7 @@
                         const val = rec[k] ? String(rec[k]).trim() : '';
                         if (!val || val.length < 2) continue;
 
-                        if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN')) {
+                        if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('CHUANDOAN') || uk.includes('CHUAN_DOAN')) {
                             if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
                                 tempChanDoanPhu = val;
                             } else {
@@ -915,7 +999,7 @@
                             // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
                             if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
 
-                            if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH')) {
+                            if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('CHUANDOAN') || uk.includes('CHUAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH')) {
                                 if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
                                     if (!t.CHANDOANKEMTHEO) t.CHANDOANKEMTHEO = String(val).trim();
                                 } else {
@@ -944,74 +1028,11 @@
                         return t;
                     });
                     console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
-                    // ── jqGrid Scraping: Lấy chẩn đoán per-sheet từ form HIS ──
-                    // Textarea #tcDieuTritxtCHUANDOAN chỉ tồn tại khi tab "Điều trị" đã được kích hoạt
-                    try {
-                        const dtGrid = _$ && _$('#tcDieuTrigrdDieuTri');
-                        let diagEl = document.getElementById('tcDieuTritxtCHUANDOAN');
 
-                        // If textarea doesn't exist, we skip DOM scraping instead of switching tabs
-                        // to ensure the summary is non-blocking.
-                        if (!diagEl) {
-                            console.log('[ALADINN-DIAG] Textarea tcDieuTritxtCHUANDOAN not found. Skipping DOM scrape fallback.');
-                        }
-
-                        const diagKTEl = document.getElementById('tcDieuTritxtBENHKEMTHEO');
-
-                        if (dtGrid && dtGrid.jqGrid && diagEl) {
-                            const gridRowIds = dtGrid.jqGrid('getDataIDs');
-                            const mbpMap = {};
-                            for (const rid of gridRowIds) {
-                                const rd = dtGrid.jqGrid('getRowData', rid);
-                                if (rd.MAUBENHPHAMID) mbpMap[rd.MAUBENHPHAMID] = rid;
-                            }
-                            const origSel = dtGrid.jqGrid('getGridParam', 'selrow');
-                            let matchCount = 0;
-
-                            for (const t of treatments) {
-                                if (!t.MAUBENHPHAMID || t.CHANDOAN) continue;
-                                const gRowId = mbpMap[t.MAUBENHPHAMID];
-                                if (!gRowId) continue;
-
-                                const rowEl = _$('#tcDieuTrigrdDieuTri tr#' + gRowId);
-                                if (rowEl.length) {
-                                    if (diagEl) diagEl.value = ''; // clear before click
-                                    if (diagKTEl) diagKTEl.value = '';
-                                    rowEl.find('td:first').trigger('click');
-                                    let cv = '';
-                                    let ktv = '';
-                                    for (let i = 0; i < 5; i++) {
-                                        await new Promise(r => setTimeout(r, 200));
-                                        cv = (diagEl.value || '').trim();
-                                        ktv = (diagKTEl?.value || '').trim();
-                                        if (cv && cv !== '-' && cv !== t.CHANDOAN) break;
-                                    }
-                                    if (cv) {
-                                        t.CHANDOAN = cv;
-                                        if (ktv) t.CHANDOANKEMTHEO = ktv;
-                                        matchCount++;
-                                    }
-                                }
-                            }
-                            // Restore original grid selection
-                            if (origSel) {
-                                const origRow = _$('#tcDieuTrigrdDieuTri tr#' + origSel);
-                                if (origRow.length) origRow.find('td:first').trigger('click');
-                            }
-                            console.log('[ALADINN-DIAG] ✓ jqGrid scrape:', matchCount, '/', treatments.length, 'sheets got diagnosis');
-                        } else {
-                            console.log('[ALADINN-DIAG] ✗ Grid/textarea not available. grid:', !!dtGrid?.jqGrid, 'textarea:', !!diagEl);
-                        }
-
-
-                    } catch (domErr) {
-                        console.warn('[ALADINN-DIAG] jqGrid scrape failed:', domErr.message);
-                    }
-
-                    // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet.
+                    // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet via background APIs.
                     const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
-                    // Limit to 10 to avoid performance issues
-                    const toFetch = sheetsNeedDetail.slice(0, 10);
+                    // Fetch up to 20 sheets to balance detail coverage and network performance
+                    const toFetch = sheetsNeedDetail.slice(0, 20);
                     await Promise.all(toFetch.map(async (sheet) => {
                         try {
                             const detailRes = await _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0);
@@ -1021,6 +1042,7 @@
                             if (records && records.rows && Array.isArray(records.rows)) records = records.rows;
                             else if (!Array.isArray(records)) records = [records];
 
+                            let hasDirectChanDoan = false;
                             for (const rec of records) {
                                 if (!rec) continue;
                                 const detailOrderText = _cleanHisText(_firstValue(rec, [
@@ -1049,24 +1071,100 @@
                                         });
                                     }
                                 }
+
+                                // 1. Fast direct key scan
                                 for (const k in rec) {
                                     const uk = k.toUpperCase();
                                     const val = rec[k];
                                     if (!val || String(val).trim().length < 2) continue;
 
-                                    // Bỏ qua các cột hình ảnh, dịch vụ, yêu cầu (chống nhiễu "CĐQT phải")
                                     if (uk.includes('HINHANH') || uk.includes('QUANGTUYEN') || uk.includes('YEUCAU') || uk.includes('CDHA') || uk.includes('DICHVU') || uk.includes('PHONGKHAM') || uk === 'TEN') continue;
 
-                                    if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH') || uk === 'TENCHANDOAN' || uk === 'TEN_CHANDOAN') {
+                                    if (uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN') || uk.includes('CHUANDOAN') || uk.includes('CHUAN_DOAN') || uk.includes('BENHCHINH') || uk.includes('BENH_CHINH') || uk === 'TENCHANDOAN' || uk === 'TEN_CHANDOAN' || uk === 'TENCHUANDOAN' || uk === 'TEN_CHUANDOAN') {
                                         if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
                                             if (!sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = String(val).trim();
                                         } else {
-                                            if (!sheet.CHANDOAN) sheet.CHANDOAN = String(val).trim();
+                                            if (!sheet.CHANDOAN) {
+                                                sheet.CHANDOAN = String(val).trim();
+                                                hasDirectChanDoan = true;
+                                            }
                                         }
                                     }
                                 }
-                                if (sheet.CHANDOAN) break; // Got it, no need to scan more records
                             }
+
+                            // 2. Fallback: Detail Universal Scan if direct keys did not populate CHANDOAN
+                            if (!hasDirectChanDoan || !sheet.CHANDOAN) {
+                                let allDiagStrings = [];
+                                var icdPatternExact = /^[A-Z]\d{2}(\.\d{1,2})?$/i;
+                                var icdPatternContains = /(^|\s|\(|\[|-)[A-Z]\d{2}(\.\d{1,2})?($|\s|\)|\]|-)/i;
+
+                                var potentialTexts = [];
+                                for (var ri = 0; ri < records.length; ri++) {
+                                    var rec = records[ri];
+                                    if (!rec) continue;
+
+                                    for (var rk in rec) {
+                                        var ruk = rk.toUpperCase();
+                                        var rv = String(rec[rk] || '').trim();
+                                        if (rv.length < 2) continue;
+
+                                        if (ruk.includes('HINHANH') || ruk.includes('QUANGTUYEN') || ruk.includes('YEUCAU') || ruk.includes('CDHA') || ruk.includes('DICHVU') || ruk.includes('PHONGKHAM') || ruk === 'TEN') continue;
+
+                                        potentialTexts.push(rv);
+                                    }
+                                }
+
+                                for (var i = 0; i < potentialTexts.length; i++) {
+                                    var curText = potentialTexts[i];
+
+                                    if (curText.length <= 6 && icdPatternExact.test(curText) && !curText.toUpperCase().startsWith('NK')) {
+                                        var desc = '';
+                                        for (var j = i - 1; j >= Math.max(0, i - 5); j--) {
+                                            var t = potentialTexts[j];
+                                            if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
+                                        }
+                                        if (!desc) {
+                                            for (j = i + 1; j <= Math.min(potentialTexts.length - 1, i + 5); j++) {
+                                                t = potentialTexts[j];
+                                                if (t.length > 5 && /[A-Za-zĐđÂâĂăÊêÔôƠơƯư]/i.test(t) && !icdPatternExact.test(t)) { desc = t; break; }
+                                            }
+                                        }
+
+                                        if (desc) {
+                                            allDiagStrings.push(curText + ' - ' + desc);
+                                        } else {
+                                            allDiagStrings.push(curText);
+                                        }
+                                    }
+                                    else if (curText.length > 6 && icdPatternContains.test(curText)) {
+                                        allDiagStrings.push(curText);
+                                    }
+                                }
+
+                                allDiagStrings = [...new Set(allDiagStrings)];
+
+                                var cleanDiag = function (str) {
+                                    if (!str) return '';
+                                    return str.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
+                                };
+
+                                if (allDiagStrings.length > 0) {
+                                    sheet.CHANDOAN = cleanDiag(allDiagStrings[0]);
+                                    if (allDiagStrings.length > 1) {
+                                        sheet.CHANDOANKEMTHEO = allDiagStrings.slice(1).map(cleanDiag).join('; ');
+                                    }
+                                }
+                            }
+
+                            // 3. Post-cleanup to ensure all diagnostics are stripped of standard prefixes
+                            var finalClean = function (str) {
+                                if (!str) return '';
+                                return str.replace(/^(chẩn đoán kèm theo|bệnh kèm theo|chẩn đoán|bệnh chính|kèm theo)[:\-\s]*/i, '').trim();
+                            };
+                            if (sheet.CHANDOAN) sheet.CHANDOAN = finalClean(sheet.CHANDOAN);
+                            if (sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = finalClean(sheet.CHANDOANKEMTHEO);
+
                         } catch (_detailErr) {
                             console.warn('[API-Bridge] Detail fetch failed for sheet', sheet.MAUBENHPHAMID);
                         }
@@ -1093,7 +1191,7 @@
             }
 
         } catch (_e) {
-            sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: yLenhList || [], yLenhList: yLenhList || [] }, requestId);
+            sendResult('FETCH_TREATMENT_RESULT', rowId, { treatmentList: yLenhList || [], yLenhList: yLenhList || [], treatmentContext: null }, requestId);
         }
     }
 
@@ -1103,16 +1201,23 @@
     async function fetchDiagnosesForCDS(rowId, benhnhanId, khambenhId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [] }, requestId);
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [], _context: null }, requestId);
                 return;
             }
-            if (rowId && (!benhnhanId || !khambenhId)) {
-                const { rowData } = resolveActiveGrid(rowId);
-                benhnhanId = benhnhanId || rowData.BENHNHANID;
-                khambenhId = khambenhId || rowData.KHAMBENHID || rowData.MADIEUTRI;
-            }
+            const { rowData } = resolveActiveGrid(rowId || null);
+            benhnhanId = benhnhanId || rowData.BENHNHANID;
+            khambenhId = khambenhId || rowData.KHAMBENHID || rowData.MADIEUTRI;
+
+            const _context = {
+                rowId: rowId || null,
+                KHAMBENHID: khambenhId || '',
+                HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                BENHNHANID: benhnhanId || '',
+                patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+            };
+
             if (!benhnhanId || !khambenhId) {
-                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [] }, requestId);
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [], _context: null }, requestId);
                 return;
             }
 
@@ -1152,12 +1257,12 @@
                     extractMatches(rawIcdSub, rawNameSub, false);
                 });
 
-                sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: allDiagnoses }, requestId);
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: allDiagnoses, _context }, requestId);
             } else {
-                sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+                sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [], _context }, requestId);
             }
         } catch (_e) {
-            sendResult('FETCH_DIAGNOSES_RESULT', null, { diagnoses: [] }, requestId);
+            sendResult('FETCH_DIAGNOSES_RESULT', rowId || null, { diagnoses: [], _context: null }, requestId);
         }
     }
 
@@ -1168,16 +1273,24 @@
     async function prefetchDiagnosesFromGrid(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '', _context: null }, requestId);
                 return;
             }
             const { grid, rowData, effectiveRowId } = resolveActiveGrid(rowId);
             if (!grid || !effectiveRowId) {
-                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '' }, requestId);
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '', _context: null }, requestId);
                 return;
             }
             const benhnhanId = rowData.BENHNHANID || '';
             const patientName = rowData.TENBENHNHAN || rowData.HOTEN || '';
+
+            const _context = {
+                rowId,
+                KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                BENHNHANID: benhnhanId,
+                patientName: patientName
+            };
 
             let candidates = [
                 rowData.HOSOBENHANID,
@@ -1189,7 +1302,7 @@
             candidates = Array.from(new Set(candidates));
 
             if (!benhnhanId || candidates.length === 0) {
-                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId }, requestId);
+                sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '', _context }, requestId);
                 return;
             }
 
@@ -1247,11 +1360,13 @@
 
                     if (allDiagnoses.length > 0) {
                         debugLog('[API-Bridge] Mode 1: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                        const leafContext = { ..._context };
                         sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
                             diagnoses: allDiagnoses,
                             patientId: benhnhanId,
-                            khambenhId: testId,
-                            patientName: patientName
+                            khambenhId: _context.KHAMBENHID,
+                            patientName: patientName,
+                            _context: leafContext
                         }, requestId);
                         return;
                     } else if (detailIds.length > 0) {
@@ -1329,11 +1444,13 @@
 
                         if (allDiagnoses.length > 0) {
                             debugLog('[API-Bridge] Mode 2: Prefetched', allDiagnoses.length, 'ICD codes:', allDiagnoses);
+                            const leafContext = { ..._context };
                             sendResult('PREFETCH_DIAGNOSES_RESULT', null, {
                                 diagnoses: allDiagnoses,
                                 patientId: benhnhanId,
-                                khambenhId: testId,
-                                patientName: patientName
+                                khambenhId: _context.KHAMBENHID,
+                                patientName: patientName,
+                                _context: leafContext
                             }, requestId);
                             return;
                         }
@@ -1342,20 +1459,27 @@
             }
 
             debugLog('[API-Bridge] All candidates & modes failed for prefetch diagnoses');
-            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '' }, requestId);
+            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: benhnhanId, khambenhId: '', _context }, requestId);
 
         } catch (_e) {
-            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '' }, requestId);
+            sendResult('PREFETCH_DIAGNOSES_RESULT', null, { diagnoses: [], patientId: '', khambenhId: '', _context: null }, requestId);
         }
     }
 
     async function fetchDrugs(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
+                sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [], _context: null }, requestId);
                 return;
             }
             const { rowData } = resolveActiveGrid(rowId);
+            const _context = {
+                rowId,
+                KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                BENHNHANID: rowData.BENHNHANID || '',
+                patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+            };
 
             let candidates = [
                 rowData.KHAMBENHID,
@@ -1392,16 +1516,16 @@
                         HOATCHAT: r.HOATCHAT || r.TENHOATCHAT || r.HOAT_CHAT || r.TEN_HOATCHAT || r.TENHC || r.TEN_HC || r.TENKHOAHOC || '',
                         HAMLUONG: r.HAMLUONG || r.NONGDO || r.HAM_LUONG || r.NONG_DO || r.NDHL || ''
                     }));
-                    sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs }, requestId);
+                    sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: drugs, _context }, requestId);
                     break;
                 }
             }
 
             if (!foundRows) {
-                sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
+                sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [], _context }, requestId);
             }
         } catch (_e) {
-            sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [] }, requestId);
+            sendResult('FETCH_DRUGS_RESULT', rowId, { drugList: [], _context: null }, requestId);
         }
     }
 
@@ -1411,13 +1535,20 @@
     async function fetchDrugsForCLS(rowId, requestId) {
         try {
             if (!_$) {
-                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context: null }, requestId);
                 return;
             }
             const { rowData } = resolveActiveGrid(rowId);
+            const _context = {
+                rowId,
+                KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
+                HOSOBENHANID: rowData.HOSOBENHANID || rowData.HSBAID || '',
+                BENHNHANID: rowData.BENHNHANID || '',
+                patientName: rowData.TENBENHNHAN || rowData.HOTEN || ''
+            };
             const uuid = _jsonrpc?.AjaxJson?.uuid;
             if (!uuid) {
-                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context }, requestId);
                 return;
             }
 
@@ -1558,7 +1689,7 @@
             }
 
             if (sheets.length === 0) {
-                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+                sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context }, requestId);
                 return;
             }
 
@@ -1687,11 +1818,11 @@
             allDrugs = uniqueDrugs;
 
             debugLog(`[Aladinn Drug] Step 2: Processed ${sheets.length} sheets`);
-            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs }, requestId);
+            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: allDrugs, _context }, requestId);
 
         } catch (_e) {
             console.error('[Aladinn Drug] Error:', _e);
-            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [] }, requestId);
+            sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context: null }, requestId);
         }
     }
 
@@ -1737,6 +1868,7 @@
                 huongXuLy: '',
                 dienBienBenh: '',
                 khamToanThanTDT: '',  // Khám toàn thân từ tờ điều trị mới nhất
+                ngayToDieuTriMoiNhat: '', // Ngày của tờ điều trị mới nhất
                 sinhHieu: {},
                 treatmentContext: contextInfo,
                 admissionTimes,
@@ -1785,7 +1917,7 @@
             if (!hasApiData) {
                 try {
                     var _domVal = function (id) {
-                        var el = document.getElementById(id);
+                        var el = _findDomElement(id);
                         if (!el) return '';
                         return (el.value || el.textContent || '').trim();
                     };
@@ -1886,6 +2018,7 @@
                             foundTreatment = true;
                             const latest = rows[0];
                             result.dienBienBenh = latest.DIENBIENBENH || latest.NOIDUNG || '';
+                            result.ngayToDieuTriMoiNhat = latest.NGAYMAUBENHPHAM || latest.NGAY_Y_LENH || latest.NGAY || '';
 
                             // Trích xuất Khám toàn thân từ tờ điều trị
                             var kttKeys = ['KHAMTOANHAN', 'KHAMBENHTOANTHAN', 'KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'TOANTHAN'];
@@ -2079,7 +2212,7 @@
                 var hasVitals = !!(vitals.pulse || vitals.temperature || vitals.weight);
                 if (!hasVitals) {
                     var _vVal = function (id) {
-                        var el = document.getElementById(id);
+                        var el = _findDomElement(id);
                         return el ? (el.value || '').trim() : '';
                     };
                     vitals.pulse = _vVal('tabBenhAntxtKHAMBENH_MACH');
@@ -2112,7 +2245,58 @@
         }
     }
 
+
     function sendResult(type, rowId, data, requestId) {
+        const CLINICAL_RESULTS = [
+            'FETCH_HISTORY_RESULT', 'FETCH_PATIENT_DEMOGRAPHICS_RESULT', 'FETCH_VITALS_RESULT',
+            'FETCH_TREATMENT_RESULT', 'FETCH_DRUGS_RESULT', 'FETCH_DRUGS_CLS_RESULT',
+            'FETCH_CLINICAL_SUMMARY_RESULT', 'FETCH_DIAGNOSES_RESULT', 'PREFETCH_DIAGNOSES_RESULT',
+            'FETCH_LABS_RESULT'
+        ];
+        if (CLINICAL_RESULTS.includes(type) && data) {
+            const dataCtx = data._context || data.treatmentContext || data;
+            if (dataCtx) {
+                const dataBnId = String(dataCtx.BENHNHANID || dataCtx.benhnhanId || '').replace(/&nbsp;|undefined|null/g, '').trim();
+                const dataKbId = String(dataCtx.KHAMBENHID || dataCtx.khambenhId || '').replace(/&nbsp;|undefined|null/g, '').trim();
+                const dataHsbaId = String(dataCtx.HOSOBENHANID || dataCtx.hosobenhanid || dataCtx.HSBAID || dataCtx.hsbaId || '').replace(/&nbsp;|undefined|null/g, '').trim();
+                
+                if (dataBnId || dataKbId || dataHsbaId) {
+                    const { rowData } = resolveActiveGrid(null, { strict: false });
+                    if (rowData && Object.keys(rowData).length > 0) {
+                        const activeBnId = String(rowData.BENHNHANID || rowData.MA_BENH_NHAN_ID || '').replace(/&nbsp;|undefined|null/g, '').trim();
+                        const activeKbId = String(rowData.KHAMBENHID || rowData.MADIEUTRI || rowData.KHAM_BENH_ID || '').replace(/&nbsp;|undefined|null/g, '').trim();
+                        const activeHsbaId = String(rowData.HOSOBENHANID || rowData.HSBAID || rowData.HO_SO_BENH_AN_ID || '').replace(/&nbsp;|undefined|null/g, '').trim();
+
+                        // 1. Patient ID conflict
+                        if (dataBnId && activeBnId && dataBnId !== activeBnId) {
+                            console.warn(`[Aladinn API-Bridge] Lock mismatch: Patient ID conflict (data: ${dataBnId}, active: ${activeBnId}). Suppressing: ${type}`);
+                            return; // Fail-closed!
+                        }
+                        // 2. Encounter ID conflict
+                        if (dataKbId && activeKbId && dataKbId !== activeKbId) {
+                            console.warn(`[Aladinn API-Bridge] Lock mismatch: Encounter ID conflict (data: ${dataKbId}, active: ${activeKbId}). Suppressing: ${type}`);
+                            return; // Fail-closed!
+                        }
+                        // 3. HSBA ID conflict
+                        if (dataHsbaId && activeHsbaId && dataHsbaId !== activeHsbaId) {
+                            console.warn(`[Aladinn API-Bridge] Lock mismatch: HSBA ID conflict (data: ${dataHsbaId}, active: ${activeHsbaId}). Suppressing: ${type}`);
+                            return; // Fail-closed!
+                        }
+
+                        // 4. Must have at least one valid overlap
+                        const hasBnMatch = dataBnId && activeBnId && dataBnId === activeBnId;
+                        const hasKbMatch = dataKbId && activeKbId && dataKbId === activeKbId;
+                        const hasHsbaMatch = dataHsbaId && activeHsbaId && dataHsbaId === activeHsbaId;
+
+                        if (!hasBnMatch && !hasKbMatch && !hasHsbaMatch) {
+                            console.warn(`[Aladinn API-Bridge] Lock mismatch: No matching non-empty identifiers. Suppressing: ${type}`);
+                            return; // Fail-closed!
+                        }
+                    }
+                }
+            }
+        }
+
         window.postMessage({
             type,
             rowId,
@@ -2621,11 +2805,19 @@
             });
             await Promise.all(cdhaDetailPromises);
 
-            sendResult('FETCH_LABS_RESULT', rowId, { labsData: allLabs, imagingData, patientName }, requestId);
+            const _context = {
+                rowId,
+                KHAMBENHID: khambenhId,
+                HOSOBENHANID: hsbaId,
+                BENHNHANID: benhnhanId,
+                patientName: patientName
+            };
+
+            sendResult('FETCH_LABS_RESULT', rowId, { labsData: allLabs, imagingData, patientName, _context }, requestId);
 
         } catch (err) {
             console.error('[API-Bridge] fetchLabs error:', err);
-            sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '' }, requestId);
+            sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '', _context: null }, requestId);
         }
     }
 

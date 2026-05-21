@@ -1,0 +1,52 @@
+name: GitNexus Index Sync
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Cho phép kích hoạt thủ công từ giao diện Actions trên GitHub
+
+permissions:
+  contents: write # Cấp quyền ghi để Action có thể đẩy (push) thay đổi lên Repo
+
+jobs:
+  sync-index:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Tải đầy đủ lịch sử commit để GitNexus phân tích sơ đồ luồng chính xác
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Install Dependencies
+      run: pnpm install
+
+    - name: Run GitNexus Analyze
+      run: npx gitnexus analyze
+
+    - name: Commit & Push GitNexus Index
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Thêm các tệp index và tài liệu tự động cập nhật
+        git add .gitnexus AGENTS.md CLAUDE.md
+        
+        # Chỉ commit và push nếu thực sự có sự thay đổi
+        if ! git diff --cached --quiet; then
+          git commit -m "chore(gitnexus): auto-update codebase index [skip ci]"
+          git push
+        else
+          echo "Không có thay đổi nào trong sơ đồ code."
+        fi

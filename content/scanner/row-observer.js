@@ -61,6 +61,14 @@ const VNPTRowObserver = (function () {
             const inpatientGrid = document.querySelector('#grdBenhNhan');
             if (inpatientGrid && !inpatientGrid._aladinnObserved) {
                 inpatientGrid._aladinnObserved = true;
+
+                // Khởi tạo giá trị ban đầu nếu có dòng đã được chọn sẵn khi tải trang
+                const activeRow = inpatientGrid.querySelector('tr.ui-state-highlight');
+                if (activeRow && activeRow.id && activeRow.id.length > 5) {
+                    _lastSelectedId = activeRow.id;
+                    onSelect(activeRow.id);
+                }
+
                 const obs = new MutationObserver((mutations) => {
                     for (const mutation of mutations) {
                         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -90,6 +98,17 @@ const VNPTRowObserver = (function () {
             const outpatientGrid = document.querySelector('#grdDSBenhNhan');
             if (outpatientGrid && !outpatientGrid._aladinnObserved) {
                 outpatientGrid._aladinnObserved = true;
+
+                // Khởi tạo giá trị ban đầu nếu có dòng đã được chọn sẵn khi tải trang
+                const activeRow = outpatientGrid.querySelector('tr.ui-state-highlight');
+                if (activeRow) {
+                    const pid = getOutpatientRowId(activeRow);
+                    if (pid) {
+                        _lastSelectedId = pid;
+                        onSelect(pid);
+                    }
+                }
+
                 const obs = new MutationObserver((mutations) => {
                     for (const mutation of mutations) {
                         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {

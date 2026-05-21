@@ -1932,6 +1932,37 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
             }
 
+            // Pre-calculate chronological sheet-level diagnosis labels to prevent reverse-order traversal label bugs.
+            const sheetLabels = {};
+            const chronologicalSheets = treatments
+                .filter(t => !isOtherOrder(t) && t.DIENBIEN?.trim())
+                .sort((a, b) => {
+                    const da = (a.NGAYMAUBENHPHAM || '').split(' ');
+                    const db = (b.NGAYMAUBENHPHAM || '').split(' ');
+                    const dateCompare = (da[0] || '').split('/').reverse().join('').localeCompare((db[0] || '').split('/').reverse().join(''));
+                    if (dateCompare !== 0) return dateCompare;
+                    return (da[1] || '').localeCompare(db[1] || '');
+                });
+
+            let runningPrevDiagKey = '';
+            chronologicalSheets.forEach((tr) => {
+                let noteDiagKey = (tr.CHANDOAN || '').trim();
+                if (tr.CHANDOANKEMTHEO?.trim()) noteDiagKey += '|' + tr.CHANDOANKEMTHEO.trim();
+                
+                const sheetKey = (tr.MAUBENHPHAMID || '') + '_' + (tr.NGAYMAUBENHPHAM || '');
+                if (noteDiagKey) {
+                    if (noteDiagKey !== runningPrevDiagKey) {
+                        const isFirstEver = runningPrevDiagKey === '';
+                        sheetLabels[sheetKey] = isFirstEver ? 'CĐ (Nhập viện)' : 'CĐ (Thay đổi)';
+                        runningPrevDiagKey = noteDiagKey;
+                    } else {
+                        sheetLabels[sheetKey] = '';
+                    }
+                } else {
+                    sheetLabels[sheetKey] = '';
+                }
+            });
+
             for (let di = 0; di < allDates.length; di++) {
                 const dt = allDates[di];
                 const isToday = dt === todayStr;
@@ -2003,16 +2034,6 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 let dayTimes = Array.from(dayTimesSet).sort((a,b) => b.localeCompare(a));
                 if (dayTimes.length === 0) dayTimes.push(''); // fallback for items without time
 
-                let _prevNoteDiagKey = '';
-                if (di + 1 < allDates.length) {
-                    const prevDayTr = (treatmentsByDate[allDates[di + 1]] || []).filter(t => !isOtherOrder(t) && t.DIENBIEN?.trim());
-                    if (prevDayTr.length > 0) {
-                        const ptr = prevDayTr[prevDayTr.length - 1];
-                        _prevNoteDiagKey = (ptr.CHANDOAN || '').trim();
-                        if (ptr.CHANDOANKEMTHEO?.trim()) _prevNoteDiagKey += '|' + ptr.CHANDOANKEMTHEO.trim();
-                    }
-                }
-
                 let legendRendered = false;
 
                 for (let ti = 0; ti < dayTimes.length; ti++) {
@@ -2036,20 +2057,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span>` : '';
                             
                             let inlineDiagHtml = '';
-                            let noteDiagKey = (tr.CHANDOAN || '').trim();
-                            if (tr.CHANDOANKEMTHEO?.trim()) noteDiagKey += '|' + tr.CHANDOANKEMTHEO.trim();
+                            const sheetKey = (tr.MAUBENHPHAMID || '') + '_' + (tr.NGAYMAUBENHPHAM || '');
+                            const label = sheetLabels[sheetKey];
                             
-                            if (noteDiagKey && noteDiagKey !== _prevNoteDiagKey) {
+                            if (label) {
                                 const mainD = (tr.CHANDOAN || '').trim();
                                 const subD = (tr.CHANDOANKEMTHEO || '').trim();
                                 let diagLabel = mainD;
                                 if (subD) diagLabel += `<span style="color:#a78bfa;opacity:.7;font-size:11.4px;"> · Kèm: ${subD}</span>`;
                                 inlineDiagHtml = `<div style="margin-top:6px;padding:5px 8px;background:rgba(139,124,248,0.05);border:1px solid rgba(139,124,248,0.12);border-radius:6px;">
-                                  <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">⟳ CĐ${_prevNoteDiagKey ? ' (Thay đổi)' : ' (Nhập viện)'}</div>
+                                  <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">⟳ ${label}</div>
                                   <div style="font-size:12.6px;color:#c4b5fd;line-height:1.4;">${diagLabel}</div>
                                 </div>`;
                             }
-                            _prevNoteDiagKey = noteDiagKey || _prevNoteDiagKey;
                             
                             combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${tp?'<br>':''}<span style="font-size:14.4px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span>${inlineDiagHtml}</div>`;
                         }

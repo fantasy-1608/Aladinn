@@ -56,8 +56,9 @@ export const CDSExtractor = {
             }
         }
 
-        const meds = this.getMedications();
-        const labs = this.getLabs();
+        const meds = await this.getMedications();
+        const labs = await this.getLabs();
+        const extractedWeight = await this.getWeight();
 
         console.log(`[Aladinn CDS Extractor] 🔍 Context extracted for patient: ${currentDomPatientId}. Cache hits: Meds=${meds.length}, Diags=${diagnoses.length}, Labs=${labs.length}`);
 
@@ -65,7 +66,7 @@ export const CDSExtractor = {
             patient: {
                 id: currentDomPatientId,
                 name: currentDomPatientName,
-                weight: this.getWeight()
+                weight: extractedWeight
             },
             encounter: {
                 id: this.getEncounterId(),
@@ -108,6 +109,70 @@ export const CDSExtractor = {
             }, window.location.origin);
         });
     },
+
+    fetchFromBridge(requestType, resultType, rowId, params = {}) {
+        return new Promise((resolve) => {
+            const reqId = Date.now() + Math.random();
+            const listener = (event) => {
+                if (event.data && event.data.type === resultType && event.data.requestId === reqId) {
+                    window.removeEventListener('message', listener);
+                    resolve(event.data);
+                }
+            };
+            window.addEventListener('message', listener);
+            
+            // Timeout 3s
+            setTimeout(() => {
+                window.removeEventListener('message', listener);
+                resolve(null);
+            }, 3000);
+
+            const token = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || '');
+            window.postMessage({
+                type: requestType,
+                rowId: rowId,
+                requestId: reqId,
+                token: token,
+                nonce: window.__ALADINN_NONCE__,
+                ...params
+            }, window.location.origin);
+        });
+    },
+
+    getActiveRowId() {
+        const els = this.getElementsAcrossIframes('#grdBenhNhan tr.ui-state-highlight, #grdDSBenhNhan tr.ui-state-highlight', true);
+        for (const el of els) {
+            if (el.id) return el.id;
+        }
+        return null;
+    },
+
+    verifyContextLock(ctx) {
+        if (!ctx) return false;
+        const domPatientId = this.getPatientId();
+        const cache = CDSCache.get();
+        
+        // 1. Check patient identity: BENHNHANID or rowId matching DOM/Cache
+        const patientIdMatch = (
+            (ctx.BENHNHANID && (ctx.BENHNHANID === domPatientId || ctx.BENHNHANID === cache.benhnhanId)) ||
+            (ctx.rowId && (ctx.rowId === domPatientId || ctx.rowId === cache.khambenhId))
+        );
+        
+        // 2. Check encounter/admission key: KHAMBENHID matching Cache or DOM
+        const encounterIdMatch = (
+            !ctx.KHAMBENHID || 
+            ctx.KHAMBENHID === cache.khambenhId || 
+            ctx.KHAMBENHID === this.getEncounterId()
+        );
+        
+        if (!patientIdMatch || !encounterIdMatch) {
+            console.error(`[Aladinn CDS Context Lock] ❌ Patient identity or encounter mismatch detected! Purging context. DOM: ${domPatientId}, Cache: ${cache.benhnhanId}_${cache.khambenhId}, API context:`, ctx);
+            return false;
+        }
+        
+        return true;
+    },
+
 
     getElementsAcrossIframes(selector, allowHidden = false) {
         const isVisible = (el) => {
@@ -187,9 +252,28 @@ export const CDSExtractor = {
         return `encounter_${Date.now()}`;
     },
 
-    getWeight() {
+    async getWeight() {
         const cache = CDSCache.get();
         if (cache.weight && cache.weight > 0) return cache.weight;
+
+        // Try API fetch via bridge first
+        try {
+            const activeRowId = this.getActiveRowId();
+            const res = await this.fetchFromBridge('REQ_FETCH_VITALS', 'FETCH_VITALS_RESULT', activeRowId);
+            if (res && res.vitals && res.vitals.weight) {
+                // Verify Context Lock
+                if (res._context && !this.verifyContextLock(res._context)) {
+                    throw new Error('Context lock mismatch');
+                }
+                const w = parseFloat(res.vitals.weight);
+                if (!isNaN(w) && w > 0) {
+                    console.log('[Aladinn CDS] 📡 Weight from API:', w);
+                    return w;
+                }
+            }
+        } catch (e) {
+            console.log('[Aladinn CDS] API fetch weight failed, falling back to DOM:', e);
+        }
 
         const els = this.getElementsAcrossIframes('#txtCanNang, [title*="Cân nặng"]');
         for (const el of els) {
@@ -268,7 +352,7 @@ export const CDSExtractor = {
         return diagnoses;
     },
 
-    getMedications() {
+    async getMedications() {
         const meds = [];
         const debugPipeline = []; // Track extraction pipeline for console
         
@@ -278,21 +362,71 @@ export const CDSExtractor = {
         if (cache.medications && cache.medications.length > 0 && cacheFresh) {
             meds.push(...cache.medications);
             debugPipeline.push(`[Cache] ${cache.medications.length} drugs (fresh)`);
-        } else if (cache.medications && cache.medications.length > 0) {
-            meds.push(...cache.medications);
-            debugPipeline.push(`[Cache] ${cache.medications.length} drugs (stale → will merge DOM)`);
+            console.log(`[Aladinn CDS] 💊 Pipeline: ${debugPipeline.join(' → ')} | Final: ${meds.length} unique drugs`);
+            return meds;
         }
 
-        // ===== SOURCE 2: Targeted Grid Scanner (column-header aware) =====
-        const gridMeds = this._scanDrugGrids();
-        if (gridMeds.length > 0) {
-            debugPipeline.push(`[Grid] ${gridMeds.length} drugs`);
-            for (const m of gridMeds) {
-                meds.push(m);
+        // ===== SOURCE 2: API Bridge (Selective API Integration) =====
+        let apiMeds = [];
+        try {
+            const activeRowId = this.getActiveRowId();
+            const careSetting = this.getCareSetting();
+            const reqType = careSetting === 'ipd' ? 'REQ_FETCH_DRUGS_CLS' : 'REQ_FETCH_DRUGS';
+            const resType = careSetting === 'ipd' ? 'FETCH_DRUGS_CLS_RESULT' : 'FETCH_DRUGS_RESULT';
+            
+            const res = await this.fetchFromBridge(reqType, resType, activeRowId);
+            if (res && res.drugList && res.drugList.length > 0) {
+                // Verify Context Lock
+                if (res._context && this.verifyContextLock(res._context)) {
+                    // Map and filter medications
+                    for (const r of res.drugList) {
+                        let name = r.TENTHUOC || '';
+                        let generic = r.HOATCHAT || r.HAMLUONG || '';
+                        
+                        name = this._filterDrugName(name, generic);
+                        if (!name) continue;
+                        
+                        // Clean up ngoặc
+                        if (name.includes('(') && name.includes(')')) {
+                            const match = name.match(/\((.*?)\)/);
+                            if (match && !generic) generic = match[1].trim();
+                            name = name.split('(')[0].trim();
+                        }
+                        
+                        if (name.length > 1) {
+                            apiMeds.push({
+                                display_name: name,
+                                generic_candidate: (generic && generic !== '-') ? generic : null
+                            });
+                        }
+                    }
+                    if (apiMeds.length > 0) {
+                        debugPipeline.push(`[API] ${apiMeds.length} drugs`);
+                        // Cập nhật Cache để lần sau đỡ gọi lại
+                        cache.medications = apiMeds;
+                        cache._medsTimestamp = Date.now();
+                        meds.push(...apiMeds);
+                    }
+                } else if (res._context) {
+                    console.warn('[Aladinn CDS] ⚠️ Drug API Context Mismatch. Skipping API payload.');
+                }
+            }
+        } catch (e) {
+            console.log('[Aladinn CDS] API fetch medications failed, falling back to DOM grids:', e);
+        }
+
+        // ===== SOURCE 3: Targeted Grid Scanner (column-header aware fallback) =====
+        if (meds.length === 0) {
+            const gridMeds = this._scanDrugGrids();
+            if (gridMeds.length > 0) {
+                debugPipeline.push(`[Grid] ${gridMeds.length} drugs`);
+                for (const m of gridMeds) {
+                    meds.push(m);
+                }
             }
         }
 
-        // ===== SOURCE 3: Generic DOM Scanner (fallback — quét mọi <tr>) =====
+        // ===== SOURCE 4: Generic DOM Scanner (fallback — quét mọi <tr>) =====
         if (meds.length === 0) {
             const domMeds = this._scanGenericRows();
             if (domMeds.length > 0) {
@@ -524,54 +658,98 @@ export const CDSExtractor = {
         return name;
     },
 
-    getLabs() {
+    async getLabs() {
         const labs = [];
         const seenKeys = new Set();
+        const debugPipeline = [];
 
-        // 1. Snoop Data (API Cache Mới Nhất)
         const cache = CDSCache.get();
-        if (cache.labs && cache.labs.length > 0) {
+        const cacheFresh = cache._labsTimestamp && (Date.now() - cache._labsTimestamp < 300000); // 5 min TTL
+        if (cache.labs && cache.labs.length > 0 && cacheFresh) {
+            debugPipeline.push(`[Cache] ${cache.labs.length} labs (fresh)`);
             for (const lab of cache.labs) {
                 if (!seenKeys.has(lab.code)) {
                     seenKeys.add(lab.code);
                     labs.push(lab);
                 }
             }
-            return labs; // Return immediately
+            console.log(`[Aladinn CDS] 🧪 Pipeline: ${debugPipeline.join(' → ')} | Final: ${labs.length} unique labs`);
+            return labs;
         }
 
-        // ===== SOURCE 1: Cached API data from Scanner (fastest) =====
-        // When user runs "Quét Xét Nghiệm", results are stored in window._aladinn_cds_labs
-        const cachedLabs = window._aladinn_cds_labs || [];
-        for (const lab of cachedLabs) {
-            const parsed = this._parseLab(lab.TENDICHVU, lab.GIATRI_KETQUA, lab.DONVI, lab.TRISOBINHTHUONG);
-            if (parsed && !seenKeys.has(parsed.code)) {
-                seenKeys.add(parsed.code);
-                labs.push(parsed);
+        // ===== SOURCE 1: Selective API Integration (REQ_FETCH_LABS) =====
+        let apiLabs = [];
+        try {
+            const activeRowId = this.getActiveRowId();
+            const res = await this.fetchFromBridge('REQ_FETCH_LABS', 'FETCH_LABS_RESULT', activeRowId);
+            if (res && res.labsData && res.labsData.length > 0) {
+                // Verify Context Lock
+                if (res._context && this.verifyContextLock(res._context)) {
+                    for (const lab of res.labsData) {
+                        const parsed = this._parseLab(lab.code || lab.testName, lab.value, lab.unit, lab.refDisplay);
+                        if (parsed && !seenKeys.has(parsed.code)) {
+                            seenKeys.add(parsed.code);
+                            apiLabs.push(parsed);
+                        }
+                    }
+                    if (apiLabs.length > 0) {
+                        debugPipeline.push(`[API] ${apiLabs.length} labs`);
+                        cache.labs = apiLabs;
+                        cache._labsTimestamp = Date.now();
+                        labs.push(...apiLabs);
+                    }
+                } else if (res._context) {
+                    console.warn('[Aladinn CDS] ⚠️ Labs API Context Mismatch. Skipping API payload.');
+                }
             }
+        } catch (e) {
+            console.log('[Aladinn CDS] API fetch labs failed, falling back to cached or DOM:', e);
         }
 
-        // ===== SOURCE 2 (Fallback): DOM Scraping for visible lab grids =====
+        // ===== SOURCE 2: Cached API data from Scanner (fallback 1) =====
+        // When user runs "Quét Xét Nghiệm", results are stored in window._aladinn_cds_labs
         if (labs.length === 0) {
-            const clsRows = this.getElementsAcrossIframes('.grid-cls tr, #gridKetQuaCLS_Body tr, #grd_KQCLS tr, [id*="gridCLS"] tr');
-            clsRows.forEach(row => {
-                const _text = row.innerText || '';
-                const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
-                if (cols.length < 2) return;
-                
-                // Try to extract lab name from first text column, value from numeric column
-                const nameCol = cols.find(c => c.length > 3 && !/^\d/.test(c));
-                const valueCol = cols.find(c => /^[\d.,]+$/.test(c));
-                if (nameCol && valueCol) {
-                    const parsed = this._parseLab(nameCol, valueCol, '', '');
+            const cachedLabs = window._aladinn_cds_labs || [];
+            if (cachedLabs.length > 0) {
+                debugPipeline.push(`[Scanner Cache] ${cachedLabs.length} raw`);
+                for (const lab of cachedLabs) {
+                    const parsed = this._parseLab(lab.TENDICHVU, lab.GIATRI_KETQUA, lab.DONVI, lab.TRISOBINHTHUONG);
                     if (parsed && !seenKeys.has(parsed.code)) {
                         seenKeys.add(parsed.code);
                         labs.push(parsed);
                     }
                 }
-            });
+            }
         }
 
+        // ===== SOURCE 3: DOM Scraping for visible lab grids (fallback 2) =====
+        if (labs.length === 0) {
+            const clsRows = this.getElementsAcrossIframes('.grid-cls tr, #gridKetQuaCLS_Body tr, #grd_KQCLS tr, [id*="gridCLS"] tr');
+            if (clsRows.length > 0) {
+                let domCount = 0;
+                clsRows.forEach(row => {
+                    const cols = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
+                    if (cols.length < 2) return;
+                    
+                    // Try to extract lab name from first text column, value from numeric column
+                    const nameCol = cols.find(c => c.length > 3 && !/^\d/.test(c));
+                    const valueCol = cols.find(c => /^[\d.,]+$/.test(c));
+                    if (nameCol && valueCol) {
+                        const parsed = this._parseLab(nameCol, valueCol, '', '');
+                        if (parsed && !seenKeys.has(parsed.code)) {
+                            seenKeys.add(parsed.code);
+                            labs.push(parsed);
+                            domCount++;
+                        }
+                    }
+                });
+                if (domCount > 0) {
+                    debugPipeline.push(`[DOM] ${domCount} labs`);
+                }
+            }
+        }
+
+        console.log(`[Aladinn CDS] 🧪 Pipeline: ${debugPipeline.length > 0 ? debugPipeline.join(' → ') : '[None]'} | Final: ${labs.length} unique labs`);
         return labs;
     },
 
