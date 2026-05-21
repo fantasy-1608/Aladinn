@@ -72,6 +72,9 @@
 
             let hasKill = false;
             for (const [remoteKey, localKey] of Object.entries(mapping)) {
+                // Tôn trọng tuyệt đối công tắc An toàn L.S (CDS) của bác sĩ trên panel
+                if (localKey === 'cds') continue;
+
                 if (rc.features[remoteKey] === false) {
                     features[localKey] = false;
                     hasKill = true;
