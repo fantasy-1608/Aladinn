@@ -41,7 +41,7 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
         # Thêm các tệp index và tài liệu tự động cập nhật
-        git add .gitnexus AGENTS.md CLAUDE.md
+        git add -f .gitnexus AGENTS.md CLAUDE.md
         
         # Chỉ commit và push nếu thực sự có sự thay đổi
         if ! git diff --cached --quiet; then
