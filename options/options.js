@@ -458,16 +458,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!resetConfirmActive) {
             resetConfirmActive = true;
             btnResetPin.textContent = '⚠️ Xác nhận XÓA PIN & API Key?';
-            btnResetPin.style.background = 'rgba(239,68,68,0.15)';
-            btnResetPin.style.color = '#ef4444';
-            btnResetPin.style.borderColor = '#ef4444';
+            btnResetPin.style.background = 'rgba(255,180,171,0.15)';
+            btnResetPin.style.color = '#FFB4AB';
+            btnResetPin.style.borderColor = '#FFB4AB';
             
             setTimeout(() => {
                 if (resetConfirmActive) {
                     resetConfirmActive = false;
                     btnResetPin.textContent = 'Xóa mã PIN & Khôi phục';
                     btnResetPin.style.background = '';
-                    btnResetPin.style.borderColor = 'rgba(239,68,68,0.3)';
+                    btnResetPin.style.borderColor = 'rgba(255,180,171,0.3)';
                 }
             }, 5000);
             return;
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btnResetPin.textContent = 'Xóa mã PIN & Khôi phục';
         btnResetPin.style.background = '';
-        btnResetPin.style.borderColor = 'rgba(239,68,68,0.3)';
+        btnResetPin.style.borderColor = 'rgba(255,180,171,0.3)';
         
         chrome.storage.local.remove([
             'dashboard_password',
@@ -723,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             ${escapeHtml(tpl.title)}
-                            <span style="background: rgba(212, 168, 83, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${escapeHtml(tpl.shortcut)}</span>
+                            <span style="background: rgba(158, 202, 255, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${escapeHtml(tpl.shortcut)}</span>
                         </div>
                         <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${escapeHtml(tpl.content)}</div>
                     </div>

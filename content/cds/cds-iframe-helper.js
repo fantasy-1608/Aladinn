@@ -1,4 +1,5 @@
 import '../debug-init.js';
+import { initKeystrokeHook } from './key-hook.js';
 /**
  * 🧞 Aladinn CDS — Iframe Helper
  * Chạy BÊN TRONG iframe "Tạo phiếu thuốc từ kho" (CapThuoc / PhieuThuoc).
@@ -9,19 +10,15 @@ import '../debug-init.js';
 (function () {
     'use strict';
 
-    // Chỉ chạy trong iframe CapThuoc / PhieuThuoc
     var url = window.location.href || '';
-    if (!url.includes('CapThuoc') && !url.includes('PhieuThuoc') && !url.includes('02D010') && !url.includes('02D021') && !url.includes('BuongDieuTri')) {
-        return;
-    }
-
+    
     // Tránh chạy trùng
     if (window._aladinnCdsIframeHelper) return;
     window._aladinnCdsIframeHelper = true;
 
     console.log('[Aladinn CDS IframeHelper] 📦 Loaded inside:', url.substring(url.lastIndexOf('/') + 1));
 
-    var PARENT_ORIGIN = window.location.origin;
+
     var DRUG_UNITS = ['viên', 'chai', 'lọ', 'ống', 'gói', 'cái', 'tuýp', 'hộp', 'túi', 'vỉ', 'tube', 'ml', 'amp', 'tab', 'cap', 'bơm'];
     var DRUG_ROUTES = ['uống', 'tiêm', 'bôi', 'nhỏ', 'đặt', 'ngậm', 'hít', 'xịt', 'truyền'];
     var NOT_DRUGS = [
@@ -120,8 +117,8 @@ import '../debug-init.js';
                 textCols.push(val);
             }
 
-            var name = textCols.length >= 1 ? textCols[0] : '';
-            var generic = textCols.length >= 2 ? textCols[1] : '';
+            var name = textCols.length >= 1 ? textCols[0].replace(/[\s\u00a0\u200b]+/g, ' ').trim() : '';
+            var generic = textCols.length >= 2 ? textCols[1].replace(/[\s\u00a0\u200b]+/g, ' ').trim() : '';
 
             // Loại bỏ nếu tên chứa mã ICD
             if (name && ICD_PATTERN.test(name)) name = '';
@@ -246,18 +243,106 @@ import '../debug-init.js';
                 medications: drugs,
                 diagnoses: diagnoses,
                 source: 'cds-iframe-helper'
-            }, PARENT_ORIGIN);
+            }, '*');
         }
     }
 
-    // Gửi ngay 1 lần khi load xong
-    setTimeout(sendDataToParent, 1000);
+    function isElementVisible(el) {
+        var rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.left > -5000;
+    }
 
-    // Theo dõi thay đổi DOM (thêm/xóa thuốc, thay đổi ICD)
+    function checkContextActive() {
+        var lowerUrl = url.toLowerCase();
+        
+        // 1. Phân hệ nhập liệu / phiếu thuốc -> realtime
+        if (lowerUrl.indexOf('capthuoc') !== -1 || lowerUrl.indexOf('phieuthuoc') !== -1 || lowerUrl.indexOf('02d010') !== -1) {
+            return { enabled: true, mode: 'realtime' };
+        }
+        
+        // 2. Phân hệ phòng khám / buồng điều trị -> cần kiểm tra tab thuốc/điều trị đang hoạt động
+        if (lowerUrl.indexOf('buongdieutri') !== -1 || lowerUrl.indexOf('02d021') !== -1) {
+            // Kiểm tra grid hiển thị
+            var drugGrids = document.querySelectorAll('table[id*="Thuoc"], table[id*="thuoc"], [id*="grdChiTiet"], [id*="grd_DSThuoc"], #grdPhieuThuoc, #gridChiTietPhieu, #grdChiTietPhieuThuoc, [id*="PhieuThuoc"], #tcThuocgrdThuoc');
+            for (var g = 0; g < drugGrids.length; g++) {
+                if (isElementVisible(drugGrids[g])) {
+                    return { enabled: true, mode: 'oneshot' };
+                }
+            }
+            
+            // Kiểm tra tab hoạt động
+            var activeTabs = document.querySelectorAll('.ui-tabs-active .ui-tabs-anchor, .ui-tabs-active a, li.active a, .ui-state-active a, [aria-selected="true"]');
+            for (var t = 0; t < activeTabs.length; t++) {
+                var text = (activeTabs[t].innerText || '').toLowerCase();
+                if (text.indexOf('thuốc') !== -1 || text.indexOf('điều trị') !== -1) {
+                    return { enabled: true, mode: 'oneshot' };
+                }
+            }
+
+            // Smart Fallback: Kiểm tra xem có bảng thuốc nào đang hiển thị hay không (dựa trên cột tiêu đề)
+            var tables = document.querySelectorAll('table');
+            for (var tb = 0; tb < tables.length; tb++) {
+                var table = tables[tb];
+                if (isElementVisible(table)) {
+                    var headers = table.querySelectorAll('th, td.ui-th-column, .ui-jqgrid-labels th');
+                    for (var hd = 0; hd < headers.length; hd++) {
+                        var headerText = (headers[hd].innerText || headers[hd].textContent || '').toLowerCase();
+                        if (headerText.indexOf('tên thuốc') !== -1 || headerText.indexOf('tên biệt dược') !== -1 || headerText.indexOf('hoạt chất') !== -1 || headerText.indexOf('mã thuốc') !== -1 || headerText.indexOf('chi tiết phiếu thuốc') !== -1 || headerText.indexOf('danh sách phiếu thuốc') !== -1) {
+                            return { enabled: true, mode: 'oneshot' };
+                        }
+                    }
+                }
+            }
+        }
+        
+        return { enabled: false, mode: '' };
+    }
+
+    var lastSentContextStatus = null;
+
+    function sendContextStatusToParent() {
+        var status = checkContextActive();
+        var statusStr = status.enabled + '||' + status.mode;
+        if (statusStr === lastSentContextStatus) return;
+        lastSentContextStatus = statusStr;
+
+        console.log('[Aladinn CDS IframeHelper] 🧭 Context status changed:', status);
+
+        if (window.top && window.top !== window) {
+            window.top.postMessage({
+                type: 'CDS_IFRAME_CONTEXT_STATUS',
+                enabled: status.enabled,
+                mode: status.mode,
+                source: 'cds-iframe-helper'
+            }, '*');
+        }
+    }
+
+    // Gửi ngay 1 lần khi load xong (với các khoảng trễ tăng dần để đợi DOM hoàn tất kết xuất)
+    setTimeout(sendDataToParent, 1000);
+    setTimeout(sendContextStatusToParent, 500);
+    setTimeout(sendContextStatusToParent, 1500);
+    setTimeout(sendContextStatusToParent, 3000);
+
+    // Khởi tạo Proactive Keystroke Hook
+    initKeystrokeHook(function (typedText) {
+        if (window.top && window.top !== window) {
+            window.top.postMessage({
+                type: 'CDS_KEYSTROKE_INPUT',
+                typedText: typedText,
+                source: 'cds-iframe-helper'
+            }, '*');
+        }
+    });
+
+    // Theo dõi thay đổi DOM (thêm/xóa thuốc, thay đổi ICD, đổi tab)
     var observer = new MutationObserver(function () {
         // Debounce 500ms
         clearTimeout(observer._timer);
-        observer._timer = setTimeout(sendDataToParent, 500);
+        observer._timer = setTimeout(function () {
+            sendDataToParent();
+            sendContextStatusToParent();
+        }, 500);
     });
 
     // Observe toàn bộ body
@@ -266,10 +351,28 @@ import '../debug-init.js';
     // Lắng nghe yêu cầu quét thủ công từ parent
     window.addEventListener('message', function (event) {
         if (event.source !== window.top) return;
-        if (event.origin !== PARENT_ORIGIN) return;
-        if (event.data && (event.data.type === 'CDS_REQUEST_DRUGS' || event.data.type === 'CDS_REQUEST_DATA')) {
-            lastSentHash = ''; // Reset để force gửi lại
-            sendDataToParent();
+        // Loosen target origin checks to support cross-origin subdomains in VNPT HIS
+        if (event.data) {
+            if (event.data.type === 'CDS_REQUEST_DRUGS' || event.data.type === 'CDS_REQUEST_DATA') {
+                lastSentHash = ''; // Reset để force gửi lại
+                lastSentContextStatus = null; // Reset để force gửi lại trạng thái ngữ cảnh
+                sendDataToParent();
+                sendContextStatusToParent();
+            } else if (event.data.type === 'CDS_PING') {
+                sendContextStatusToParent();
+            }
+        }
+    });
+
+    // Báo cáo ngừng hoạt động khi iframe bị gỡ khỏi DOM hoặc chuyển hướng
+    window.addEventListener('beforeunload', function () {
+        if (window.top && window.top !== window) {
+            window.top.postMessage({
+                type: 'CDS_IFRAME_CONTEXT_STATUS',
+                enabled: false,
+                mode: '',
+                source: 'cds-iframe-helper'
+            }, '*');
         }
     });
 

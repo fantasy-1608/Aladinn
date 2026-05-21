@@ -16,6 +16,7 @@ import {
     getDrugLabRules,
     // logAuditEvent
 } from './db.js';
+import { injectCalculatedEgfr } from './egfr-alerts.js';
 
 const ALIAS_MAP = {
     // Tên thay thế phổ biến
@@ -273,7 +274,7 @@ export async function normalizeContext(context) {
     const mappings = await getConditionGroupMappings(db);
 
     const normalizedDrugs = new Set();
-    const unmappedDrugs = [];
+    const unmappedDrugsSet = new Set();
     
     for (const med of (context.medications || [])) {
         const genericCandidate = med.generic_candidate ? normalizeToken(med.generic_candidate) : null;
@@ -314,7 +315,7 @@ export async function normalizeContext(context) {
             const cleanGeneric = normalized.replace(/\(.*?\)/g, '').trim();
             normalizedDrugs.add(cleanGeneric || normalized);
         } else {
-            unmappedDrugs.push(med.display_name.trim());
+            unmappedDrugsSet.add(med.display_name.replace(/[\s\u00a0\u200b]+/g, ' ').trim());
         }
     }
 
@@ -325,7 +326,7 @@ export async function normalizeContext(context) {
         condition_groups: mapConditionGroups(icdCodes, mappings),
         raw_drugs: (context.medications || []).map(m => m.display_name),
         icd_codes: icdCodes,
-        unmapped_drugs: unmappedDrugs
+        unmapped_drugs: Array.from(unmappedDrugsSet)
     };
 }
 
@@ -585,7 +586,8 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
  * Không chạy tự động để tránh ảnh hưởng hiệu năng.
  */
 export async function runBhytAuditRules(context) {
-    const normalized = await normalizeContext(context);
+    const enrichedContext = injectCalculatedEgfr(context);
+    const normalized = await normalizeContext(enrichedContext);
     const alerts = [];
 
     // 1. Kiểm tra mã bệnh Z (Khám sức khỏe) cho BN BHYT
@@ -664,7 +666,8 @@ export async function runBhytAuditRules(context) {
 
 export async function analyzeLocally(context, filterLow = true) {
     const db = await openDatabase();
-    const normalized = await normalizeContext(context);
+    const enrichedContext = injectCalculatedEgfr(context);
+    const normalized = await normalizeContext(enrichedContext);
 
     const [genericMap, ddiRules, drugDiseaseRules, insuranceFormulary, insuranceRules, renalRules, drugLabRules] = await Promise.all([
         getDrugGenericMap(db),
@@ -703,8 +706,8 @@ export async function analyzeLocally(context, filterLow = true) {
         ...noDiagnosisAlerts,
         ...runDuplicateTherapyRules(normalized, genericMap),
         ...runDdiRules(ddiRules, normalized),
-        ...runDrugDiseaseRules(drugDiseaseRules, normalized, context, drugLabRules, renalRules),
-        ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, context)
+        ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
+        ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext)
     ]);
 
     // Lọc Alert Fatigue theo Setting
@@ -718,7 +721,7 @@ export async function analyzeLocally(context, filterLow = true) {
             normalized_drugs: normalized.normalized_drugs,
             unmapped_drugs: normalized.unmapped_drugs,
             condition_groups: normalized.condition_groups,
-            labs: (context.labs || []).map(l => `${l.code}=${l.value}`)
+            labs: (enrichedContext.labs || []).map(l => `${l.code}=${l.value}`)
         }
     };
 }

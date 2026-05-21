@@ -138,8 +138,11 @@ class CDSCacheManager {
 
         if (payload.medications && Array.isArray(payload.medications)) {
             for (const med of payload.medications) {
-                const key = med.display_name.toLowerCase();
+                // Normalize spaces, non-breaking spaces (\u00a0), and zero-width spaces (\u200b)
+                const cleanName = med.display_name.replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+                const key = cleanName.toLowerCase();
                 if (!this.medsSet.has(key)) {
+                    med.display_name = cleanName;
                     this.medsSet.add(key);
                     this.cache.medications.push(med);
                     hasChanges = true;

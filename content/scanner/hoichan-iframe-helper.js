@@ -53,7 +53,7 @@
                 var val = data[key];
 
                 if (val !== undefined && val !== null && String(val).trim() !== '') {
-                    if (setVal(fieldIdStr, val)) {
+                    if (setVal(fieldIdStr, val, key)) {
                         inputsFilled++;
                     }
                 }
@@ -93,9 +93,10 @@
     /**
      * Tìm element bằng danh sách ID (pipe-separated) + fallback label search.
      * @param {string} fieldIdStr - Pipe-separated list of possible IDs
+     * @param {string} key - Clinical data key
      * @returns {{el: HTMLElement, targetId: string} | null}
      */
-    function getFieldElement(fieldIdStr) {
+    function getFieldElement(fieldIdStr, key) {
         if (!fieldIdStr) return null;
         var ids = fieldIdStr.split('|');
 
@@ -104,6 +105,15 @@
             var el = document.getElementById(currId) || document.querySelector('[name="' + currId + '"]');
             if (el) return { el: el, targetId: currId };
         }
+
+        // Fallback to Self-Healing Engine
+        if (window.SelfHealingEngine) {
+            var healed = window.SelfHealingEngine.resolveElement(document, fieldIdStr, key);
+            if (healed) {
+                return { el: healed, targetId: healed.id || healed.name || fieldIdStr };
+            }
+        }
+
         return null;
     }
 
@@ -111,11 +121,12 @@
      * Set giá trị cho field và trigger change events.
      * @param {string} fieldIdStr
      * @param {string} val
+     * @param {string} key
      * @returns {boolean}
      */
-    function setVal(fieldIdStr, val) {
+    function setVal(fieldIdStr, val, key) {
         if (val === undefined || val === null) return false;
-        var found = getFieldElement(fieldIdStr);
+        var found = getFieldElement(fieldIdStr, key);
 
         if (!found) {
             console.log('[HoiChan Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));

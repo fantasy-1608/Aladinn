@@ -94,7 +94,7 @@ window.VNPTPatientContextGuard = (function () {
                         }
                     });
                 }
-            } catch (e) {}
+            } catch (_e) {}
             throw new Error(`PATIENT_CONTEXT_MISMATCH_${options.stage || 'UNKNOWN'}`);
         }
     }

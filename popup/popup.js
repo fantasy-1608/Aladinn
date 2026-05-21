@@ -10,7 +10,7 @@ async function initPopup() {
         if (!err) {
             err = document.createElement('div');
             err.id = 'aladinn-popup-err';
-            err.style.cssText = 'color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; font-size: 13px; text-align: center; margin: 8px 16px; font-weight: 500; animation: fadeSlideUp 0.3s;';
+            err.style.cssText = 'color: #FFB4AB; background: rgba(255, 180, 171, 0.1); border: 1px solid rgba(255, 180, 171, 0.3); border-radius: 8px; padding: 10px; font-size: 13px; text-align: center; margin: 8px 16px; font-weight: 500; animation: fadeSlideUp 0.3s;';
             container.insertBefore(err, container.firstChild);
         }
         err.textContent = msg;
@@ -145,8 +145,8 @@ async function initPopup() {
     if (debugBtn) {
         chrome.storage.local.get('aladinn_debug_mode', (res) => {
             const isDebug = !!res.aladinn_debug_mode;
-            debugBtn.style.color = isDebug ? '#ef4444' : 'var(--al-text-dim)';
-            debugBtn.style.background = isDebug ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
+            debugBtn.style.color = isDebug ? '#FFB4AB' : 'var(--al-text-dim)';
+            debugBtn.style.background = isDebug ? 'rgba(255, 180, 171, 0.1)' : 'transparent';
         });
 
         debugBtn.addEventListener('click', () => {
@@ -154,8 +154,8 @@ async function initPopup() {
                 const newState = !res.aladinn_debug_mode;
                 chrome.storage.local.set({ aladinn_debug_mode: newState });
                 
-                debugBtn.style.color = newState ? '#ef4444' : 'var(--al-text-dim)';
-                debugBtn.style.background = newState ? 'rgba(239, 68, 68, 0.1)' : 'transparent';
+                debugBtn.style.color = newState ? '#FFB4AB' : 'var(--al-text-dim)';
+                debugBtn.style.background = newState ? 'rgba(255, 180, 171, 0.1)' : 'transparent';
                 
                 // Notify content script
                 chrome.runtime.sendMessage({ type: 'POPUP_SET_DEBUG', state: newState }).catch(() => {});

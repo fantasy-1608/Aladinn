@@ -59,6 +59,7 @@ export const CDSExtractor = {
         const meds = await this.getMedications();
         const labs = await this.getLabs();
         const extractedWeight = await this.getWeight();
+        const demographics = await this.getDemographics();
 
         console.log(`[Aladinn CDS Extractor] 🔍 Context extracted for patient: ${currentDomPatientId}. Cache hits: Meds=${meds.length}, Diags=${diagnoses.length}, Labs=${labs.length}`);
 
@@ -66,7 +67,10 @@ export const CDSExtractor = {
             patient: {
                 id: currentDomPatientId,
                 name: currentDomPatientName,
-                weight: extractedWeight
+                weight: extractedWeight,
+                gender: demographics?.gender,
+                age: demographics?.age ? parseInt(demographics.age, 10) : undefined,
+                dob: demographics?.dob
             },
             encounter: {
                 id: this.getEncounterId(),
@@ -110,6 +114,82 @@ export const CDSExtractor = {
         });
     },
 
+    async getDemographics() {
+        const cache = CDSCache.get();
+        if (cache.demographics) return cache.demographics;
+
+        try {
+            const activeRowId = this.getActiveRowId();
+            const res = await this.fetchFromBridge('REQ_FETCH_PATIENT_DEMOGRAPHICS', 'FETCH_PATIENT_DEMOGRAPHICS_RESULT', activeRowId);
+            if (res && res.demographics) {
+                if (res._context && !this.verifyContextLock(res._context)) {
+                    throw new Error('Context lock mismatch');
+                }
+                console.log('[Aladinn CDS] 📡 Demographics from API:', res.demographics);
+                cache.demographics = res.demographics;
+                return res.demographics;
+            }
+        } catch (e) {
+            console.log('[Aladinn CDS] API fetch demographics failed, falling back to DOM:', e);
+        }
+
+        // Fallback: Parse gender and age from DOM
+        let gender = undefined;
+        let age = undefined;
+        let dob = undefined;
+
+        // Try parsing gender from common elements
+        const genderEls = this.getElementsAcrossIframes('#txtGioiTinh, [name="GioiTinh"], [id*="GioiTinh"]');
+        for (const el of genderEls) {
+            const val = (el.value || el.innerText || '').trim().toLowerCase();
+            if (val.includes('nam') || val === 'm' || val === '1') {
+                gender = 'Nam';
+                break;
+            } else if (val.includes('nữ') || val.includes('nu') || val === 'f' || val === '0') {
+                gender = 'Nữ';
+                break;
+            }
+        }
+
+        // Try parsing age or birth year from common elements
+        const ageEls = this.getElementsAcrossIframes('#txtTuoi, [name="Tuoi"], [id*="Tuoi"], #txtNamSinh, [name="NamSinh"], [id*="NamSinh"]');
+        for (const el of ageEls) {
+            const valStr = (el.value || el.innerText || '').trim();
+            const val = parseInt(valStr, 10);
+            if (!isNaN(val) && val > 0) {
+                if (val > 1900 && val <= new Date().getFullYear()) {
+                    // It's a birth year
+                    age = String(new Date().getFullYear() - val);
+                    dob = valStr;
+                } else if (val < 120) {
+                    age = String(val);
+                }
+                break;
+            }
+        }
+
+        // Try parsing from info bars text if gender/age still missing
+        if (!gender || !age) {
+            const infoBars = this.getElementsAcrossIframes('div, span, td');
+            for (const el of infoBars) {
+                const text = el.innerText || '';
+                if (!gender) {
+                    const genderMatch = text.match(/(?:Giới tính|Phái):\s*(Nam|Nữ)/i);
+                    if (genderMatch) gender = genderMatch[1];
+                }
+                if (!age) {
+                    const ageMatch = text.match(/(?:Tuổi):\s*(\d+)/i);
+                    if (ageMatch) age = ageMatch[1];
+                }
+                if (gender && age) break;
+            }
+        }
+
+        const result = { gender, age, dob };
+        cache.demographics = result;
+        return result;
+    },
+
     fetchFromBridge(requestType, resultType, rowId, params = {}) {
         return new Promise((resolve) => {
             const reqId = Date.now() + Math.random();
@@ -149,28 +229,111 @@ export const CDSExtractor = {
 
     verifyContextLock(ctx) {
         if (!ctx) return false;
+        
         const domPatientId = this.getPatientId();
         const cache = CDSCache.get();
         
-        // 1. Check patient identity: BENHNHANID or rowId matching DOM/Cache
-        const patientIdMatch = (
-            (ctx.BENHNHANID && (ctx.BENHNHANID === domPatientId || ctx.BENHNHANID === cache.benhnhanId)) ||
-            (ctx.rowId && (ctx.rowId === domPatientId || ctx.rowId === cache.khambenhId))
-        );
+        // Normalize IDs to trimmed strings to avoid number vs string strict equality mismatches
+        const normCtxBenhNhanId = ctx.BENHNHANID ? String(ctx.BENHNHANID).trim() : '';
+        const normCtxRowId = ctx.rowId ? String(ctx.rowId).trim() : '';
+        const normCtxKhamBenhId = ctx.KHAMBENHID ? String(ctx.KHAMBENHID).trim() : '';
         
-        // 2. Check encounter/admission key: KHAMBENHID matching Cache or DOM
-        const encounterIdMatch = (
-            !ctx.KHAMBENHID || 
-            ctx.KHAMBENHID === cache.khambenhId || 
-            ctx.KHAMBENHID === this.getEncounterId()
-        );
-        
-        if (!patientIdMatch || !encounterIdMatch) {
-            console.error(`[Aladinn CDS Context Lock] ❌ Patient identity or encounter mismatch detected! Purging context. DOM: ${domPatientId}, Cache: ${cache.benhnhanId}_${cache.khambenhId}, API context:`, ctx);
+        const normDomPatientId = domPatientId ? String(domPatientId).trim() : '';
+        let normCacheBenhNhanId = cache.benhnhanId ? String(cache.benhnhanId).trim() : '';
+        let normCacheKhamBenhId = cache.khambenhId ? String(cache.khambenhId).trim() : '';
+        const normDomEncounterId = this.getEncounterId() ? String(this.getEncounterId()).trim() : '';
+
+        // 1. Validate BENHNHANID if present in context
+        let patientIdMatch = true;
+        if (normCtxBenhNhanId) {
+            patientIdMatch = (
+                normCtxBenhNhanId === normDomPatientId || 
+                normCtxBenhNhanId === normCacheBenhNhanId ||
+                (cache.patientIds && cache.patientIds.has(normCtxBenhNhanId))
+            );
+        }
+
+        // 2. Validate rowId if present in context
+        let rowIdMatch = true;
+        if (normCtxRowId) {
+            rowIdMatch = (
+                normCtxRowId === normDomPatientId || 
+                normCtxRowId === normCacheKhamBenhId ||
+                (cache.patientIds && cache.patientIds.has(normCtxRowId))
+            );
+        }
+
+        // If neither is present, we cannot verify the identity, so we fail closed
+        if (!normCtxBenhNhanId && !normCtxRowId) {
             return false;
         }
-        
+
+        // Both must be valid (not mismatched)
+        let identityMatch = patientIdMatch && rowIdMatch;
+
+        // Name-based fallback when cache is cold or initial check fails
+        if (!identityMatch) {
+            const domName = this.getPatientName();
+            const ctxName = ctx.patientName || ctx.TENTEN || '';
+            
+            const cleanDomName = this._cleanName(domName);
+            const cleanCtxName = this._cleanName(ctxName);
+            
+            if (cleanDomName && cleanCtxName && cleanDomName.length >= 3 && cleanDomName === cleanCtxName) {
+                console.log(`[Aladinn CDS Context Lock] 🛡️ Name match fallback passed: "${domName}" === "${ctxName}". Warming cache.`);
+                
+                // Warm the cache with the API IDs to enable subsequent context validation locks to pass
+                if (normCtxBenhNhanId) {
+                    cache.benhnhanId = normCtxBenhNhanId;
+                    normCacheBenhNhanId = normCtxBenhNhanId;
+                    if (cache.patientIds) cache.patientIds.add(normCtxBenhNhanId);
+                }
+                if (normCtxRowId) {
+                    if (cache.patientIds) cache.patientIds.add(normCtxRowId);
+                }
+                if (normCtxKhamBenhId) {
+                    cache.khambenhId = normCtxKhamBenhId;
+                    normCacheKhamBenhId = normCtxKhamBenhId;
+                }
+                // Set the patient key if both IDs are available
+                if (normCtxBenhNhanId && normCtxKhamBenhId) {
+                    CDSCache._patientKey = `${normCtxBenhNhanId}_${normCtxKhamBenhId}`;
+                }
+                
+                identityMatch = true;
+            }
+        }
+
+        // 3. Check encounter/admission key: KHAMBENHID matching Cache or DOM
+        const encounterIdMatch = (
+            !normCtxKhamBenhId ||
+            normCtxKhamBenhId === normCacheKhamBenhId ||
+            normCtxKhamBenhId === normDomEncounterId
+        );
+
+        if (!identityMatch || !encounterIdMatch) {
+            console.error(
+                '[Aladinn CDS Context Lock] ❌ Patient identity or encounter mismatch detected! Purging context. ' +
+                `DOM Patient: ${normDomPatientId}, Cache: ${normCacheBenhNhanId}_${normCacheKhamBenhId}, ` +
+                'API context:', ctx
+            );
+            return false;
+        }
+
         return true;
+    },
+
+    _cleanName(name) {
+        if (!name) return '';
+        return String(name)
+            .replace(/<[^>]*>/g, '') // Strip HTML tags
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'd')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Strip diacritics
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '') // Strip special chars/emojis
+            .trim();
     },
 
 
@@ -362,8 +525,19 @@ export const CDSExtractor = {
         if (cache.medications && cache.medications.length > 0 && cacheFresh) {
             meds.push(...cache.medications);
             debugPipeline.push(`[Cache] ${cache.medications.length} drugs (fresh)`);
-            console.log(`[Aladinn CDS] 💊 Pipeline: ${debugPipeline.join(' → ')} | Final: ${meds.length} unique drugs`);
-            return meds;
+            
+            // Deduplicate even for cache hits
+            const uniqueMeds = [];
+            const seen = new Set();
+            for (const m of meds) {
+                const k = m.display_name.toLowerCase();
+                if (!seen.has(k)) {
+                    seen.add(k);
+                    uniqueMeds.push(m);
+                }
+            }
+            console.log(`[Aladinn CDS] 💊 Pipeline: ${debugPipeline.join(' → ')} | Final: ${uniqueMeds.length} unique drugs`);
+            return uniqueMeds;
         }
 
         // ===== SOURCE 2: API Bridge (Selective API Integration) =====
@@ -380,8 +554,8 @@ export const CDSExtractor = {
                 if (res._context && this.verifyContextLock(res._context)) {
                     // Map and filter medications
                     for (const r of res.drugList) {
-                        let name = r.TENTHUOC || '';
-                        let generic = r.HOATCHAT || r.HAMLUONG || '';
+                        let name = (r.TENTHUOC || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+                        let generic = (r.HOATCHAT || r.HAMLUONG || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim();
                         
                         name = this._filterDrugName(name, generic);
                         if (!name) continue;
@@ -402,10 +576,20 @@ export const CDSExtractor = {
                     }
                     if (apiMeds.length > 0) {
                         debugPipeline.push(`[API] ${apiMeds.length} drugs`);
+                        // Deduplicate API drugs before caching
+                        const uniqueApiMeds = [];
+                        const seenApi = new Set();
+                        for (const m of apiMeds) {
+                            const k = m.display_name.toLowerCase();
+                            if (!seenApi.has(k)) {
+                                seenApi.add(k);
+                                uniqueApiMeds.push(m);
+                            }
+                        }
                         // Cập nhật Cache để lần sau đỡ gọi lại
-                        cache.medications = apiMeds;
+                        cache.medications = uniqueApiMeds;
                         cache._medsTimestamp = Date.now();
-                        meds.push(...apiMeds);
+                        meds.push(...uniqueApiMeds);
                     }
                 } else if (res._context) {
                     console.warn('[Aladinn CDS] ⚠️ Drug API Context Mismatch. Skipping API payload.');
@@ -508,8 +692,8 @@ export const CDSExtractor = {
                 const cells = row.querySelectorAll('td');
                 if (cells.length <= nameCol) continue;
                 
-                let name = (cells[nameCol]?.innerText || '').trim();
-                let generic = dosageCol >= 0 && cells[dosageCol] ? (cells[dosageCol]?.innerText || '').trim() : '';
+                let name = (cells[nameCol]?.innerText || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+                let generic = dosageCol >= 0 && cells[dosageCol] ? (cells[dosageCol]?.innerText || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim() : '';
                 
                 if (!name || name.length < 2 || name === '-') continue;
                 
@@ -586,8 +770,8 @@ export const CDSExtractor = {
                 textCols.push({ index: i, value: val });
             }
 
-            let name = textCols.length >= 1 ? textCols[0].value : '';
-            let generic = textCols.length >= 2 ? textCols[1].value : '';
+            let name = textCols.length >= 1 ? textCols[0].value.replace(/[\s\u00a0\u200b]+/g, ' ').trim() : '';
+            let generic = textCols.length >= 2 ? textCols[1].value.replace(/[\s\u00a0\u200b]+/g, ' ').trim() : '';
 
             if (name && ICD_PATTERN.test(name)) name = '';
             

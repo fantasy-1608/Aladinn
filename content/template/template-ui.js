@@ -56,10 +56,10 @@ class TemplateUI {
                     width: 350px;
                     max-height: 250px;
                     overflow-y: auto;
-                    background: rgba(30, 41, 59, 0.95);
+                    background: rgba(29, 32, 36, 0.95);
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
-                    border: 1px solid rgba(245, 158, 11, 0.2);
+                    border: 1px solid rgba(158, 202, 255, 0.2);
                     border-radius: 8px;
                     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
                     color: #fff;
@@ -71,10 +71,10 @@ class TemplateUI {
                     padding: 8px 12px;
                     font-size: 11px;
                     text-transform: uppercase;
-                    color: #f59e0b;
+                    color: #9ECAFF;
                     letter-spacing: 0.05em;
                     border-bottom: 1px solid rgba(255,255,255,0.05);
-                    background: rgba(245, 158, 11, 0.05);
+                    background: rgba(158, 202, 255, 0.05);
                 }
                 .aladinn-template-item {
                     padding: 10px 12px;
@@ -87,13 +87,13 @@ class TemplateUI {
                 }
                 .aladinn-template-item.selected,
                 .aladinn-template-item:hover {
-                    background: rgba(245, 158, 11, 0.15);
+                    background: rgba(158, 202, 255, 0.15);
                 }
                 .aladinn-template-item-title {
                     font-weight: 600;
                     font-size: 13px;
                     margin-bottom: 4px;
-                    color: #fbbf24;
+                    color: #D1E4FF;
                     display: flex;
                     align-items: center;
                     gap: 6px;
@@ -126,7 +126,7 @@ class TemplateUI {
                     background: transparent;
                 }
                 .aladinn-template-menu::-webkit-scrollbar-thumb {
-                    background: rgba(245, 158, 11, 0.3);
+                    background: rgba(158, 202, 255, 0.3);
                     border-radius: 3px;
                 }
             `;

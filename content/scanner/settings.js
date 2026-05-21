@@ -210,7 +210,7 @@ const VNPTSettings = (function () {
                 if (clickCount >= 5) {
                     const isHidden = aiSection.style.display === 'none';
                     aiSection.style.display = isHidden ? 'block' : 'none';
-                    versionTag.style.backgroundColor = isHidden ? '#22c55e' : '';
+                    versionTag.style.backgroundColor = isHidden ? '#4ADE80' : '';
                     if (isHidden) showNotification('✨ Đã mở khóa tính năng AI VIP', 'success');
                     clickCount = 0;
                 }
@@ -282,12 +282,12 @@ const VNPTSettings = (function () {
         style.id = 'vnpt-settings-v5-styles';
         style.textContent = `
             .vnpt-settings-panel {
-                --vnpt-bg: #0b1121;
-                --vnpt-text: #f8fafc;
-                --vnpt-header: rgba(20, 27, 45, 0.95);
-                --vnpt-border: rgba(212, 168, 83, 0.2);
-                --vnpt-accent: #d4a853;
-                --vnpt-section: #141b2d;
+                --vnpt-bg: #0C0E12;
+                --vnpt-text: #E1E2E8;
+                --vnpt-header: rgba(29, 32, 36, 0.95);
+                --vnpt-border: rgba(158, 202, 255, 0.15);
+                --vnpt-accent: #9ECAFF;
+                --vnpt-section: #191C20;
             }
 
             .vnpt-settings-panel {
@@ -334,7 +334,7 @@ const VNPTSettings = (function () {
                 background: none; border: none; color: var(--vnpt-text); 
                 font-size: 24px; cursor: pointer; opacity: 0.7; transition: 0.3s;
             }
-            .vnpt-settings-close:hover { opacity: 1; transform: scale(1.1); color: #ef4444; }
+            .vnpt-settings-close:hover { opacity: 1; transform: scale(1.1); color: #FFB4AB; }
 
             .vnpt-settings-content { padding: 20px; max-height: 60vh; overflow-y: auto; }
             .vnpt-settings-section { margin-bottom: 20px; padding: 15px; background: var(--vnpt-section); border-radius: 12px; }

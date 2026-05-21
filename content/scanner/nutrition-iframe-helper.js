@@ -50,6 +50,21 @@
             var height = d.height || '';
             var bp = d.bloodPressure || '';
             var admissionDate = d.admissionDate || '';
+            var mapping = d.mapping || {
+                weight: 'textfield_1535',
+                height: 'textfield_1536',
+                bmi: 'textfield_1526',
+                systolic: 'textfield_1537',
+                diastolic: 'textfield_1538',
+                sutCanNo: 'checkbox_1527',
+                sutCan: 'checkbox_1539',
+                bmiThap: 'checkbox_1540',
+                teoCo: 'checkbox_1553',
+                phuNgoaiVi: 'checkbox_1554',
+                benhLyTieuHoa: 'checkbox_1542',
+                anUongGiamSut: 'checkbox_1543',
+                boSungMieng: 'checkbox_1546'
+            };
 
             console.log('[Nutrition Iframe] Nhận tín hiệu điền form:', d);
 
@@ -78,7 +93,13 @@
                 var dp = document.getElementById('datepicker_TGTH');
                 if (dp) {
                     dp.removeAttribute('disabled'); // Mở khóa trường bị disable
-                    setVal('datepicker_TGTH', admissionDate);
+                    dp.value = admissionDate;
+                    if ($) {
+                        $(dp).trigger('change').trigger('input');
+                    } else {
+                        dp.dispatchEvent(new Event('change', { bubbles: true }));
+                        dp.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
                     console.log('[Nutrition Iframe] ĐỀ ĐIỀN CHUẨN XÁC VÀO #datepicker_TGTH:', admissionDate);
                 } else {
                     // Ưu tiên 2: Tìm thẻ chứa chữ "Ngày thực hiện" rồi lấy input kế nó (Cho form dự phòng)
@@ -94,7 +115,13 @@
                                 var input = container.querySelector('input[type="text"]');
                                 if (input) {
                                     input.removeAttribute('disabled');
-                                    setVal(input.id, admissionDate);
+                                    input.value = admissionDate;
+                                    if ($) {
+                                        $(input).trigger('change').trigger('input');
+                                    } else {
+                                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                                    }
                                     injectedDate = true;
                                     console.log('[Nutrition Iframe] Đã điền Ngày Nhập Khoa vào:', input.id);
                                     break;
@@ -111,7 +138,13 @@
                             var val = el.value || '';
                             if (val && val.match(/\d{2}\/\d{2}\/\d{4}/)) {
                                 el.removeAttribute('disabled');
-                                setVal(el.id, admissionDate);
+                                el.value = admissionDate;
+                                if ($) {
+                                    $(el).trigger('change').trigger('input');
+                                } else {
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                                }
                                 console.log('[Nutrition Iframe] Fallback điền Ngày Nhập Khoa vào:', el.id);
                                 break; 
                             }
@@ -122,16 +155,16 @@
                 console.log('[Nutrition Iframe] Cảnh báo: admissionDate rỗng, không thể điền Ngày thực hiện.');
             }
 
-            setVal('textfield_1535', weight);
-            setVal('textfield_1536', height);
+            setVal(mapping.weight, weight, 'weight');
+            setVal(mapping.height, height, 'height');
 
             // Xử lý Huyết áp (nếu có định dạng 120/80)
             if (bp && bp.includes('/')) {
                 var parts = bp.split('/');
-                setVal('textfield_1537', parts[0]);
-                setVal('textfield_1538', parts[1]);
+                setVal(mapping.systolic, parts[0], 'systolic');
+                setVal(mapping.diastolic, parts[1], 'diastolic');
             } else if (bp) {
-                setVal('textfield_1537', bp);
+                setVal(mapping.systolic, bp, 'systolic');
             }
 
             // Tự tính BMI = cân nặng / (chiều cao ^ 2)
@@ -141,22 +174,21 @@
             if (!isNaN(w) && !isNaN(h) && h > 0) {
                 bmi = (w / (h * h)).toFixed(2);
             }
-            setVal('textfield_1526', bmi);
-
+            setVal(mapping.bmi, bmi, 'bmi');
 
             // Sụt cân trong 3 tháng gần đây: tick "Không"
-            var sutCan = document.getElementById('checkbox_1527');
-            if (sutCan && !sutCan.checked) sutCan.click();
+            setVal(mapping.sutCanNo, true, 'sutCanNo');
 
             // Phần II: tick ALL "Không"
-            ['checkbox_1539', 'checkbox_1540', 'checkbox_1553', 'checkbox_1554', 'checkbox_1542', 'checkbox_1543'].forEach(function (id) {
-                var cb = document.getElementById(id);
-                if (cb && !cb.checked) cb.click();
-            });
+            setVal(mapping.sutCan, true, 'sutCan');
+            setVal(mapping.bmiThap, true, 'bmiThap');
+            setVal(mapping.teoCo, true, 'teoCo');
+            setVal(mapping.phuNgoaiVi, true, 'phuNgoaiVi');
+            setVal(mapping.benhLyTieuHoa, true, 'benhLyTieuHoa');
+            setVal(mapping.anUongGiamSut, true, 'anUongGiamSut');
 
             // Phần III: tick "Bổ sung DD qua miệng"
-            var bsMieng = document.getElementById('checkbox_1546');
-            if (bsMieng && !bsMieng.checked) bsMieng.click();
+            setVal(mapping.boSungMieng, true, 'boSungMieng');
 
             sendResponse(true);
         } catch (e) {
@@ -166,16 +198,78 @@
 
     window.addEventListener('message', window._vnptNutritionHandler);
 
-    function setVal(id, val) {
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.value = val;
+    /**
+     * Tìm element bằng danh sách ID (pipe-separated) + fallback label search.
+     * @param {string} fieldIdStr - Pipe-separated list of possible IDs or selectors
+     * @param {string} key - Clinical data key
+     * @returns {{el: HTMLElement, targetId: string} | null}
+     */
+    function getFieldElement(fieldIdStr, key) {
+        if (!fieldIdStr) return null;
+        var ids = fieldIdStr.split('|');
+
+        for (var i = 0; i < ids.length; i++) {
+            var currId = ids[i].trim();
+            if (!currId) continue;
+            
+            var el = document.getElementById(currId) || document.querySelector('[name="' + currId + '"]');
+            if (!el) {
+                try {
+                    el = document.querySelector(currId);
+                } catch (_e) {}
+            }
+            if (el) return { el: el, targetId: currId };
+        }
+
+        // Fallback to Self-Healing Engine
+        if (window.SelfHealingEngine) {
+            var healed = window.SelfHealingEngine.resolveElement(document, fieldIdStr, key);
+            if (healed) {
+                return { el: healed, targetId: healed.id || healed.name || fieldIdStr };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Set giá trị cho field và trigger change events.
+     * @param {string} fieldIdStr
+     * @param {any} val
+     * @param {string} key
+     * @returns {boolean}
+     */
+    function setVal(fieldIdStr, val, key) {
+        if (val === undefined || val === null) return false;
+        var found = getFieldElement(fieldIdStr, key);
+
+        if (!found) {
+            console.log('[Nutrition Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
+            return false;
+        }
+
+        var el = found.el;
+        el.removeAttribute('disabled');
+        el.removeAttribute('readonly');
+
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            var expectChecked = String(val) === '1' || val === true || String(val).toLowerCase() === 'true';
+            if (el.checked !== expectChecked) {
+                el.click();
+            }
+        } else {
+            el.value = val;
+        }
+
         if ($) {
             $(el).trigger('change').trigger('input');
         } else {
             el.dispatchEvent(new Event('change', { bubbles: true }));
             el.dispatchEvent(new Event('input', { bubbles: true }));
         }
+
+        console.log('[Nutrition] Đã điền:', found.targetId, '->', String(val).substring(0, 60));
+        return true;
     }
 
     function sendResponse(success, error) {

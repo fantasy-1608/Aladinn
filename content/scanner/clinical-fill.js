@@ -369,52 +369,84 @@ const VNPTClinicalFill = (function () {
                 }
                 #vnpt-clinical-fab:hover::after { opacity: 1; }
                 /* Preview dialog */
+                @keyframes clinical-dialog-glow {
+                    0%, 100% {
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 15px rgba(31, 105, 194, 0.12);
+                        border-color: rgba(31, 105, 194, 0.2);
+                    }
+                    50% {
+                        box-shadow: 0 25px 70px rgba(0,0,0,0.7), 0 0 25px rgba(31, 105, 194, 0.3);
+                        border-color: rgba(31, 105, 194, 0.4);
+                    }
+                }
                 .clinical-preview-overlay {
                     position: fixed; inset: 0; z-index: 2147483646;
-                    background: rgba(0,0,0,0.5); display: flex;
+                    background: rgba(0,0,0,0.56); display: flex;
                     align-items: center; justify-content: center;
+                    backdrop-filter: blur(4px);
+                    -webkit-backdrop-filter: blur(4px);
                 }
                 .clinical-preview-dialog {
-                    background: #1a1a2e; color: #e0d5c1; border-radius: 16px;
+                    background: var(--al-surface-container); color: var(--al-on-surface); border-radius: var(--al-radius-xl);
                     padding: 24px; max-width: 700px; width: 90%;
                     max-height: 80vh; overflow-y: auto;
-                    border: 1px solid rgba(212,168,83,0.3);
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-                    font-family: 'Inter', system-ui, sans-serif;
+                    border: 1px solid var(--al-outline-variant);
+                    box-shadow: var(--al-shadow-xl);
+                    font-family: var(--al-font);
+                    animation: clinical-dialog-glow 8s ease-in-out infinite;
                 }
                 .clinical-preview-dialog h3 {
-                    margin: 0 0 16px; color: #d4a853; font-size: 18px;
+                    margin: 0 0 18px; color: var(--al-primary); font-size: 20px;
+                    font-family: var(--al-font-title); font-weight: 600;
+                    letter-spacing: 0.2px;
                 }
                 .clinical-preview-dialog .field-row {
-                    margin-bottom: 12px; padding: 8px 12px;
-                    background: rgba(255,255,255,0.05); border-radius: 8px;
-                    border-left: 3px solid #d4a853;
+                    margin-bottom: 14px; padding: 10px 14px;
+                    background: var(--al-surface-container-low); border-radius: var(--al-radius-md);
+                    border-left: 4px solid var(--al-primary);
                 }
                 .clinical-preview-dialog .field-label {
-                    font-size: 11px; color: #a08c6a; text-transform: uppercase;
-                    letter-spacing: 0.5px; margin-bottom: 4px;
+                    font-size: 11px; color: var(--al-primary); text-transform: uppercase;
+                    letter-spacing: 0.8px; margin-bottom: 6px; font-weight: 600;
                 }
-                .clinical-preview-dialog .field-value {
-                    font-size: 13px; color: #e0d5c1; white-space: pre-wrap;
-                    max-height: 80px; overflow-y: auto;
+                .field-value-input {
+                    background: var(--al-surface-container-lowest) !important;
+                    border: 1px solid var(--al-outline-variant) !important;
+                    color: var(--al-on-surface) !important;
+                    border-radius: var(--al-radius-sm) !important;
+                    padding: 10px !important;
+                    font-family: inherit !important;
+                    font-size: 13px !important;
+                    transition: border-color var(--al-duration-short) var(--al-ease), box-shadow var(--al-duration-short) var(--al-ease) !important;
+                }
+                .field-value-input:focus {
+                    outline: none !important;
+                    border-color: var(--al-primary) !important;
+                    box-shadow: 0 0 0 2px var(--al-primary-container) !important;
                 }
                 .clinical-preview-actions {
-                    display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;
+                    display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;
                 }
                 .clinical-preview-actions button {
-                    padding: 10px 20px; border: none; border-radius: 10px;
+                    padding: 10px 24px; border: none; border-radius: var(--al-radius-pill);
                     cursor: pointer; font-size: 14px; font-weight: 600;
-                    transition: all 0.2s; font-family: 'Inter', system-ui, sans-serif;
+                    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); font-family: var(--al-font);
                 }
                 .clinical-btn-cancel {
-                    background: rgba(255,255,255,0.1); color: #a08c6a;
+                    background: var(--al-surface-container-highest); color: var(--al-on-surface-variant);
                 }
-                .clinical-btn-cancel:hover { background: rgba(255,255,255,0.15); }
+                .clinical-btn-cancel:hover { background: var(--al-outline-variant); }
                 .clinical-btn-fill {
-                    background: linear-gradient(135deg, #d4a853, #f59e0b);
-                    color: #1a1a2e;
+                    background: var(--al-primary);
+                    color: var(--al-on-primary);
+                    box-shadow: var(--al-shadow-sm);
                 }
-                .clinical-btn-fill:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,168,83,0.4); }
+                .clinical-btn-fill:hover { 
+                    transform: translateY(-1px); 
+                    box-shadow: var(--al-shadow-md);
+                    background: var(--al-primary-container);
+                    color: var(--al-on-primary-container);
+                }
             `;
             document.head.appendChild(style);
         }
@@ -692,13 +724,13 @@ const VNPTClinicalFill = (function () {
             const patientName = store.selectedPatientName || 'Không rõ';
 
             let html = `
-                <button id="cfill-close-x" style="position:absolute; top:16px; right:16px; background:none; border:none; color:#a08c6a; font-size:24px; cursor:pointer; line-height:1; transition:color 0.2s;">&times;</button>
+                <button id="cfill-close-x" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--al-outline); font-size:24px; cursor:pointer; line-height:1; transition:color var(--al-duration-short) var(--al-ease);">&times;</button>
                 <h3>${title}</h3>
                 <div style="background:rgba(16, 185, 129, 0.1);border-left:4px solid #10b981;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;">
                     <div style="color:#10b981; font-weight:bold;">✅ ĐÃ XÁC MINH NGỮ CẢNH</div>
                     <div style="margin-top:4px; color:#e2e8f0;">Dữ liệu form được trích xuất chính xác từ bệnh nhân: <b style="color:#fff">${patientName}</b></div>
                 </div>`;
-
+ 
             for (const [key, label] of Object.entries(labels)) {
                 let val = '';
                 if (isXT) {
@@ -712,7 +744,7 @@ const VNPTClinicalFill = (function () {
                 }
                 html += `<div class="field-row">
                     <div class="field-label">${label}</div>
-                    <textarea id="cf-input-${key}" class="field-value-input" data-key="${key}" style="width:100%; min-height:40px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,168,83,0.3); color:#e0d5c1; border-radius:6px; padding:8px; font-family:inherit; font-size:13px; resize:vertical;">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                    <textarea id="cf-input-${key}" class="field-value-input" data-key="${key}">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                 </div>`;
             }
 
@@ -788,8 +820,8 @@ const VNPTClinicalFill = (function () {
                 overlay.remove();
                 resolve(false);
             });
-            overlay.querySelector('#cfill-close-x').addEventListener('mouseover', function() { this.style.color = '#ef4444'; });
-            overlay.querySelector('#cfill-close-x').addEventListener('mouseout', function() { this.style.color = '#a08c6a'; });
+            overlay.querySelector('#cfill-close-x').addEventListener('mouseover', function() { this.style.color = 'var(--al-error)'; });
+            overlay.querySelector('#cfill-close-x').addEventListener('mouseout', function() { this.style.color = 'var(--al-outline)'; });
             
             overlay.querySelector('#cfill-confirm').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -926,7 +958,8 @@ const VNPTClinicalFill = (function () {
             mapping = {};
         }
 
-        await injectHelper(target, helperFile, scriptId);
+        await injectHelper(target, 'content/shared/self-healing.js', 'vnpt-self-healing-helper');
+        await injectHelper(target, 'content/scanner/' + helperFile, scriptId);
 
         if (window.VNPTPatientContextGuard && contextToken) {
             await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_before_fill' });
@@ -947,7 +980,7 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     // INJECT & COMMUNICATE (pattern từ emergency.js)
     // ==========================================
-    async function injectHelper(iframe, fileName, scriptId) {
+    async function injectHelper(iframe, filePath, scriptId) {
         const doc = iframe.contentDocument;
         if (!doc) throw new Error('Không truy cập được iframe');
 
@@ -958,13 +991,13 @@ const VNPTClinicalFill = (function () {
             const script = doc.createElement('script');
             script.id = scriptId;
             if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/' + fileName);
+                script.src = _chrome.runtime.getURL(filePath);
             } else {
                 reject(new Error('Chrome runtime unavailable'));
                 return;
             }
             script.onload = () => resolve(undefined);
-            script.onerror = () => reject(new Error('Inject helper failed'));
+            script.onerror = () => reject(new Error('Inject helper failed: ' + filePath));
             (doc.head || doc.documentElement).appendChild(script);
         });
     }

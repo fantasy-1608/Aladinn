@@ -72,6 +72,9 @@
 
             let hasKill = false;
             for (const [remoteKey, localKey] of Object.entries(mapping)) {
+                // Tôn trọng tuyệt đối công tắc An toàn L.S (CDS) của bác sĩ trên panel
+                if (localKey === 'cds') continue;
+
                 if (rc.features[remoteKey] === false) {
                     features[localKey] = false;
                     hasKill = true;
@@ -358,7 +361,6 @@
                 let found = false;
                 
                 // Tìm element "Người dùng:" ở footer/status bar của HIS
-                // Dùng selector cụ thể thay vì querySelectorAll('*') — giảm từ ~5000 xuống ~200 elements
                 const elements = document.querySelectorAll('span, div, td, label, a, li, p, strong, em, b');
                 for (const el of elements) {
                     
@@ -387,6 +389,46 @@
                                 }
                                 
                                 if (targetEl && !targetEl.classList.contains('his-mystic-username-aura')) {
+                                    // Thay thế chữ "Người dùng:" bằng biểu tượng AI hiện đại (giữ lại text ẩn cho innerText tương thích)
+                                    el.innerHTML = '<span class="aladinn-hidden-label">' + text + '</span>' + 
+                                        '<svg class="aladinn-brand-gemini-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 22px; height: 22px; display: inline-block; vertical-align: middle; flex-shrink: 0; margin-right: 6px; position: relative; top: -2px;" title="Trợ lý Aladinn AI">' +
+                                            '<defs>' +
+                                                '<linearGradient id="aladinn-gemini-grad-main" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                                                    '<stop offset="0%" stop-color="#00f2fe" />' +
+                                                    '<stop offset="35%" stop-color="#9B72CB" />' +
+                                                    '<stop offset="70%" stop-color="#ec008c" />' +
+                                                    '<stop offset="100%" stop-color="#FABC12" />' +
+                                                '</linearGradient>' +
+                                                '<linearGradient id="aladinn-gemini-grad-sub" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                                                    '<stop offset="0%" stop-color="#FABC12" />' +
+                                                    '<stop offset="50%" stop-color="#ec008c" />' +
+                                                    '<stop offset="100%" stop-color="#00f2fe" />' +
+                                                '</linearGradient>' +
+                                            '</defs>' +
+                                            '<path class="gemini-star-main" d="M9 7a6 6 0 0 0 6 6 6 6 0 0 0-6 6 6 6 0 0 0-6-6 6 6 0 0 0 6-6z" fill="url(#aladinn-gemini-grad-main)" style="transform-origin: 9px 13px; animation: aladinn-gemini-pulse 3.5s infinite ease-in-out;" />' +
+                                            '<path class="gemini-star-sub" d="M18 2.5a3.5 3.5 0 0 0 3.5 3.5 3.5 3.5 0 0 0-3.5 3.5 3.5 3.5 0 0 0-3.5-3.5 3.5 3.5 0 0 0 3.5-3.5z" fill="url(#aladinn-gemini-grad-sub)" style="transform-origin: 18px 6px; animation: aladinn-gemini-twinkle 2.5s infinite ease-in-out;" />' +
+                                        '</svg>';
+                                    
+                                    el.style.setProperty('background', 'transparent', 'important');
+                                    el.style.setProperty('border', 'none', 'important');
+                                    el.style.setProperty('box-shadow', 'none', 'important');
+                                    el.style.setProperty('padding', '0', 'important');
+                                    el.style.setProperty('display', 'inline-block', 'important');
+                                    el.style.setProperty('vertical-align', 'middle', 'important');
+                                    
+                                    // Tăng tương phản cho node hậu tố (thường là "- Tên Đơn Vị")
+                                    let suffixEl = targetEl.nextSibling;
+                                    while (suffixEl && suffixEl.nodeType === Node.TEXT_NODE && suffixEl.textContent.trim() === '') {
+                                        suffixEl = suffixEl.nextSibling;
+                                    }
+                                    if (suffixEl && suffixEl.nodeType === Node.ELEMENT_NODE) {
+                                        suffixEl.style.setProperty('color', '#e2e8f0', 'important');
+                                        suffixEl.style.setProperty('background', 'transparent', 'important');
+                                        suffixEl.style.setProperty('border', 'none', 'important');
+                                        suffixEl.style.setProperty('box-shadow', 'none', 'important');
+                                        suffixEl.style.setProperty('padding', '0 4px', 'important');
+                                    }
+
                                     targetEl.classList.add('his-mystic-username-aura');
                                     injectAuraStyles(targetEl);
                                     found = true;
@@ -401,7 +443,33 @@
                                 if (match) {
                                     const username = match[2];
                                     el.classList.add('his-mystic-username-aura-applied');
-                                    el.innerHTML = el.innerHTML.replace(
+                                    
+                                    // Loại bỏ nền xám trùng màu của HIS
+                                    el.style.setProperty('color', '#ffffff', 'important');
+                                    el.style.setProperty('background', 'transparent', 'important');
+                                    el.style.setProperty('border', 'none', 'important');
+                                    el.style.setProperty('box-shadow', 'none', 'important');
+
+                                    const replacementSVG = '<span class="aladinn-hidden-label">Người dùng:</span>' + 
+                                        '<svg class="aladinn-brand-gemini-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 22px; height: 22px; display: inline-block; vertical-align: middle; flex-shrink: 0; margin-right: 6px; position: relative; top: -2px;" title="Trợ lý Aladinn AI">' +
+                                            '<defs>' +
+                                                '<linearGradient id="aladinn-gemini-grad-main" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                                                    '<stop offset="0%" stop-color="#00f2fe" />' +
+                                                    '<stop offset="35%" stop-color="#9B72CB" />' +
+                                                    '<stop offset="70%" stop-color="#ec008c" />' +
+                                                    '<stop offset="100%" stop-color="#FABC12" />' +
+                                                '</linearGradient>' +
+                                                '<linearGradient id="aladinn-gemini-grad-sub" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                                                    '<stop offset="0%" stop-color="#FABC12" />' +
+                                                    '<stop offset="50%" stop-color="#ec008c" />' +
+                                                    '<stop offset="100%" stop-color="#00f2fe" />' +
+                                                '</linearGradient>' +
+                                            '</defs>' +
+                                            '<path class="gemini-star-main" d="M9 7a6 6 0 0 0 6 6 6 6 0 0 0-6 6 6 6 0 0 0-6-6 6 6 0 0 0 6-6z" fill="url(#aladinn-gemini-grad-main)" style="transform-origin: 9px 13px; animation: aladinn-gemini-pulse 3.5s infinite ease-in-out;" />' +
+                                            '<path class="gemini-star-sub" d="M18 2.5a3.5 3.5 0 0 0 3.5 3.5 3.5 3.5 0 0 0-3.5 3.5 3.5 3.5 0 0 0-3.5-3.5 3.5 3.5 0 0 0 3.5-3.5z" fill="url(#aladinn-gemini-grad-sub)" style="transform-origin: 18px 6px; animation: aladinn-gemini-twinkle 2.5s infinite ease-in-out;" />' +
+                                        '</svg>';
+
+                                    el.innerHTML = el.innerHTML.replace('Người dùng:', replacementSVG).replace(
                                         username, 
                                         `<span class="his-mystic-username-aura">${username}</span>`
                                     );
@@ -418,26 +486,42 @@
                 }
                 
                 function injectAuraStyles(targetEl) {
-                    targetEl.style.display = 'inline-block';
-                    targetEl.style.padding = '2px 8px';
-                    targetEl.style.borderRadius = '8px';
-                    targetEl.style.color = '#fdf8ec';
-                    targetEl.style.fontWeight = '500';
-                    targetEl.style.position = 'relative';
-                    targetEl.style.zIndex = '1';
-                    
-                    if (!targetEl.querySelector('.aladinn-genie-icon')) {
-                        const icon = document.createElement('span');
-                        icon.className = 'aladinn-genie-icon';
-                        icon.textContent = ' 🧞';
-                        icon.style.fontSize = '14px';
-                        icon.style.marginLeft = '4px';
-                        icon.style.filter = 'drop-shadow(0 0 3px rgba(212, 162, 90, 0.4))';
-                        icon.style.display = 'inline-block';
-                        // Using pulse animation for the icon to match the mystic feel
-                        icon.style.animation = 'his-icon-pulse 3s infinite alternate ease-in-out';
-                        targetEl.appendChild(icon);
+                    // Inject CSS keyframes và lớp ẩn nhãn
+                    if (!document.getElementById('aladinn-gemini-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'aladinn-gemini-styles';
+                        style.textContent = `
+                            @keyframes aladinn-gemini-pulse {
+                                0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(0, 229, 255, 0.4)) drop-shadow(0 0 4px rgba(155, 114, 203, 0.3)); }
+                                50% { transform: scale(1.15) rotate(8deg); filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.8)) drop-shadow(0 0 12px rgba(236, 0, 140, 0.7)); }
+                                100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(0, 229, 255, 0.4)) drop-shadow(0 0 4px rgba(155, 114, 203, 0.3)); }
+                            }
+                            @keyframes aladinn-gemini-twinkle {
+                                0% { opacity: 0.5; transform: scale(0.9); filter: drop-shadow(0 0 1px rgba(250, 188, 18, 0.4)); }
+                                50% { opacity: 1; transform: scale(1.25); filter: drop-shadow(0 0 6px rgba(250, 188, 18, 0.9)) drop-shadow(0 0 10px rgba(255, 112, 67, 0.8)); }
+                                100% { opacity: 0.5; transform: scale(0.9); filter: drop-shadow(0 0 1px rgba(250, 188, 18, 0.4)); }
+                            }
+                            .aladinn-hidden-label {
+                                position: absolute !important;
+                                width: 0 !important;
+                                height: 0 !important;
+                                overflow: hidden !important;
+                                color: transparent !important;
+                                font-size: 0 !important;
+                                pointer-events: none !important;
+                            }
+                        `;
+                        document.head.appendChild(style);
                     }
+
+                    // Giữ thiết kế phẳng gốc nhưng đảm bảo độ tương phản cao chữ trắng
+                    targetEl.style.setProperty('color', '#ffffff', 'important');
+                    targetEl.style.setProperty('text-shadow', '0 1px 2px rgba(0,0,0,0.4)', 'important');
+                    targetEl.style.setProperty('font-weight', 'bold', 'important');
+                    targetEl.style.setProperty('background', 'transparent', 'important');
+                    targetEl.style.setProperty('border', 'none', 'important');
+                    targetEl.style.setProperty('box-shadow', 'none', 'important');
+                    targetEl.style.setProperty('padding', '0 4px', 'important');
                 }
 
                 if (found || uiRetries > 30) {

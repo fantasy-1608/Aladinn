@@ -61,6 +61,12 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
 
+### Quy tắc Giao tiếp & Báo cáo (BẮT BUỘC)
+
+1. **Ngôn ngữ:** Mọi báo cáo, tài liệu thiết kế, kế hoạch thực hiện (implementation plan, walkthrough...) hoặc giải thích trong cuộc trò chuyện PHẢI được viết bằng tiếng Việt.
+2. **Đối tượng:** Viết thật đơn giản, trực quan, dễ hiểu cho người không chuyên về lập trình/code (non-coder). Hạn chế tối đa các thuật ngữ kỹ thuật phức tạp. Tập trung vào tính năng thực tế, trải nghiệm sử dụng thực tế của người dùng và lợi ích lâm sàng thay vì cấu trúc code phức tạp.
+
+
 ### Extension Architecture & Coding Patterns (Sourced from ECC)
 
 1. **Immutability (CRITICAL):** Always create new objects, never mutate existing patient states or data payloads. Return new copies with changes applied. This prevents patient data cross-contamination.

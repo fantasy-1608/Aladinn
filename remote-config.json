@@ -1,9 +1,9 @@
 {
     "version": 1,
     "features": {
-        "autoSign": false,
-        "cdsEngine": false,
-        "aiVoice": false,
+        "autoSign": true,
+        "cdsEngine": true,
+        "aiVoice": true,
         "scanner": true
     },
     "mode": "pilot_safe_mode",

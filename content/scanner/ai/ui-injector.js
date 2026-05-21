@@ -23,10 +23,10 @@ const AIUIInjector = {
         }
 
         // Ép kiểu CSS ưu tiên cao nhất (important) để đè lên giao diện cũ
-        button.style.setProperty('background', 'linear-gradient(135deg, #d4a853 0%, #f59e0b 100%)', 'important');
-        button.style.setProperty('color', '#0b1121', 'important');
+        button.style.setProperty('background', 'linear-gradient(135deg, #9ECAFF 0%, #60A5FA 100%)', 'important');
+        button.style.setProperty('color', '#003258', 'important');
         button.style.setProperty('border', '2px solid rgba(255, 255, 255, 0.4)', 'important');
-        button.style.setProperty('box-shadow', '0 4px 15px rgba(212, 168, 83, 0.5), 0 0 20px rgba(245, 158, 11, 0.4)', 'important');
+        button.style.setProperty('box-shadow', '0 4px 15px rgba(158, 202, 255, 0.5), 0 0 20px rgba(96, 165, 250, 0.4)', 'important');
         button.style.setProperty('text-shadow', 'none', 'important');
         button.style.setProperty('transform', 'scale(1.05)', 'important');
         button.style.setProperty('transition', 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 'important');
@@ -102,7 +102,7 @@ const AIUIInjector = {
             .vnpt-toggle-container {
                 display: flex;
                 align-items: center;
-                background: rgba(15, 23, 42, 0.8);
+                background: rgba(29, 32, 36, 0.8);
                 backdrop-filter: blur(8px);
                 padding: 4px 8px;
                 border-radius: 20px;
@@ -114,32 +114,32 @@ const AIUIInjector = {
                 box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             }
             .vnpt-toggle-container:hover {
-                background: rgba(15, 23, 42, 0.95);
+                background: rgba(29, 32, 36, 0.95);
                 border-color: rgba(255, 255, 255, 0.2);
             }
             .toggle-label {
                 font-size: 9px;
                 font-weight: 800;
-                color: #8B8579;
+                color: #C2C6D2;
                 letter-spacing: 0.05em;
                 transition: color 0.3s;
             }
-            .vip-active .toggle-label.vip { color: #d4a853; }
-            .vip-active .toggle-label.base { color: #8B8579; }
+            .vip-active .toggle-label.vip { color: #9ECAFF; }
+            .vip-active .toggle-label.base { color: #C2C6D2; }
             .toggle-switch {
                 width: 32px;
                 height: 16px;
-                background: rgba(212, 168, 83, 0.1);
-                border: 1px solid rgba(212, 168, 83, 0.3);
+                background: rgba(158, 202, 255, 0.1);
+                border: 1px solid rgba(158, 202, 255, 0.3);
                 border-radius: 10px;
                 position: relative;
                 transition: background 0.3s;
             }
-            .vip-active .toggle-switch { background: #d4a853; border-color: #f59e0b; }
+            .vip-active .toggle-switch { background: #9ECAFF; border-color: #60A5FA; }
             .toggle-handle {
                 width: 12px;
                 height: 12px;
-                background: #E8E0D4;
+                background: #E1E2E8;
                 border-radius: 50%;
                 position: absolute;
                 top: 1px;
@@ -148,8 +148,8 @@ const AIUIInjector = {
             }
             .vip-active .toggle-handle {
                 transform: translateX(16px);
-                background: #0b1121;
-                box-shadow: 0 0 10px rgba(212, 168, 83, 0.8);
+                background: #0C0E12;
+                box-shadow: 0 0 10px rgba(158, 202, 255, 0.8);
             }
         `;
         document.head.appendChild(style);
@@ -161,9 +161,9 @@ const AIUIInjector = {
         style.id = 'vnpt-ai-keyframes';
         style.textContent = `
             @keyframes ai-glow-pulse {
-                0% { box-shadow: 0 4px 15px rgba(212, 168, 83, 0.5), 0 0 10px rgba(245, 158, 11, 0.4); }
-                50% { box-shadow: 0 4px 25px rgba(212, 168, 83, 0.8), 0 0 30px rgba(245, 158, 11, 0.7); }
-                100% { box-shadow: 0 4px 15px rgba(212, 168, 83, 0.5), 0 0 10px rgba(245, 158, 11, 0.4); }
+                0% { box-shadow: 0 4px 15px rgba(158, 202, 255, 0.5), 0 0 10px rgba(96, 165, 250, 0.4); }
+                50% { box-shadow: 0 4px 25px rgba(158, 202, 255, 0.8), 0 0 30px rgba(96, 165, 250, 0.7); }
+                100% { box-shadow: 0 4px 15px rgba(158, 202, 255, 0.5), 0 0 10px rgba(96, 165, 250, 0.4); }
             }
             .vnpt-ai-btn-active {
                 animation: ai-glow-pulse 2s infinite ease-in-out !important;

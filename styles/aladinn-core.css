@@ -1,6 +1,7 @@
 /* ============================================================
-   🧞 ALADINN DESIGN SYSTEM v2 — "Desert Mystic"
+   🧞 ALADINN DESIGN SYSTEM v2 — Material Design 3
    Source of Truth — All CSS Custom Properties & Shared Utilities
+   Seed Color: #1565C0 (Medical Blue — tương đồng HIS)
    ============================================================ */
 
 /* ── Fonts: Injected via JS using chrome.runtime.getURL() ──
@@ -9,66 +10,156 @@
 
 /* ── Design Tokens ── */
 :root {
-    /* Backgrounds */
-    --al-bg-deep:      #0C1222;
-    --al-bg-surface:   #141B2D;
-    --al-bg-elevated:  #1C2541;
-    --al-bg-glass:     rgba(20, 27, 45, 0.88);
-    --al-bg-hover:     rgba(212, 168, 83, 0.06);
+    /* ===== ALADINN HIS-IFY SYSTEM (Light Theme — VNPT HIS Blue) ===== */
 
-    /* Gold Accent */
-    --al-gold:         #D4A853;
-    --al-gold-light:   #F0D68A;
-    --al-gold-glow:    rgba(212, 168, 83, 0.25);
-    --al-gold-dim:     rgba(212, 168, 83, 0.08);
-    --al-gold-border:  rgba(212, 168, 83, 0.20);
+    /* Primary (Xanh chủ đạo HIS - rgb(0, 79, 158)) */
+    --al-primary:                #004f9e;
+    --al-on-primary:             #FFFFFF;
+    --al-primary-container:      #e0f0ff;
+    --al-on-primary-container:   #004f9e;
 
-    /* Text */
-    --al-text:         #E8E0D4;
-    --al-text-muted:   #8B8579;
-    --al-text-dim:     #5C564F;
+    /* Secondary (Màu nền phụ/Xám nút bấm HIS - rgb(238, 238, 238)) */
+    --al-secondary:              #eeeeee;
+    --al-on-secondary:           #333333;
+    --al-secondary-container:    #e5e5e5;
+    --al-on-secondary-container: #333333;
 
-    /* Functional */
-    --al-success:      #3ECDA0;
-    --al-warning:      #E8A838;
-    --al-error:        #E85454;
-    --al-info:         #5BA8D4;
+    /* Tertiary (Xanh nhạt viền/trạng thái của HIS) */
+    --al-tertiary:               #a6c9e2;
+    --al-on-tertiary:            #333333;
+    --al-tertiary-container:     #eef6ff;
+    --al-on-tertiary-container:  #004f9e;
 
-    /* Functional BG */
-    --al-success-bg:   rgba(62, 205, 160, 0.10);
-    --al-warning-bg:   rgba(232, 168, 56, 0.10);
-    --al-error-bg:     rgba(232, 84, 84, 0.10);
-    --al-info-bg:      rgba(91, 168, 212, 0.10);
+    /* Error */
+    --al-error:                  #dc3545;
+    --al-on-error:               #FFFFFF;
+    --al-error-container:        #f8d7da;
+    --al-on-error-container:     #721c24;
 
-    /* Typography */
-    --al-font:         'Inter', system-ui, -apple-system, sans-serif;
-    --al-font-title:   'Outfit', system-ui, sans-serif;
+    /* Surface (Nền sáng đục) */
+    --al-surface:                #FFFFFF;
+    --al-surface-dim:            #fcfcfc;
+    --al-surface-bright:         #FFFFFF;
+    --al-on-surface:             #333333;
+    --al-on-surface-variant:     #555555;
 
-    /* Radius */
-    --al-radius-sm:    6px;
-    --al-radius-md:    12px;
-    --al-radius-lg:    16px;
-    --al-radius-xl:    24px;
-    --al-radius-pill:  50px;
+    /* Surface Containers (Tonal Elevation) */
+    --al-surface-container-lowest:  #FFFFFF;
+    --al-surface-container-low:     #f9f9f9;
+    --al-surface-container:         #f5f5f5;
+    --al-surface-container-high:    #eeeeee;
+    --al-surface-container-highest: #e5e5e5;
 
-    /* Shadows */
-    --al-shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.3);
-    --al-shadow-md:    0 4px 12px rgba(0, 0, 0, 0.35);
-    --al-shadow-lg:    0 10px 30px rgba(0, 0, 0, 0.4);
-    --al-shadow-gold:  0 4px 20px rgba(212, 168, 83, 0.15);
+    /* Outline (Viền xanh nhạt đặc trưng của HIS - rgb(166, 201, 226)) */
+    --al-outline:                #a6c9e2;
+    --al-outline-variant:        #d3d3d3;
 
-    /* Blur (lightweight for performance) */
-    --al-blur:         blur(8px);
+    /* Inverse */
+    --al-inverse-surface:        #333333;
+    --al-inverse-on-surface:     #FFFFFF;
+    --al-inverse-primary:        #004f9e;
 
-    /* Motion */
-    --al-ease:         cubic-bezier(0.4, 0, 0.2, 1);
-    --al-duration:     200ms;
+    /* Scrim */
+    --al-scrim:                  rgba(0, 0, 0, 0.2);
 
-    /* Border */
-    --al-border:       rgba(212, 168, 83, 0.12);
-    --al-border-hover: rgba(212, 168, 83, 0.30);
+    /* ===== CUSTOM FUNCTIONAL COLORS ===== */
+    --al-success:      #28a745;
+    --al-warning:      #ffc107;
+    --al-info:         #17a2b8;
 
-    /* Z-Index Scale (Content scripts) */
+    /* Nền nhạt cho trạng thái */
+    --al-success-bg:   rgba(40, 167, 69, 0.08);
+    --al-warning-bg:   rgba(255, 193, 7, 0.08);
+    --al-error-bg:     rgba(220, 53, 69, 0.08);
+    --al-info-bg:      rgba(23, 162, 184, 0.08);
+
+    /* ===== BACKWARD COMPATIBILITY ALIASES ===== */
+    /* Đồng bộ các bí danh cũ sang giá trị HIS mới */
+    --al-bg-deep:      var(--al-surface);
+    --al-bg-surface:   var(--al-surface-container-low);
+    --al-bg-elevated:  var(--al-surface-container);
+    --al-bg-glass:     #FFFFFF;
+    --al-bg-hover:     rgba(0, 79, 158, 0.08);
+
+    --al-gold:         var(--al-primary);
+    --al-gold-light:   var(--al-on-primary-container);
+    --al-gold-glow:    rgba(0, 79, 158, 0.05);
+    --al-gold-dim:     rgba(0, 79, 158, 0.04);
+    --al-gold-border:  var(--al-outline);
+
+    --al-text:         var(--al-on-surface);
+    --al-text-muted:   var(--al-on-surface-variant);
+    --al-text-dim:     #666666;
+
+    --al-border:       var(--al-outline);
+    --al-border-hover: var(--al-primary);
+
+    /* HIS backward compat */
+    --his-primary:     var(--al-primary);
+    --his-success:     var(--al-success);
+    --his-danger:      var(--al-error);
+    --his-warning:     var(--al-warning);
+    --his-bg-primary:  var(--al-surface);
+    --his-bg-secondary: var(--al-surface-container-low);
+    --his-bg-tertiary: var(--al-surface-container);
+    --his-text-primary: var(--al-on-surface);
+    --his-text-secondary: var(--al-on-surface-variant);
+    --his-border:      var(--al-outline);
+    --his-glass-bg:    #FFFFFF;
+    --his-shadow:      var(--al-shadow-sm);
+    --his-glass-shadow: none;
+
+    /* ===== TYPOGRAPHY ===== */
+    --al-font:         "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    --al-font-title:   "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+
+    /* ===== SHAPE (HIS Square Style — 100% Phẳng vuông vức) ===== */
+    --al-radius-none:  0px;
+    --al-radius-xs:    0px;
+    --al-radius-sm:    0px;
+    --al-radius-md:    0px;
+    --al-radius-lg:    0px;
+    --al-radius-xl:    0px;
+    --al-radius-pill:  9999px; /* Giữ lại chỉ cho nút tròn micro hoặc avatar */
+
+    /* ===== SPACING (8dp Base Grid) ===== */
+    --al-space-050:    4px;
+    --al-space-100:    8px;
+    --al-space-150:    12px;
+    --al-space-200:    16px;
+    --al-space-300:    24px;
+    --al-space-400:    32px;
+    --al-space-500:    40px;
+    --al-space-600:    48px;
+
+    /* ===== MOTION (M3 Easing & Duration) ===== */
+    --al-ease:                  cubic-bezier(0.2, 0.0, 0.0, 1.0);
+    --al-ease-emphasized:       cubic-bezier(0.05, 0.7, 0.1, 1.0);
+    --al-ease-emphasized-accel: cubic-bezier(0.3, 0.0, 0.8, 0.15);
+    --al-ease-decel:            cubic-bezier(0.0, 0.0, 0.0, 1.0);
+    --al-ease-accel:            cubic-bezier(0.3, 0.0, 1.0, 1.0);
+    --al-duration:              250ms;
+    --al-duration-short:        150ms;
+    --al-duration-medium:       300ms;
+    --al-duration-long:         500ms;
+
+    /* ===== ELEVATION (HIS Flat Elevation) ===== */
+    --al-shadow-none:  none;
+    --al-shadow-sm:    1px 1px 2px rgba(0,0,0,0.05);
+    --al-shadow-md:    1px 1px 3px rgba(0,0,0,0.08);
+    --al-shadow-lg:    2px 2px 5px rgba(0,0,0,0.1);
+    --al-shadow-xl:    2px 2px 8px rgba(0,0,0,0.12);
+
+    /* Blur */
+    --al-blur:         none;
+
+    /* ===== STATE LAYER OPACITY ===== */
+    --al-state-hover:    0.06;
+    --al-state-focus:    0.08;
+    --al-state-pressed:  0.08;
+    --al-state-dragged:  0.12;
+
+    /* ===== Z-INDEX SCALE (Content Scripts) ===== */
     --al-z-base:       9000;
     --al-z-tooltip:    9100;
     --al-z-dashboard:  9200;
@@ -78,22 +169,8 @@
     --al-z-modal:      9700;
     --al-z-overlay:    9800;
     --al-z-top:        9999;
-
-    /* ── Backward Compatibility Aliases ── */
-    --his-primary:     var(--al-gold);
-    --his-success:     var(--al-success);
-    --his-danger:      var(--al-error);
-    --his-warning:     var(--al-warning);
-    --his-bg-primary:  var(--al-bg-deep);
-    --his-bg-secondary: var(--al-bg-surface);
-    --his-bg-tertiary: var(--al-bg-elevated);
-    --his-text-primary: var(--al-text);
-    --his-text-secondary: var(--al-text-muted);
-    --his-border:      var(--al-border);
-    --his-glass-bg:    var(--al-bg-glass);
-    --his-shadow:      var(--al-shadow-md);
-    --his-glass-shadow: var(--al-shadow-lg);
 }
+
 
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
@@ -142,24 +219,23 @@
 }
 
 .al-toast {
-    padding: 10px 18px;
-    border-radius: var(--al-radius-md);
+    padding: 12px 20px;
+    border-radius: var(--al-radius-sm);
     font-family: var(--al-font);
     font-size: 13px;
     font-weight: 500;
-    color: white;
+    color: var(--al-on-surface);
     pointer-events: auto;
     opacity: 0;
     transform: translateY(10px);
-    transition: all 0.3s var(--al-ease);
+    transition: all var(--al-duration-medium) var(--al-ease-emphasized);
     display: flex;
     align-items: center;
     gap: 10px;
     max-width: 380px;
     box-shadow: var(--al-shadow-md);
-    backdrop-filter: var(--al-blur);
-    background: var(--al-bg-glass);
-    border: 1px solid var(--al-border);
+    background: var(--al-surface-container-high);
+    border: 1px solid var(--al-outline-variant);
 }
 
 .al-toast.show {
@@ -180,16 +256,24 @@
 }
 
 .al-toast.info {
-    border-left: 3px solid var(--al-info);
+    border-left: 3px solid var(--al-primary);
 }
 
-/* ── Glass Panel (shared utility) ── */
+/* ── Surface Container Utility ── */
 .al-glass {
+    background: var(--al-surface-container-high);
+    border: 1px solid var(--al-outline-variant);
+    border-radius: var(--al-radius-xl);
+    box-shadow: var(--al-shadow-lg);
+}
+
+/* Content-script variant — needs transparency to show HIS beneath */
+.al-glass-overlay {
     background: var(--al-bg-glass);
     backdrop-filter: var(--al-blur);
     -webkit-backdrop-filter: var(--al-blur);
-    border: 1px solid var(--al-border);
-    border-radius: var(--al-radius-lg);
+    border: 1px solid var(--al-outline-variant);
+    border-radius: var(--al-radius-xl);
     box-shadow: var(--al-shadow-lg);
 }
 
@@ -203,12 +287,12 @@
 }
 
 .al-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(212, 168, 83, 0.2);
+    background: rgba(158, 202, 255, 0.15);
     border-radius: 4px;
 }
 
 .al-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 168, 83, 0.4);
+    background: rgba(158, 202, 255, 0.30);
 }
 
 /* ── Keyframes (shared, lightweight) ── */
@@ -253,8 +337,8 @@
 .al-spinner {
     width: 24px;
     height: 24px;
-    border: 2px solid var(--al-border);
-    border-top-color: var(--al-gold);
+    border: 2px solid var(--al-outline-variant);
+    border-top-color: var(--al-primary);
     border-radius: 50%;
     animation: al-spin 0.8s linear infinite;
 }

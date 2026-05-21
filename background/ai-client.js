@@ -418,7 +418,7 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
                     details: { context: 'callGeminiGenerateContent' }
                 });
             }
-        } catch (e) {}
+        } catch (_e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -580,7 +580,7 @@ export async function requestAI({ text, model, requestId }) {
                     details: { context: 'requestAI' }
                 });
             }
-        } catch (e) {}
+        } catch (_e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -625,7 +625,7 @@ export async function requestAI({ text, model, requestId }) {
                         details: { error: validation.error }
                     });
                 }
-            } catch (e) {}
+            } catch (_e) {}
             throw aiError(`Lỗi định dạng AI: ${validation.error}`, 'AI_SCHEMA_INVALID');
         }
 

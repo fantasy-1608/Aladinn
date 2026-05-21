@@ -361,12 +361,30 @@ const VNPTNutrition = (function () {
                 await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'nutrition_before_fill' });
             }
 
-            // Gửi lệnh điền — gửi cả weight/bloodPressure + admissionDate
+            // Construct the dynamic mapping from VNPTSelectors.nutritionForm
+            const mapping = {
+                weight: window.VNPTSelectors?.nutritionForm?.fields?.weight?.selector || 'textfield_1535',
+                height: window.VNPTSelectors?.nutritionForm?.fields?.height?.selector || 'textfield_1536',
+                bmi: window.VNPTSelectors?.nutritionForm?.fields?.bmi?.selector || 'textfield_1526',
+                systolic: window.VNPTSelectors?.nutritionForm?.fields?.systolic?.selector || 'textfield_1537',
+                diastolic: window.VNPTSelectors?.nutritionForm?.fields?.diastolic?.selector || 'textfield_1538',
+                sutCanNo: window.VNPTSelectors?.nutritionForm?.section2?.sutCanNo?.selector || 'checkbox_1527',
+                sutCan: window.VNPTSelectors?.nutritionForm?.section2?.sutCan?.selector || 'checkbox_1539',
+                bmiThap: window.VNPTSelectors?.nutritionForm?.section2?.bmiThap?.selector || 'checkbox_1540',
+                teoCo: window.VNPTSelectors?.nutritionForm?.section2?.teoCo?.selector || 'checkbox_1553',
+                phuNgoaiVi: window.VNPTSelectors?.nutritionForm?.section2?.phuNgoaiVi?.selector || 'checkbox_1554',
+                benhLyTieuHoa: window.VNPTSelectors?.nutritionForm?.section2?.benhLyTieuHoa?.selector || 'checkbox_1542',
+                anUongGiamSut: window.VNPTSelectors?.nutritionForm?.section2?.anUongGiamSut?.selector || 'checkbox_1543',
+                boSungMieng: window.VNPTSelectors?.nutritionForm?.section3?.boSungMieng?.selector || 'checkbox_1546'
+            };
+
+            // Gửi lệnh điền — gửi cả weight/bloodPressure + admissionDate + mapping
             await sendCmd(target, 'NUTRITION_FILL_FORM', {
                 weight: vitals?.weight || '',
                 height: hMeter,
                 bloodPressure: vitals?.bloodPressure || '',
                 admissionDate: admissionDate,
+                mapping: mapping,
                 contextToken: contextToken,
                 expectedPatientName: window.VNPTStore?.get('selectedPatientName')
             }, 'NUTRITION_FILL_RESULT');
@@ -411,20 +429,35 @@ const VNPTNutrition = (function () {
         const doc = iframe.contentDocument;
         if (!doc) throw new Error('Không truy cập iframe');
 
-        const old = doc.getElementById('vnpt-nutrition-helper');
+        // Inject self-healing script first
+        await injectScript(iframe, 'content/shared/self-healing.js', 'vnpt-self-healing-helper');
+        // Inject nutrition helper script
+        await injectScript(iframe, 'content/scanner/nutrition-iframe-helper.js', 'vnpt-nutrition-helper');
+    }
+
+    /**
+     * @param {HTMLIFrameElement} iframe
+     * @param {string} filePath
+     * @param {string} scriptId
+     */
+    async function injectScript(iframe, filePath, scriptId) {
+        const doc = iframe.contentDocument;
+        if (!doc) throw new Error('Không truy cập iframe');
+
+        const old = doc.getElementById(scriptId);
         if (old) old.remove();
 
         return new Promise((resolve, reject) => {
             const script = doc.createElement('script');
-            script.id = 'vnpt-nutrition-helper';
+            script.id = scriptId;
             if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/nutrition-iframe-helper.js');
+                script.src = _chrome.runtime.getURL(filePath);
             } else {
                 reject(new Error('Chrome runtime unavailable'));
                 return;
             }
             script.onload = () => resolve(undefined);
-            script.onerror = () => reject(new Error('Inject failed'));
+            script.onerror = () => reject(new Error('Inject failed: ' + filePath));
             (doc.head || doc.documentElement).appendChild(script);
         });
     }

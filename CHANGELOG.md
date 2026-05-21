@@ -7,6 +7,76 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.0.0] — 2026-05-21
+
+### ✨ Tính năng mới & Cải tiến Lâm sàng Vượt trội (Aladinn Clinical OS Upgrade)
+
+- **Hệ thống Tự phục hồi DOM (Self-Healing DOM Engine)**: Tích hợp cơ chế đối sánh ngữ nghĩa thông minh sử dụng bộ từ điển lâm sàng tiếng Việt. Giúp tự động nhận diện và tự sửa lỗi ánh xạ các trường bệnh án (Hội chẩn, Chuyển viện, Dinh dưỡng,...) ngay cả khi hệ thống HIS thay đổi, ẩn hoặc làm mới ID tĩnh của DOM.
+- **Cảnh báo eGFR & Liều lượng theo Chức năng Thận (eGFR Renal Alerts)**:
+  - Tích hợp tự động tính toán eGFR theo phương trình **Cockcroft-Gault** và **CKD-EPI (2021)** không phụ thuộc vào chủng tộc (race-free).
+  - Tự động nhận diện và chuyển đổi đơn vị Creatinine huyết thanh ($\mu\text{mol/L}$ sang $\text{mg/dL}$).
+  - Tự động cảnh báo giới hạn liều lượng/chỉ định an toàn lâm sàng (ví dụ: Chống chỉ định hoặc cảnh báo giảm liều Metformin dựa trên mức eGFR của bệnh nhân).
+- **Quét phím Chủ động thời gian thực (Proactive Keystroke CDS Hook)**:
+  - Cho phép quét phím trực tiếp trên các trường kê đơn khi bác sĩ đang nhập tên thuốc (real-time).
+  - Phân tích và truy vấn luật CDS từ trước khi biểu mẫu được lưu/gửi, hỗ trợ ra quyết định lâm sàng nhanh chóng và an toàn hơn.
+- **Tuân thủ Tuyệt đối Clinical Safety & Immutability**:
+  - Toàn bộ cơ chế phân tích CDS được thiết kế bất biến (Immutable Context), loại bỏ triệt để việc thay đổi dữ liệu gốc của bệnh nhân.
+  - Fail-closed hoàn toàn nếu phát hiện sự sai lệch thông tin `benhnhanId` hoặc `khambenhId`.
+
+---
+
+## [2.0.5] — 2026-05-21
+
+### 🎨 Thiết Kế Nhận Diện Thương Hiệu Động Aladinn x Gemini Intelligent (Aesthetics Upgrade)
+
+- **Hộp Kính Mờ Thương Hiệu (Glassmorphic Capsule):** Khắc phục lỗi tương phản màu chữ bằng việc tạo một hộp kính mờ sang trọng bao quanh tên Bác sĩ, với viền gradient phát sáng neon và màu chữ trắng tinh khiết nổi bật 100%.
+- **Biểu tượng lai Aladinn x Gemini Intelligent Động:** Tích hợp logo Đèn Thần Gold lấp lánh kết hợp làn khói ma thuật uốn lượn bay ra 2 ngôi sao Gemini lấp lánh (một to phập phồng tự xoay chậm, một nhỏ nhấp nháy lấp lánh lệch pha cực đẹp).
+- **Chữ thương hiệu SHIMMER:** Bổ sung dòng chữ nhỏ "ALADINN" màu vàng Gold lấp lánh (shimmer effect) ngay trước tên Bác sĩ, khẳng định rõ trạng thái hoạt động của hệ điều hành lâm sàng.
+
+---
+
+## [2.0.4] — 2026-05-21
+
+### 📝 Hoàn thiện Hồ sơ Sáng kiến Cấp Cơ sở
+
+- **Hoàn thiện Thuyết minh Sáng kiến:** Bổ sung đầy đủ các mục bắt buộc theo Nghị định 13/2012/NĐ-CP (Tính mới, Cam đoan tác giả, Thời gian áp dụng, Nơi áp dụng, Chủ đầu tư, Điều kiện áp dụng).
+- **Mẫu Phiếu khảo sát bác sĩ:** Tạo mẫu phiếu khảo sát sự hài lòng 10 câu hỏi Likert để thu thập minh chứng thực tế.
+- **Mẫu Đơn đề nghị công nhận:** Tạo mẫu đơn hành chính chuẩn để nộp Hội đồng Khoa học Kỹ thuật.
+- **Xóa test placeholder:** Loại bỏ `basic.test.js` (test vô nghĩa `expect(true).toBe(true)`).
+
+---
+
+## [2.0.3] — 2026-05-21
+
+### 🛡️ Self-Healing UI & Live Persistence Observer
+
+- **Cơ chế tự khôi phục tiện ích thời gian thực:** Tích hợp `MutationObserver` siêu nhẹ trên `document.body` giúp tự động tái tiêm nút Aladinn "🧞" và nút tóm tắt nội dòng (inline) dưới 10ms khi HIS re-render DOM.
+- **Kiểm thử tự phục hồi:** Bổ sung 3 ca test chuyên biệt tại `tests/scanner/self-healing-ui.test.js` giả lập tình huống HIS xóa nút tiện ích, xác nhận phục hồi tự động.
+- **Dọn dẹp an toàn bộ nhớ:** Observer tự `disconnect()` khi tab unload để tránh rò rỉ bộ nhớ.
+
+---
+
+## [2.0.2] — 2026-05-21
+
+### 🎨 Tinh chỉnh Hover & Màu sắc Chỉ số Bất thường
+
+- **Thanh ngang định vị hover:** Gỡ bỏ `!important` inline style, nâng cường nền hover `#d2e3fc`, thêm thanh chỉ thị đứng `#1e5494` bên trái dòng xét nghiệm khi rê chuột.
+- **Sửa lỗi mã Hex:** Khắc phục lệch mã màu Hex (`#dc2626` → `#c62828`) giúp chỉ số tăng (▲) hiển thị đúng đỏ sẫm trên nền đỏ nhạt `#ffeeee`.
+- **CSS transition:** Bổ sung chuyển cảnh mượt 0.12s giúp quét mắt dóng hàng cực nhanh.
+
+---
+
+## [2.0.1] — 2026-05-21
+
+### 🎨 Giao diện CLS Phẳng Chuẩn HIS
+
+- **Tông màu xanh thẫm HIS `#1e5494`:** Tất cả thanh header modal, tiêu đề phân nhóm xét nghiệm và nút hành động chính đều chuyển sang màu xanh dương đặc trưng VNPT HIS.
+- **Phẳng lỳ 100%:** Toàn bộ bo góc `border-radius` về `0px`, viền phẳng mỏng `#cccccc`.
+- **Kẻ lưới dóng hàng:** Bảng xét nghiệm kẻ lưới mỏng dọc/ngang đầy đủ (`border-collapse: collapse`).
+- **Nút phẳng:** Các nút "Đọc Nâng Cao" và "Xem ảnh PACS" chuyển sang nút phẳng viền xanh dương.
+
+---
+
 ## [1.5.0] — 2026-05-21
 
 ### ✨ Tính năng mới & Cải tiến Giao diện Nổi bật

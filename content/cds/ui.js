@@ -56,7 +56,11 @@ export const CDSUI = {
     },
 
     init() {
-        if (document.getElementById('aladinn-cds-drawer')) return;
+        if (document.getElementById('aladinn-cds-drawer')) {
+            this.panel = document.getElementById('aladinn-cds-panel');
+            this.iconToggle = document.getElementById('aladinn-cds-shield');
+            return;
+        }
 
         // Container chung
         const container = document.createElement('div');
@@ -249,7 +253,7 @@ export const CDSUI = {
                 pointer-events: auto !important;
                 width: 48px !important;
                 height: 48px !important;
-                background: rgba(20, 27, 45, 0.92) !important;
+                background: rgba(29, 32, 36, 0.92) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
                 border: 1px solid rgba(255,255,255,0.1) !important;
@@ -263,13 +267,13 @@ export const CDSUI = {
                 transition: transform 0.2s ease, box-shadow 0.2s !important;
             }
             #aladinn-cds-shield:hover { transform: scale(1.05) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.4) !important; }
-            #aladinn-cds-shield.warning { border-color: #E8A838 !important; animation: pulse-warning 2s infinite !important; }
-            #aladinn-cds-shield.critical { border-color: #E85454 !important; animation: pulse-critical 1.5s infinite !important; }
+            #aladinn-cds-shield.warning { border-color: #FBBF24 !important; animation: pulse-warning 2s infinite !important; }
+            #aladinn-cds-shield.critical { border-color: #FFB4AB !important; animation: pulse-critical 1.5s infinite !important; }
 
             #aladinn-cds-panel {
                 pointer-events: auto !important;
                 width: 340px !important;
-                background: rgba(12, 18, 34, 0.94) !important;
+                background: rgba(29, 32, 36, 0.94) !important;
                 backdrop-filter: blur(24px) saturate(180%) !important;
                 -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
                 border-radius: 20px !important;
@@ -301,14 +305,14 @@ export const CDSUI = {
                 background: transparent !important;
                 min-height: 50px !important;
             }
-            .cds-header h3 { margin: 0 !important; font-size: 15px !important; color: #E8E0D4 !important; font-weight: 600 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important;}
+            .cds-header h3 { margin: 0 !important; font-size: 15px !important; color: #E1E2E8 !important; font-weight: 600 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important;}
             .cds-header h3 svg { stroke: #60a5fa !important; }
             .header-action-btn { 
                 cursor: pointer; color: #64748b;
                 width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
                 background: rgba(255,255,255,0.05); transition: background 0.2s, color 0.2s;
             }
-            .header-action-btn:hover { background: rgba(255,255,255,0.1); color: #E8E0D4; }
+            .header-action-btn:hover { background: rgba(255,255,255,0.1); color: #E1E2E8; }
             
             .cds-body {
                 flex: 1 !important;
@@ -329,9 +333,9 @@ export const CDSUI = {
                 background: rgba(0,0,0,0.2) !important;
             }
             #cds-status-text { color: #64748b !important; font-size: 12px !important; }
-            #cds-crawl-info { color: #8B8579 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(20,27,45,0.5) !important; }
+            #cds-crawl-info { color: #C2C6D2 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(29,32,36,0.5) !important; }
             #cds-crawl-info.success { color: #34d399 !important; }
-            .cds-empty-state { text-align: center; color: #8B8579 !important; font-size: 13px !important; margin-top: 40px !important; }
+            .cds-empty-state { text-align: center; color: #C2C6D2 !important; font-size: 13px !important; margin-top: 40px !important; }
 
             .cds-patient-info {
                 padding: 10px 20px !important;
@@ -340,7 +344,7 @@ export const CDSUI = {
             }
             .cds-patient-name {
                 font-weight: 700 !important;
-                color: #E8E0D4 !important;
+                color: #E1E2E8 !important;
                 font-size: 13px !important;
                 margin-bottom: 4px !important;
                 display: flex !important;
@@ -349,7 +353,7 @@ export const CDSUI = {
             }
             .cds-patient-diag {
                 font-size: 11px !important;
-                color: #8B8579 !important;
+                color: #C2C6D2 !important;
                 line-height: 1.4 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -357,7 +361,7 @@ export const CDSUI = {
             }
             .cds-diag-label {
                 font-size: 10px !important;
-                color: #8B8579 !important;
+                color: #C2C6D2 !important;
                 font-weight: 600 !important;
                 text-transform: uppercase !important;
                 letter-spacing: 0.5px !important;
@@ -374,7 +378,7 @@ export const CDSUI = {
                 font-size: 11px !important;
                 font-weight: 600 !important;
                 font-family: 'SF Mono', 'Menlo', 'Consolas', monospace !important;
-                color: #c8b89a !important;
+                color: #C2C6D2 !important;
                 background: rgba(255,255,255,0.06) !important;
                 border: 1px solid rgba(255,255,255,0.08) !important;
                 letter-spacing: 0.3px !important;
@@ -386,15 +390,15 @@ export const CDSUI = {
                 background: rgba(255,255,255,0.1) !important;
                 border-color: rgba(255,255,255,0.15) !important;
                 transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(212, 162, 90, 0.15) !important;
+                box-shadow: 0 4px 12px rgba(158, 202, 255, 0.15) !important;
             }
             .cds-diag-pill.primary {
-                color: #f0d78c !important;
-                background: rgba(212,162,90,0.15) !important;
-                border-color: rgba(212,162,90,0.3) !important;
+                color: #D1E4FF !important;
+                background: rgba(158,202,255,0.15) !important;
+                border-color: rgba(158,202,255,0.3) !important;
             }
             .cds-diag-pill.primary:hover {
-                background: rgba(212,162,90,0.22) !important;
+                background: rgba(158,202,255,0.22) !important;
             }
             
             /* Alert Cards — Dark */
@@ -408,21 +412,21 @@ export const CDSUI = {
                 border-left: 4px solid #475569 !important;
                 text-align: left !important;
             }
-            .cds-alert-card.high { border-left-color: #E85454 !important; background: rgba(232, 84, 84, 0.06) !important; animation: aladinn-glowPulseRed 2s ease-in-out infinite; }
-            .cds-alert-card.medium { border-left-color: #E8A838 !important; background: rgba(232, 168, 56, 0.06) !important; animation: aladinn-glowPulseGold 2s ease-in-out infinite; }
+            .cds-alert-card.high { border-left-color: #FFB4AB !important; background: rgba(255, 180, 171, 0.06) !important; animation: aladinn-glowPulseRed 2s ease-in-out infinite; }
+            .cds-alert-card.medium { border-left-color: #FBBF24 !important; background: rgba(251, 191, 36, 0.06) !important; animation: aladinn-glowPulseGold 2s ease-in-out infinite; }
             .cds-alert-card.low, .cds-alert-card.info { border-left-color: #3b82f6 !important; }
             
-            .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #E8E0D4 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
-            .cds-alert-effect { font-size: 13px !important; color: #8B8579 !important; margin-bottom: 10px !important; line-height: 1.4 !important; }
+            .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #E1E2E8 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
+            .cds-alert-effect { font-size: 13px !important; color: #C2C6D2 !important; margin-bottom: 10px !important; line-height: 1.4 !important; }
             .cds-alert-rec { font-size: 12px !important; color: #34d399 !important; font-weight: 600 !important; background: rgba(52, 211, 153, 0.1) !important; padding: 6px 10px !important; border-radius: 6px !important; display: inline-block !important; }
             
             .alert-match-list { margin-top: 12px; font-size: 11px; }
-            .alert-match-list span { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-family: -apple-system, monospace; color: #E8E0D4; margin-right: 6px; display: inline-block; margin-bottom: 4px;}
+            .alert-match-list span { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-family: -apple-system, monospace; color: #E1E2E8; margin-right: 6px; display: inline-block; margin-bottom: 4px;}
             
             @keyframes pulse-warning {
-                0% { box-shadow: 0 0 0 0 rgba(232, 168, 56, 0.4); }
-                70% { box-shadow: 0 0 0 12px rgba(232, 168, 56, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(232, 168, 56, 0); }
+                0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+                70% { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
             }
             @keyframes pulse-critical {
                 0% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0.4); }
@@ -436,7 +440,7 @@ export const CDSUI = {
                 padding: 12px !important; border-radius: 10px !important; margin-bottom: 10px !important;
             }
             .cds-checked { background: rgba(16, 185, 129, 0.08) !important; border: 1px solid rgba(16, 185, 129, 0.2) !important; }
-            .cds-unchecked { background: rgba(232, 168, 56, 0.08) !important; border: 1px solid rgba(232, 168, 56, 0.2) !important; }
+            .cds-unchecked { background: rgba(251, 191, 36, 0.08) !important; border: 1px solid rgba(251, 191, 36, 0.2) !important; }
             .cds-coverage-label { 
                 font-size: 12px !important; font-weight: 600 !important; color: #e2e8f0 !important; 
                 margin-bottom: 8px !important; display: flex !important; align-items: center !important; gap: 4px !important;
@@ -453,14 +457,14 @@ export const CDSUI = {
                 border: 1px solid rgba(16, 185, 129, 0.25) !important;
             }
             .cds-pill.unchecked { 
-                background: rgba(232, 168, 56, 0.12) !important; color: #fcd34d !important;
-                border: 1px solid rgba(232, 168, 56, 0.25) !important;
+                background: rgba(251, 191, 36, 0.12) !important; color: #fcd34d !important;
+                border: 1px solid rgba(251, 191, 36, 0.25) !important;
                 text-decoration: none !important; cursor: pointer !important;
                 transition: background 0.15s, border-color 0.15s !important;
             }
             .cds-pill.unchecked:hover { 
-                background: rgba(232, 168, 56, 0.22) !important; 
-                border-color: rgba(232, 168, 56, 0.4) !important; 
+                background: rgba(251, 191, 36, 0.22) !important; 
+                border-color: rgba(251, 191, 36, 0.4) !important; 
             }
             .cds-coverage-hint {
                 margin-top: 6px !important; font-size: 10px !important; color: #64748b !important;
@@ -477,12 +481,18 @@ export const CDSUI = {
 
     show() {
         // Thêm class cho phần tử CHA (drawer) để trượt nguyên cụm ra ngoài
-        document.getElementById('aladinn-cds-drawer').classList.add('aladinn-drawer-active');
+        const drawer = document.getElementById('aladinn-cds-drawer');
+        if (drawer) {
+            drawer.classList.add('aladinn-drawer-active');
+        }
         this.isOpen = true;
     },
 
     hide() {
-        document.getElementById('aladinn-cds-drawer').classList.remove('aladinn-drawer-active');
+        const drawer = document.getElementById('aladinn-cds-drawer');
+        if (drawer) {
+            drawer.classList.remove('aladinn-drawer-active');
+        }
         this.isOpen = false;
         this.hasUserDismissed = true;  // Ghi nhận user tự đóng
     },
@@ -600,22 +610,43 @@ export const CDSUI = {
         const shieldAlertSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
         const shieldCheckSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
 
-        const unmapped = debug.unmapped_drugs || [];
+        const unmappedRaw = debug.unmapped_drugs || [];
+        const seenUnmapped = new Set();
+        const unmapped = [];
+        for (const d of unmappedRaw) {
+            const cleanKey = d.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+            if (!seenUnmapped.has(cleanKey)) {
+                seenUnmapped.add(cleanKey);
+                unmapped.push(d);
+            }
+        }
         const hasUnmapped = unmapped.length > 0;
 
         if (summary.critical_count > 0) {
             this.iconToggle.classList.add('critical');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#E85454';
+            this.iconToggle.style.color = '#FFB4AB';
         } else if (summary.warning_count > 0 || hasUnmapped) {
             this.iconToggle.classList.add('warning');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#E8A838';
+            this.iconToggle.style.color = '#FBBF24';
         } else {
             this.iconToggle.innerHTML = shieldCheckSVG;
         }
 
-        statusText.textContent = `Đã phân tích: ${debug.normalized_drugs.length}/${summary.total_scanned || debug.normalized_drugs.length} thuốc`;
+        // Deduplicate checked/normalized list for robust UI display
+        const checkedRaw = debug.normalized_drugs || [];
+        const seenChecked = new Set();
+        const checked = [];
+        for (const d of checkedRaw) {
+            const cleanKey = d.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+            if (!seenChecked.has(cleanKey)) {
+                seenChecked.add(cleanKey);
+                checked.push(d);
+            }
+        }
+
+        statusText.textContent = `Đã phân tích: ${checked.length}/${summary.total_scanned || checked.length} thuốc`;
 
         // === BUILD BODY ===
         container.innerHTML = '';
@@ -666,9 +697,7 @@ export const CDSUI = {
         const coverageDiv = document.createElement('div');
         coverageDiv.className = 'cds-coverage-summary';
 
-        // 2a. Thuốc ĐÃ KIỂM TRA (normalized)
-        const checked = debug.normalized_drugs || [];
-        
+        // 2a. Thuốc ĐÃ KIỂM TRA (sử dụng danh sách checked đã được khử trùng lặp phía trên)
         // Lọc ra những thuốc AN TOÀN (không nằm trong cảnh báo nào)
         const alertDrugs = new Set();
         alerts.forEach(a => {
@@ -716,10 +745,10 @@ export const CDSUI = {
     getSeverityEmoji(severity) {
         // Trả về dấu chấm tròn màu sắc chỉ báo mức độ chuyên nghiệp hơn emoji
         const bullet = (color) => `<svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="${color}"/></svg>`;
-        if (severity === 'high') return bullet('#E85454');
-        if (severity === 'medium') return bullet('#E8A838');
+        if (severity === 'high') return bullet('#FFB4AB');
+        if (severity === 'medium') return bullet('#FBBF24');
         if (severity === 'low') return bullet('#3b82f6');
-        return bullet('#E8E0D4');
+        return bullet('#E1E2E8');
     },
 
     /**
@@ -789,7 +818,7 @@ export const CDSUI = {
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(232, 168, 56, 0.95);
+                background: rgba(251, 191, 36, 0.95);
                 color: #fff;
                 padding: 16px 24px;
                 border-radius: 12px;
@@ -851,7 +880,7 @@ export const CDSUI = {
                         <span style="font-size: 20px;">✅</span>
                         <div>
                             <div style="color: #10b981; font-weight: 700; font-size: 13px;">Kiểm tra BHYT: Đạt</div>
-                            <div style="color: #A0998E; font-size: 12px;">${drugCount} thuốc, ${icdCount} ICD • ${time}</div>
+                            <div style="color: #8C9099; font-size: 12px;">${drugCount} thuốc, ${icdCount} ICD • ${time}</div>
                         </div>
                     </div>
                 </div>
@@ -862,18 +891,18 @@ export const CDSUI = {
 
         // Render audit alerts (không replace, chỉ thêm vào đầu)
         let html = `
-            <div style="background: rgba(232, 168, 56, 0.1); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(232, 168, 56, 0.3);">
+            <div style="background: rgba(251, 191, 36, 0.1); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                     <span style="font-size: 16px;">🛡️</span>
-                    <strong style="color: #E8A838; font-size: 13px;">BHYT Pre-claim Audit</strong>
-                    <span style="color: #A0998E; font-size: 11px; margin-left: auto;">${time}</span>
+                    <strong style="color: #FBBF24; font-size: 13px;">BHYT Pre-claim Audit</strong>
+                    <span style="color: #8C9099; font-size: 11px; margin-left: auto;">${time}</span>
                 </div>
-                <div style="color: #A0998E; font-size: 11px; margin-bottom: 6px;">${drugCount} thuốc, ${icdCount} ICD • ${alerts.length} vấn đề</div>
+                <div style="color: #8C9099; font-size: 11px; margin-bottom: 6px;">${drugCount} thuốc, ${icdCount} ICD • ${alerts.length} vấn đề</div>
             </div>
         `;
 
         for (const alert of alerts) {
-            const borderColor = alert.severity === 'high' ? '#E85454' : '#E8A838';
+            const borderColor = alert.severity === 'high' ? '#FFB4AB' : '#FBBF24';
             const icon = alert.severity === 'high' ? '⛔' : '⚠️';
             html += `
                 <div class="cds-alert" style="border-left: 4px solid ${borderColor}; margin-bottom: 6px;">
@@ -881,7 +910,7 @@ export const CDSUI = {
                         <span style="font-size: 14px; margin-top: 1px;">${icon}</span>
                         <div style="flex: 1; min-width: 0;">
                             <div style="color: ${borderColor}; font-weight: 700; font-size: 12px; margin-bottom: 2px;">${this.escapeHtml(alert.title)}</div>
-                            <div style="color: #D4CFC5; font-size: 12px; line-height: 1.4;">${this.escapeHtml(alert.effect)}</div>
+                            <div style="color: #C2C6D2; font-size: 12px; line-height: 1.4;">${this.escapeHtml(alert.effect)}</div>
                             <div style="color: #10b981; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: rgba(16,185,129,0.08); border-radius: 6px;">💡 ${this.escapeHtml(alert.recommendation)}</div>
                         </div>
                     </div>

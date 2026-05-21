@@ -10,14 +10,14 @@
         .master-switch-card {
             margin: 16px 16px 0;
             padding: 12px 16px;
-            background: rgba(212, 168, 83, 0.08);
-            border: 1px solid var(--al-gold);
+            background: rgba(158, 202, 255, 0.08);
+            border: 1px solid var(--al-primary);
             border-radius: var(--al-radius-md);
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s var(--al-ease);
         }
         .master-switch-card.paused {
             background: rgba(0, 0, 0, 0.3);
@@ -48,7 +48,7 @@
         .master-title {
             font-weight: 600;
             font-size: 14px;
-            color: var(--al-gold);
+            color: var(--al-primary);
         }
 
         /* Grey out main content when paused */
@@ -159,11 +159,11 @@
                     <span style="font-size:18px; margin-bottom:4px;">✂️</span>
                     Quét PTTT
                 </div>
-                <div id="scan-bhyt-btn" class="action-btn" style="padding: 12px 8px; border-color: rgba(232, 168, 56, 0.4); color: rgba(232, 168, 56, 1);">
+                <div id="scan-bhyt-btn" class="action-btn" style="padding: 12px 8px; border-color: rgba(158, 202, 255, 0.3); color: var(--al-primary);">
                     <span style="font-size:18px; margin-bottom:4px;">🛡️</span>
                     Quét BHYT
                 </div>
-                <div id="clear-cache-btn" class="action-btn" style="grid-column: span 2; padding: 10px; flex-direction: row; justify-content: center; border-color: rgba(239, 68, 68, 0.2); color: rgba(239, 68, 68, 0.8);">
+                <div id="clear-cache-btn" class="action-btn" style="grid-column: span 2; padding: 10px; flex-direction: row; justify-content: center; border-color: rgba(255, 180, 171, 0.2); color: var(--al-error);">
                     <svg class="al-icon al-icon-sm action-icon" style="color: inherit;" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     Xóa Cache Bộ nhớ
                 </div>
@@ -187,7 +187,7 @@
                     </button>
                 </div>
                 
-                <div style="background: rgba(212, 168, 83, 0.05); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: var(--al-text-dim); border: 1px dashed var(--al-border);">
+                <div style="background: rgba(158, 202, 255, 0.05); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: var(--al-text-dim); border: 1px dashed var(--al-border);">
                     <span id="sign-status-text">Chỉ hoạt động ở màn hình chờ Ký số HIS</span>
                 </div>
             </div>

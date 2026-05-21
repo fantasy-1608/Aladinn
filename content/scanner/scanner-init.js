@@ -10,6 +10,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 (function () {
     'use strict';
 
+    const AI_MAGNIFIER_SVG = '<span class="his-inline-icon">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">' +
+        '<circle cx="10" cy="10" r="6"></circle>' +
+        '<line x1="14.5" y1="14.5" x2="20" y2="20"></line>' +
+        '<polyline class="aladinn-ecg-line" points="5,10 7.5,10 8.5,12 9.5,6 10.5,13.5 11.5,10 14.5,10" ' +
+        'stroke-width="1.5" fill="none"></polyline>' +
+        '</svg></span>';
+
     function _showABGPopup(pH, pCO2, HCO3, pO2, FiO2, BE, Na, Cl) {
         let step1Html;
         let phStatus;
@@ -17,17 +26,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         let isAlkalemia = false;
 
         if (pH !== null && !isNaN(pH)) {
-            if (pH < 7.35) { phStatus = '<span style="color:#ef4444">Toan máu (Acidemia)</span>'; isAcidemia = true; }
+            if (pH < 7.35) { phStatus = '<span style="color:#FFB4AB">Toan máu (Acidemia)</span>'; isAcidemia = true; }
             else if (pH > 7.45) { phStatus = '<span style="color:#60a5fa">Kiềm máu (Alkalemia)</span>'; isAlkalemia = true; }
             else { phStatus = '<span style="color:#4ade80">Bình thường</span>'; }
             step1Html = `<div style="margin-bottom:12px;">
-                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div>
+                <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div>
                 <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:14px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
                     pH = <b>${pH}</b> ➔ <b>${phStatus}</b>
                 </div>
             </div>`;
         } else {
-            step1Html = '<div style="margin-bottom:12px;"><div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div><div style="color:#a18764; font-size:13px;">(Không có dữ liệu pH)</div></div>';
+            step1Html = '<div style="margin-bottom:12px;"><div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">1️⃣ Bước 1: Đánh giá pH</div><div style="color:#8C9099; font-size:13px;">(Không có dữ liệu pH)</div></div>';
         }
 
         let step2Html;
@@ -38,9 +47,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             
             let primary = '';
             if (isAcidemia) {
-                if (pCO2 > 45 && HCO3 >= 22) { primary = '<span style="color:#ef4444">Toan hô hấp</span>'; direction = 'toan_ho_hap'; }
-                else if (HCO3 < 22 && pCO2 <= 45) { primary = '<span style="color:#ef4444">Toan chuyển hóa</span>'; direction = 'toan_chuyen_hoa'; }
-                else if (pCO2 > 45 && HCO3 < 22) { primary = '<span style="color:#ef4444">Toan hỗn hợp (Hô hấp + Chuyển hóa)</span>'; direction = 'toan_hon_hop'; }
+                if (pCO2 > 45 && HCO3 >= 22) { primary = '<span style="color:#FFB4AB">Toan hô hấp</span>'; direction = 'toan_ho_hap'; }
+                else if (HCO3 < 22 && pCO2 <= 45) { primary = '<span style="color:#FFB4AB">Toan chuyển hóa</span>'; direction = 'toan_chuyen_hoa'; }
+                else if (pCO2 > 45 && HCO3 < 22) { primary = '<span style="color:#FFB4AB">Toan hỗn hợp (Hô hấp + Chuyển hóa)</span>'; direction = 'toan_hon_hop'; }
             } else if (isAlkalemia) {
                 if (pCO2 < 35 && HCO3 <= 26) { primary = '<span style="color:#60a5fa">Kiềm hô hấp</span>'; direction = 'kiem_ho_hap'; }
                 else if (HCO3 > 26 && pCO2 >= 35) { primary = '<span style="color:#60a5fa">Kiềm chuyển hóa</span>'; direction = 'kiem_chuyen_hoa'; }
@@ -52,7 +61,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             }
 
             step2Html = `<div style="margin-bottom:12px;">
-                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div>
+                <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div>
                 <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
                     <ul style="margin:0; padding-left:16px; margin-bottom:6px;">
                         <li>pCO2 = ${pCO2} mmHg ➔ Hướng <b>${pco2Dir}</b></li>
@@ -62,7 +71,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 </div>
             </div>`;
         } else {
-             step2Html = '<div style="margin-bottom:12px;"><div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div><div style="color:#a18764; font-size:13px;">(Thiếu dữ liệu pCO2, HCO3)</div></div>';
+             step2Html = '<div style="margin-bottom:12px;"><div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">2️⃣ Bước 2: Rối loạn nguyên phát</div><div style="color:#8C9099; font-size:13px;">(Thiếu dữ liệu pCO2, HCO3)</div></div>';
         }
 
         let step3Html = '';
@@ -93,11 +102,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             }
             
             if (BE !== null && !isNaN(BE)) {
-                compDetails += `<div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);"><b>Base Excess (BE):</b> ${BE} mmol/L ` + (BE < -2 ? '(<span style="color:#ef4444">Thiếu kiềm</span>)' : (BE > 2 ? '(<span style="color:#60a5fa">Thừa kiềm</span>)' : '(<span style="color:#4ade80">Bình thường</span>)')) + '</div>';
+                compDetails += `<div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);"><b>Base Excess (BE):</b> ${BE} mmol/L ` + (BE < -2 ? '(<span style="color:#FFB4AB">Thiếu kiềm</span>)' : (BE > 2 ? '(<span style="color:#60a5fa">Thừa kiềm</span>)' : '(<span style="color:#4ade80">Bình thường</span>)')) + '</div>';
             }
 
             step3Html = `<div style="margin-bottom:12px;">
-                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">3️⃣ Bước 3: Đánh giá bù trừ & Hỗn hợp</div>
+                <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">3️⃣ Bước 3: Đánh giá bù trừ & Hỗn hợp</div>
                 <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
                     ${compDetails}
                 </div>
@@ -109,7 +118,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             let agDetails = '';
             if (Na !== null && Cl !== null && !isNaN(Na) && !isNaN(Cl)) {
                 const AG = Na - (Cl + HCO3);
-                agDetails += `<div style="margin-bottom:6px;"><b>Anion Gap (AG):</b> ${AG.toFixed(1)} mmol/L ` + (AG > 12 ? '(<span style="color:#ef4444">Tăng</span>)' : '(<span style="color:#4ade80">Bình thường</span>)') + '</div>';
+                agDetails += `<div style="margin-bottom:6px;"><b>Anion Gap (AG):</b> ${AG.toFixed(1)} mmol/L ` + (AG > 12 ? '(<span style="color:#FFB4AB">Tăng</span>)' : '(<span style="color:#4ade80">Bình thường</span>)') + '</div>';
                 
                 if (AG > 12) {
                     agDetails += '↳ <b>Nguyên nhân (MUDPILES):</b> Toan ceton, Toan lactic, Suy thận, Ngộ độc...<br/>';
@@ -125,12 +134,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     agDetails += '↳ <b>Nguyên nhân (HARDUP):</b> Tiêu chảy, RTA (Toan ống thận), Dò tiêu hóa...';
                 }
             } else {
-                agDetails = '<span style="color:#a18764; font-style:italic;">(Cần xét nghiệm Na, Cl bên bảng Sinh hóa cùng ngày để tính Anion Gap)</span>';
+                agDetails = '<span style="color:#8C9099; font-style:italic;">(Cần xét nghiệm Na, Cl bên bảng Sinh hóa cùng ngày để tính Anion Gap)</span>';
             }
 
             const agStepNum = step3Html ? 4 : 3;
             step4Html = `<div style="margin-bottom:12px;">
-                <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${agStepNum}️⃣ Bước ${agStepNum}: Khoảng trống Anion (AG)</div>
+                <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${agStepNum}️⃣ Bước ${agStepNum}: Khoảng trống Anion (AG)</div>
                 <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
                     ${agDetails}
                 </div>
@@ -146,34 +155,34 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 pfRatio = pO2 / fVal;
                 if (pfRatio >= 400) oxyStatus = `<span style="color:#4ade80">✅ Oxy hóa máu tốt (P/F = ${pfRatio.toFixed(0)})</span>`;
                 else if (pfRatio >= 300) oxyStatus = `<span style="color:#fbbf24">⚠️ Oxy hóa máu ranh giới (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else if (pfRatio >= 200) oxyStatus = `<span style="color:#ef4444">🚨 ARDS Nhẹ (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else if (pfRatio >= 100) oxyStatus = `<span style="color:#ef4444">🆘 ARDS Trung bình (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else oxyStatus = `<span style="color:#ef4444">💀 ARDS Nặng (P/F = ${pfRatio.toFixed(0)})</span>`;
-                oxyStatus += ` <span style="font-size:12px; color:#7a6e5e;">(FiO2: ${FiO2}%)</span>`;
+                else if (pfRatio >= 200) oxyStatus = `<span style="color:#FFB4AB">🚨 ARDS Nhẹ (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else if (pfRatio >= 100) oxyStatus = `<span style="color:#FFB4AB">🆘 ARDS Trung bình (P/F = ${pfRatio.toFixed(0)})</span>`;
+                else oxyStatus = `<span style="color:#FFB4AB">💀 ARDS Nặng (P/F = ${pfRatio.toFixed(0)})</span>`;
+                oxyStatus += ` <span style="font-size:12px; color:#8C9099;">(FiO2: ${FiO2}%)</span>`;
             } else {
                 if (pO2 >= 80) oxyStatus = '<span style="color:#4ade80">✅ Oxy hóa máu bình thường (80-100 mmHg)</span>';
                 else if (pO2 >= 60) oxyStatus = '<span style="color:#fbbf24">⚠️ Thiếu oxy máu nhẹ (60-79 mmHg)</span>';
-                else if (pO2 >= 40) oxyStatus = '<span style="color:#ef4444">🚨 Thiếu oxy máu trung bình (40-59 mmHg)</span>';
-                else oxyStatus = '<span style="color:#ef4444">🆘 Thiếu oxy máu nặng (<40 mmHg)</span>';
-                oxyStatus += ' <span style="font-size:12px; color:#7a6e5e;">(Không có FiO2 để tính P/F)</span>';
+                else if (pO2 >= 40) oxyStatus = '<span style="color:#FFB4AB">🚨 Thiếu oxy máu trung bình (40-59 mmHg)</span>';
+                else oxyStatus = '<span style="color:#FFB4AB">🆘 Thiếu oxy máu nặng (<40 mmHg)</span>';
+                oxyStatus += ' <span style="font-size:12px; color:#8C9099;">(Không có FiO2 để tính P/F)</span>';
             }
-        } else oxyStatus = '<span style="color:#a18764">Không có dữ liệu pO2</span>';
+        } else oxyStatus = '<span style="color:#8C9099">Không có dữ liệu pO2</span>';
 
         const oxyStepNum = (step3Html ? 3 : 2) + (step4Html ? 1 : 0) + 1;
         step5Html = `<div style="margin-bottom:12px;">
-            <div style="color:#d4a25a; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${oxyStepNum}️⃣ Bước ${oxyStepNum}: Tình trạng Oxy hóa</div>
+            <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${oxyStepNum}️⃣ Bước ${oxyStepNum}: Tình trạng Oxy hóa</div>
             <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:14px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
                 ${oxyStatus}
             </div>
         </div>`;
 
         let suggestHtml = '';
-        if (direction === 'toan_ho_hap') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải phóng đường thở, thở oxy (mục tiêu SpO2 88-92% nếu COPD).<br/>- Chỉ định thông khí nhân tạo (NIV/BIPAP hoặc Đặt NKQ) khi pH < 7.25, pCO2 > 50mmHg.<br/>- Điều trị nguyên nhân: Giãn phế quản, Corticosteroid, Kháng sinh (nếu có nhiễm khuẩn).';
-        else if (direction === 'toan_chuyen_hoa') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- <b>Ưu tiên:</b> Điều trị nguyên nhân gốc (truyền Insulin cho DKA, bù dịch/vận mạch cho sốc, hồi sức sepsis).<br/>- <b>Bù NaHCO3 tĩnh mạch:</b> Chỉ định khi pH < 7.15 (hoặc 7.2 tùy nguyên nhân) hoặc HCO3 < 10 mmol/L.<br/>- Bù dịch tinh thể tích cực, theo dõi sát điện giải đồ (đặc biệt Kali máu).';
-        else if (direction === 'kiem_ho_hap') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải quyết nguyên nhân gây tăng thông khí: Liệu pháp oxy, Giảm đau, Hạ sốt.<br/>- Trấn an, cân nhắc dùng an thần (Diazepam) nếu do lo âu, hoảng sợ.<br/>- Nếu đang thở máy: Chỉnh giảm thể tích khí lưu thông (Vt) hoặc tần số thở (f).';
-        else if (direction === 'kiem_chuyen_hoa') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Bồi hoàn thể tích tuần hoàn bằng dung dịch NaCl 0.9%.<br/>- Bù Kali Clorua (KCl) tĩnh mạch tích cực theo mức độ hạ Kali máu.<br/>- Ngừng/giảm liều thuốc lợi tiểu mất Kali. Cân nhắc PPI/Kháng H2 nếu mất acid do nôn/hút dịch dạ dày.';
-        else if (direction === 'toan_hon_hop') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Tình trạng cấp cứu nặng):</b><br/>- Hỗ trợ hô hấp khẩn cấp (Đặt NKQ, thở máy) kết hợp hồi sức tuần hoàn (bù dịch, thuốc vận mạch).<br/>- Xử trí nguyên nhân gốc (sốc nhiễm khuẩn, ngưng tim, suy đa tạng). Cân nhắc lọc máu CRRT nếu có chỉ định.';
-        else if (direction === 'kiem_hon_hop') suggestHtml = '<b style="color:#e8dcc8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Điều chỉnh giảm ngay thông khí trên máy thở.<br/>- Bù dịch NaCl 0.9% và KCl tích cực.<br/>- Cân nhắc lợi tiểu Acetazolamide (Diamox) nếu người bệnh thừa nước kèm kiềm chuyển hóa nặng cản trở cai máy thở.';
+        if (direction === 'toan_ho_hap') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải phóng đường thở, thở oxy (mục tiêu SpO2 88-92% nếu COPD).<br/>- Chỉ định thông khí nhân tạo (NIV/BIPAP hoặc Đặt NKQ) khi pH < 7.25, pCO2 > 50mmHg.<br/>- Điều trị nguyên nhân: Giãn phế quản, Corticosteroid, Kháng sinh (nếu có nhiễm khuẩn).';
+        else if (direction === 'toan_chuyen_hoa') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- <b>Ưu tiên:</b> Điều trị nguyên nhân gốc (truyền Insulin cho DKA, bù dịch/vận mạch cho sốc, hồi sức sepsis).<br/>- <b>Bù NaHCO3 tĩnh mạch:</b> Chỉ định khi pH < 7.15 (hoặc 7.2 tùy nguyên nhân) hoặc HCO3 < 10 mmol/L.<br/>- Bù dịch tinh thể tích cực, theo dõi sát điện giải đồ (đặc biệt Kali máu).';
+        else if (direction === 'kiem_ho_hap') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải quyết nguyên nhân gây tăng thông khí: Liệu pháp oxy, Giảm đau, Hạ sốt.<br/>- Trấn an, cân nhắc dùng an thần (Diazepam) nếu do lo âu, hoảng sợ.<br/>- Nếu đang thở máy: Chỉnh giảm thể tích khí lưu thông (Vt) hoặc tần số thở (f).';
+        else if (direction === 'kiem_chuyen_hoa') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Bồi hoàn thể tích tuần hoàn bằng dung dịch NaCl 0.9%.<br/>- Bù Kali Clorua (KCl) tĩnh mạch tích cực theo mức độ hạ Kali máu.<br/>- Ngừng/giảm liều thuốc lợi tiểu mất Kali. Cân nhắc PPI/Kháng H2 nếu mất acid do nôn/hút dịch dạ dày.';
+        else if (direction === 'toan_hon_hop') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Tình trạng cấp cứu nặng):</b><br/>- Hỗ trợ hô hấp khẩn cấp (Đặt NKQ, thở máy) kết hợp hồi sức tuần hoàn (bù dịch, thuốc vận mạch).<br/>- Xử trí nguyên nhân gốc (sốc nhiễm khuẩn, ngưng tim, suy đa tạng). Cân nhắc lọc máu CRRT nếu có chỉ định.';
+        else if (direction === 'kiem_hon_hop') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Điều chỉnh giảm ngay thông khí trên máy thở.<br/>- Bù dịch NaCl 0.9% và KCl tích cực.<br/>- Cân nhắc lợi tiểu Acetazolamide (Diamox) nếu người bệnh thừa nước kèm kiềm chuyển hóa nặng cản trở cai máy thở.';
 
         if (suggestHtml) {
              let searchLink = '';
@@ -187,7 +196,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
              
              if (directionName) {
                  const query = encodeURIComponent(`Phác đồ điều trị ${directionName} Bộ y tế`);
-                 searchLink = `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(212,162,90,0.2); text-align:right;">
+                 searchLink = `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(158,202,255,0.2); text-align:right;">
                      <a href="https://www.google.com/search?q=${query}" target="_blank" style="color:#60a5fa; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:4px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                          🔍 Tra cứu phác đồ ${directionName} trên Google ↗
                      </a>
@@ -195,8 +204,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
              }
 
              suggestHtml = `<div style="margin-top:16px;">
-                <div style="color:#d4a25a; font-size:12px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">💡 Phân tích nguyên nhân & Hướng xử trí:</div>
-                <div style="background:rgba(212,162,90,0.08); border:1px solid rgba(212,162,90,0.2); padding:10px; border-radius:6px; color:#cbd5e1; font-size:13px; line-height:1.6;">
+                <div style="color:#9ECAFF; font-size:12px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">💡 Phân tích nguyên nhân & Hướng xử trí:</div>
+                <div style="background:rgba(158,202,255,0.08); border:1px solid rgba(158,202,255,0.2); padding:10px; border-radius:6px; color:#cbd5e1; font-size:13px; line-height:1.6;">
                     ${suggestHtml}
                     ${searchLink}
                 </div>
@@ -204,20 +213,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         }
 
         const modalHtml = `<div id="abg-popup-modal" onclick="if(event.target===this) this.remove()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:2147483647; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
-            <div style="background:#1a1510; border:1px solid rgba(212,162,90,0.3); border-radius:12px; width:480px; max-width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.5); overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-height:90vh; display:flex; flex-direction:column;">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(212,162,90,0.1); border-bottom:1px solid rgba(212,162,90,0.2); flex-shrink:0;">
-                    <h3 style="margin:0; color:#d4a25a; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">🫁 Phân Tích Khí Máu (Step-by-Step)</h3>
-                    <button onclick="document.getElementById('abg-popup-modal').remove()" style="background:none; border:none; color:#a18764; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+            <div style="background:#111418; border:1px solid rgba(158,202,255,0.3); border-radius:0px !important; width:480px; max-width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.5); overflow:hidden; font-family:system-ui,-apple-system,sans-serif; max-height:90vh; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(158,202,255,0.1); border-bottom:1px solid rgba(158,202,255,0.2); flex-shrink:0;">
+                    <h3 style="margin:0; color:#9ECAFF; font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px;">🫁 Phân Tích Khí Máu (Step-by-Step)</h3>
+                    <button onclick="document.getElementById('abg-popup-modal').remove()" style="background:none; border:none; color:#8C9099; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
                 </div>
-                <div style="padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(212,162,90,0.3) transparent;">
+                <div style="padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(158,202,255,0.3) transparent;">
                     ${step1Html}
                     ${step2Html}
                     ${step3Html}
                     ${step4Html}
                     ${step5Html}
                     ${suggestHtml}
-                    <div style="margin-top:16px; padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px dashed rgba(161,135,100,0.3);">
-                        <div style="color:#7a6e5e; font-size:11px; line-height:1.5; text-align:center;">⚠️ Kết quả chỉ mang tính <b>gợi ý tham khảo</b>, không thay thế chẩn đoán lâm sàng.<br/>Bác sĩ điều trị chịu trách nhiệm quyết định cuối cùng.</div>
+                    <div style="margin-top:16px; padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px dashed rgba(140,144,153,0.3);">
+                        <div style="color:#8C9099; font-size:11px; line-height:1.5; text-align:center;">⚠️ Kết quả chỉ mang tính <b>gợi ý tham khảo</b>, không thay thế chẩn đoán lâm sàng.<br/>Bác sĩ điều trị chịu trách nhiệm quyết định cuối cùng.</div>
                     </div>
                 </div>
             </div>
@@ -277,16 +286,16 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const labelRaw = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
             const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
             const contentHtml = contentRaw
-                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>');
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#9ECAFF">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color:#E1E2E8">$1</em>');
             return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
-                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(212,168,83,0.18);border:1px solid rgba(212,168,83,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#D4A853;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
-                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#D4A853;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
+                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(158,202,255,0.18);border:1px solid rgba(158,202,255,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#9ECAFF;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
+                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#9ECAFF;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
                 '</div>';
         });
         text = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#D4A853">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em style="color:#e8dcc8">$1</em>');
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#9ECAFF">$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em style="color:#E1E2E8">$1</em>');
         text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#cbd5e1;line-height:1.65;font-size:${basePx}px;">$1</li>`);
         text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
             return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#cbd5e1;">${rest}</span></div>`;
@@ -606,7 +615,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const inlineBtn = document.querySelector('.his-inline-summary-btn.loading');
                     if (inlineBtn) {
                         inlineBtn.classList.remove('loading');
-                        inlineBtn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                        inlineBtn.innerHTML = AI_MAGNIFIER_SVG;
                         inlineBtn.title = 'Xem tóm tắt Cận lâm sàng & Thuốc (Aladinn)';
                     }
 
@@ -654,14 +663,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     btn.type = 'button';
                     btn.title = 'Tiện ích Aladinn';
                     btn.innerHTML = '<span style="font-size:14px; line-height:1;">🧞</span>';
-                    btn.style.cssText = 'background:linear-gradient(135deg, rgba(212,162,90,0.15), rgba(212,162,90,0.05)); border:1px solid rgba(212,162,90,0.4); border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:2px 6px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1); outline:none; height:22px; width:28px; margin:0 auto;';
+                    btn.style.cssText = 'background:linear-gradient(135deg, rgba(158,202,255,0.15), rgba(158,202,255,0.05)); border:1px solid rgba(158,202,255,0.4); border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:2px 6px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1); outline:none; height:22px; width:28px; margin:0 auto;';
                     
-                    btn.onmouseover = () => btn.style.background = 'rgba(212,162,90,0.25)';
-                    btn.onmouseout = () => btn.style.background = 'linear-gradient(135deg, rgba(212,162,90,0.15), rgba(212,162,90,0.05))';
+                    btn.onmouseover = () => btn.style.background = 'rgba(158,202,255,0.25)';
+                    btn.onmouseout = () => btn.style.background = 'linear-gradient(135deg, rgba(158,202,255,0.15), rgba(158,202,255,0.05))';
 
                     const dropdown = document.createElement('div');
                     dropdown.id = 'aladinn-quick-actions-menu';
-                    dropdown.style.cssText = 'position:absolute; background:linear-gradient(135deg,#1a1510,#231c14); border:1px solid rgba(212,162,90,0.3); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; min-width:180px; padding:6px 0; animation:vnpt-fade-in 0.15s ease-out; z-index: 999999;';
+                    dropdown.style.cssText = 'position:absolute; background:linear-gradient(135deg,#111418,#191C20); border:1px solid rgba(158,202,255,0.3); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; min-width:180px; padding:6px 0; animation:vnpt-fade-in 0.15s ease-out; z-index: 999999;';
 
                     const items = [
                         { icon: '🖨️', text: 'Quét Buồng', action: () => window.Aladinn.Scanner.startScanning({mode: 'room'}) },
@@ -674,8 +683,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     items.forEach(item => {
                         const opt = document.createElement('div');
                         opt.innerHTML = `<span style="margin-right:8px; font-size:14px;">${item.icon}</span> <span style="font-size:13px; font-weight:500;">${item.text}</span>`;
-                        opt.style.cssText = 'padding:10px 16px; color:#d4a25a; cursor:pointer; display:flex; align-items:center; transition:background 0.2s; white-space:nowrap; text-align:left;';
-                        opt.onmouseover = () => opt.style.background = 'rgba(212,162,90,0.1)';
+                        opt.style.cssText = 'padding:10px 16px; color:#9ECAFF; cursor:pointer; display:flex; align-items:center; transition:background 0.2s; white-space:nowrap; text-align:left;';
+                        opt.onmouseover = () => opt.style.background = 'rgba(158,202,255,0.1)';
                         opt.onmouseout = () => opt.style.background = 'transparent';
                         opt.onclick = (e) => {
                             e.stopPropagation();
@@ -760,7 +769,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'his-inline-summary-btn';
-                    btn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                    btn.innerHTML = AI_MAGNIFIER_SVG;
                     btn.title = 'Xem tóm tắt Cận lâm sàng & Thuốc (Aladinn)';
 
                     btn.addEventListener('click', async (e) => {
@@ -777,7 +786,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         
                         if (!success) {
                             btn.classList.remove('loading');
-                            btn.innerHTML = '<span class="his-inline-icon">✨</span>';
+                            btn.innerHTML = AI_MAGNIFIER_SVG;
                         }
                         // Nếu success, showAiLabSummary sẽ tự update nút thành ready
                     });
@@ -800,6 +809,41 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             };
             window.Aladinn.Scanner.UI = window.VNPTUI || {};
             window.Aladinn.Scanner.Settings = window.VNPTSettings || {};
+
+            // 6. Self-Healing UI & Live Persistence Observer (Mới - Dành cho Sáng kiến cấp cơ sở)
+            // Lắng nghe sự thay đổi của DOM để tự động khôi phục các nút tiện ích Aladinn khi HIS re-render
+            if (typeof MutationObserver !== 'undefined') {
+                const uiObserver = new MutationObserver(() => {
+                    // Tránh vòng lặp vô hạn bằng cách chỉ khôi phục nếu nút thực sự bị biến mất
+                    const targetTh = document.getElementById('grdBenhNhan_ICON1');
+                    if (targetTh && !document.getElementById('aladinn-quick-actions-btn')) {
+                        if (Logger) Logger.debug('Scanner.SelfHealing', 'Detected Aladinn quick action button removed. Re-injecting...');
+                        _injectQuickActionsDropdown();
+                    }
+                    
+                    // Khôi phục nút inline nếu dòng được chọn bị vẽ lại nhưng mất nút inline
+                    const activeRow = document.querySelector('tr.ui-state-highlight');
+                    if (activeRow && !activeRow.querySelector('.his-inline-summary-btn')) {
+                        const pid = window.VNPTStore?.get('selectedPatientId');
+                        const pName = window.VNPTStore?.get('selectedPatientName');
+                        if (pid && pName) {
+                            if (Logger) Logger.debug('Scanner.SelfHealing', 'Detected active row summary button removed. Re-injecting...');
+                            _injectInlineSummaryBtn(activeRow, pName);
+                        }
+                    }
+                });
+
+                // Khởi động quan sát trên toàn bộ document body với cấu hình nhẹ để tối ưu hiệu năng
+                uiObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+                
+                // Lưu observer để có thể dọn dẹp khi cần
+                window.Aladinn.Scanner._uiObserver = uiObserver;
+                
+                window.addEventListener('unload', () => uiObserver.disconnect());
+            }
 
             if (Logger) Logger.success('Scanner.Init', 'Các module Scanner đã sẵn sàng!');
 
@@ -882,66 +926,66 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 @keyframes bhytSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                 @keyframes bhytPulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
                 .bhyt-modal {
-                    background: linear-gradient(145deg, #1a1510, #0f0d0a);
-                    border: 1px solid rgba(212,162,90,0.3);
+                    background: linear-gradient(145deg, #111418, #0C0E12);
+                    border: 1px solid rgba(158,202,255,0.3);
                     border-radius: 14px;
                     width: 720px; max-height: 82vh;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(212,162,90,0.08);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(158,202,255,0.08);
                     animation: bhytSlideUp .3s ease;
                     display: flex; flex-direction: column;
                 }
                 .bhyt-header {
                     padding: 16px 22px;
-                    border-bottom: 1px solid rgba(212,162,90,0.15);
+                    border-bottom: 1px solid rgba(158,202,255,0.15);
                     display: flex; justify-content: space-between; align-items: center;
                 }
-                .bhyt-title { font-size: 15px; font-weight: 700; color: #e8dcc8; display: flex; align-items: center; gap: 8px; }
-                .bhyt-subtitle { font-size: 10px; color: #7a6e5e; margin-top: 2px; }
-                .bhyt-scanning-dot { width: 8px; height: 8px; border-radius: 50%; background: #d4a25a; animation: bhytPulse 1s infinite; }
+                .bhyt-title { font-size: 15px; font-weight: 700; color: #E1E2E8; display: flex; align-items: center; gap: 8px; }
+                .bhyt-subtitle { font-size: 10px; color: #8C9099; margin-top: 2px; }
+                .bhyt-scanning-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ECAFF; animation: bhytPulse 1s infinite; }
                 .bhyt-scanning-dot.done { animation: none; background: #22c55e; }
                 .bhyt-stats { display: flex; gap: 10px; }
                 .bhyt-stat {
                     text-align: center; padding: 5px 10px;
-                    background: rgba(212,162,90,0.08); border-radius: 8px; min-width: 50px;
+                    background: rgba(158,202,255,0.08); border-radius: 8px; min-width: 50px;
                 }
-                .bhyt-stat-num { font-size: 20px; font-weight: 700; color: #d4a25a; line-height: 1; }
-                .bhyt-stat-label { font-size: 8px; color: #7a6e5e; text-transform: uppercase; letter-spacing: 0.5px; }
+                .bhyt-stat-num { font-size: 20px; font-weight: 700; color: #9ECAFF; line-height: 1; }
+                .bhyt-stat-label { font-size: 8px; color: #8C9099; text-transform: uppercase; letter-spacing: 0.5px; }
                 .bhyt-stat.error .bhyt-stat-num { color: #f87171; }
                 .bhyt-body { padding: 0; overflow-y: auto; flex: 1; min-height: 100px; }
                 .bhyt-row {
                     display: flex; align-items: flex-start; padding: 8px 22px; gap: 10px;
-                    border-bottom: 1px solid rgba(212,162,90,0.06);
+                    border-bottom: 1px solid rgba(158,202,255,0.06);
                     animation: bhytFadeIn .2s ease;
                 }
-                .bhyt-row:hover { background: rgba(212,162,90,0.04); }
+                .bhyt-row:hover { background: rgba(158,202,255,0.04); }
                 .bhyt-row-icon { flex-shrink: 0; font-size: 13px; margin-top: 1px; }
                 .bhyt-row-name {
-                    font-size: 12px; font-weight: 600; color: #e8dcc8; min-width: 140px;
+                    font-size: 12px; font-weight: 600; color: #E1E2E8; min-width: 140px;
                     cursor: pointer; flex-shrink: 0;
                 }
-                .bhyt-row-name:hover { color: #d4a25a; }
-                .bhyt-row-detail { font-size: 11px; color: #7a6e5e; flex: 1; }
-                .bhyt-row-sheets { font-size: 10px; color: #5a5040; }
+                .bhyt-row-name:hover { color: #9ECAFF; }
+                .bhyt-row-detail { font-size: 11px; color: #8C9099; flex: 1; }
+                .bhyt-row-sheets { font-size: 10px; color: #6B6F78; }
                 .bhyt-row-errors { margin-top: 3px; }
                 .bhyt-err-line {
                     font-size: 10px; color: #f87171; display: flex; gap: 6px; padding: 1px 0;
                 }
-                .bhyt-err-dv { color: #d4a25a; min-width: 100px; }
-                .bhyt-err-msg { color: #e8dcc8; font-family: 'Courier New', monospace; font-size: 10px; }
+                .bhyt-err-dv { color: #9ECAFF; min-width: 100px; }
+                .bhyt-err-msg { color: #E1E2E8; font-family: 'Courier New', monospace; font-size: 10px; }
                 .bhyt-raw-keys {
-                    font-size: 10px; color: #5a5040; padding: 10px 22px;
-                    border-top: 1px solid rgba(212,162,90,0.1);
+                    font-size: 10px; color: #6B6F78; padding: 10px 22px;
+                    border-top: 1px solid rgba(158,202,255,0.1);
                     max-height: 80px; overflow-y: auto;
                     word-break: break-all; line-height: 1.5;
                 }
-                .bhyt-raw-keys strong { color: #7a6e5e; }
+                .bhyt-raw-keys strong { color: #8C9099; }
                 .bhyt-time-details { margin-top: 4px; }
                 .bhyt-time-row {
                     display: flex; align-items: center; gap: 4px; padding: 2px 0;
                     font-size: 10px; flex-wrap: wrap;
                 }
                 .bhyt-time-dv {
-                    color: #7a6e5e; min-width: 100px; font-size: 9px;
+                    color: #8C9099; min-width: 100px; font-size: 9px;
                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0;
                 }
                 .bhyt-time-tag {
@@ -949,24 +993,24 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     font-size: 9px; white-space: nowrap;
                 }
                 .bhyt-time-tag.cd { background: rgba(96,165,250,0.15); color: #60a5fa; }
-                .bhyt-time-tag.tn { background: rgba(168,152,128,0.15); color: #a89880; }
-                .bhyt-time-tag.th { background: rgba(212,162,90,0.15); color: #d4a25a; }
+                .bhyt-time-tag.tn { background: rgba(194,198,210,0.15); color: #C2C6D2; }
+                .bhyt-time-tag.th { background: rgba(158,202,255,0.15); color: #9ECAFF; }
                 .bhyt-time-tag.kq { background: rgba(34,197,94,0.15); color: #22c55e; }
-                .bhyt-time-arrow { color: #3a3530; font-size: 8px; }
-                .bhyt-time-date { color: #4a4035; font-size: 8px; margin-left: 4px; }
+                .bhyt-time-arrow { color: #42464F; font-size: 8px; }
+                .bhyt-time-date { color: #42464F; font-size: 8px; margin-left: 4px; }
                 .bhyt-footer {
                     padding: 10px 22px;
-                    border-top: 1px solid rgba(212,162,90,0.15);
+                    border-top: 1px solid rgba(158,202,255,0.15);
                     display: flex; justify-content: space-between; align-items: center;
                 }
-                .bhyt-footer-info { font-size: 10px; color: #7a6e5e; }
+                .bhyt-footer-info { font-size: 10px; color: #8C9099; }
                 .bhyt-close {
-                    background: none; border: 1px solid rgba(212,162,90,0.3);
-                    color: #d4a25a; padding: 5px 14px; border-radius: 8px;
+                    background: none; border: 1px solid rgba(158,202,255,0.3);
+                    color: #9ECAFF; padding: 5px 14px; border-radius: 8px;
                     cursor: pointer; font-size: 11px; font-weight: 600; transition: all .15s;
                 }
-                .bhyt-close:hover { background: rgba(212,162,90,0.15); }
-                .bhyt-empty-msg { padding: 30px; text-align: center; color: #5a5040; font-size: 12px; }
+                .bhyt-close:hover { background: rgba(158,202,255,0.15); }
+                .bhyt-empty-msg { padding: 30px; text-align: center; color: #6B6F78; font-size: 12px; }
             </style>
             <div class="bhyt-modal">
                 <div class="bhyt-header">
@@ -1096,10 +1140,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const hasMore = sheets.length > maxShow;
         const timelineHtml = sheetsToShow.map(s => {
             const hasTime = s.tgChiDinh || s.tgThucHien || s.tgKetQua;
-            if (!hasTime) return `<div class="bhyt-time-row"><span class="bhyt-time-dv">${(s.tenDV || '?').substring(0, 22)}</span><span style="color:#5a5040">— không có dữ liệu giờ —</span></div>`;
+            if (!hasTime) return `<div class="bhyt-time-row"><span class="bhyt-time-dv">${(s.tenDV || '?').substring(0, 22)}</span><span style="color:#6B6F78">— không có dữ liệu giờ —</span></div>`;
             return `<div class="bhyt-time-row">
                 <span class="bhyt-time-dv">${(s.tenDV || '?').substring(0, 22)}</span>
-                ${s.ketQua ? `<span style="color:#a89880;font-size:9px;margin-right:4px">[${s.ketQua}]</span>` : ''}
+                ${s.ketQua ? `<span style="color:#C2C6D2;font-size:9px;margin-right:4px">[${s.ketQua}]</span>` : ''}
                 <span class="bhyt-time-tag cd">CĐ ${shortTime(s.tgChiDinh)}</span>
                 <span class="bhyt-time-arrow">→</span>
                 <span class="bhyt-time-tag th">TH ${shortTime(s.tgThucHien)}</span>
@@ -1120,7 +1164,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 <div style="display:flex;align-items:center;gap:8px">
                     <span class="bhyt-row-name" onclick="(function(){var tr=document.getElementById('${rowId}');if(tr){tr.scrollIntoView({behavior:'smooth',block:'center'});tr.click();}})()">${rowNum}. ${patientName || rowId}</span>
                     <span class="bhyt-row-sheets">${sheets.length} phiếu</span>
-                    ${errors.length > 0 ? `<span style="background:rgba(239,68,68,0.2);color:#f87171;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px">${errors.length} lỗi</span>` : ''}
+                    ${errors.length > 0 ? `<span style="background:rgba(255,180,171,0.2);color:#f87171;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px">${errors.length} lỗi</span>` : ''}
                 </div>
                 ${errors.length > 0 ? `
                     <div class="bhyt-row-errors">
@@ -1134,7 +1178,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 ` : ''}
                 <div class="bhyt-time-details">
                     ${timelineHtml}
-                    ${hasMore ? `<div style="font-size:9px;color:#5a5040;padding:2px 0">... và ${sheets.length - maxShow} phiếu khác</div>` : ''}
+                    ${hasMore ? `<div style="font-size:9px;color:#6B6F78;padding:2px 0">... và ${sheets.length - maxShow} phiếu khác</div>` : ''}
                 </div>
             </div>
         `;
@@ -1364,8 +1408,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     function _statusColor(status) {
         if (!status) return null;
         const s = status.toLowerCase();
-        if (s.includes('cao') || s.includes('high') || s.includes('tăng')) return { bg: 'rgba(239,68,68,0.15)', text: '#f87171', icon: '▲' };
-        if (s.includes('thấp') || s.includes('low') || s.includes('giảm')) return { bg: 'rgba(59,130,246,0.15)', text: '#60a5fa', icon: '▼' };
+        if (s.includes('cao') || s.includes('high') || s.includes('tăng')) return { bg: '#ffeeee', text: '#c62828', icon: '▲' };
+        if (s.includes('thấp') || s.includes('low') || s.includes('giảm')) return { bg: '#eef6ff', text: '#1565c0', icon: '▼' };
         return null;
     }
 
@@ -1536,20 +1580,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         // --- Summary Cards ---
         const summaryCards = `<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
-          <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
-            <div style="font-size:12px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🧪 Tổng chỉ số</div>
-            <div style="font-size:26.4px; font-weight:800; color:#d4a25a; margin-top:4px;">${totalIndicators}</div>
-            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${sortedMCats.length} nhóm XN</div>
+          <div style="background:#ffffff; border:1px solid #cccccc; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:#555555; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🧪 Tổng chỉ số</div>
+            <div style="font-size:26.4px; font-weight:800; color:#1e5494; margin-top:4px;">${totalIndicators}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${sortedMCats.length} nhóm XN</div>
           </div>
-          <div style="background:${abnormals.length > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)'}; border:1px solid ${abnormals.length > 0 ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'}; border-radius:10px; padding:12px;">
-            <div style="font-size:12px; color:${abnormals.length > 0 ? '#f87171' : '#6ee7a0'}; text-transform:uppercase; letter-spacing:1px; font-weight:700;">⚠️ Bất thường</div>
-            <div style="font-size:26.4px; font-weight:800; color:${abnormals.length > 0 ? '#f87171' : '#22c55e'}; margin-top:4px;">${abnormals.length}</div>
-            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${abnormals.length > 0 ? 'Cần lưu ý' : 'Tất cả bình thường'}</div>
+          <div style="background:${abnormals.length > 0 ? '#fff5f5' : '#ffffff'}; border:1px solid ${abnormals.length > 0 ? '#ffcccc' : '#cccccc'}; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:${abnormals.length > 0 ? '#c62828' : '#2e7d32'}; text-transform:uppercase; letter-spacing:1px; font-weight:700;">⚠️ Bất thường</div>
+            <div style="font-size:26.4px; font-weight:800; color:${abnormals.length > 0 ? '#c62828' : '#2e7d32'}; margin-top:4px;">${abnormals.length}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${abnormals.length > 0 ? 'Cần lưu ý' : 'Tất cả bình thường'}</div>
           </div>
-          <div style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.25); border-radius:10px; padding:12px;">
-            <div style="font-size:12px; color:#a18764; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Ngày XN</div>
-            <div style="font-size:26.4px; font-weight:800; color:#d4a25a; margin-top:4px;">${sortedDates.length}</div>
-            <div style="font-size:12px; color:#7a6e5e; margin-top:2px;">${firstDate} → ${latestDate}</div>
+          <div style="background:#ffffff; border:1px solid #cccccc; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:#555555; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Ngày XN</div>
+            <div style="font-size:26.4px; font-weight:800; color:#1e5494; margin-top:4px;">${sortedDates.length}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${firstDate} → ${latestDate}</div>
           </div>
         </div>`;
 
@@ -1562,12 +1606,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (!uniqueAbn[key] || _parseLabDate(a.sheetDate) > _parseLabDate(uniqueAbn[key].sheetDate)) uniqueAbn[key] = a;
             }
             const abnItems = Object.values(uniqueAbn);
-            alertsHtml = `<div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:12px 14px; margin-bottom:16px;">
-              <div style="font-size:13.2px; font-weight:700; color:#f87171; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">🔴 Chỉ số bất thường mới nhất</div>
+            alertsHtml = `<div style="background:#fff5f5; border:1px solid #ffcccc; border-radius:0px; padding:12px 14px; margin-bottom:16px;">
+              <div style="font-size:13.2px; font-weight:700; color:#c62828; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">🔴 Chỉ số bất thường mới nhất</div>
               <div style="display:flex; flex-wrap:wrap; gap:6px;">
                 ${abnItems.map(a => {
                     const sc = _statusColor(a.status);
-                    return `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:14.4px; font-weight:600; background:${sc ? sc.bg : 'rgba(239,68,68,0.15)'}; color:${sc ? sc.text : '#f87171'}; border:1px solid ${sc ? sc.text + '33' : 'rgba(239,68,68,0.3)'};">${a.code || a.testName}: ${a.value} ${a.unit || ''} ${sc ? sc.icon : ''}</span>`;
+                    const bg = sc ? sc.bg : '#fff5f5';
+                    const text = sc ? sc.text : '#c62828';
+                    const border = sc ? (sc.text === '#c62828' ? '#ffcccc' : '#b3d4fc') : '#ffcccc';
+                    return `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:0px; font-size:14.4px; font-weight:700; background:${bg}; color:${text}; border:1px solid ${border};">${a.code || a.testName}: ${a.value} ${a.unit || ''} ${sc ? sc.icon : ''}</span>`;
                 }).join('')}
               </div>
             </div>`;
@@ -1597,7 +1644,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // Sub-category header for "Huyết học" to distinguish Tế bào máu, Đông máu, Nhóm máu
                 if (mCat === 'Huyết học' && subCat !== 'Huyết học') {
                      const subName = subCat.replace('Huyết học (', '').replace(')', '');
-                     mRowsHtml += `<tr><td colspan="${sortedDates.length + 2}" style="padding:5px 10px; background:rgba(212,162,90,0.1); color:#d4a25a; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; border-top:1px solid rgba(212,162,90,0.15); border-bottom:1px solid rgba(212,162,90,0.15); position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
+                     mRowsHtml += `<tr><td colspan="${sortedDates.length + 2}" style="padding:6px 10px; background:#f8fafc; color:#1e5494; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; border:1px solid #cccccc; position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
                 }
 
                 const sortedIndicators = Object.entries(indicators).sort((a, b) => {
@@ -1616,9 +1663,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                 let rowIdx = 0;
                 for (let [cName, data] of sortedIndicators) {
-                    const rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
+                    const rowBg = rowIdx % 2 === 0 ? '#ffffff' : '#f9f9f9';
                     const rowHasAbn = Object.values(data.values).some(v => _isAbnormal(v.status));
-                    const leftBorder = rowHasAbn ? 'border-left:3px solid #f87171;' : 'border-left:3px solid transparent;';
+                    const leftBorder = rowHasAbn ? 'border-left:3px solid #c62828;' : 'border-left:1px solid #dddddd;';
                     
                     let refText = data.refDisplay || '';
                     if (!refText && (data.refMin || data.refMax)) {
@@ -1738,24 +1785,24 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         displayName = 'TCK (APTT)';
                     }
                     
-                    const stickyBg = rowBg === 'transparent' ? '#1a1510' : '#1e1913';
+                    const stickyBg = rowIdx % 2 === 0 ? '#ffffff' : '#f9f9f9';
 
-                    mRowsHtml += `<tr style="background:${rowBg}; ${leftBorder}">`;
-                    mRowsHtml += `<td style="padding:6px 10px; color:#e8dcc8; font-weight:${rowHasAbn ? '600' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1;">${displayName}</td>`;
-                    mRowsHtml += `<td style="padding:6px 8px; color:#7a6e5e; font-size:12px; white-space:nowrap; background:${stickyBg};">${refText}</td>`;
+                    mRowsHtml += `<tr style="background:${rowBg};">`;
+                    mRowsHtml += `<td style="padding:6px 10px; color:#333333; font-weight:${rowHasAbn ? '700' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc; ${leftBorder}">${displayName}</td>`;
+                    mRowsHtml += `<td style="padding:6px 8px; color:#666666; font-size:12.6px; white-space:nowrap; background:${stickyBg}; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${refText}</td>`;
 
                     for (const d of sortedDates) {
                         const cell = data.values[d];
                         if (cell) {
                             const sc = _statusColor(cell.status);
                             let arrow = '';
-                            if (sc && sc.icon) arrow = ` <span style="color:${sc.text};font-size:12px;font-weight:700;">${sc.icon}</span>`;
-                            const cellBg = sc ? sc.bg : '#1a1510';
-                            const cellColor = sc ? sc.text : '#e8dcc8';
-                            const fw = sc ? '700' : '400';
-                            mRowsHtml += `<td style="padding:6px 8px; text-align:right; white-space:nowrap; background:${cellBg} !important; color:${cellColor} !important; font-weight:${fw}; border-radius:4px;">${cell.value}${arrow}</td>`;
+                            if (sc && sc.icon) arrow = ` <span style="font-size:11px;font-weight:900;margin-left:2px;">${sc.icon}</span>`;
+                            const cellBg = sc ? (sc.text === '#c62828' ? '#ffeeee' : '#eef6ff') : (rowBg === '#ffffff' ? '#ffffff' : '#f9f9f9');
+                            const cellColor = sc ? (sc.text === '#c62828' ? '#c62828' : '#1565c0') : '#333333';
+                            const fw = sc ? '800' : '400';
+                            mRowsHtml += `<td style="padding:6px 8px; text-align:right; white-space:nowrap; background:${cellBg}; color:${cellColor} !important; font-weight:${fw}; border-radius:0px; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${cell.value}${arrow}</td>`;
                         } else {
-                            mRowsHtml += '<td style="padding:6px 8px; text-align:right; color:#3d3529; background:#1a1510 !important;">·</td>';
+                            mRowsHtml += `<td style="padding:6px 8px; text-align:right; color:#cccccc; background:${rowBg === '#ffffff' ? '#ffffff' : '#f9f9f9'}; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">·</td>`;
                         }
                     }
                     mRowsHtml += '</tr>';
@@ -1765,7 +1812,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
             if (mIndicatorsCount > 0) {
                 const icon = catIcons[mCat] || '📋';
-                tablesHtml += '<div style="margin-bottom:14px; border:1px solid rgba(212,162,90,0.2); border-radius:10px; overflow:hidden;">';
+                tablesHtml += '<div style="margin-bottom:14px; border:1px solid #cccccc; border-radius:0px; overflow:hidden;">';
                 
                 let abgButtonHtml = '';
                 if (mCat === 'Khí máu') {
@@ -1793,23 +1840,23 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             }
                         }
                     }
-                    abgButtonHtml = `<button class="aladinn-abg-btn" data-ph="${val_pH}" data-pco2="${val_pCO2}" data-hco3="${val_HCO3}" data-po2="${val_pO2}" data-fio2="${val_FiO2}" data-be="${val_BE}" data-na="${val_Na}" data-cl="${val_Cl}" style="margin-left:auto; background:rgba(212,162,90,0.2); border:1px solid rgba(212,162,90,0.4); color:#d4a25a; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.2);" onmouseover="this.style.background='rgba(212,162,90,0.3)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(212,162,90,0.2)'; this.style.transform='scale(1)';" title="Mở Popup phân tích Khí máu ngày gần nhất">⚡️ Đọc Nâng Cao</button>`;
+                    abgButtonHtml = `<button class="aladinn-abg-btn" data-ph="${val_pH}" data-pco2="${val_pCO2}" data-hco3="${val_HCO3}" data-po2="${val_pO2}" data-fio2="${val_FiO2}" data-be="${val_BE}" data-na="${val_Na}" data-cl="${val_Cl}" style="margin-left:auto; background:#ffffff; border:1px solid #1e5494; color:#1e5494; padding:4px 10px; border-radius:0px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.1s;" onmouseover="this.style.background='#edf4fc';" onmouseout="this.style.background='#ffffff';" title="Mở Popup phân tích Khí máu ngày gần nhất">⚡️ Đọc Nâng Cao</button>`;
                 }
 
-                tablesHtml += `<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(212,162,90,0.08); border-bottom:1px solid rgba(212,162,90,0.15);">
+                tablesHtml += `<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f2f5f8; border-bottom:2px solid #1e5494;">
                   <span style="font-size:16.8px;">${icon}</span>
-                  <span style="font-size:15.6px; font-weight:700; color:#d4a25a;">${mCat}</span>
-                  <span style="font-size:12px; color:#a18764; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:10px;">${mIndicatorsCount} chỉ số</span>
-                  ${mHasAbn ? '<span style="font-size:12px; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 8px; border-radius:10px;">⚠ Bất thường</span>' : ''}
+                  <span style="font-size:15.6px; font-weight:700; color:#333333;">${mCat}</span>
+                  <span style="font-size:12px; color:#333333; background:#ffffff; border:1px solid #cccccc; padding:2px 8px; border-radius:0px;">${mIndicatorsCount} chỉ số</span>
+                  ${mHasAbn ? '<span style="font-size:12px; color:#c62828; background:#ffe5e5; border:1px solid #ffcdd2; padding:2px 8px; border-radius:0px; font-weight:700;">⚠ Bất thường</span>' : ''}
                   ${abgButtonHtml}
                 </div>`;
                 
-                tablesHtml += '<div style="overflow-x:auto;"><table class="aladinn-lab-table" style="width:100%; border-collapse:collapse; font-size:14.4px;">';
+                tablesHtml += '<div style="overflow-x:auto;"><table class="aladinn-lab-table" style="width:100%; border-collapse:collapse; font-size:14.4px; border:1px solid #cccccc;">';
                 tablesHtml += `<thead><tr>
-                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#a0937e; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2;">Chỉ số</th>
-                  <th style="padding:7px 10px; text-align:left; background:rgba(0,0,0,0.2); color:#7a6e5e; font-size:12px; font-weight:600; position:sticky; left:0; z-index:2;">Ref</th>`;
+                  <th style="padding:7px 10px; text-align:left; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">Chỉ số</th>
+                  <th style="padding:7px 10px; text-align:left; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; position:sticky; left:0; z-index:2; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">Ref</th>`;
                 for (const d of sortedDates) {
-                    tablesHtml += `<th style="padding:7px 8px; text-align:right; background:rgba(0,0,0,0.2); color:#a0937e; font-size:12px; font-weight:600; white-space:nowrap;">${_shortDate(d)}</th>`;
+                    tablesHtml += `<th style="padding:7px 8px; text-align:right; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; white-space:nowrap; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${_shortDate(d)}</th>`;
                 }
                 tablesHtml += '</tr></thead><tbody>';
                 tablesHtml += mRowsHtml;
@@ -1820,35 +1867,35 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- CĐHA Section ---
         let cdhaHtml = '';
         if (imgList.length > 0) {
-            cdhaHtml = `<div style="margin-bottom:14px; border:1px solid rgba(96,165,250,0.25); border-radius:10px; overflow:hidden;">
-              <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(96,165,250,0.08); border-bottom:1px solid rgba(96,165,250,0.15);">
+            cdhaHtml = `<div style="margin-bottom:14px; border:1px solid #cccccc; border-radius:0px; overflow:hidden;">
+              <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f2f5f8; border-bottom:2px solid #1e5494;">
                 <span style="font-size:16.8px;">🩻</span>
-                <span style="font-size:15.6px; font-weight:700; color:#60a5fa;">Chẩn đoán hình ảnh</span>
-                <span style="font-size:12px; color:#6b8ab5; background:rgba(96,165,250,0.15); padding:2px 8px; border-radius:10px;">${imgList.length} phiếu</span>
+                <span style="font-size:15.6px; font-weight:700; color:#333333;">Chẩn đoán hình ảnh</span>
+                <span style="font-size:12px; color:#333333; background:#ffffff; border:1px solid #cccccc; padding:2px 8px; border-radius:0px;">${imgList.length} phiếu</span>
               </div>
-              <div style="padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="padding:10px 12px; display:flex; flex-direction:column; gap:8px; background:#ffffff;">
                 ${imgList.map((img, idx) => {
-                    const statusColor = (img.status || '').includes('Đang') ? '#fbbf24' : '#22c55e';
-                    const statusBg = (img.status || '').includes('Đang') ? 'rgba(251,191,36,0.08)' : 'rgba(34,197,94,0.08)';
+                    const statusColor = (img.status || '').includes('Đang') ? '#b7791f' : '#2e7d32';
+                    const statusBg = (img.status || '').includes('Đang') ? '#fffdf5' : '#f1f8e9';
                     const conclusionHtml = img.conclusion 
-                        ? `<div style="color:#c8b89a; font-size:13px; margin-top:8px; padding:8px 12px; background:rgba(96,165,250,0.06); border-left:3px solid rgba(96,165,250,0.5); border-radius:0 8px 8px 0; line-height:1.6; font-style:italic;">${img.conclusion}</div>` 
+                        ? `<div style="color:#333333; font-size:13.2px; margin-top:8px; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #1e5494; border-radius:0px; line-height:1.6; font-style:italic;">${img.conclusion}</div>` 
                         : '';
                     const dept = (img.department || '').split('-').map(s => s.trim().charAt(0).toUpperCase() + s.trim().slice(1).toLowerCase()).join(' · ');
-                    return `<div class="aladinn-cdha-card" style="padding:12px 14px; background:rgba(96,165,250,${idx % 2 === 0 ? '0.03' : '0.06'}); border:1px solid rgba(96,165,250,0.1); border-radius:10px; transition:all 0.15s ease;">
+                    return `<div class="aladinn-cdha-card" style="padding:12px 14px; background:${idx % 2 === 0 ? '#ffffff' : '#f9f9f9'}; border:1px solid #cccccc; border-radius:0px; transition:all 0.15s ease;">
                       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
                         <div style="flex:1; min-width:0;">
                           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="color:#e8dcc8; font-size:14px; font-weight:600; line-height:1.4;">${img.name || 'CĐHA'}</span>
-                            ${img.code ? `<span style="color:#6b8ab5; font-size:11px; font-weight:500; background:rgba(96,165,250,0.1); padding:1px 6px; border-radius:4px; white-space:nowrap;">${img.code}</span>` : ''}
+                            <span style="color:#333333; font-size:14.4px; font-weight:700; line-height:1.4;">${img.name || 'CĐHA'}</span>
+                            ${img.code ? `<span style="color:#1e5494; font-size:11px; font-weight:700; background:#e6f2ff; border:1px solid #cccccc; padding:1px 6px; border-radius:0px; white-space:nowrap;">${img.code}</span>` : ''}
                           </div>
-                          ${dept ? `<div style="color:#5a6e85; font-size:11.5px; margin-top:3px;">${dept}</div>` : ''}
+                          ${dept ? `<div style="color:#666666; font-size:12px; margin-top:3px;">${dept}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
                           <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="color:#60a5fa; font-size:12.5px; font-weight:600;">${_shortDate(img.sheetDate)}</span>
+                            <span style="color:#1e5494; font-size:13px; font-weight:700;">${_shortDate(img.sheetDate)}</span>
                           </div>
-                          <span style="font-size:11px; color:${statusColor}; background:${statusBg}; padding:1px 8px; border-radius:10px; font-weight:500;">${img.status || ''}</span>
-                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:linear-gradient(135deg,rgba(96,165,250,0.2),rgba(96,165,250,0.08)); border:1px solid rgba(96,165,250,0.35); color:#60a5fa; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap;" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
+                          <span style="font-size:11.5px; color:${statusColor}; background:${statusBg}; padding:1px 8px; border-radius:0px; font-weight:700; border:1px solid ${statusColor}33;">${img.status || ''}</span>
+                          ${img.sheetId ? `<button class="aladinn-pacs-btn" data-sheet-id="${img.sheetId}" data-maubenhphamid="${img.maubenhphamid || ''}" data-sophieu="${img.sophieu || ''}" data-madichvu="${img.madichvu || ''}" data-linkdicom="${img.linkDicom || ''}" style="margin-top:2px; background:#ffffff; border:1px solid #1e5494; color:#1e5494; padding:4px 10px; border-radius:0px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.1s; white-space:nowrap;" onmouseover="this.style.background='#edf4fc';" onmouseout="this.style.background='#ffffff';" title="Xem ảnh DICOM trực tiếp">🩻 Xem ảnh</button>` : ''}
                         </div>
                       </div>
                       ${conclusionHtml}
@@ -1993,29 +2040,29 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const dateObj = parts.length === 3 ? new Date(+parts[2], +parts[1]-1, +parts[0]) : null;
                 const dowStr = dateObj ? dowMap[dateObj.getDay()] : '';
                 const doctorName = dayProgressTreatments[0]?.NGUOITAO || dayOrders[0]?.NGUOITAO || '';
-                const numColor = isFirst ? '#f59e0b' : isToday ? '#34d399' : '#d4a25a';
-                const stripBg = isFirst ? 'rgba(245,158,11,0.06)' : isToday ? 'rgba(16,185,129,0.07)' : 'rgba(212,162,90,0.05)';
+                const numColor = isFirst ? '#d87a00' : isToday ? '#2e7d32' : '#1e5494';
+                const stripBg = isFirst ? '#fff9db' : isToday ? '#e8f5e9' : '#f2f5f8';
 
                 // Tag pills
                 const hasProgress = dayTreatments.some(t => t.DIENBIEN?.trim());
                 let pills = '';
-                if (hasProgress) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(96,165,250,0.12);color:#7ab8f5;border:1px solid rgba(96,165,250,0.2);">● Diễn tiến</span>';
-                if (dayOrders.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(16,185,129,0.1);color:#34d399;border:1px solid rgba(16,185,129,0.2);">▣ ${dayOrders.length} y lệnh</span>`;
-                if (diagChanged && !isFirst) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(167,139,250,0.1);color:#b79bfa;border:1px solid rgba(167,139,250,0.2);">↕ CĐ thay đổi</span>';
-                if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.2);">📋 ${currDiags.size} CĐ</span>`;
-                if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:12px;background:rgba(212,162,90,0.1);color:#c49a52;border:1px solid rgba(212,162,90,0.2);">💊 ${dayDrugs.length} thuốc</span>`;
+                if (hasProgress) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#edf4fc;color:#1e5494;border:1px solid #cccccc;">● Diễn tiến</span>';
+                if (dayOrders.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;">▣ ${dayOrders.length} y lệnh</span>`;
+                if (diagChanged && !isFirst) pills += '<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7;">↕ CĐ thay đổi</span>';
+                if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;">📋 ${currDiags.size} CĐ</span>`;
+                if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#edf4fc;color:#1565c0;border:1px solid #b3d4fc;">💊 ${dayDrugs.length} thuốc</span>`;
 
                 // ── Day card ──
-                combinedTimelineHtml += `<div style="border:1px solid rgba(212,162,90,0.1);border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.012);margin-bottom:8px;">
-                  <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid rgba(212,162,90,0.1);">
+                combinedTimelineHtml += `<div style="border:1px solid #cccccc;border-radius:0px !important;overflow:hidden;background:#ffffff;margin-bottom:8px;">
+                  <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid #cccccc;">
                     <div style="text-align:center;min-width:28px;">
                       <div style="font-size:21.6px;font-weight:800;color:${numColor};line-height:1;">${dt.substring(0,2)}</div>
-                      <div style="font-size:10.8px;color:#a18764;font-weight:600;">${dt.substring(3,5)}</div>
+                      <div style="font-size:10.8px;color:#555555;font-weight:600;">${dt.substring(3,5)}</div>
                     </div>
-                    <div style="width:1px;height:28px;background:rgba(212,162,90,0.15);flex-shrink:0;"></div>
+                    <div style="width:1px;height:28px;background:#cccccc;flex-shrink:0;"></div>
                     <div style="flex:1;">
                       <div style="color:${numColor};font-weight:600;font-size:15px;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
-                      <div style="color:#6a5e4e;font-size:12.6px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
+                      <div style="color:#666666;font-size:12.6px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
                     </div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
                   </div>
@@ -2047,14 +2094,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     
                     if (timeProgress.length === 0 && timeOrders.length === 0 && timeGhichus.length === 0 && timeDrugs.length === 0 && !isLastTime) continue;
 
-                    combinedTimelineHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;${!isLastTime ? 'border-bottom:1px solid rgba(255,255,255,0.04);' : ''}">`;
+                    combinedTimelineHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;${!isLastTime ? 'border-bottom:1px solid #e5e7eb;' : ''}">`;
                     
                     // --- LEFT COLUMN (Notes) ---
-                    combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid rgba(255,255,255,0.04);">';
+                    combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid #e5e7eb;">';
                     
                     if (timeProgress.length > 0) {
                         for (const tr of timeProgress) {
-                            const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span>` : '';
+                            const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#333333;background:#edf4fc;border:1px solid #cccccc;padding:1px 6px;border-radius:0px !important;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span>` : '';
                             
                             let inlineDiagHtml = '';
                             const sheetKey = (tr.MAUBENHPHAMID || '') + '_' + (tr.NGAYMAUBENHPHAM || '');
@@ -2064,36 +2111,36 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 const mainD = (tr.CHANDOAN || '').trim();
                                 const subD = (tr.CHANDOANKEMTHEO || '').trim();
                                 let diagLabel = mainD;
-                                if (subD) diagLabel += `<span style="color:#a78bfa;opacity:.7;font-size:11.4px;"> · Kèm: ${subD}</span>`;
-                                inlineDiagHtml = `<div style="margin-top:6px;padding:5px 8px;background:rgba(139,124,248,0.05);border:1px solid rgba(139,124,248,0.12);border-radius:6px;">
-                                  <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">⟳ ${label}</div>
-                                  <div style="font-size:12.6px;color:#c4b5fd;line-height:1.4;">${diagLabel}</div>
+                                if (subD) diagLabel += `<span style="color:#6a1b9a;opacity:.7;font-size:11.4px;"> · Kèm: ${subD}</span>`;
+                                inlineDiagHtml = `<div style="margin-top:6px;padding:5px 8px;background:#f3e5f5;border:1px solid #e1bee7;border-radius:0px !important;">
+                                  <div style="font-size:10.2px;font-weight:700;color:#6a1b9a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">⟳ ${label}</div>
+                                  <div style="font-size:12.6px;color:#333333;line-height:1.4;">${diagLabel}</div>
                                 </div>`;
                             }
                             
-                            combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.03);border-radius:0 5px 5px 0;margin-bottom:6px;">${timeTag}${tp?'<br>':''}<span style="font-size:14.4px;color:#c8d4e0;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span>${inlineDiagHtml}</div>`;
+                            combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid #1e5494;background:#f9f9f9;border-radius:0px !important;margin-bottom:6px;">${timeTag}${tp?'<br>':''}<span style="font-size:14.4px;color:#333333;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span>${inlineDiagHtml}</div>`;
                         }
                     } else if (timeDrugs.length > 0 || timeOrders.length > 0 || timeGhichus.length > 0) {
-                        const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#a18764;background:rgba(212,162,90,0.1);border:1px solid rgba(212,162,90,0.2);padding:1px 6px;border-radius:4px;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span><br>` : '';
-                        combinedTimelineHtml += `${timeTag}<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>`;
+                        const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#333333;background:#edf4fc;border:1px solid #cccccc;padding:1px 6px;border-radius:0px !important;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span><br>` : '';
+                        combinedTimelineHtml += `${timeTag}<div style="font-size:13.2px;color:#777777;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>`;
                     }
                     
                     if (timeOrders.length > 0) {
-                        combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid rgba(16,185,129,0.35);background:rgba(16,185,129,0.035);border-radius:0 5px 5px 0;">
-                          <div style="font-size:11.4px;color:#34d399;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
+                        combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid #2e7d32;background:#e8f5e9;border-radius:0px !important;">
+                          <div style="font-size:11.4px;color:#2e7d32;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
                         for (const order of timeOrders) {
-                            const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#6ee7b7;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.16);padding:1px 5px;border-radius:4px;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
-                            const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#8fbfae;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
-                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#d8f3e7;line-height:1.55;margin-bottom:4px;">${group}${escapeHtml(order.YLENH)}${note}</div>`;
+                            const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#2e7d32;background:#c8e6c9;border:1px solid #a5d6a7;padding:1px 5px;border-radius:0px !important;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
+                            const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#555555;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
+                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#333333;line-height:1.55;margin-bottom:4px;">${group}${escapeHtml(order.YLENH)}${note}</div>`;
                         }
                         combinedTimelineHtml += '</div>';
                     }
                     
                     if (timeGhichus.length > 0) {
                         for (const gc of timeGhichus) {
-                            combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid rgba(212,162,90,0.3);background:rgba(212,162,90,0.03);border-radius:0 5px 5px 0;">
-                              <div style="font-size:11.4px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
-                              <div style="font-size:13.8px;color:#b89a70;line-height:1.5;font-style:italic;">${gc.GHICHU}</div>
+                            combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid #1e5494;background:#f9f9f9;border-radius:0px !important;">
+                              <div style="font-size:11.4px;color:#1e5494;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
+                              <div style="font-size:13.8px;color:#333333;line-height:1.5;font-style:italic;">${gc.GHICHU}</div>
                             </div>`;
                         }
                     }
@@ -2102,34 +2149,34 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     if (isLastTime) {
                         if (dayProgressTreatments.filter(t => t.DIENBIEN?.trim()).length === 0 && diagChanged && currDiags.size > 0) {
                             let diagItems = '';
-                            for (const d of currDiags) diagItems += `<div style="font-size:12.6px;color:#c4b5fd;line-height:1.35;margin-bottom:2px;">${d}</div>`;
-                            combinedTimelineHtml += `<div style="margin-top:6px;padding:5px 8px;background:rgba(139,124,248,0.05);border:1px solid rgba(139,124,248,0.12);border-radius:6px;">
-                              <div style="font-size:10.2px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">⟳ Chẩn đoán${isFirst?' (Nhập viện)':' (Thay đổi)'}</div>
+                            for (const d of currDiags) diagItems += `<div style="font-size:12.6px;color:#333333;line-height:1.35;margin-bottom:2px;">${d}</div>`;
+                            combinedTimelineHtml += `<div style="margin-top:6px;padding:5px 8px;background:#f3e5f5;border:1px solid #e1bee7;border-radius:0px !important;">
+                              <div style="font-size:10.2px;font-weight:700;color:#6a1b9a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;">⟳ Chẩn đoán${isFirst?' (Nhập viện)':' (Thay đổi)'}</div>
                               ${diagItems}
                             </div>`;
                         }
                         
-                        combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">
-                          <div style="font-size:11.4px;color:#8b7cf8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
+                        combinedTimelineHtml += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;">
+                          <div style="font-size:11.4px;color:#6a1b9a;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▸ Chẩn đoán${currDiags.size > 0 && !isFirst && !diagChanged?' — không đổi':''}</div>`;
                         if (currDiags.size > 0) {
                             for (const d of currDiags) {
                                 const isNewD = !isFirst && !prevDiags.has(d);
-                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:${isNewD?'rgba(52,211,153,.06)':'rgba(107,114,128,.04)'};border-left:2px solid ${isNewD?'#34d399':'#4b5563'};color:${isNewD?'#6ee7b7':'#9ca3af'};">
-                                  <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;flex-shrink:0;">MỚI</span>':''}
+                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:0px !important;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:${isNewD?'#e8f5e9':'#f5f5f5'};border-left:2px solid ${isNewD?'#2e7d32':'#757575'};color:#333333;">
+                                  <span style="flex:1;">${d}</span>${isNewD?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#c8e6c9;color:#2e7d32;flex-shrink:0;">MỚI</span>':''}
                                 </div>`;
                             }
                             if (!isFirst) {
                                 for (const d of prevDiags) {
                                     if (!currDiags.has(d)) {
-                                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:4px;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:rgba(239,68,68,.04);border-left:2px solid #f87171;color:#fca5a5;text-decoration:line-through;opacity:.75;">
+                                        combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px 3px 8px;border-radius:0px !important;margin-bottom:3px;font-size:13.8px;line-height:1.45;background:#ffebee;border-left:2px solid #c62828;color:#c62828;text-decoration:line-through;">
                                           <span style="flex:1;">${d}</span>
-                                          <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                          <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#ffcdd2;color:#c62828;flex-shrink:0;">NGƯNG</span>
                                         </div>`;
                                     }
                                 }
                             }
                         } else {
-                            combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
+                            combinedTimelineHtml += '<div style="font-size:13.2px;color:#777777;font-style:italic;padding:2px 4px;">Chưa có dữ liệu chẩn đoán.</div>';
                         }
                         combinedTimelineHtml += '</div>';
                     }
@@ -2141,9 +2188,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     // Legend
                     if (!legendRendered && (timeDrugs.length > 0 || (isLastTime && prevDrugs.length > 0))) {
                         combinedTimelineHtml += `<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;">
-                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;display:inline-block;"></span>Mới</span>
-                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#6b7280;display:inline-block;"></span>Tiếp tục</span>
-                          <span style="display:flex;align-items:center;gap:3px;color:#6a5e4e;"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block;"></span>Ngưng</span>
+                          <span style="display:flex;align-items:center;gap:3px;color:#555555;"><span style="width:6px;height:6px;border-radius:50%;background:#2e7d32;display:inline-block;"></span>Mới</span>
+                          <span style="display:flex;align-items:center;gap:3px;color:#555555;"><span style="width:6px;height:6px;border-radius:50%;background:#757575;display:inline-block;"></span>Tiếp tục</span>
+                          <span style="display:flex;align-items:center;gap:3px;color:#555555;"><span style="width:6px;height:6px;border-radius:50%;background:#c62828;display:inline-block;"></span>Ngưng</span>
                         </div>`;
                         legendRendered = true;
                     }
@@ -2161,21 +2208,21 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             if (dm?.[1]) totalDose = dm[1];
                             else if (drug.SOLUONG) totalDose = `${drug.SOLUONG} ${drug.DONVITINH||''}/ngày`.trim();
                             else totalDose = drug.LIEUDUNG || '';
-                            const dotC = (isNew||isFirst)?'#34d399':'#6b7280';
-                            const nameC = (isNew||isFirst)?'#d0f0e4':'#9ca3af';
-                            const doseStyle = (isNew||isFirst)?'background:rgba(52,211,153,.12);color:#34d399;':'background:rgba(107,114,128,.1);color:#9ca3af;';
-                            const itemBg = (isNew||isFirst)?'background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);':'background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.04);opacity:.7;';
-                            const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(52,211,153,.15);color:#34d399;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
+                            const dotC = (isNew||isFirst)?'#2e7d32':'#757575';
+                            const nameC = '#333333';
+                            const doseStyle = (isNew||isFirst)?'background:#c8e6c9;color:#2e7d32;':'background:#e0e0e0;color:#616161;';
+                            const itemBg = (isNew||isFirst)?'background:#e8f5e9;border:1px solid #c8e6c9;':'background:#f9f9f9;border:1px solid #e0e0e0;';
+                            const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#c8e6c9;color:#2e7d32;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
                             const ksDays = drug.SOLAN_SD_KHANGSINH ? parseInt(drug.SOLAN_SD_KHANGSINH, 10) : 0;
-                            const _ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(212,162,90,.18);color:#d4a25a;border:1px solid rgba(212,162,90,.3);margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
-                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-bottom:4px;${itemBg}">
+                            const _ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:0px !important;background:#edf4fc;color:#1e5494;border:1px solid #cccccc;margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
+                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:0px !important;margin-bottom:4px;${itemBg}">
                               <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
-                              <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#d4a25a;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
-                              ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
+                              <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#1e5494;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
+                              ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:0px !important;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
                             </div>`;
                         }
                     } else if (timeProgress.length > 0 || timeOrders.length > 0) {
-                        combinedTimelineHtml += '<div style="font-size:13.2px;color:#4a4540;font-style:italic;padding:4px 2px;">(Không có y lệnh thuốc)</div>';
+                        combinedTimelineHtml += '<div style="font-size:13.2px;color:#777777;font-style:italic;padding:4px 2px;">(Không có y lệnh thuốc)</div>';
                     }
                     
                     // Render stopped drugs ONLY at the last time block of the day
@@ -2184,10 +2231,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         for (const pd of prevDrugs) {
                             if (!currDrugNames.has(pd.TENTHUOC)) {
                                 _totalStopped++;
-                                combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:6px;margin-top:${hasStopped?'4px':'12px'};margin-bottom:4px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);opacity:.75;">
-                                  <span style="width:6px;height:6px;border-radius:50%;background:#f87171;flex-shrink:0;margin-top:5px;"></span>
-                                  <span style="flex:1;font-size:14.4px;color:#fca5a5;text-decoration:line-through;">${pd.TENTHUOC}</span>
-                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:3px;background:rgba(239,68,68,.15);color:#f87171;flex-shrink:0;">NGƯNG</span>
+                                combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:0px !important;margin-top:${hasStopped?'4px':'12px'};margin-bottom:4px;background:#ffebee;border:1px solid #ffcdd2;">
+                                  <span style="width:6px;height:6px;border-radius:50%;background:#c62828;flex-shrink:0;margin-top:5px;"></span>
+                                  <span style="flex:1;font-size:14.4px;color:#c62828;text-decoration:line-through;">${pd.TENTHUOC}</span>
+                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#ffcdd2;color:#c62828;flex-shrink:0;">NGƯNG</span>
                                 </div>`;
                                 hasStopped = true;
                             }
@@ -2199,13 +2246,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 combinedTimelineHtml += '</div></div>'; // End Day card
             }
         } else {
-            combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#7a6e5e;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
+            combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#8C9099;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
         }
 
         const sourcePills = [
             { label: `${treatments.length} diễn tiến/y lệnh`, color: '#7ab8f5' },
             { label: `${yLenhList.length} y lệnh khác`, color: '#34d399' },
-            { label: `${drugList.length} thuốc`, color: '#d4a25a' },
+            { label: `${drugList.length} thuốc`, color: '#9ECAFF' },
             { label: `${labs.length} XN`, color: '#f472b6' },
             { label: `${imgList.length} CĐHA`, color: '#60a5fa' }
         ].map(item => `<span style="font-size:12.6px;font-weight:700;color:${item.color};background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:999px;padding:3px 8px;">${item.label}</span>`).join('');
@@ -2217,8 +2264,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const _hasLamsangData = allDates.length > 0 || Object.keys(historyData).length > 0; void _hasLamsangData;
 
         if (Object.keys(historyData).length > 0) {
-            khamVaoVienHtml += `<div style="background:rgba(212,162,90,0.05); border:1px solid rgba(212,162,90,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
-                <h4 style="color:#d4a25a; margin:0 0 12px 0; font-size:16.8px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
+            khamVaoVienHtml += `<div style="background:rgba(158,202,255,0.05); border:1px solid rgba(158,202,255,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
+                <h4 style="color:#9ECAFF; margin:0 0 12px 0; font-size:16.8px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
             const fields = [
                 { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
                 { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
@@ -2230,24 +2277,24 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             for (const f of fields) {
                 if (historyData[f.key]) {
                     khamVaoVienHtml += `<div style="margin-bottom:10px;">
-                        <span style="color:#a18764; font-weight:600; font-size:14.4px; display:block; margin-bottom:2px;">${f.label}:</span>
-                        <div style="color:#e8dcc8; font-size:15.6px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
+                        <span style="color:#555555; font-weight:600; font-size:14.4px; display:block; margin-bottom:2px;">${f.label}:</span>
+                        <div style="color:#333333; font-size:15.6px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
                     </div>`;
                 }
             }
             khamVaoVienHtml += '</div>';
         } else {
-            khamVaoVienHtml = '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu khám vào viện.</div>';
+            khamVaoVienHtml = '<div style="text-align:center; padding:30px; color:#6B6F78; font-style:italic;">Chưa có dữ liệu khám vào viện.</div>';
         }
 
         // --- Lâm sàng & Thuốc: diễn tiến + thuốc (combined timeline) ---
-        const lamsangHtml = clinicalGuideHtml + (combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#5a5450; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>');
+        const lamsangHtml = clinicalGuideHtml + (combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#6B6F78; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>');
 
         // --- Modal ---
         const modal = document.createElement('div');
         modal.id = 'vnpt-lab-timeline-modal';
         modal.className = 'vnpt-glass-overlay';
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147480000;';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:2147480000;';
 
         const defaultActiveTab = 1;
 
@@ -2307,9 +2354,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const _pillsHtml = icdMatches.length > 0
                 ? icdMatches.map((code, i) => {
                     const isPrimary = i === 0;
-                    const bg = isPrimary ? 'rgba(212,162,90,0.2)' : 'rgba(255,255,255,0.06)';
-                    const border = isPrimary ? 'rgba(212,162,90,0.4)' : 'rgba(255,255,255,0.1)';
-                    const color = isPrimary ? '#f0d78c' : '#c8b89a';
+                    const bg = isPrimary ? 'rgba(158,202,255,0.2)' : 'rgba(255,255,255,0.06)';
+                    const border = isPrimary ? 'rgba(158,202,255,0.4)' : 'rgba(255,255,255,0.1)';
+                    const color = isPrimary ? '#D1E4FF' : '#C2C6D2';
                     return `<span style="display:inline-block; padding:2px 8px; border-radius:5px; font-size:14.4px; font-weight:700; font-family:'SF Mono','Menlo','Consolas',monospace; color:${color}; background:${bg}; border:1px solid ${border}; letter-spacing:0.3px; line-height:1.4;" title="${isPrimary ? 'Chẩn đoán chính' : 'Kèm theo'}">${code}</span>`;
                 }).join(' ')
                 : '';
@@ -2325,32 +2372,32 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const _namePillsHtml = patientInfo.diagHistory.map((d, i) => {
                     const isPrimary = i === 0;
                     const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
-                    const color = isPrimary ? '#e8dcc8' : '#9a8e7e';
+                    const color = isPrimary ? '#333333' : '#555555';
                     const weight = isPrimary ? '600' : '400';
                     const title = isPrimary ? 'Chẩn đoán chính' : 'Chẩn đoán kèm';
-                    return `<span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:14.4px; font-weight:${weight}; color:${color}; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
+                    return `<span style="display:inline-block; padding:2px 8px; border-radius:0px !important; font-size:14.4px; font-weight:${weight}; color:${color}; background:#f5f5f5; border:1px solid #ddd; line-height:1.5; margin-bottom:2px;" title="${title}">${escapeHtml(cleanName)}</span>`;
                 }).join(' ');
 
                 // Tạo danh sách ICD cho phần chi tiết
                 const icdDetailList = patientInfo.diagHistory.map(d => {
                     const codes = (d.match(icdRegex) || []);
                     const cleanName = d.replace(icdRegex, '').replace(/^[\s,;-]+/, '').trim() || d;
-                    const codeStr = codes.length > 0 ? codes.map(c => `<code style="font-size:12px;background:rgba(212,162,90,0.12);padding:1px 4px;border-radius:3px;color:#a18764;">${c}</code>`).join(' ') : '';
-                    return `<li style="margin-bottom:4px; color:#c8b89a; font-size:14.4px; line-height:1.5;">${escapeHtml(cleanName)}${codeStr ? ' ' + codeStr : ''}</li>`;
+                    const codeStr = codes.length > 0 ? codes.map(c => `<code style="font-size:12px;background:#e6f2ff;padding:1px 4px;border-radius:0px !important;color:#1e5494;">${c}</code>`).join(' ') : '';
+                    return `<li style="margin-bottom:4px; color:#333333; font-size:14.4px; line-height:1.5;">${escapeHtml(cleanName)}${codeStr ? ' ' + codeStr : ''}</li>`;
                 }).join('');
 
                 patientDiagHtml = `
                     <div style="margin-top:5px;">
                         <div style="display:flex; align-items:baseline; gap:6px; flex-wrap:nowrap;">
-                            <span style="font-size:12px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
-                            <div style="font-size:14.4px; color:#e8dcc8; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(patientInfo.diagHistory.map(d => d.replace(icdRegex,'').replace(/^[\s,;-]+/,'').trim()).filter(Boolean).join(' · '))}</div>
+                            <span style="font-size:12px; color:#666666; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                            <div style="font-size:14.4px; color:#333333; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(patientInfo.diagHistory.map(d => d.replace(icdRegex,'').replace(/^[\s,;-]+/,'').trim()).filter(Boolean).join(' · '))}</div>
                         </div>
                         <details style="margin-top:3px;">
-                            <summary style="font-size:13.2px; color:#5a5450; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:3px;">
+                            <summary style="font-size:13.2px; color:#555555; cursor:pointer; outline:none; user-select:none; list-style:none; display:inline-flex; align-items:center; gap:3px;">
                                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                 Chi tiết (${patientInfo.diagHistory.length} chẩn đoán, kèm mã ICD)
                             </summary>
-                            <div style="margin-top:4px; padding:6px 10px; background:rgba(0,0,0,0.18); border:1px solid rgba(212,162,90,0.1); border-radius:5px; max-height:110px; overflow-y:auto;">
+                            <div style="margin-top:4px; padding:6px 10px; background:#f9f9f9; border:1px solid #cccccc; border-radius:0px !important; max-height:110px; overflow-y:auto;">
                                 <ul style="margin:0; padding-left:12px; line-height:1.5;">${icdDetailList}</ul>
                             </div>
                         </details>
@@ -2359,56 +2406,67 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             } else {
                 patientDiagHtml = `
                     <div style="margin-top:5px; display:flex; align-items:baseline; gap:6px;">
-                        <span style="font-size:12px; color:#a18764; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
-                        <div style="font-size:14.4px; color:#e8dcc8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(descText || rawDiag)}</div>
+                        <span style="font-size:12px; color:#666666; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;">CĐ:</span>
+                        <div style="font-size:14.4px; color:#333333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${escapeHtml(descText || rawDiag)}</div>
                     </div>
                 `;
             }
 
         }
         const headerSubtitleHtml = patientAgeHtml || patientDiagHtml
-            ? `<div style="margin-top:3px; font-size:14.4px; color:#9a8e7e;">${patientAgeHtml}${patientDiagHtml}</div>`
+            ? `<div style="margin-top:3px; font-size:14.4px; color:#333333;">${patientAgeHtml}${patientDiagHtml}</div>`
             : '';
+
+        // Trích xuất Năm sinh & Chuẩn hóa thông tin bệnh nhân theo chuẩn HIS Hình 2
+        let birthYear = '';
+        if (patientInfo.demographics?.dob) {
+            const dobStr = String(patientInfo.demographics.dob).trim();
+            const parts = dobStr.match(/(\d{4})/);
+            if (parts) birthYear = parts[1];
+        }
+        if (!birthYear && patientInfo.age) {
+            const ageStr = String(patientInfo.age).trim();
+            const match = ageStr.match(/\d{4}/);
+            if (match) {
+                birthYear = match[0];
+            } else {
+                const numericAge = parseInt(ageStr.replace(/\D/g, ''), 10);
+                if (numericAge > 0 && numericAge < 150) {
+                    birthYear = String(new Date().getFullYear() - numericAge);
+                }
+            }
+        }
+        if (!birthYear && patientInfo.demographics?.age) {
+            const ageStr = String(patientInfo.demographics.age).trim();
+            const numericAge = parseInt(ageStr.replace(/\D/g, ''), 10);
+            if (numericAge > 0 && numericAge < 150) {
+                birthYear = String(new Date().getFullYear() - numericAge);
+            }
+        }
+
+        const patientNameUpper = String(patientName || 'Bệnh Nhân').toUpperCase();
+        const genderText = headerGender ? headerGender.trim() : '';
+        const patientDetails = [patientNameUpper, birthYear, genderText].filter(Boolean).join('/ ');
+        const headerTitleText = `CLS + Thuốc (${patientDetails})`;
 
         const tabsHeaderHtml = `
             <style>
-                @keyframes aisTab-shimmer { 0%{left:-80%} 100%{left:120%} }
-                @keyframes aisTab-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(212,168,83,0.3)} 60%{box-shadow:0 0 0 5px rgba(212,168,83,0)} }
                 @keyframes aisSkel { 0%,100%{opacity:0.35} 50%{opacity:0.85} }
                 @keyframes aisSpinRing { to{transform:rotate(360deg)} }
                 @keyframes aisDot { 0%,80%,100%{transform:scale(0.55);opacity:0.35} 40%{transform:scale(1);opacity:1} }
                 @keyframes aisTabFadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-                #aladinn-tab-ai {
-                    position:relative; overflow:hidden;
-                    background:linear-gradient(135deg,rgba(200,146,42,0.15),rgba(212,168,83,0.07));
-                    border:1px solid rgba(212,168,83,0.3) !important;
-                    border-bottom:2px solid rgba(212,168,83,0.15) !important;
-                    color:#c8a455 !important; font-weight:700 !important;
-                    animation:aisTab-pulse 3s ease-in-out infinite;
-                }
-                #aladinn-tab-ai::after {
-                    content:''; position:absolute; top:0; left:-80%; width:40%; height:100%;
-                    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
-                    transform:skewX(-18deg); animation:aisTab-shimmer 3.5s ease-in-out infinite;
-                }
-                #aladinn-tab-ai.ai-tab-active {
-                    background:linear-gradient(135deg,rgba(212,168,83,0.2),rgba(200,146,42,0.1)) !important;
-                    border-bottom-color:#D4A853 !important; color:#D4A853 !important;
-                    animation:none;
-                }
-                #aladinn-tab-ai.ai-tab-active::after { display:none; }
                 .ais-dot-wrap{display:inline-flex;gap:3px;align-items:center;vertical-align:middle;}
-                .ais-dot-wrap span{width:5px;height:5px;border-radius:50%;background:#D4A853;display:inline-block;animation:aisDot 1.2s infinite ease-in-out;}
+                .ais-dot-wrap span{width:5px;height:5px;border-radius:50%;background:#1e5494;display:inline-block;animation:aisDot 1.2s infinite ease-in-out;}
                 .ais-dot-wrap span:nth-child(2){animation-delay:0.15s}
                 .ais-dot-wrap span:nth-child(3){animation-delay:0.3s}
                 #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
             </style>
-            <div style="display:flex; border-bottom:1px solid rgba(212,162,90,0.2); margin-bottom:14px; gap:3px;">
-                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
-                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
-                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
-                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:1px solid transparent; border-bottom:2px solid transparent; color:#7a6e5e; padding:9px 4px; font-weight:600; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
-                <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:9px 4px; border-radius:8px 8px 0 0; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">
+            <div style="display:flex; border-bottom:1px solid #cccccc; margin-bottom:14px; gap:3px;">
+                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
+                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
+                <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
+                <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+                <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     AI
                 </button>
@@ -2416,98 +2474,99 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         `;
 
         modal.innerHTML = `
-            <div style="width:96vw; max-width:1400px; height:94vh; max-height:94vh; display:flex; flex-direction:column; padding:24px; background:linear-gradient(135deg,#1a1510,#231c14); box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 30px rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3); border-radius:16px; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:10px; flex-shrink:0;">
-                    <div style="flex:1; min-width:0;">
-                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                            <h3 style="color:#d4a25a; margin:0; font-size:19.2px; display:flex; align-items:center; gap:10px;">
-                                <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:22px;height:22px;"> 
-                                CLS + Thuốc <span style="color:#a18764; margin: 0 4px;">—</span> <span style="color:#fff; font-weight:700; background:rgba(212,162,90,0.15); padding:2px 8px; border-radius:4px;">${patientName}</span>${headerGender || patientInfo.age ? `<span style="color:#9a8e7e; font-size:15.6px; font-weight:400;">${[headerGender, patientInfo.age].filter(Boolean).join(', ')}</span>` : ''}
-                            </h3>
-                        </div>
-                        ${headerSubtitleHtml}
+            <div style="width:96vw; max-width:1400px; height:94vh; max-height:94vh; display:flex; flex-direction:column; padding:0px !important; background:#ffffff !important; color:#333333 !important; border:2px solid #1e5494 !important; border-radius:0px !important; box-shadow:2px 2px 10px rgba(0,0,0,0.15) !important; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; overflow:hidden;">
+                <!-- Thanh tiêu đề (Header) xanh đặc sát mép 100% chuẩn HIS Hình 2 -->
+                <div style="background:#1e5494; color:#ffffff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-radius:0px !important;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:20px;height:20px;">
+                        <span style="font-weight:700; font-size:16px; color:#ffffff;">${headerTitleText}</span>
                     </div>
-                    <button id="lab-timeline-close" style="background:none;border:none;color:#7a6e5e;font-size:26.4px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;" title="Đóng">&times;</button>
+                    <button id="lab-timeline-close" style="background:none;border:none;color:#ffffff;font-size:24px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;opacity:0.9;transition:0.2s;" onmouseover="this.style.opacity='1';this.style.color='#ffcdd2'" onmouseout="this.style.opacity='0.9';this.style.color='#ffffff'" title="Đóng">&times;</button>
                 </div>
-                ${tabsHeaderHtml}
-                <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#e8dcc8;">
-                    <div id="aladinn-content-khamvaovien" style="display:none;">
-                        ${khamVaoVienHtml}
-                    </div>
-                    <div id="aladinn-content-lamsang" style="display:none;">
-                        ${lamsangHtml}
-                    </div>
-                    <div id="aladinn-content-xn" style="display:none;">
-                        ${summaryCards}
-                        ${alertsHtml}
-                        ${tablesHtml}
-                    </div>
-                    <div id="aladinn-content-cdha" style="display:none;">
-                        ${cdhaHtml || '<div style="text-align:center; padding:20px; color:#7a6e5e; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>'}
-                    </div>
-                    <div id="aladinn-content-ai" style="display:none; padding:4px 2px;">
-                        <div id="ai-tab-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:14px; text-align:center;">
-                            <div style="width:52px;height:52px;border-radius:50%;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);display:flex;align-items:center;justify-content:center;">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                            </div>
-                            <div>
-                                <div style="color:#D4A853;font-weight:700;font-size:16.8px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
-                                <div style="color:#6b7280;font-size:14.4px;line-height:1.5;">Chưa cấu hình API. Copy prompt để dán sang ChatGPT/Gemini khác</div>
-                            </div>
-                            <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
-                                <button id="btn-ai-copy-prompt" style="display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#c8922a,#d4a853,#e8c27a);border:none;color:#0b0f1e;border-radius:9px;padding:9px 22px;font-size:15.6px;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;box-shadow:0 3px 14px rgba(212,168,83,0.4);transition:all 0.2s;position:relative;overflow:hidden;">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-                                    Copy prompt
-                                </button>
-                                <button id="btn-ai-start" style="display:none;align-items:center;gap:7px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.25);color:#c8a455;border-radius:9px;padding:9px 18px;font-size:15.6px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:0.3px;transition:all 0.2s;position:relative;overflow:hidden;">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                                    Phân tích ngay
-                                </button>
-                            </div>
+                
+                <!-- Phần thân chứa dữ liệu (Body) có padding cân đối -->
+                <div style="padding:16px; display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+                    ${headerSubtitleHtml ? `<div style="margin-bottom:10px; border-bottom:1px dashed #cccccc; padding-bottom:8px;">${headerSubtitleHtml}</div>` : ''}
+                    ${tabsHeaderHtml}
+                    <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#333333;">
+                        <div id="aladinn-content-khamvaovien" style="display:none;">
+                            ${khamVaoVienHtml}
                         </div>
-                        <div id="ai-tab-loading" style="display:none; padding:20px 10px;">
-                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
-                                <div style="position:relative;width:22px;height:22px;flex-shrink:0;">
-                                    <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(212,168,83,0.15);"></div>
-                                    <div style="position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:#D4A853;animation:aisSpinRing 0.9s linear infinite;"></div>
+                        <div id="aladinn-content-lamsang" style="display:none;">
+                            ${lamsangHtml}
+                        </div>
+                        <div id="aladinn-content-xn" style="display:none;">
+                            ${summaryCards}
+                            ${alertsHtml}
+                            ${tablesHtml}
+                        </div>
+                        <div id="aladinn-content-cdha" style="display:none;">
+                            ${cdhaHtml || '<div style="text-align:center; padding:20px; color:#8C9099; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>'}
+                        </div>
+                        <div id="aladinn-content-ai" style="display:none; padding:4px 2px;">
+                            <div id="ai-tab-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:14px; text-align:center;">
+                                <div style="width:52px;height:52px;border-radius:0px !important;background:#e6f2ff;border:1px solid #cccccc;display:flex;align-items:center;justify-content:center;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e5494" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                                 </div>
-                                <span style="color:#D4A853;font-weight:600;font-size:15.6px;">Đang phân tích hồ sơ lâm sàng...</span>
+                                <div>
+                                    <div style="color:#1e5494;font-weight:700;font-size:16.8px;margin-bottom:4px;">Phân tích lâm sàng AI</div>
+                                    <div style="color:#666666;font-size:14.4px;line-height:1.5;">Chưa cấu hình API. Copy prompt để dán sang ChatGPT/Gemini khác</div>
+                                </div>
+                                <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                    <button id="btn-ai-copy-prompt" style="display:flex;align-items:center;gap:7px;background:#1e5494;border:1px solid #003d7a;color:#ffffff;border-radius:0px !important;padding:9px 22px;font-size:15.6px;font-weight:800;cursor:pointer;font-family:'Segoe UI',sans-serif;letter-spacing:0.3px;transition:all 0.2s;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                                        Copy prompt
+                                    </button>
+                                    <button id="btn-ai-start" style="display:none;align-items:center;gap:7px;background:#e6f2ff;border:1px solid #cccccc;color:#1e5494;border-radius:0px !important;padding:9px 18px;font-size:15.6px;font-weight:700;cursor:pointer;font-family:'Segoe UI',sans-serif;letter-spacing:0.3px;transition:all 0.2s;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                                        Phân tích ngay
+                                    </button>
+                                </div>
                             </div>
-                            <div style="display:flex;flex-direction:column;gap:8px;padding-left:32px;">
-                                <div style="height:9px;background:rgba(212,168,83,0.12);border-radius:5px;width:88%;animation:aisSkel 1.6s ease-in-out infinite;"></div>
-                                <div style="height:9px;background:rgba(212,168,83,0.08);border-radius:5px;width:70%;animation:aisSkel 1.6s ease-in-out 0.2s infinite;"></div>
-                                <div style="height:9px;background:rgba(212,168,83,0.05);border-radius:5px;width:78%;animation:aisSkel 1.6s ease-in-out 0.4s infinite;"></div>
-                                <div style="height:9px;background:rgba(212,168,83,0.04);border-radius:5px;width:55%;animation:aisSkel 1.6s ease-in-out 0.6s infinite;"></div>
+                            <div id="ai-tab-loading" style="display:none; padding:20px 10px;">
+                                <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+                                    <div style="position:relative;width:22px;height:22px;flex-shrink:0;">
+                                        <div style="position:absolute;inset:0;border-radius:0px !important;border:2px solid #a6c9e2;"></div>
+                                        <div style="position:absolute;inset:0;border-radius:0px !important;border:2px solid transparent;border-top-color:#1e5494;animation:aisSpinRing 0.9s linear infinite;"></div>
+                                    </div>
+                                    <span style="color:#1e5494;font-weight:600;font-size:15.6px;">Đang phân tích hồ sơ lâm sàng...</span>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:8px;padding-left:32px;">
+                                    <div style="height:9px;background:rgba(30,84,148,0.12);border-radius:0px !important;width:88%;animation:aisSkel 1.6s ease-in-out infinite;"></div>
+                                    <div style="height:9px;background:rgba(30,84,148,0.08);border-radius:0px !important;width:70%;animation:aisSkel 1.6s ease-in-out 0.2s infinite;"></div>
+                                    <div style="height:9px;background:rgba(30,84,148,0.05);border-radius:0px !important;width:78%;animation:aisSkel 1.6s ease-in-out 0.4s infinite;"></div>
+                                    <div style="height:9px;background:rgba(30,84,148,0.04);border-radius:0px !important;width:55%;animation:aisSkel 1.6s ease-in-out 0.6s infinite;"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div id="ai-tab-result" style="display:none;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(212,168,83,0.12);">
-                                <span style="font-size:13.2px;color:#a18764;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Kết quả phân tích</span>
-                                <button id="btn-ai-rerun" style="display:flex;align-items:center;gap:5px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);color:#c8a455;border-radius:6px;padding:3px 10px;font-size:13.2px;font-weight:600;cursor:pointer;transition:0.2s;" title="Phân tích lại">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                                    Phân tích lại
-                                </button>
-                            </div>
-                            <div id="ai-summary-result-modal" style="font-size:15.6px;color:#cbd5e1;line-height:1.7;"></div>
-                            <div id="ai-search-links" style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(212,168,83,0.1);display:none;">
-                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📚 Tra cứu chuyên sâu theo mã ICD</div>
-                                <div id="ai-links-wrap" style="display:flex;flex-direction:column;gap:8px;"></div>
-                            </div>
-                            <div id="ai-disclaimer" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);border-radius:8px;">
-                                <div style="display:flex;align-items:flex-start;gap:8px;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                    <div>
-                                        <div style="font-size:13.2px;font-weight:700;color:#f59e0b;margin-bottom:3px;">Lưu ý lâm sàng</div>
-                                        <div style="font-size:13.2px;color:#9a8e7e;line-height:1.6;">Nội dung trên được tạo bởi AI dựa trên dữ liệu có sẵn, mang tính <strong style='color:#c8b89a;'>tham khảo</strong> và có thể không chính xác hoặc thiếu sót. Bác sĩ điều trị chịu trách nhiệm <strong style='color:#c8b89a;'>đánh giá, xác minh</strong> và đưa ra quyết định lâm sàng cuối cùng.</div>
+                            <div id="ai-tab-result" style="display:none;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #cccccc;">
+                                    <span style="font-size:13.2px;color:#555555;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Kết quả phân tích</span>
+                                    <button id="btn-ai-rerun" style="display:flex;align-items:center;gap:5px;background:#e6f2ff;border:1px solid #cccccc;color:#1e5494;border-radius:0px !important;padding:3px 10px;font-size:13.2px;font-weight:600;cursor:pointer;transition:0.2s;" title="Phân tích lại">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                                        Phân tích lại
+                                    </button>
+                                </div>
+                                <div id="ai-summary-result-modal" style="font-size:15.6px;color:#333333;line-height:1.7;"></div>
+                                <div id="ai-search-links" style="margin-top:14px;padding-top:10px;border-top:1px solid #cccccc;display:none;">
+                                    <div style="font-size:12px;color:#666666;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📚 Tra cứu chuyên sâu theo mã ICD</div>
+                                    <div id="ai-links-wrap" style="display:flex;flex-direction:column;gap:8px;"></div>
+                                </div>
+                                <div id="ai-disclaimer" style="display:none;margin-top:16px;padding:12px 14px;background:#fff3e0;border:1px solid #ffe0b2;border-radius:0px !important;">
+                                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        <div>
+                                            <div style="font-size:13.2px;font-weight:700;color:#e65100;margin-bottom:3px;">Lưu ý lâm sàng</div>
+                                            <div style="font-size:13.2px;color:#333333;line-height:1.6;">Nội dung trên được tạo bởi AI dựa trên dữ liệu có sẵn, mang tính <strong style='color:#333333;'>tham khảo</strong> và có thể không chính xác hoặc thiếu sót. Bác sĩ điều trị chịu trách nhiệm <strong style='color:#333333;'>đánh giá, xác minh</strong> và đưa ra quyết định lâm sàng cuối cùng.</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div id="ai-tab-error" style="display:none;padding:16px;background:#ffebee;border:1px solid #ffcdd2;border-radius:0px !important;color:#c62828;font-size:15.6px;"></div>
                         </div>
-                        <div id="ai-tab-error" style="display:none;padding:16px;background:rgba(232,84,84,0.06);border:1px solid rgba(232,84,84,0.2);border-radius:8px;color:#E85454;font-size:15.6px;"></div>
                     </div>
-                </div>
-                <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid rgba(212,162,90,0.2); padding-top:12px;">
-                    <button style="background:rgba(212,162,90,0.1); border:1px solid rgba(212,162,90,0.3); color:#d4a25a; padding:6px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='rgba(212,162,90,0.2)'" onmouseout="this.style.background='rgba(212,162,90,0.1)'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng</button>
+                    <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid #cccccc; padding-top:12px;">
+                        <button style="background:#eeeeee; border:1px solid #cccccc; color:#333333; padding:6px 16px; border-radius:0px !important; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#dddddd'" onmouseout="this.style.background='#eeeeee'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng</button>
+                    </div>
                 </div>
             </div>`;
 
@@ -2533,30 +2592,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         function activateTab(idx) {
             allTabs.forEach((t, i) => {
                 if (!t) return;
-                const isAI = (i === 4);
-                // CDHA tab = index 3 (blue), others gold
-                const col = i === 3 ? '96,165,250' : '212,162,90';
-                const activeColor = i === 3 ? '#60a5fa' : '#d4a25a';
                 if (i === idx) {
-                    if (isAI) {
-                        t.classList.add('ai-tab-active');
-                    } else {
-                        t.style.background = `rgba(${col},0.1)`;
-                        t.style.borderColor = `rgba(${col},0.3)`;
-                        t.style.borderBottomColor = activeColor;
-                        t.style.color = activeColor;
-                        t.style.fontWeight = '700';
-                    }
+                    t.style.background = '#ffffff';
+                    t.style.border = '1px solid #cccccc';
+                    t.style.borderBottom = '2px solid #1e5494';
+                    t.style.color = '#1e5494';
+                    t.style.fontWeight = '700';
                 } else {
-                    if (isAI) {
-                        t.classList.remove('ai-tab-active');
-                    } else {
-                        t.style.background = 'transparent';
-                        t.style.borderColor = 'transparent';
-                        t.style.borderBottomColor = 'transparent';
-                        t.style.color = '#7a6e5e';
-                        t.style.fontWeight = '600';
-                    }
+                    t.style.background = '#eeeeee';
+                    t.style.border = '1px solid #dddddd';
+                    t.style.borderBottom = '2px solid transparent';
+                    t.style.color = '#555555';
+                    t.style.fontWeight = '600';
                 }
             });
             allContents.forEach((c, i) => {
@@ -2971,13 +3018,13 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                             'position:fixed', 'bottom:24px', 'right:28px',
                             'z-index:2147483647',
                             'background:rgba(18,14,10,0.92)',
-                            'border:1px solid rgba(212,168,83,0.35)',
+                            'border:1px solid rgba(158,202,255,0.35)',
                             'border-radius:10px',
                             'padding:8px 14px',
                             'display:flex', 'align-items:center', 'gap:8px',
                             'font-family:Outfit,system-ui,sans-serif',
-                            'font-size:12px', 'color:#c8a455',
-                            'box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 12px rgba(212,168,83,0.1)',
+                            'font-size:12px', 'color:#9ECAFF',
+                            'box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 12px rgba(158,202,255,0.1)',
                             'backdrop-filter:blur(8px)',
                             'animation:ald-toast-in 0.25s cubic-bezier(0.34,1.56,0.64,1)',
                             'pointer-events:none',
@@ -2987,7 +3034,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                                 @keyframes ald-toast-in{from{opacity:0;transform:translateY(10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
                                 @keyframes ald-toast-out{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(6px)}}
                             </style>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4A853" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ECAFF" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
                             <span>${escapeHtml(msg)}</span>`;
                         document.body.appendChild(toast);
                         setTimeout(() => {
@@ -3048,7 +3095,7 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         return {
                             code, displayName,
                             links: [
-                                { label:'Phác đồ BYT', url:`https://www.google.com/search?q=${encodeURIComponent(code + ' phác đồ điều trị')}`, color:'#D4A853', icon:'🏥' },
+                                { label:'Phác đồ BYT', url:`https://www.google.com/search?q=${encodeURIComponent(code + ' phác đồ điều trị')}`, color:'#9ECAFF', icon:'🏥' },
                                 { label:'KCB.vn', url:`https://kcb.vn/?s=${encodeURIComponent(code)}`, color:'#60a5fa', icon:'📋' },
                                 { label:'UpToDate', url:`https://www.google.com/search?q=${encodeURIComponent('site:uptodate.com ' + code)}`, color:'#22c55e', icon:'🌐' },
                                 { label:'ICD Tra cứu', url:`https://www.google.com/search?q=${encodeURIComponent(code + ' ICD-10 là gì')}`, color:'#a78bfa', icon:'🔍' },
@@ -3060,8 +3107,8 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
                         aiLinksWrap.innerHTML = icdGroups.map(g => `
                             <div style="padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">
                                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                                    <code style="font-size:11px;font-weight:800;color:#D4A853;background:rgba(212,168,83,0.15);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">${escapeHtml(g.code)}</code>
-                                    <span style="font-size:11px;color:#9a8e7e;">${escapeHtml(g.displayName)}</span>
+                                    <code style="font-size:11px;font-weight:800;color:#9ECAFF;background:rgba(158,202,255,0.15);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;">${escapeHtml(g.code)}</code>
+                                    <span style="font-size:11px;color:#C2C6D2;">${escapeHtml(g.displayName)}</span>
                                 </div>
                                 <div style="display:flex;gap:5px;flex-wrap:wrap;">
                                     ${g.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener" title="${escapeHtml(l.label)}: ${escapeHtml(g.code)}"
