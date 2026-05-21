@@ -1,13 +1,13 @@
 {
-  "repoPath": "/Users/trunganh/CNTT/Aladinn",
-  "lastCommit": "2aa2c165dfc6f4010f7b6ce34a9b5f8d63e18194",
-  "indexedAt": "2026-05-21T02:54:01.162Z",
+  "repoPath": "/home/runner/work/Aladinn/Aladinn",
+  "lastCommit": "fb05f320f5457913e945900fd80c69cd7b2a9e15",
+  "indexedAt": "2026-05-21T03:06:41.703Z",
   "remoteUrl": "https://github.com/fantasy-1608/Aladinn",
   "stats": {
     "files": 201,
-    "nodes": 5653,
+    "nodes": 5650,
     "edges": 8740,
-    "communities": 228,
+    "communities": 225,
     "processes": 300,
     "embeddings": 0
   }
