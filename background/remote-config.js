@@ -34,7 +34,8 @@ const DEFAULT_CONFIG = {
         autoSign: true,
         cdsEngine: true,
         aiVoice: true,
-        scanner: true
+        scanner: true,
+        enableSmartPath: false
     },
     mode: 'full_mode',
     emergencyMessage: '',

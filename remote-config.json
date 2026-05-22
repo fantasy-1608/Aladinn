@@ -4,7 +4,8 @@
         "autoSign": true,
         "cdsEngine": true,
         "aiVoice": true,
-        "scanner": true
+        "scanner": true,
+        "enableSmartPath": false
     },
     "mode": "pilot_safe_mode",
     "emergencyMessage": ""
