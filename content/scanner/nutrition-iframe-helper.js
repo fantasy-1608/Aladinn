@@ -35,14 +35,8 @@
                     }
                 }
 
-                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
-                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN');
-                if (recordIdEl && expectedRecordId) {
-                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
-                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
-                        console.warn('[VNPT-Helper] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
-                    }
-                }
+
+                // Record ID check removed: contextToken.rowId ≠ mã bệnh nhân trên form
             }
 
             var d = event.data;

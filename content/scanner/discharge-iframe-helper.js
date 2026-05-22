@@ -40,14 +40,10 @@
                     }
                 }
 
-                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
-                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN') || document.getElementById('txtMABENHNHAN_BA');
-                if (recordIdEl && expectedRecordId) {
-                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
-                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
-                        console.warn('[VNPT-Helper-XuTri] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
-                    }
-                }
+
+                // Ghi chú: Record ID check đã bị loại bỏ vì contextToken.rowId 
+                // là index hàng grid (VD: 1), không phải mã bệnh nhân (VD: 26037105).
+                // Xác minh tên bệnh nhân ở trên (dòng 32-40) đã đủ để đảm bảo an toàn.
             }
 
             var d = event.data;

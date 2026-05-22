@@ -46,17 +46,10 @@
                     }
                 }
 
-                var expectedRecordId = event.data.contextToken ? event.data.contextToken.rowId : '';
-                var recordIdEl = document.getElementById('txtMABENHNHAN') || document.getElementById('txtMAVAOVIEN');
-                if (recordIdEl && expectedRecordId) {
-                    var idOnForm = (recordIdEl.value || recordIdEl.textContent || '').trim();
-                    // So sánh lỏng hơn một chút: if idOnForm exists and does not include expectedRecordId or vice versa
-                    if (idOnForm && expectedRecordId && idOnForm !== expectedRecordId) {
-                        // Do mã trên form và rowId có thể khác loại (MABENHNHAN vs MAVAOVIEN), chúng ta chỉ warn nếu thực sự có thông tin nhưng hoàn toàn không khớp. 
-                        // Tạm thời log warning thay vì block cứng nếu không chắc chắn 100%, nhưng tên BN thì block cứng.
-                        console.warn('[VNPT-Helper] Mismatch ID detected (Warn only): Form ID:', idOnForm, 'Expected:', expectedRecordId);
-                    }
-                }
+
+                // Ghi chú: Record ID check đã loại bỏ vì contextToken.rowId
+                // là index hàng grid, không phải mã bệnh nhân trên form.
+                // Xác minh tên bệnh nhân ở trên đã đủ bảo vệ.
             }
 
             var data = event.data.history || {};
