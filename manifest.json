@@ -87,6 +87,7 @@
                 "content/scanner/hoichan-iframe-helper.js",
                 "content/scanner/chuyenvien-iframe-helper.js",
                 "content/scanner/discharge-iframe-helper.js",
+                "content/scanner/nhapbenhnhan-iframe-helper.js",
                 "content/cds/cds-iframe-helper.js"
             ],
             "run_at": "document_end",
