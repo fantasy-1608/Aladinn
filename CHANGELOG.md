@@ -7,6 +7,15 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [1.5.1] — 2026-05-22
+
+### ✨ Tính năng mới & Cải tiến Giao diện Nổi bật
+- **Đồng bộ hóa Giao diện và Bản sửa lỗi Lâm sàng**: Đại tu giao diện Popup Panel mới, tối ưu hóa các phím tắt Scanner và Ký số cực kỳ hiện đại.
+- **Tối ưu hóa màu sắc VNPT HIS (Medical Blue)**: Riêng bản worktree V2.0 giữ nguyên màu xanh HIS đặc trưng nhưng cập nhật 100% nội dung và cấu trúc panel mới nhất.
+- **Đồng bộ toàn bộ Helper Scripts**: Đồng bộ các tệp helper quét dữ liệu lâm sàng của Iframe (Bản án, Cấp cứu, Dinh dưỡng, Chuyển viện, Hội chẩn) giữa 2 phiên bản.
+
+---
+
 ## [1.5.0] — 2026-05-21
 
 ### ✨ Tính năng mới & Cải tiến Giao diện Nổi bật
