@@ -69,7 +69,7 @@ console.log('✅ Changelog entry: OK');
 
 console.log('\n[3] Chạy Linter...');
 try {
-    execSync('pnpm run lint', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+    execSync('npm run lint', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
     console.log('✅ Lint: PASS');
 } catch (err) {
     console.error('❌ Linter fail. Vui lòng fix linter errors trước khi release.');
@@ -78,7 +78,7 @@ try {
 
 console.log('\n[4] Chạy Unit Tests...');
 try {
-    execSync('pnpm test', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+    execSync('npm run test', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
     console.log('✅ Test: PASS');
 } catch (err) {
     console.error('❌ Tests fail. Vui lòng fix lỗi trước khi release.');
@@ -90,7 +90,7 @@ console.log(`📦 Đóng gói Release v${version}`);
 console.log('=' + '='.repeat(50));
 
 console.log('\n🔨 [1/3] Build dự án bằng Vite...');
-execSync('pnpm run build', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+execSync('npm run build', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
 
 // Verify build artifacts
 if (!fs.existsSync(path.join(__dirname, '../dist/manifest.json'))) {
