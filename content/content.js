@@ -596,6 +596,54 @@
                 sendResponse({ success: true });
             }
 
+            // Patient context for popup card
+            if (type === 'GET_PATIENT_CONTEXT') {
+                try {
+                    const store = window.VNPTStore?.getState() || {};
+                    const name = store.selectedPatientName || '';
+                    const pid = store.selectedPatientId;
+                    if (!name && !pid) {
+                        sendResponse(null);
+                    } else {
+                        // Try to get more info from the grid
+                        let birthYear = '';
+                        let bed = '';
+                        let dayCount = '';
+                        let diagnosis = '';
+
+                        // Attempt to read from the highlighted row in the patient grid
+                        const selectedRow = document.querySelector('.datagrid-row-selected, tr.datagrid-row-selected, tr[class*="selected"]');
+                        if (selectedRow) {
+                            const cells = selectedRow.querySelectorAll('td');
+                            // HIS grid columns: index, icons, MA_BA, MA_BN, Giờ vào, Vào khoa, Họ tên, Năm sinh, SNĐT, ...
+                            if (cells.length >= 8) {
+                                birthYear = (cells[7]?.textContent || '').trim();
+                                dayCount = (cells[8]?.textContent || '').trim();
+                            }
+                            // Chẩn đoán thường ở cột cuối
+                            for (let i = cells.length - 1; i >= 9; i--) {
+                                const txt = (cells[i]?.textContent || '').trim();
+                                if (txt && txt.length > 5 && /[A-Z]\d/.test(txt)) {
+                                    diagnosis = txt;
+                                    break;
+                                }
+                            }
+                        }
+
+                        sendResponse({
+                            name: name,
+                            pid: pid,
+                            birthYear: birthYear,
+                            bed: bed,
+                            dayCount: dayCount,
+                            diagnosis: diagnosis
+                        });
+                    }
+                } catch (_e) {
+                    sendResponse(null);
+                }
+            }
+
             return true;
         });
     }
