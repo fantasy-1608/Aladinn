@@ -22,7 +22,7 @@ const VNPTClinicalFill = (function () {
     /** @type {HTMLIFrameElement | null} */
     let currentFormIframe = null;
     /** @type {string} */
-    let _currentFormType = ''; // 'hoichan' | 'chuyenvien'
+    let _currentFormType = ''; // 'hoichan' | 'chuyenvien' | 'xutri' | 'nhapbenhnhan'
     /** @type {string | null} */
     let lastPatientId = null;
 
@@ -102,7 +102,8 @@ const VNPTClinicalFill = (function () {
     // DETECT MODAL
     // ==========================================
     function checkForClinicalForm() {
-        let found = false;
+        let matches = [];
+        let counter = 0;
 
         function getModalTitle(iframe) {
             try {
@@ -117,6 +118,32 @@ const VNPTClinicalFill = (function () {
                 // Safe fallback
             }
             return null;
+        }
+
+        function getIframeZIndex(iframe) {
+            try {
+                const wrapper = iframe.closest('.jBox-wrapper, .ui-dialog, .jBox-container');
+                if (wrapper) {
+                    const z = window.getComputedStyle(wrapper).zIndex;
+                    if (z && !isNaN(z) && z !== 'auto') {
+                        return parseInt(z, 10);
+                    }
+                }
+                let el = iframe;
+                while (el && el !== document.body) {
+                    const style = window.getComputedStyle(el);
+                    if (style.position === 'absolute' || style.position === 'relative' || style.position === 'fixed') {
+                        const z = style.zIndex;
+                        if (z && !isNaN(z) && z !== 'auto') {
+                            return parseInt(z, 10);
+                        }
+                    }
+                    el = el.parentElement;
+                }
+            } catch (_e) {
+                // Safe ignore
+            }
+            return 0;
         }
 
         // Hàm scan đệ quy để tìm iframe lồng nhau (VD: jBox modal bên trong iframe chính)
@@ -146,11 +173,14 @@ const VNPTClinicalFill = (function () {
                 let isHoiChan = false;
                 let isChuyenVien = false;
                 let isXuTri = false;
+                let isNhapBenhNhan = false;
 
                 const modalTitle = getModalTitle(iframe);
                 if (modalTitle) {
                     // Phân biệt nghiêm ngặt theo tiêu đề modal
-                    if (/xử trí/i.test(modalTitle)) {
+                    if (/cập nhật bệnh nhân|nhập bệnh nhân/i.test(modalTitle)) {
+                        isNhapBenhNhan = true;
+                    } else if (/xử trí/i.test(modalTitle)) {
                         isXuTri = true;
                     } else if (/hội chẩn|hội chuẩn/i.test(modalTitle)) {
                         isHoiChan = true;
@@ -158,30 +188,37 @@ const VNPTClinicalFill = (function () {
                         isChuyenVien = true;
                     }
                     // Nếu là modal có tiêu đề khác (ví dụ: "Bệnh án nội khoa"),
-                    // tất cả isHoiChan, isChuyenVien, isXuTri vẫn là false -> Tắt hẳn.
+                    // tất cả flag vẫn là false -> Tắt hẳn.
                 } else {
                     // Phương pháp 1: Detect qua iframe src URL pattern
-                    if (iframeSrc.includes('bienbanhoi') || iframeSrc.includes('hoichuan') || iframeSrc.includes('hoichan') || iframeSrc.includes('ntu02d008')) {
+                    // ── Ưu tiên detect Nhập bệnh nhân TRƯỚC Xử trí ──
+                    if (iframe.id === 'divDlgNhapBenhNhanifmView' ||
+                        iframeSrc.includes('ntu01h002_nhapbenhnhan') ||
+                        iframeSrc.includes('nhapbenhnhan')
+                    ) {
+                        isNhapBenhNhan = true;
+                    } else if (iframeSrc.includes('bienbanhoi') || iframeSrc.includes('hoichuan') || iframeSrc.includes('hoichan') || iframeSrc.includes('ntu02d008')) {
                         isHoiChan = true;
                     } else if (iframeSrc.includes('chuyenvien') || iframeSrc.includes('ngt02k009')) {
                         isChuyenVien = true;
                     } else if (
                         iframeSrc.includes('xutri') || 
-                        iframeSrc.includes('ntu02d021_buongdieutri') ||
-                        iframeSrc.includes('ntu01h002_nhapbenhnhan') ||
-                        iframeSrc.includes('nhapbenhnhan') ||
-                        iframe.id === 'divDlgNhapBenhNhanifmView'
+                        iframeSrc.includes('ntu02d021_buongdieutri')
                     ) {
-                        if (iframe.id === 'divDlgNhapBenhNhanifmView' || iframeSrc.includes('xutri')) {
-                            isXuTri = true;
-                        }
+                        isXuTri = true;
                     }
 
                     // Phương pháp 2: Detect qua field IDs trong iframe (nếu accessible)
                     // Chỉ dùng khi chưa xác định được từ URL
-                    if (innerDoc && !isHoiChan && !isChuyenVien && !isXuTri) {
+                    if (innerDoc && !isHoiChan && !isChuyenVien && !isXuTri && !isNhapBenhNhan) {
                         try {
-                            isHoiChan = !!(
+                            // Detect Nhập bệnh nhân qua field đặc trưng
+                            isNhapBenhNhan = !!(
+                                innerDoc.getElementById('txtTKCHANDOANVAOKHOA') &&
+                                innerDoc.getElementById('cboMACHANDOANVAOKHOA')
+                            );
+
+                            isHoiChan = !isNhapBenhNhan && !!(
                                 innerDoc.getElementById('txtTOMTAT_TIEUSUBENH') ||
                                 innerDoc.getElementById('txtKETLUAN_CHANDOAN') ||
                                 innerDoc.getElementById('txtTOMTAT_TT_VAOVIEN')
@@ -189,14 +226,14 @@ const VNPTClinicalFill = (function () {
 
                             // Chỉ dùng field đặc trưng riêng của form chuyển viện
                             // KHÔNG dùng txtQUATRINHBENHLY vì nó cũng có trong form Hỏi bệnh
-                            isChuyenVien = !isHoiChan && !!(
+                            isChuyenVien = !isNhapBenhNhan && !isHoiChan && !!(
                                 innerDoc.getElementById('txtDAUHIEULAMSANG') ||
                                 innerDoc.getElementById('txtDAU_HIEU_LAM_SANG') ||
                                 innerDoc.getElementById('txtTINHTRANGNGUOIBENH') ||
                                 innerDoc.getElementById('txtTINHTRANG_CHUYENTUYEN')
                             );
 
-                            isXuTri = !isHoiChan && !isChuyenVien && !!(
+                            isXuTri = !isNhapBenhNhan && !isHoiChan && !isChuyenVien && !!(
                                 innerDoc.getElementById('txtMABENHCHINH') &&
                                 (innerDoc.getElementById('txtNGAYRAKHOA') || innerDoc.getElementById('datepicker_NGAYRAKHOA') || innerDoc.getElementById('txtBENHKEMTHEO'))
                             );
@@ -204,33 +241,48 @@ const VNPTClinicalFill = (function () {
                     }
                 }
 
-                if (isHoiChan || isChuyenVien || isXuTri) {
-                    found = true;
+                if (isHoiChan || isChuyenVien || isXuTri || isNhapBenhNhan) {
                     let type = 'hoichan';
-                    if (isChuyenVien) type = 'chuyenvien';
+                    if (isNhapBenhNhan) type = 'nhapbenhnhan';
+                    else if (isChuyenVien) type = 'chuyenvien';
                     else if (isXuTri) type = 'xutri';
 
-                    currentFormIframe = iframe;
-                    _currentFormType = type;
-
-                    if (!fillButton || !document.body.contains(fillButton) || fillButton.dataset.formType !== type) {
-                        _currentFormType = type;
-                        showFillButton(iframe, type);
-                    }
-                    return true; // Found
+                    matches.push({
+                        iframe: iframe,
+                        type: type,
+                        index: counter++,
+                        zIndex: getIframeZIndex(iframe)
+                    });
                 }
 
                 // Scan đệ quy vào iframe con nếu có quyền truy cập
                 if (innerDoc) {
-                    if (scanIframes(innerDoc)) return true;
+                    scanIframes(innerDoc);
                 }
             }
-            return false;
         }
 
         scanIframes(document);
 
-        if (!found) {
+        if (matches.length > 0) {
+            // Sắp xếp tìm ra iframe trên cùng:
+            // 1. Phần tử có zIndex cao nhất đứng trước
+            // 2. Tie-breaker bằng DOM order (phần tử chèn sau có index cao hơn đứng trước)
+            matches.sort((a, b) => {
+                if (a.zIndex !== b.zIndex) {
+                    return b.zIndex - a.zIndex;
+                }
+                return b.index - a.index;
+            });
+
+            const topMatch = matches[0];
+            currentFormIframe = topMatch.iframe;
+            _currentFormType = topMatch.type;
+
+            if (!fillButton || !document.body.contains(fillButton) || fillButton.dataset.formType !== topMatch.type) {
+                showFillButton(topMatch.iframe, topMatch.type);
+            }
+        } else {
             hideFillButton();
             currentFormIframe = null;
             _currentFormType = '';
@@ -249,11 +301,13 @@ const VNPTClinicalFill = (function () {
 
         const isCV = type === 'chuyenvien';
         const isXT = type === 'xutri';
+        const isNBN = type === 'nhapbenhnhan';
 
         const SVGS = {
             hoichan: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px; color: #818cf8; filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.45));"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
             chuyenvien: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px; color: #fb7185; filter: drop-shadow(0 0 2px rgba(244, 63, 94, 0.45));"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>',
             xutri: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px; color: #38bdf8; filter: drop-shadow(0 0 2px rgba(14, 165, 233, 0.45));"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>',
+            nhapbenhnhan: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px; color: #34d399; filter: drop-shadow(0 0 2px rgba(52, 211, 153, 0.45));"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>',
             processing: '<svg class="fab-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width: 22px; height: 22px; color: var(--cf-color); animation: fab-spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path></svg>',
             done: '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.45));"><polyline points="20 6 9 17 4 12"></polyline></svg>',
             error: '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.45));"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
@@ -272,7 +326,20 @@ const VNPTClinicalFill = (function () {
             '--cf-inner-glow-bright': 'rgba(99, 102, 241, 0.3)'
         };
 
-        if (isCV) {
+        if (isNBN) {
+            iconHtml = SVGS.nhapbenhnhan;
+            label = 'Điền CĐ Vào khoa';
+            themeVars = {
+                '--cf-color': '#34d399',
+                '--cf-border': 'rgba(52, 211, 153, 0.4)',
+                '--cf-border-hover': 'rgba(52, 211, 153, 0.8)',
+                '--cf-shadow': 'rgba(52, 211, 153, 0.2)',
+                '--cf-shadow-hover': 'rgba(52, 211, 153, 0.45)',
+                '--cf-shadow-bright': 'rgba(52, 211, 153, 0.35)',
+                '--cf-inner-glow': 'rgba(52, 211, 153, 0.15)',
+                '--cf-inner-glow-bright': 'rgba(52, 211, 153, 0.3)'
+            };
+        } else if (isCV) {
             iconHtml = SVGS.chuyenvien;
             label = 'Điền Chuyển viện';
             themeVars = {
@@ -916,17 +983,20 @@ const VNPTClinicalFill = (function () {
         const isHC = type === 'hoichan';
         const isCV = type === 'chuyenvien';
         const isXT = type === 'xutri';
+        const isNBN = type === 'nhapbenhnhan';
 
         let formData;
         if (isHC) {
             formData = buildHoiChanData(raw);
         } else if (isCV) {
             formData = buildChuyenVienData(raw);
-        } else if (isXT) {
+        } else if (isXT || isNBN) {
+            // Nhập bệnh nhân dùng chung buildXuTriData để lấy mainDiag + subDiag
             formData = buildXuTriData(raw);
         }
 
-        // Hiện bảng xem trước cho Hội chẩn và Chuyển viện, điền trực tiếp cho Xử trí
+        // Hiện bảng xem trước cho Hội chẩn và Chuyển viện
+        // Điền trực tiếp cho Xử trí và Nhập bệnh nhân
         if (isHC || isCV) {
             const confirmed = await _showPreviewDialog(formData, type, contextToken);
             if (!confirmed) {
@@ -938,28 +1008,34 @@ const VNPTClinicalFill = (function () {
         window.VNPTRealtime?.showToast('⏳ Đang điền form...', 'info');
 
         // Inject helper
-        let helperFile = 'chuyenvien-iframe-helper.js';
+        let helperFile = 'content/scanner/chuyenvien-iframe-helper.js';
         let scriptId = 'vnpt-chuyenvien-helper';
         let messageType = 'CHUYENVIEN_FILL_FORM';
         let responseType = 'CHUYENVIEN_FILL_RESULT';
         let mapping = CHUYENVIEN_MAPPING;
 
         if (isHC) {
-            helperFile = 'hoichan-iframe-helper.js';
+            helperFile = 'content/scanner/hoichan-iframe-helper.js';
             scriptId = 'vnpt-hoichan-helper';
             messageType = 'HOICHAN_FILL_FORM';
             responseType = 'HOICHAN_FILL_RESULT';
             mapping = HOICHAN_MAPPING;
         } else if (isXT) {
-            helperFile = 'discharge-iframe-helper.js';
+            helperFile = 'content/scanner/discharge-iframe-helper.js';
             scriptId = 'vnpt-xutri-helper';
             messageType = 'XUTRI_FILL_FORM';
             responseType = 'XUTRI_FILL_RESULT';
             mapping = {};
+        } else if (isNBN) {
+            helperFile = 'content/scanner/nhapbenhnhan-iframe-helper.js';
+            scriptId = 'vnpt-nhapbenhnhan-helper';
+            messageType = 'NHAPBENHNHAN_FILL_FORM';
+            responseType = 'NHAPBENHNHAN_FILL_RESULT';
+            mapping = {};
         }
 
         await injectHelper(target, 'content/shared/self-healing.js', 'vnpt-self-healing-helper');
-        await injectHelper(target, 'content/scanner/' + helperFile, scriptId);
+        await injectHelper(target, helperFile, scriptId);
 
         if (window.VNPTPatientContextGuard && contextToken) {
             await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_before_fill' });
@@ -972,9 +1048,9 @@ const VNPTClinicalFill = (function () {
             expectedPatientName: window.VNPTStore?.get('selectedPatientName')
         }, responseType);
 
-        const label = isHC ? 'Hội chẩn' : (isCV ? 'Chuyển viện' : 'Xử trí');
+        const fillLabel = isHC ? 'Hội chẩn' : (isCV ? 'Chuyển viện' : (isNBN ? 'CĐ Vào khoa' : 'Xử trí'));
         const ptName = window.VNPTStore?.get('selectedPatientName') || '';
-        window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu ${label} cho bệnh nhân: ${ptName}`, 'success');
+        window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu ${fillLabel} cho bệnh nhân: ${ptName}`, 'success');
     }
 
     // ==========================================
