@@ -61,6 +61,14 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
 
+### Quy tắc Thiết kế Giao diện Aladinn V2 (BẮT BUỘC)
+
+1. **Định hướng Thiết kế (HIS-ify):** Từ phiên bản V2 trở đi, toàn bộ giao diện của Aladinn phải bám sát 100% phong cách thiết kế của hệ thống **VNPT HIS**. Aladinn phải tựa như một phần tích hợp tự nhiên, sẵn có của HIS, tạo sự tin cậy lâm sàng cao nhất cho bác sĩ.
+2. **Màu sắc chủ đạo (Seed Color):** Bắt buộc sử dụng màu xanh dương VNPT HIS (`#004f9e` / `rgb(0, 79, 158)`), kết hợp với nền trắng, xám nhạt (`#f9f9f9` / `#ffffff`) và viền xanh nhạt đặc trưng (`#a6c9e2`). Cấm dùng tông màu Desert Gold (vàng sa mạc), tím hoặc các tông màu nổi bật sặc sỡ làm màu mặc định chính từ bản V2.
+3. **Phong cách hình khối (Shape):** Phong cách phẳng và vuông vức hoàn toàn (`border-radius: 0px` cho các thẻ, panel, modal, input và các nút bấm chính). Tuyệt đối không bo tròn góc quá mức (trừ các pill button micro đặc thù hoặc avatar).
+4. **Hiệu ứng chuyển động (Micro-animations):** Chỉ sử dụng các hiệu ứng chuyển động nhẹ nhàng, tinh tế và cực nhanh (thời gian chuyển động từ 150ms đến 250ms), ví dụ như hover sáng nhẹ viền, nâng khẽ nút bấm 1px hoặc slide chuyển tab rất dịu. Nghiêm cấm các hiệu ứng khói bụi, bay lượn gây mất tập trung cho y bác sĩ.
+5. **Tham chiếu lịch sử V1:** Phong cách Desert Mystic (vàng sa mạc, bo tròn cao, hiệu ứng ambient) chỉ dành riêng cho phiên bản V1 và được lưu giữ làm tham chiếu lịch sử hoặc chế độ thử nghiệm đặc biệt.
+
 ### Quy tắc Giao tiếp & Báo cáo (BẮT BUỘC)
 
 1. **Ngôn ngữ:** Mọi báo cáo, tài liệu thiết kế, kế hoạch thực hiện (implementation plan, walkthrough...) hoặc giải thích trong cuộc trò chuyện PHẢI được viết bằng tiếng Việt.

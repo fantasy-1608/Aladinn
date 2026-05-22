@@ -149,6 +149,8 @@
     --al-shadow-md:    1px 1px 3px rgba(0,0,0,0.08);
     --al-shadow-lg:    2px 2px 5px rgba(0,0,0,0.1);
     --al-shadow-xl:    2px 2px 8px rgba(0,0,0,0.12);
+    --al-shadow-gold:  0 4px 12px rgba(0, 79, 158, 0.15);
+
 
     /* Blur */
     --al-blur:         none;

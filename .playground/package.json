@@ -1,0 +1,20 @@
+{
+  "name": "aladinn-v3-playground",
+  "version": "1.0.0",
+  "description": "POC sandbox cho Aladinn v2.0 — Local AI, RAG, Voice, OCR",
+  "type": "module",
+  "scripts": {
+    "test:ollama": "node poc-local-llm/ollama-client.test.js",
+    "test:ocr": "node poc-ocr/tesseract.test.js",
+    "test:rag": "node poc-rag/rag-pipeline.test.js",
+    "test:voice": "node poc-voice/whisper.test.js",
+    "test:router": "node poc-local-llm/ai-router.test.js",
+    "test:all": "node run-all-tests.js",
+    "demo:rag-ingest": "node poc-rag/ingest-protocols.js",
+    "demo:rag-query": "node poc-rag/query-protocol.js"
+  },
+  "dependencies": {
+    "tesseract.js": "^5.1.1",
+    "orama": "^3.1.3"
+  }
+}
