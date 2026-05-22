@@ -3,209 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <title>Aladinn — Trợ lý VNPT HIS</title>
-    <!-- Fonts: bundled locally (see aladinn-core.css @font-face) -->
     <link rel="stylesheet" href="popup.css">
-    <style>
-        /* Test specific overrides or additions for the new layout */
-        .master-switch-card {
-            margin: 16px 16px 0;
-            padding: 12px 16px;
-            background: rgba(212, 168, 83, 0.08);
-            border: 1px solid var(--al-gold);
-            border-radius: var(--al-radius-md);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .master-switch-card.paused {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: var(--al-border);
-            color: var(--al-text-muted);
-        }
-        .paused-icon {
-            display: none;
-            color: var(--al-text-muted);
-        }
-        .master-switch-card.paused .active-icon {
-            display: none;
-        }
-        .master-switch-card.paused .paused-icon {
-            display: block;
-        }
-        
-        .master-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .master-switch-card.paused .master-title {
-            color: var(--al-text-muted);
-        }
-
-        .master-title {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--al-gold);
-        }
-
-        /* Grey out main content when paused */
-        .main-content {
-            transition: opacity 0.3s ease, filter 0.3s ease;
-        }
-        body.is-paused .main-content {
-            opacity: 0.3;
-            pointer-events: none;
-            filter: grayscale(100%);
-        }
-
-        .section-header {
-            margin: 16px 16px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--al-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        /* Ensure popup is tall enough */
-        body { min-height: 480px; }
-    </style>
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
             <div class="logo">
-                <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn Lamp" id="genie-logo" style="transition: all 0.3s ease;">
+                <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn" id="genie-logo">
                 <span class="app-title">Aladinn</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
+            <div class="header-right">
+                <span class="status-dot" id="connection-dot" title="Trạng thái kết nối"></span>
                 <div class="version-badge">v...</div>
             </div>
         </header>
 
-        <!-- Feature Toggles - Control Center -->
+        <!-- Feature Toggles — Compact Chips -->
         <div class="feature-toggles">
-            <label class="toggle-item">
-                <div class="toggle-info">
-                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                    <span class="toggle-label">Scanner</span>
-                </div>
+            <label class="toggle-chip active" id="chip-scanner">
+                <svg class="chip-icon" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                <span>Scanner</span>
                 <input type="checkbox" id="toggle-scanner" checked>
-                <div class="toggle-slider"></div>
             </label>
-            <label class="toggle-item">
-                <div class="toggle-info">
-                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-                    <span class="toggle-label">Trợ lý AI</span>
-                </div>
+            <label class="toggle-chip active" id="chip-voice">
+                <svg class="chip-icon" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                <span>AI</span>
                 <input type="checkbox" id="toggle-voice" checked>
-                <div class="toggle-slider"></div>
             </label>
-            <label class="toggle-item">
-                <div class="toggle-info">
-                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    <span class="toggle-label">Ký số</span>
-                </div>
+            <label class="toggle-chip active" id="chip-sign">
+                <svg class="chip-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                <span>Ký số</span>
                 <input type="checkbox" id="toggle-sign" checked>
-                <div class="toggle-slider"></div>
             </label>
-            <label class="toggle-item">
-                <div class="toggle-info">
-                    <svg class="al-icon al-icon-sm toggle-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-                    <span class="toggle-label">An toàn L.S</span>
-                </div>
+            <label class="toggle-chip active" id="chip-cds">
+                <svg class="chip-icon" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                <span>CDS</span>
                 <input type="checkbox" id="toggle-cds" checked>
-                <div class="toggle-slider"></div>
             </label>
+        </div>
+
+        <!-- Update Banner (hidden by default) -->
+        <div class="update-banner" id="update-banner">
+            <div class="update-content">
+                <svg class="al-icon al-icon-sm update-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <div>
+                    <div class="update-title">Bản mới <span id="update-version"></span></div>
+                    <div class="update-desc" id="update-changelog"></div>
+                </div>
+            </div>
+            <div class="update-actions">
+                <a class="update-btn update-btn-primary" id="update-download-btn" href="#" target="_blank">Tải về</a>
+                <button class="update-btn update-btn-secondary" id="update-dismiss-btn">Bỏ qua</button>
+            </div>
         </div>
 
         <div class="main-content">
-            <div class="section-header" id="header-scanner" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                    Quét Dữ Liệu & Bệnh Án
-                </div>
-                <label class="toggle-item" style="padding: 4px 8px; background: transparent; border: none; gap: 4px; min-width: auto;">
-                    <span class="toggle-label" style="font-size: 11px; font-weight: normal; color: #888;">Chỉ BN chọn</span>
-                    <input type="checkbox" id="scan-selected-only">
-                    <div class="toggle-slider" style="width: 28px; height: 16px;"></div>
-                </label>
-            </div>
-            <div class="action-grid" id="grid-scanner" style="padding-top: 0; padding-bottom: 8px;">
-                <div id="show-dashboard-btn" class="action-btn primary" style="grid-column: span 2; padding: 14px; flex-direction: row; justify-content: center;">
-                    <svg class="al-icon al-icon-lg action-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                    Bảng Điều Khiển & Thống kê
-                </div>
-                <div id="scan-room-btn" class="action-btn" style="padding: 12px 8px;">
-                    <span style="font-size:18px; margin-bottom:4px;">🏥</span>
-                    Quét Buồng
-                </div>
-                <div id="scan-drugs-btn" class="action-btn" style="padding: 12px 8px;">
-                    <span style="font-size:18px; margin-bottom:4px;">💊</span>
-                    Quét Thuốc
-                </div>
-                <div id="ai-lab-summary-btn" class="action-btn" style="padding: 12px 8px;">
-                    <span style="font-size:18px; margin-bottom:4px;">✨</span>
-                    Tóm tắt CLS + Thuốc
-                </div>
-                <div id="scan-pttt-btn" class="action-btn" style="padding: 12px 8px;">
-                    <span style="font-size:18px; margin-bottom:4px;">✂️</span>
-                    Quét PTTT
-                </div>
-                <div id="scan-bhyt-btn" class="action-btn" style="padding: 12px 8px; border-color: rgba(232, 168, 56, 0.4); color: rgba(232, 168, 56, 1);">
-                    <span style="font-size:18px; margin-bottom:4px;">🛡️</span>
-                    Quét BHYT
-                </div>
-                <div id="clear-cache-btn" class="action-btn" style="grid-column: span 2; padding: 10px; flex-direction: row; justify-content: center; border-color: rgba(239, 68, 68, 0.2); color: rgba(239, 68, 68, 0.8);">
-                    <svg class="al-icon al-icon-sm action-icon" style="color: inherit;" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    Xóa Cache Bộ nhớ
-                </div>
+            <!-- Patient Context Card -->
+            <div class="patient-card empty" id="patient-card">
+                <span class="patient-empty-text">
+                    <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Chọn bệnh nhân trên danh sách
+                </span>
             </div>
 
 
 
-            <div class="section-header" id="header-sign">
-                <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                Ký số Hồ sơ (Smart CA)
-            </div>
-            <div class="sign-controls" id="grid-sign" style="padding-top: 0;">
-                <div class="action-grid" style="grid-template-columns: 1fr 1fr; padding: 0 0 8px 0; gap: 8px;">
-                    <button id="sign-select-all-btn" class="action-btn" style="padding: 10px; border-radius: 10px; gap: 6px; flex-direction: row; justify-content: center;">
-                        <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                        Chọn tất cả
-                    </button>
-                    <button id="sign-start-btn" class="action-btn primary" style="padding: 10px; border-radius: 10px; gap: 6px; flex-direction: row; justify-content: center;">
-                        <svg class="al-icon al-icon-sm action-icon" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                        Ký hồ sơ chọn
-                    </button>
+            <!-- Scanner Section -->
+            <div id="section-scanner">
+                <div class="section-label">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/></svg>
+                    Quét dữ liệu
                 </div>
-                
-                <div style="background: rgba(212, 168, 83, 0.05); border-radius: 8px; padding: 8px; text-align: center; font-size: 11px; color: var(--al-text-dim); border: 1px dashed var(--al-border);">
-                    <span id="sign-status-text">Chỉ hoạt động ở màn hình chờ Ký số HIS</span>
+                <div class="action-grid" id="grid-scanner">
+                    <div id="show-dashboard-btn" class="action-btn primary full-width">
+                        <svg class="al-icon action-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+                        Bảng Điều Khiển & Thống kê
+                    </div>
+                    <div id="scan-room-btn" class="action-btn">
+                        <span class="btn-emoji">🏥</span>
+                        Quét Buồng
+                    </div>
+                    <div id="scan-drugs-btn" class="action-btn">
+                        <span class="btn-emoji">💊</span>
+                        Quét Thuốc
+                    </div>
+                    <div id="ai-lab-summary-btn" class="action-btn">
+                        <span class="btn-emoji">✨</span>
+                        Tóm tắt CLS
+                    </div>
+                    <div id="scan-pttt-btn" class="action-btn">
+                        <span class="btn-emoji">✂️</span>
+                        Quét PTTT
+                    </div>
+                    <div id="scan-bhyt-btn" class="action-btn compact full-width" style="border-color: rgba(212, 168, 83, 0.25); color: var(--al-gold);">
+                        <span>🛡️</span>
+                        Quét BHYT
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign Section — Compact -->
+            <div id="section-sign">
+                <div class="section-label">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    Ký số hồ sơ
+                </div>
+                <div class="sign-compact">
+                    <div class="sign-label">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        <span id="sign-status-text">Smart CA — sẵn sàng</span>
+                    </div>
+                    <div class="sign-actions">
+                        <button id="sign-select-all-btn" class="sign-btn">Chọn hết</button>
+                        <button id="sign-start-btn" class="sign-btn primary">Ký</button>
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- Footer -->
-    <footer class="app-footer" style="display: flex; align-items: center; gap: 8px;">
+    <footer class="app-footer">
         <button id="open-options-btn" class="footer-btn">
-            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            Cài đặt hệ thống
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            Cài đặt
         </button>
-        <button id="toggle-debug-btn" class="footer-btn" style="color: var(--al-text-dim); transition: all 0.2s;" title="Bật/Tắt Logs Hệ Thống">
-            <svg class="al-icon al-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="6.5"></line></svg>
-            Logs
+        <button id="clear-cache-btn" class="footer-btn danger" title="Xóa cache bộ nhớ">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Xóa cache
         </button>
-        <div class="author-info" style="margin-left: auto;">Huỳnh Trung Anh</div>
+        <div class="author-info">Huỳnh Trung Anh</div>
     </footer>
     <script type="module" src="popup.js"></script>
 </body>
