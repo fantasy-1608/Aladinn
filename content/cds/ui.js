@@ -1,7 +1,11 @@
 /**
- * 🧞 Aladinn CDS — UI Drawer Panel
- * Vẽ giao diện Cảnh Báo Lâm Sàng (Ngăn Kéo Nổi 320px) bên mép phải màn hình HIS.
+ * 🧞 Aladinn CDS — UI Drawer Panel (Phiên bản V2 - HIS-ify Hoàn Toàn)
+ * Vẽ giao diện Cảnh Báo Lâm Sàng phẳng, vuông vức, tiệp 100% phong cách VNPT HIS.
+ * Tích hợp Tab An Toàn Kê Đơn và Tab SmartScore (Thang điểm Cấp Cứu).
  */
+
+import { SmartScoreEngine } from './smart-score.js';
+import { CDSExtractor } from './extractor.js';
 
 export const CDSUI = {
     panel: null,
@@ -9,6 +13,10 @@ export const CDSUI = {
     isOpen: false,
     hasUserDismissed: false,  // User đã tự đóng panel
     lastAlertLevel: 'safe',   // Lưu level cuối cùng để chỉ auto-show khi severity thay đổi
+    activeTab: 'prescription',
+    currentContext: null,
+    scoreStates: {},
+    _lastPatientKey: '',
 
     escapeHtml(value) {
         return String(value ?? '')
@@ -72,11 +80,11 @@ export const CDSUI = {
         panel.innerHTML = `
             <div class="cds-header">
                 <h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
-                    An Toàn Kê Đơn
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
+                    Aladinn OS Lâm Sàng
                 </h3>
                 <div style="display:flex; gap: 8px;">
-                    <span id="cds-bhyt-audit-btn" class="header-action-btn" title="Kiểm tra BHYT (Pre-claim Audit)" style="font-size: 13px; letter-spacing: 0.5px;">
+                    <span id="cds-bhyt-audit-btn" class="header-action-btn" title="Kiểm tra BHYT (Pre-claim Audit)">
                         🛡️
                     </span>
                     <span id="cds-refresh-btn" class="header-action-btn" title="Làm mới & Xóa Bộ nhớ (Reset Cache)">
@@ -89,20 +97,38 @@ export const CDSUI = {
             </div>
             <div id="cds-crawl-info" style="display:none"></div>
             <div id="cds-patient-info" style="display:none" class="cds-patient-info"></div>
+            
+            <!-- HIS-ify Tab Header -->
+            <div class="cds-tab-header">
+                <div id="cds-tab-prescription" class="cds-tab active">
+                    🛡️ An Toàn Kê Đơn
+                </div>
+                <div id="cds-tab-smartscore" class="cds-tab">
+                    🧮 Thang Điểm <span id="cds-score-badge">!</span>
+                </div>
+            </div>
+
             <div class="cds-body">
+                <!-- Tab Kê đơn an toàn -->
                 <div id="cds-alerts-container">
                     <div class="cds-empty-state" id="cds-empty-state">
                         <div style="opacity:0.6; margin-bottom:8px">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
                         </div>
                         Chưa có dữ liệu thuốc
-                        <button id="cds-manual-rescan" style="margin-top:12px; padding:6px 16px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(255,255,255,0.05); color:inherit; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px; transition:all .2s">
+                        <button id="cds-manual-rescan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                             Quét lại
                         </button>
                     </div>
                 </div>
+
+                <!-- Tab Thang điểm lâm sàng -->
+                <div id="cds-smartscore-container" style="display:none;">
+                    <div class="cds-empty-state">Đang tải dữ liệu bệnh nhân...</div>
+                </div>
             </div>
+
             <div class="cds-footer">
                 <div id="cds-status-text">Đã phân tích: 0 thuốc</div>
             </div>
@@ -110,8 +136,8 @@ export const CDSUI = {
 
         const icon = document.createElement('div');
         icon.id = 'aladinn-cds-shield';
-        icon.title = 'Hệ thống Cảnh báo Lâm sàng (An toàn)';
-        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
+        icon.title = 'Hệ thống Cảnh báo Lâm sàng Aladinn';
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#004f9e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
 
         // Đảo ngược thứ tự append để dùng với flex-direction: row-reverse
         container.appendChild(panel);
@@ -123,6 +149,9 @@ export const CDSUI = {
 
         this.injectCSS();
         this.bindEvents();
+
+        // Gắn biến CDSUI toàn cục để các listener inline trong HTML hoạt động
+        window.CDSUI = this;
     },
 
     bindEvents() {
@@ -193,6 +222,19 @@ export const CDSUI = {
             });
         }
 
+        // Tab click listeners
+        const tabPrescription = document.getElementById('cds-tab-prescription');
+        const tabSmartScore = document.getElementById('cds-tab-smartscore');
+        
+        if (tabPrescription && tabSmartScore) {
+            tabPrescription.addEventListener('click', () => {
+                this.switchTab('prescription');
+            });
+            tabSmartScore.addEventListener('click', () => {
+                this.switchTab('smartscore');
+            });
+        }
+
         // Kéo thả dọc (Vertical drag)
         let isDown = false;
         let startY;
@@ -231,6 +273,30 @@ export const CDSUI = {
         });
     },
 
+    switchTab(tab) {
+        this.activeTab = tab;
+        const tabPrescription = document.getElementById('cds-tab-prescription');
+        const tabSmartScore = document.getElementById('cds-tab-smartscore');
+        const alertsContainer = document.getElementById('cds-alerts-container');
+        const smartScoreContainer = document.getElementById('cds-smartscore-container');
+
+        if (tab === 'prescription') {
+            tabPrescription.classList.add('active');
+            tabSmartScore.classList.remove('active');
+
+            alertsContainer.style.display = '';
+            smartScoreContainer.style.display = 'none';
+        } else {
+            tabSmartScore.classList.add('active');
+            tabPrescription.classList.remove('active');
+
+            alertsContainer.style.display = 'none';
+            smartScoreContainer.style.display = '';
+            
+            this.renderSmartScore();
+        }
+    },
+
     injectCSS() {
         if (document.getElementById('aladinn-cds-style')) return;
         const style = document.createElement('style');
@@ -251,43 +317,42 @@ export const CDSUI = {
             
             #aladinn-cds-shield {
                 pointer-events: auto !important;
-                width: 48px !important;
-                height: 48px !important;
-                background: rgba(29, 32, 36, 0.92) !important;
-                backdrop-filter: blur(10px) !important;
-                -webkit-backdrop-filter: blur(10px) !important;
-                border: 1px solid rgba(255,255,255,0.1) !important;
+                width: 46px !important;
+                height: 46px !important;
+                background: #ffffff !important;
+                border: 2px solid #004f9e !important;
                 border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                font-size: 22px !important;
+                font-size: 20px !important;
                 cursor: pointer !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
-                transition: transform 0.2s ease, box-shadow 0.2s !important;
+                box-shadow: 0 3px 12px rgba(0, 79, 158, 0.25) !important;
+                transition: transform 0.15s ease, box-shadow 0.15s !important;
             }
-            #aladinn-cds-shield:hover { transform: scale(1.05) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.4) !important; }
-            #aladinn-cds-shield.warning { border-color: #FBBF24 !important; animation: pulse-warning 2s infinite !important; }
-            #aladinn-cds-shield.critical { border-color: #FFB4AB !important; animation: pulse-critical 1.5s infinite !important; }
+            #aladinn-cds-shield:hover { transform: scale(1.05) !important; box-shadow: 0 5px 16px rgba(0, 79, 158, 0.35) !important; }
+            #aladinn-cds-shield.warning { border-color: #f59e0b !important; animation: pulse-warning 2s infinite !important; }
+            #aladinn-cds-shield.critical { border-color: #ef4444 !important; animation: pulse-critical 1.5s infinite !important; }
+            #aladinn-cds-shield svg { stroke: #004f9e !important; }
+            #aladinn-cds-shield.warning svg { stroke: #f59e0b !important; }
+            #aladinn-cds-shield.critical svg { stroke: #ef4444 !important; }
 
             #aladinn-cds-panel {
                 pointer-events: auto !important;
-                width: 340px !important;
-                background: rgba(29, 32, 36, 0.94) !important;
-                backdrop-filter: blur(24px) saturate(180%) !important;
-                -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-                border-radius: 20px !important;
-                box-shadow: 0 10px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset !important;
-                border: 1px solid rgba(255,255,255,0.08) !important;
+                width: 330px !important;
+                background: #ffffff !important;
+                border-radius: 0px !important; /* PHẲNG LỲ */
+                box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+                border: 1px solid #a6c9e2 !important; /* Viền xanh nhạt HIS */
                 display: flex !important;
                 flex-direction: column !important;
-                max-height: 70vh !important;
+                max-height: 75vh !important;
                 overflow: hidden !important;
                 
                 opacity: 0 !important;
-                transform: translateY(20px) scale(0.95) !important;
+                transform: translateY(15px) scale(0.97) !important;
                 visibility: hidden !important;
-                transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
                 transform-origin: bottom right !important;
             }
             #aladinn-cds-drawer.aladinn-drawer-active #aladinn-cds-panel {
@@ -297,54 +362,96 @@ export const CDSUI = {
             }
 
             .cds-header {
-                padding: 16px 20px !important;
-                border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+                padding: 10px 16px !important;
+                border-bottom: 1px solid #a6c9e2 !important;
                 display: flex !important;
                 justify-content: space-between !important;
                 align-items: center !important;
-                background: transparent !important;
-                min-height: 50px !important;
+                background: #004f9e !important; /* Xanh dương VNPT HIS */
+                min-height: 40px !important;
             }
-            .cds-header h3 { margin: 0 !important; font-size: 15px !important; color: #E1E2E8 !important; font-weight: 600 !important; letter-spacing: -0.01em !important; display: flex !important; align-items: center !important;}
-            .cds-header h3 svg { stroke: #60a5fa !important; }
+            .cds-header h3 { margin: 0 !important; font-size: 13px !important; color: #ffffff !important; font-weight: bold !important; display: flex !important; align-items: center !important;}
+            .cds-header h3 svg { stroke: #ffffff !important; }
             .header-action-btn { 
-                cursor: pointer; color: #64748b;
-                width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-                background: rgba(255,255,255,0.05); transition: background 0.2s, color 0.2s;
+                cursor: pointer; color: #ffffff;
+                width: 24px; height: 24px; border-radius: 0px; display: flex; align-items: center; justify-content: center;
+                background: rgba(255,255,255,0.15); transition: background 0.15s; font-size: 12px;
             }
-            .header-action-btn:hover { background: rgba(255,255,255,0.1); color: #E1E2E8; }
+            .header-action-btn:hover { background: rgba(255,255,255,0.3); }
             
+            /* HIS-ify Tabs */
+            .cds-tab-header {
+                display: flex !important;
+                background: #e6f0fa !important;
+                border-bottom: 1px solid #a6c9e2 !important;
+                padding: 0 !important;
+            }
+            .cds-tab {
+                flex: 1 !important;
+                text-align: center !important;
+                padding: 8px 0 !important;
+                font-size: 12px !important;
+                font-weight: bold !important;
+                color: #555555 !important;
+                cursor: pointer !important;
+                border-bottom: 3px solid transparent !important;
+                background: #e6f0fa !important;
+                transition: all 0.15s !important;
+                border-radius: 0px !important;
+            }
+            .cds-tab.active {
+                color: #004f9e !important;
+                border-bottom: 3px solid #004f9e !important;
+                background: #ffffff !important;
+            }
+            .cds-tab:hover:not(.active) {
+                background: #dbeafe !important;
+            }
+            #cds-score-badge {
+                display: none;
+                background: #ef4444;
+                color: white;
+                border-radius: 50%;
+                padding: 1px 5px;
+                font-size: 9px;
+                vertical-align: middle;
+                margin-left: 2px;
+            }
+
             .cds-body {
                 flex: 1 !important;
-                padding: 16px 20px !important;
+                padding: 12px 14px !important;
                 overflow-y: auto !important;
-                background: transparent !important;
-                color: #e2e8f0 !important;
+                background: #f9f9f9 !important;
+                color: #333333 !important;
             }
-            /* Scrollbar dark */
             .cds-body::-webkit-scrollbar { width: 4px; }
             .cds-body::-webkit-scrollbar-track { background: transparent; }
-            .cds-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+            .cds-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 0px; }
 
             .cds-footer {
-                padding: 12px 20px !important;
-                border-top: 1px solid rgba(255,255,255,0.06) !important;
+                padding: 8px 16px !important;
+                border-top: 1px solid #e2e8f0 !important;
                 text-align: center !important;
-                background: rgba(0,0,0,0.2) !important;
+                background: #f1f5f9 !important;
             }
-            #cds-status-text { color: #64748b !important; font-size: 12px !important; }
-            #cds-crawl-info { color: #C2C6D2 !important; font-size: 11px !important; padding: 6px 16px !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: rgba(29,32,36,0.5) !important; }
-            #cds-crawl-info.success { color: #34d399 !important; }
-            .cds-empty-state { text-align: center; color: #C2C6D2 !important; font-size: 13px !important; margin-top: 40px !important; }
+            #cds-status-text { color: #64748b !important; font-size: 11px !important; }
+            #cds-crawl-info { color: #333333 !important; font-size: 11px !important; padding: 6px 14px !important; border-bottom: 1px solid #a6c9e2 !important; background: #e0f2fe !important; font-weight: 500; }
+            #cds-crawl-info.success { color: #15803d !important; }
+            .cds-empty-state { text-align: center; color: #64748b !important; font-size: 12px !important; margin-top: 30px !important; }
+            .cds-empty-state button {
+                margin-top:10px; padding:6px 12px; border:1px solid #004f9e; border-radius:0px; background:#004f9e; color:#ffffff; cursor:pointer; font-size:11px; display:inline-flex; align-items:center; gap:4px; font-weight:bold; transition:background 0.15s;
+            }
+            .cds-empty-state button:hover { background:#1e5494; }
 
             .cds-patient-info {
-                padding: 10px 20px !important;
-                border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-                background: rgba(255,255,255,0.02) !important;
+                padding: 8px 14px !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                background: #ffffff !important;
             }
             .cds-patient-name {
-                font-weight: 700 !important;
-                color: #E1E2E8 !important;
+                font-weight: bold !important;
+                color: #004f9e !important;
                 font-size: 13px !important;
                 margin-bottom: 4px !important;
                 display: flex !important;
@@ -353,18 +460,18 @@ export const CDSUI = {
             }
             .cds-patient-diag {
                 font-size: 11px !important;
-                color: #C2C6D2 !important;
+                color: #475569 !important;
                 line-height: 1.4 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                gap: 6px !important;
+                gap: 4px !important;
             }
             .cds-diag-label {
                 font-size: 10px !important;
-                color: #C2C6D2 !important;
-                font-weight: 600 !important;
+                color: #64748b !important;
+                font-weight: bold !important;
                 text-transform: uppercase !important;
-                letter-spacing: 0.5px !important;
+                letter-spacing: 0.3px !important;
             }
             .cds-diag-pills {
                 display: flex !important;
@@ -373,102 +480,111 @@ export const CDSUI = {
             }
             .cds-diag-pill {
                 display: inline-block !important;
-                padding: 2px 7px !important;
-                border-radius: 5px !important;
+                padding: 1px 6px !important;
+                border-radius: 0px !important; /* PHẲNG LỲ */
                 font-size: 11px !important;
-                font-weight: 600 !important;
-                font-family: 'SF Mono', 'Menlo', 'Consolas', monospace !important;
-                color: #C2C6D2 !important;
-                background: rgba(255,255,255,0.06) !important;
-                border: 1px solid rgba(255,255,255,0.08) !important;
-                letter-spacing: 0.3px !important;
-                line-height: 1.4 !important;
-                transition: all 0.2s ease !important;
+                font-weight: bold !important;
+                font-family: monospace !important;
+                color: #475569 !important;
+                background: #f1f5f9 !important;
+                border: 1px solid #cbd5e1 !important;
                 cursor: pointer !important;
+                transition: all 0.15s ease !important;
             }
             .cds-diag-pill:hover {
-                background: rgba(255,255,255,0.1) !important;
-                border-color: rgba(255,255,255,0.15) !important;
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(158, 202, 255, 0.15) !important;
+                background: #e2e8f0 !important;
+                border-color: #94a3b8 !important;
             }
             .cds-diag-pill.primary {
-                color: #D1E4FF !important;
-                background: rgba(158,202,255,0.15) !important;
-                border-color: rgba(158,202,255,0.3) !important;
+                color: #0369a1 !important;
+                background: #e0f2fe !important;
+                border-color: #93c5fd !important;
             }
             .cds-diag-pill.primary:hover {
-                background: rgba(158,202,255,0.22) !important;
+                background: #bae6fd !important;
             }
             
-            /* Alert Cards — Dark */
+            /* Alert Cards — HIS-ify Sáng sủa phẳng lỳ */
             .cds-alert-card {
-                background: rgba(255,255,255,0.04) !important;
-                border-radius: 12px !important;
-                padding: 16px !important;
-                margin-bottom: 12px !important;
-                box-shadow: none !important;
-                border: 1px solid rgba(255,255,255,0.06) !important;
-                border-left: 4px solid #475569 !important;
+                background: #ffffff !important;
+                border-radius: 0px !important; /* PHẲNG LỲ */
+                padding: 12px 14px !important;
+                margin-bottom: 10px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+                border: 1px solid #e2e8f0 !important;
+                border-left: 4px solid #64748b !important;
                 text-align: left !important;
             }
-            .cds-alert-card.high { border-left-color: #FFB4AB !important; background: rgba(255, 180, 171, 0.06) !important; animation: aladinn-glowPulseRed 2s ease-in-out infinite; }
-            .cds-alert-card.medium { border-left-color: #FBBF24 !important; background: rgba(251, 191, 36, 0.06) !important; animation: aladinn-glowPulseGold 2s ease-in-out infinite; }
-            .cds-alert-card.low, .cds-alert-card.info { border-left-color: #3b82f6 !important; }
+            .cds-alert-card.high { border-left-color: #ef4444 !important; background: #fef2f2 !important; }
+            .cds-alert-card.medium { border-left-color: #f59e0b !important; background: #fffbeb !important; }
+            .cds-alert-card.low, .cds-alert-card.info { border-left-color: #0284c7 !important; background: #f0f9ff !important; }
             
-            .cds-alert-title { font-weight: 600 !important; font-size: 14px !important; color: #E1E2E8 !important; margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
-            .cds-alert-effect { font-size: 13px !important; color: #C2C6D2 !important; margin-bottom: 10px !important; line-height: 1.4 !important; }
-            .cds-alert-rec { font-size: 12px !important; color: #34d399 !important; font-weight: 600 !important; background: rgba(52, 211, 153, 0.1) !important; padding: 6px 10px !important; border-radius: 6px !important; display: inline-block !important; }
+            .cds-alert-title { font-weight: bold !important; font-size: 13px !important; color: #004f9e !important; margin-bottom: 4px !important; display: flex !important; align-items: center !important; gap: 6px !important;}
+            .cds-alert-effect { font-size: 12px !important; color: #334155 !important; margin-bottom: 8px !important; line-height: 1.4 !important; }
+            .cds-alert-rec { font-size: 11px !important; color: #15803d !important; font-weight: bold !important; background: #dcfce7 !important; padding: 4px 8px !important; border-radius: 0px !important; display: inline-block !important; }
             
-            .alert-match-list { margin-top: 12px; font-size: 11px; }
-            .alert-match-list span { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; font-family: -apple-system, monospace; color: #E1E2E8; margin-right: 6px; display: inline-block; margin-bottom: 4px;}
+            .alert-match-list { margin-top: 8px; font-size: 10px; }
+            .alert-match-list span { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 0px; font-family: monospace; color: #334155; margin-right: 4px; display: inline-block; margin-bottom: 4px;}
             
             @keyframes pulse-warning {
-                0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
-                70% { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+                0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
             }
             @keyframes pulse-critical {
-                0% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0.4); }
-                70% { box-shadow: 0 0 0 12px rgba(232, 84, 84, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(232, 84, 84, 0); }
+                0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
             }
             
-            /* Drug Coverage Summary — Dark */
-            .cds-coverage-summary { margin-top: 12px !important; }
+            /* Drug Coverage Summary */
+            .cds-coverage-summary { margin-top: 10px !important; }
             .cds-coverage-group { 
-                padding: 12px !important; border-radius: 10px !important; margin-bottom: 10px !important;
+                padding: 10px !important; border-radius: 0px !important; margin-bottom: 8px !important;
             }
-            .cds-checked { background: rgba(16, 185, 129, 0.08) !important; border: 1px solid rgba(16, 185, 129, 0.2) !important; }
-            .cds-unchecked { background: rgba(251, 191, 36, 0.08) !important; border: 1px solid rgba(251, 191, 36, 0.2) !important; }
+            .cds-checked { background: #f0fdf4 !important; border: 1px solid #bbf7d0 !important; }
+            .cds-unchecked { background: #fffbeb !important; border: 1px solid #fef3c7 !important; }
             .cds-coverage-label { 
-                font-size: 12px !important; font-weight: 600 !important; color: #e2e8f0 !important; 
-                margin-bottom: 8px !important; display: flex !important; align-items: center !important; gap: 4px !important;
+                font-size: 11px !important; font-weight: bold !important; color: #1e293b !important; 
+                margin-bottom: 6px !important; display: flex !important; align-items: center !important; gap: 4px !important;
             }
-            .cds-coverage-count { font-weight: 400 !important; color: #64748b !important; }
-            .cds-coverage-pills { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; }
+            .cds-coverage-count { font-weight: normal !important; color: #64748b !important; }
+            .cds-coverage-pills { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
             .cds-pill {
                 display: inline-flex !important; align-items: center !important;
-                padding: 3px 8px !important; border-radius: 6px !important; font-size: 11px !important;
-                font-family: -apple-system, monospace !important; line-height: 1.3 !important;
+                padding: 2px 6px !important; border-radius: 0px !important; font-size: 11px !important;
+                font-family: monospace !important; line-height: 1.3 !important;
             }
             .cds-pill.checked { 
-                background: rgba(16, 185, 129, 0.15) !important; color: #6ee7b7 !important; 
-                border: 1px solid rgba(16, 185, 129, 0.25) !important;
+                background: #dcfce7 !important; color: #166534 !important; 
+                border: 1px solid #bbf7d0 !important;
             }
             .cds-pill.unchecked { 
-                background: rgba(251, 191, 36, 0.12) !important; color: #fcd34d !important;
-                border: 1px solid rgba(251, 191, 36, 0.25) !important;
+                background: #fef3c7 !important; color: #9a3412 !important;
+                border: 1px solid #fde047 !important;
                 text-decoration: none !important; cursor: pointer !important;
                 transition: background 0.15s, border-color 0.15s !important;
             }
             .cds-pill.unchecked:hover { 
-                background: rgba(251, 191, 36, 0.22) !important; 
-                border-color: rgba(251, 191, 36, 0.4) !important; 
+                background: #fef08a !important; 
+                border-color: #facc15 !important; 
             }
             .cds-coverage-hint {
                 margin-top: 6px !important; font-size: 10px !important; color: #64748b !important;
                 font-style: italic !important;
+            }
+            
+            /* Thang điểm CSS phẳng */
+            .score-card {
+                margin-bottom: 10px !important;
+                border-radius: 0px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            }
+            .score-fill-btn:hover {
+                background: #1e5494 !important;
+            }
+            .score-criteria-inputs label:hover {
+                background: #f1f5f9;
             }
         `;
         document.head.appendChild(style);
@@ -498,6 +614,9 @@ export const CDSUI = {
     },
 
     update({ summary, alerts, debug, context }) {
+        // Lưu trữ ngữ cảnh hiện tại phục vụ SmartScore
+        this.currentContext = context;
+
         if (!this.panel) this.init();
 
         const container = document.getElementById('cds-alerts-container');
@@ -511,7 +630,7 @@ export const CDSUI = {
             const diagnoses = context.encounter.diagnoses || [];
             const icdRegex = /\b([A-Z]\d{2}(?:\.\d{1,2})?)\b/g;
             
-            // Parse clean ICD codes from d.code (which may contain full text like "N18.5 - Suy thận mạn...")
+            // Parse clean ICD codes
             const parsedCodes = [];
             const seenCodes = new Set();
             for (const d of diagnoses) {
@@ -519,7 +638,7 @@ export const CDSUI = {
                 const matches = d.code.match(icdRegex);
                 let rawDesc = d.name || d.code.replace(icdRegex, '').trim();
                 
-                // Clean up leading separators from rawDesc
+                // Clean up leading separators
                 rawDesc = rawDesc.replace(/^[\s,;=\-|]+/, '').replace(/[\s,;=\-|]+$/, '').trim();
 
                 if (matches) {
@@ -532,7 +651,6 @@ export const CDSUI = {
                             
                             let individualDesc = '';
                             if (descParts.length > 0) {
-                                // Align right: if there are more codes than descriptions, the missing ones are at the beginning
                                 if (matches.length > descParts.length && idx >= offset) {
                                     individualDesc = descParts[idx - offset];
                                 } else if (matches.length <= descParts.length) {
@@ -545,7 +663,6 @@ export const CDSUI = {
                                 individualDesc = individualDesc.replace(/^-\s*/, '').trim();
                             }
                             
-                            // Fallback if no description could be matched
                             if (!individualDesc) {
                                 individualDesc = (d.is_primary && parsedCodes.length === 0 && idx === 0) ? 'Chẩn đoán chính' : 'Bệnh kèm theo';
                             }
@@ -555,7 +672,6 @@ export const CDSUI = {
                         }
                     });
                 } else {
-                    // d.code is already a clean code
                     if (!seenCodes.has(d.code)) {
                         seenCodes.add(d.code);
                         let individualDesc = rawDesc || (d.is_primary && parsedCodes.length === 0 ? 'Chẩn đoán chính' : 'Bệnh kèm theo');
@@ -582,15 +698,13 @@ export const CDSUI = {
             }
             
             patientInfo.innerHTML = `
-                <div class="cds-patient-name" style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div class="cds-patient-name" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     ${this.escapeHtml(context.patient.name || context.patient.id)}
                 </div>
                 ${diagHtml}
             `;
             patientInfo.style.display = 'block';
-
-            // AI Summary đã được chuyển sang modal CLS + Thuốc (scanner-init.js)
         } else {
             patientInfo.style.display = 'none';
         }
@@ -603,12 +717,10 @@ export const CDSUI = {
             info_count: alerts.filter(a => a.severity === 'low' || a.severity === 'info').length
         };
 
-        
-        // Cập nhật Shield Icon (KHÔNG tự bung panel — user click khi cần)
+        // Cập nhật Shield Icon
         this.iconToggle.className = '';
-        
         const shieldAlertSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
-        const shieldCheckSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
+        const shieldCheckSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#004f9e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
 
         const unmappedRaw = debug.unmapped_drugs || [];
         const seenUnmapped = new Set();
@@ -625,16 +737,15 @@ export const CDSUI = {
         if (summary.critical_count > 0) {
             this.iconToggle.classList.add('critical');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#FFB4AB';
+            this.iconToggle.style.color = '#ef4444';
         } else if (summary.warning_count > 0 || hasUnmapped) {
             this.iconToggle.classList.add('warning');
             this.iconToggle.innerHTML = shieldAlertSVG;
-            this.iconToggle.style.color = '#FBBF24';
+            this.iconToggle.style.color = '#f59e0b';
         } else {
             this.iconToggle.innerHTML = shieldCheckSVG;
         }
 
-        // Deduplicate checked/normalized list for robust UI display
         const checkedRaw = debug.normalized_drugs || [];
         const seenChecked = new Set();
         const checked = [];
@@ -648,19 +759,14 @@ export const CDSUI = {
 
         statusText.textContent = `Đã phân tích: ${checked.length}/${summary.total_scanned || checked.length} thuốc`;
 
-        // === BUILD BODY ===
+        // === BUILD BODY tab kê đơn ===
         container.innerHTML = '';
 
-        // 1. Render Alerts (nếu có)
         if (alerts.length > 0) {
             alerts.forEach((alert, idx) => {
                 const card = document.createElement('div');
                 const severity = ['high', 'medium', 'low', 'info'].includes(alert.severity) ? alert.severity : 'info';
                 card.className = `cds-alert-card ${severity}`;
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(12px)';
-                card.style.animation = 'aladinn-staggerIn .4s ease forwards';
-                card.style.animationDelay = `${idx * 0.08}s`;
                 
                 let matchedHtml = '';
                 let linkHtml = '';
@@ -668,17 +774,16 @@ export const CDSUI = {
                 if (alert.matched_items) {
                     const items = [];
                     if (alert.matched_items.drug) items.push(...alert.matched_items.drug);
-                    
                     if (items.length > 0) {
                         matchedHtml = `<div class="alert-match-list">${items.map(i => `<span>${this.escapeHtml(i)}</span>`).join('')}</div>`;
                     }
 
                     if (alert.domain === 'interaction' && alert.matched_items.drug && alert.matched_items.drug.length >= 2) {
                         const VN_QUERY = `tương tác thuốc giữa ${alert.matched_items.drug.join(' và ')}`;
-                        linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:10px; font-size:12px; color:#2563eb; font-weight:600; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu Web</a>`;
+                        linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:8px; font-size:11px; color:#004f9e; font-weight:bold; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu Web</a>`;
                     } else if (alert.domain === 'insurance' && alert.missing_icd) {
                         const VN_QUERY = `mã icd ${alert.missing_icd.replace(/,/g, ' ')}`;
-                        linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:10px; font-size:12px; color:#2563eb; font-weight:600; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu mã ICD phác đồ</a>`;
+                        linkHtml = `<a href="https://www.google.com/search?q=${encodeURIComponent(VN_QUERY)}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; margin-top:8px; font-size:11px; color:#004f9e; font-weight:bold; text-decoration:none;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg> Tra cứu mã ICD phác đồ</a>`;
                     }
                 }
 
@@ -693,12 +798,9 @@ export const CDSUI = {
             });
         }
 
-        // 2. Drug Coverage Summary — LUÔN HIỂN THỊ
         const coverageDiv = document.createElement('div');
         coverageDiv.className = 'cds-coverage-summary';
 
-        // 2a. Thuốc ĐÃ KIỂM TRA (sử dụng danh sách checked đã được khử trùng lặp phía trên)
-        // Lọc ra những thuốc AN TOÀN (không nằm trong cảnh báo nào)
         const alertDrugs = new Set();
         alerts.forEach(a => {
             if (a.matched_items && a.matched_items.drug) {
@@ -717,7 +819,6 @@ export const CDSUI = {
                 </div>`;
         }
 
-        // 2b. Thuốc CHƯA CÓ DỮ LIỆU (unmapped) — kèm link Google
         let uncheckedHtml = '';
         if (hasUnmapped) {
             const pills = unmapped.map(d => {
@@ -732,7 +833,6 @@ export const CDSUI = {
                 </div>`;
         }
 
-        // No alerts + all checked = safe
         if (alerts.length === 0 && !hasUnmapped) {
             coverageDiv.innerHTML = '<p class="cds-empty-state">✅ Đơn thuốc an toàn!</p>' + checkedHtml;
         } else {
@@ -740,20 +840,33 @@ export const CDSUI = {
         }
 
         container.appendChild(coverageDiv);
+
+        // === CẬP NHẬT BADGE TAB SMARTSCORE & RENDER ===
+        const evals = SmartScoreEngine.evaluatePatientContext(context);
+        const suggestedCount = Object.values(evals).filter(e => e.suggested).length;
+        const badge = document.getElementById('cds-score-badge');
+        if (badge) {
+            if (suggestedCount > 0) {
+                badge.style.display = 'inline-block';
+                badge.textContent = suggestedCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        if (this.activeTab === 'smartscore') {
+            this.renderSmartScore();
+        }
     },
 
     getSeverityEmoji(severity) {
-        // Trả về dấu chấm tròn màu sắc chỉ báo mức độ chuyên nghiệp hơn emoji
         const bullet = (color) => `<svg width="12" height="12" style="margin-right:6px"><circle cx="6" cy="6" r="5" fill="${color}"/></svg>`;
-        if (severity === 'high') return bullet('#FFB4AB');
-        if (severity === 'medium') return bullet('#FBBF24');
-        if (severity === 'low') return bullet('#3b82f6');
-        return bullet('#E1E2E8');
+        if (severity === 'high') return bullet('#ef4444');
+        if (severity === 'medium') return bullet('#f59e0b');
+        if (severity === 'low') return bullet('#0284c7');
+        return bullet('#64748b');
     },
 
-    /**
-     * Hiến thị thông tin crawl (sau khi import xong)
-     */
     updateCrawlInfo(result) {
         const infoEl = document.getElementById('cds-crawl-info');
         if (!infoEl) return;
@@ -773,7 +886,6 @@ export const CDSUI = {
         infoEl.className = 'success';
         infoEl.style.display = '';
         
-        // Từ động ẩn sau 30s
         setTimeout(() => {
             infoEl.innerHTML = `📅 Data: ${dateStr} • ${result.totalCrawled} thuốc`;
             infoEl.className = '';
@@ -785,15 +897,13 @@ export const CDSUI = {
         if (!infoEl) return;
         
         if (meta?.ruleset_version) {
-            infoEl.innerHTML = `📚 Tập luật: <b style="color: #60a5fa">${meta.ruleset_version}</b>`;
+            infoEl.innerHTML = `📚 Tập luật BHYT: <b style="color: #004f9e">${meta.ruleset_version}</b>`;
             infoEl.title = `Nguồn: ${meta.ruleset_source || 'Unknown'} | Cập nhật: ${meta.last_updated ? new Date(meta.last_updated).toLocaleDateString('vi-VN') : 'Unknown'}`;
         } else if (meta?.lastCrawlDate) {
-            // Hiện ngày cào gần nhất
             const d = new Date(meta.lastCrawlDate);
             const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
             infoEl.innerHTML = `📅 Cập nhật: ${dateStr} • ${meta.lastCrawlCount || '?'} thuốc`;
         } else if (meta?.seededAt) {
-            // Fallback: hiện ngày seed ban đầu
             const d = new Date(meta.seededAt);
             const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
             infoEl.innerHTML = `📅 Data gốc: ${dateStr}`;
@@ -803,9 +913,6 @@ export const CDSUI = {
         infoEl.style.display = '';
     },
 
-    /**
-     * BHYT Guard: Hiển thị Toast cảnh báo Warn-only khi Ra viện
-     */
     showBhytToast(alerts) {
         if (!alerts || alerts.length === 0) return;
         
@@ -818,17 +925,16 @@ export const CDSUI = {
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(251, 191, 36, 0.95);
-                color: #fff;
-                padding: 16px 24px;
-                border-radius: 12px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                background: #fff9db;
+                color: #d9480f;
+                padding: 14px 20px;
+                border-radius: 0px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
                 z-index: 2147483647;
                 font-family: system-ui, sans-serif;
-                font-size: 15px;
+                font-size: 14px;
                 max-width: 400px;
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255,255,255,0.2);
+                border: 1px solid #f59e0b;
                 transition: opacity 0.3s, transform 0.3s;
                 pointer-events: none;
             `;
@@ -837,21 +943,19 @@ export const CDSUI = {
 
         const count = alerts.length;
         toast.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <span style="font-size: 24px;">🛡️</span>
-                <strong style="font-size: 16px;">BHYT Guard: Cảnh báo Rủi ro</strong>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 20px;">🛡️</span>
+                <strong style="font-size: 15px; color: #d9480f;">BHYT Guard: Cảnh báo Xuất toán</strong>
             </div>
-            <div>Phát hiện <b>${count}</b> vấn đề BHYT/Lâm sàng có thể gây xuất toán hoặc sai sót hồ sơ.</div>
-            <div style="margin-top: 8px; font-size: 13px; opacity: 0.9;"><i>Hệ thống vẫn đang Lưu hồ sơ bình thường. Vui lòng kiểm tra lại Panel Aladinn ở góc phải.</i></div>
+            <div>Phát hiện <b>${count}</b> quy tắc BHYT có thể bị xuất toán hoặc sai lệch thông tin hành chính.</div>
+            <div style="margin-top: 6px; font-size: 12px; opacity: 0.85;"><i>Mời bác sĩ nhấp mở Panel Aladinn ở góc phải màn hình HIS để kiểm tra chi tiết.</i></div>
         `;
         
         toast.style.opacity = '1';
         toast.style.transform = 'translate(-50%, 0)';
         
-        // Hiện panel Aladinn lên để bác sĩ xem chi tiết
         this.show();
 
-        // Ẩn sau 8 giây
         setTimeout(() => {
             if (toast) {
                 toast.style.opacity = '0';
@@ -860,9 +964,6 @@ export const CDSUI = {
         }, 8000);
     },
 
-    /**
-     * BHYT Audit: Hiển thị kết quả kiểm tra BHYT on-demand (Phase 2)
-     */
     showBhytAuditResults(result) {
         if (!result) return;
         
@@ -873,14 +974,13 @@ export const CDSUI = {
         const time = new Date(timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         
         if (alerts.length === 0) {
-            // Thêm banner pass vào đầu panel
             const passHtml = `
-                <div class="cds-alert" style="border-left: 4px solid #10b981; margin-bottom: 8px;">
+                <div class="cds-alert-card" style="border-left: 4px solid #10b981; margin-bottom: 8px; background: #f0fdf4 !important;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 20px;">✅</span>
+                        <span style="font-size: 18px;">✅</span>
                         <div>
-                            <div style="color: #10b981; font-weight: 700; font-size: 13px;">Kiểm tra BHYT: Đạt</div>
-                            <div style="color: #8C9099; font-size: 12px;">${drugCount} thuốc, ${icdCount} ICD • ${time}</div>
+                            <div style="color: #166534; font-weight: bold; font-size: 12px;">Kiểm tra BHYT: Đạt yêu cầu</div>
+                            <div style="color: #64748b; font-size: 11px;">${drugCount} thuốc, ${icdCount} ICD • Lúc ${time}</div>
                         </div>
                     </div>
                 </div>
@@ -889,29 +989,29 @@ export const CDSUI = {
             return;
         }
 
-        // Render audit alerts (không replace, chỉ thêm vào đầu)
         let html = `
-            <div style="background: rgba(251, 191, 36, 0.1); border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
+            <div style="background: #fffbeb; border-radius: 0px; padding: 10px; margin-bottom: 8px; border: 1px solid #fde047;">
                 <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                     <span style="font-size: 16px;">🛡️</span>
-                    <strong style="color: #FBBF24; font-size: 13px;">BHYT Pre-claim Audit</strong>
-                    <span style="color: #8C9099; font-size: 11px; margin-left: auto;">${time}</span>
+                    <strong style="color: #b45309; font-size: 12px;">BHYT Pre-claim Audit</strong>
+                    <span style="color: #64748b; font-size: 11px; margin-left: auto;">${time}</span>
                 </div>
-                <div style="color: #8C9099; font-size: 11px; margin-bottom: 6px;">${drugCount} thuốc, ${icdCount} ICD • ${alerts.length} vấn đề</div>
+                <div style="color: #64748b; font-size: 11px; margin-bottom: 4px;">${drugCount} thuốc, ${icdCount} ICD • ${alerts.length} vấn đề cần lưu ý</div>
             </div>
         `;
 
         for (const alert of alerts) {
-            const borderColor = alert.severity === 'high' ? '#FFB4AB' : '#FBBF24';
+            const borderColor = alert.severity === 'high' ? '#ef4444' : '#f59e0b';
+            const bgClass = alert.severity === 'high' ? '#fef2f2' : '#fffbeb';
             const icon = alert.severity === 'high' ? '⛔' : '⚠️';
             html += `
-                <div class="cds-alert" style="border-left: 4px solid ${borderColor}; margin-bottom: 6px;">
+                <div class="cds-alert-card" style="border-left: 4px solid ${borderColor}; margin-bottom: 6px; background: ${bgClass} !important; padding: 10px !important;">
                     <div style="display: flex; align-items: flex-start; gap: 6px;">
                         <span style="font-size: 14px; margin-top: 1px;">${icon}</span>
                         <div style="flex: 1; min-width: 0;">
-                            <div style="color: ${borderColor}; font-weight: 700; font-size: 12px; margin-bottom: 2px;">${this.escapeHtml(alert.title)}</div>
-                            <div style="color: #C2C6D2; font-size: 12px; line-height: 1.4;">${this.escapeHtml(alert.effect)}</div>
-                            <div style="color: #10b981; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: rgba(16,185,129,0.08); border-radius: 6px;">💡 ${this.escapeHtml(alert.recommendation)}</div>
+                            <div style="color: #004f9e; font-weight: bold; font-size: 12px; margin-bottom: 2px;">${this.escapeHtml(alert.title)}</div>
+                            <div style="color: #334155; font-size: 11px; line-height: 1.4;">${this.escapeHtml(alert.effect)}</div>
+                            <div style="color: #15803d; font-size: 11px; margin-top: 4px; padding: 4px 6px; background: #dcfce7; font-weight: bold;">💡 ${this.escapeHtml(alert.recommendation)}</div>
                         </div>
                     </div>
                 </div>
@@ -919,8 +1019,212 @@ export const CDSUI = {
         }
 
         container.insertAdjacentHTML('afterbegin', html);
-        
-        // Mở panel để hiển thị kết quả
         this.show();
+    },
+
+    // ==========================================
+    // 🧮 SMARTSCORE COMPONENT LOGIC & UI V2
+    // ==========================================
+
+    renderSmartScore() {
+        const container = document.getElementById('cds-smartscore-container');
+        if (!container) return;
+
+        if (!this.currentContext) {
+            container.innerHTML = '<div class="cds-empty-state">Chưa có dữ liệu bệnh nhân để tính điểm. Hãy chọn bệnh nhân trên HIS.</div>';
+            return;
+        }
+
+        const evaluations = SmartScoreEngine.evaluatePatientContext(this.currentContext);
+
+        // Khởi tạo scoreStates nếu chưa có hoặc đổi bệnh nhân
+        const patientKey = this.currentContext.patient?.id || this.currentContext.patient?.name || '';
+        if (this._lastPatientKey !== patientKey) {
+            this._lastPatientKey = patientKey;
+            this.scoreStates = {};
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:8px; padding: 2px 0;">';
+
+        Object.entries(SmartScoreEngine.SCORING_SYSTEMS).forEach(([id, sys]) => {
+            const evalInfo = evaluations[id] || { suggested: false, prefilled: {} };
+            
+            // Khởi tạo giá trị mặc định cho thang điểm
+            if (!this.scoreStates[id]) {
+                this.scoreStates[id] = {};
+                Object.entries(sys.criteria).forEach(([k, crit]) => {
+                    if (evalInfo.prefilled[k] !== undefined) {
+                        this.scoreStates[id][k] = evalInfo.prefilled[k];
+                    } else {
+                        this.scoreStates[id][k] = crit.default;
+                    }
+                });
+            }
+
+            const vals = this.scoreStates[id];
+            const { total, risk, rec } = sys.calculate(vals);
+
+            const isSuggested = evalInfo.suggested;
+            const borderStyle = isSuggested ? 'border: 1px solid #004f9e; border-left: 4px solid #004f9e;' : 'border: 1px solid #a6c9e2; border-left: 4px solid #a6c9e2;';
+            const bgHeader = isSuggested ? '#eaf2ff' : '#f5f9fd';
+
+            html += `
+                <div class="score-card" id="score-card-${id}" style="${borderStyle} background:#ffffff; font-size:12px; margin-bottom: 8px;">
+                    <div class="score-card-header" style="background:${bgHeader}; padding:8px 12px; font-weight:bold; color:#004f9e; cursor:pointer; display:flex; justify-content:space-between; align-items:center;" onclick="const el = document.getElementById('score-card-body-${id}'); el.style.display = el.style.display === 'none' ? 'block' : 'none';">
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            ${sys.name}
+                            ${isSuggested ? '<span style="background:#004f9e; color:#ffffff; font-size:9px; padding:1px 4px; font-weight:bold; border-radius:0px;">Gợi ý</span>' : ''}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                    <div class="score-card-body" id="score-card-body-${id}" style="padding:10px; display:${isSuggested ? 'block' : 'none'}; border-top: 1px solid #cbd5e1;">
+                        <p style="margin: 0 0 8px 0; color:#64748b; font-size:11px; font-style:italic; line-height:1.3;">${sys.description}</p>
+                        
+                        <div class="score-criteria-inputs" style="display:flex; flex-direction:column; gap:6px;">
+            `;
+
+            // Vẽ các trường nhập liệu tiêu chuẩn
+            Object.entries(sys.criteria).forEach(([k, crit]) => {
+                const curVal = vals[k];
+                if (crit.type === 'checkbox') {
+                    const isChecked = !!curVal;
+                    const autoFillLabel = evalInfo.prefilled[k] ? ' <span style="color:#16a34a; font-size:10px; font-weight:bold;">(Tự động điền 🧪)</span>' : '';
+                    html += `
+                        <label style="display:flex; align-items:flex-start; gap:6px; cursor:pointer; font-weight:normal; color:#333; padding: 4px; transition: background 0.15s;">
+                            <input type="checkbox" id="crit-${id}-${k}" ${isChecked ? 'checked' : ''} style="margin-top:2px; border-radius:0px; border:1px solid #a6c9e2; width:13px; height:13px;" onchange="window.CDSUI.onScoreCriteriaChange('${id}', '${k}', this.checked)">
+                            <span>${crit.label}${autoFillLabel}</span>
+                        </label>
+                    `;
+                } else if (crit.type === 'select') {
+                    let optionsHtml = '';
+                    crit.options.forEach(opt => {
+                        optionsHtml += `<option value="${opt.val}" ${Number(curVal) === opt.val ? 'selected' : ''}>${opt.text}</option>`;
+                    });
+                    html += `
+                        <div style="display:flex; flex-direction:column; gap:3px; padding: 4px;">
+                            <span style="font-weight:bold; color:#475569;">${crit.label}</span>
+                            <select id="crit-${id}-${k}" style="border:1px solid #a6c9e2; border-radius:0px; padding:4px; font-size:11px; width:100%; outline:none; background:#ffffff; color:#333;" onchange="window.CDSUI.onScoreCriteriaChange('${id}', '${k}', this.value)">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                    `;
+                }
+            });
+
+            // Hiển thị kết quả điểm và khuyến cáo
+            let riskColor = '#16a34a'; // Xanh lá
+            if (risk.toLowerCase().includes('nặng') || risk.toLowerCase().includes('cao') || risk.toLowerCase().includes('rất nghi ngờ')) {
+                riskColor = '#dc2626'; // Đỏ
+            } else if (risk.toLowerCase().includes('trung bình') || risk.toLowerCase().includes('nhóm 2') || risk.toLowerCase().includes('có khả năng')) {
+                riskColor = '#d97706'; // Vàng cam
+            }
+
+            html += `
+                        </div>
+                        
+                        <div class="score-results" style="margin-top:10px; padding:8px 10px; background:#f0f7ff; border:1px dashed #a6c9e2; display:flex; flex-direction:column; gap:3px;">
+                            <div style="font-weight:bold; color:#004f9e; font-size:12px;">Kết quả: <span style="color:#ef4444; font-size:14px;">${total}</span> điểm</div>
+                            <div style="font-weight:bold; color:#1e293b;">Đánh giá: <span style="color:${riskColor};">${risk}</span></div>
+                            <div style="color:#475569; font-size:11px; line-height:1.35; font-style:italic;">💡 Khuyến cáo: ${rec}</div>
+                        </div>
+
+                        <button class="score-fill-btn" style="margin-top:10px; width:100%; padding:6px 0; background:#004f9e; color:#ffffff; font-weight:bold; border:none; border-radius:0px; cursor:pointer; text-align:center; transition:background 0.15s; font-size:11px;" onclick="window.CDSUI.onScoreFillClick('${id}')">
+                            💾 Điền kết quả y án (1-Click)
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+    },
+
+    onScoreCriteriaChange(scoreId, criteriaKey, value) {
+        if (!this.scoreStates[scoreId]) return;
+        this.scoreStates[scoreId][criteriaKey] = value;
+        this.renderSmartScore();
+    },
+
+    onScoreFillClick(scoreId) {
+        const sys = SmartScoreEngine.SCORING_SYSTEMS[scoreId];
+        if (!sys || !this.scoreStates[scoreId]) return;
+
+        const vals = this.scoreStates[scoreId];
+        const { total, risk, rec } = sys.calculate(vals);
+
+        const text = SmartScoreEngine.generateDescription(scoreId, vals, total, risk, rec);
+        this.autoFillToHis(text);
+    },
+
+    autoFillToHis(text) {
+        // Kiểm tra Patient Context Guard trước khi điền để tránh nhiễm chéo bệnh nhân
+        if (this.currentContext) {
+            const domPatientId = String(this.currentContext.patient?.id || '').trim();
+            const currentDomPatientId = String(CDSExtractor.getPatientId() || '').trim();
+            if (domPatientId && currentDomPatientId && domPatientId !== currentDomPatientId && domPatientId !== 'anonymous_patient' && currentDomPatientId !== 'anonymous_patient') {
+                alert(`⚠️ [CẢNH BÁO AN TOÀN] Không khớp danh tính bệnh nhân!\nBệnh nhân trên thang điểm: ${this.currentContext.patient?.name || domPatientId}\nBệnh nhân đang mở trên HIS: ${CDSExtractor.getPatientName()} (${currentDomPatientId})\n\nĐể đảm bảo an toàn lâm sàng, Aladinn đã ngăn chặn điền tự động.`);
+                return false;
+            }
+        }
+
+        // Tìm ô nhập liệu phù hợp
+        let target = document.activeElement;
+        
+        const iframes = document.querySelectorAll('iframe');
+        for (const iframe of iframes) {
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.activeElement) {
+                    const activeEl = iframe.contentDocument.activeElement;
+                    const tag = activeEl.tagName.toLowerCase();
+                    if (tag === 'textarea' || (tag === 'input' && activeEl.type === 'text')) {
+                        target = activeEl;
+                        break;
+                    }
+                }
+            } catch (_e) {}
+        }
+
+        const selectors = [
+            'textarea[id*="DienBien"]', 'textarea[name*="DienBien"]', 'textarea[id*="dienbien"]',
+            'textarea[id*="YLenh"]', 'textarea[name*="YLenh"]', 'textarea[id*="ylenh"]',
+            'textarea[id*="ChuanDoan"]', 'textarea[name*="ChuanDoan"]', 'textarea[id*="chuandoan"]',
+            'textarea[id*="MoTaBenh"]', 'textarea[name*="MoTaBenh"]',
+            'textarea', 'input[type="text"]'
+        ];
+
+        if (!target || (target.tagName.toLowerCase() !== 'textarea' && !(target.tagName.toLowerCase() === 'input' && target.type === 'text'))) {
+            for (const sel of selectors) {
+                const els = CDSExtractor.getElementsAcrossIframes(sel);
+                if (els.length > 0) {
+                    target = els[0];
+                    break;
+                }
+            }
+        }
+
+        if (!target) {
+            alert('⚠️ Vui lòng nhấp con trỏ chuột vào ô nhập liệu cần điền trên HIS (Diễn biến bệnh, Y lệnh, Chẩn đoán...) rồi bấm lại nút này.');
+            return false;
+        }
+
+        const origVal = target.value || '';
+        const separator = origVal ? '\n\n' : '';
+        target.value = origVal + separator + text;
+
+        const events = ['input', 'change'];
+        events.forEach(name => {
+            const ev = new Event(name, { bubbles: true });
+            target.dispatchEvent(ev);
+        });
+
+        const origBg = target.style.backgroundColor;
+        target.style.transition = 'background-color 0.2s';
+        target.style.backgroundColor = '#e0f2fe';
+        setTimeout(() => {
+            target.style.backgroundColor = origBg;
+        }, 800);
+
+        return true;
     }
 };

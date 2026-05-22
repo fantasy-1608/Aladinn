@@ -983,6 +983,7 @@ export const CDSExtractor = {
         else if (/\bhemoglobin\b|\bhgb\b|\bhb\b/i.test(n) && !n.includes('a1c')) code = 'hemoglobin';
         else if (n.includes('tiểu cầu') || n.includes('platelet') || /\bplt\b/i.test(n)) code = 'platelet';
         else if (n.includes('bạch cầu') || n.includes('wbc') || n.includes('white blood')) code = 'WBC';
+        else if (n.includes('neut') || n.includes('trung tính') || n.includes('neutrophil')) code = 'neutrophil';
 
         // === Lipids ===
         else if (n.includes('cholesterol') && n.includes('toàn phần') || n === 'cholesterol') code = 'cholesterol';

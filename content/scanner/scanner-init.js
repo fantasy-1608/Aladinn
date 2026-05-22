@@ -1518,6 +1518,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const existing = targetDoc.getElementById('vnpt-lab-timeline-modal');
         if (existing) existing.remove();
         
+        const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const imgList = imaging || [];
 
         // ─── Helper: Lấy PACS URL qua bridge (getHashRIS trong HIS tab) ───
@@ -1787,7 +1788,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     
                     const stickyBg = rowIdx % 2 === 0 ? '#ffffff' : '#f9f9f9';
 
-                    mRowsHtml += `<tr style="background:${rowBg};">`;
+                    const trendPoints = sortedDates.map(d => {
+                        const cell = data.values[d];
+                        return {
+                            date: _shortDate(d),
+                            value: cell ? parseFloat(cell.value) : null,
+                            rawValue: cell ? cell.value : null,
+                            status: cell ? cell.status : null
+                        };
+                    }).filter(pt => pt.rawValue !== null && pt.rawValue !== undefined && pt.rawValue !== '·');
+
+                    mRowsHtml += `<tr class="aladinn-lab-row" style="background:${rowBg}; cursor:pointer;" data-trend-values="${escapeHtml(JSON.stringify(trendPoints))}" data-indicator-name="${escapeHtml(cName)}" data-indicator-unit="${escapeHtml(data.unit || '')}" data-ref-min="${data.refMin || ''}" data-ref-max="${data.refMax || ''}">`;
                     mRowsHtml += `<td style="padding:6px 10px; color:#333333; font-weight:${rowHasAbn ? '700' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc; ${leftBorder}">${displayName}</td>`;
                     mRowsHtml += `<td style="padding:6px 8px; color:#666666; font-size:12.6px; white-space:nowrap; background:${stickyBg}; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${refText}</td>`;
 
@@ -2498,6 +2509,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         <div id="aladinn-content-xn" style="display:none;">
                             ${summaryCards}
                             ${alertsHtml}
+                            <div id="aladinn-lab-trend-container" style="display:none; background:#ffffff; border:1px solid #cccccc; border-bottom:2px solid #1e5494; padding:12px; margin-bottom:14px; border-radius:0px !important; position:relative;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <span style="font-size:14.4px; font-weight:700; color:#1e5494; display:flex; align-items:center; gap:6px;">
+                                        📈 Biểu đồ diễn tiến chỉ số: <span id="aladinn-lab-trend-title" style="color:#333333;">—</span>
+                                    </span>
+                                    <button id="aladinn-lab-trend-close" style="background:none; border:none; color:#777777; font-size:18px; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.color='#c62828'" onmouseout="this.style.color='#777777'" title="Đóng biểu đồ">&times;</button>
+                                </div>
+                                <div style="width:100%; height:180px; position:relative; background:#fcfdfe;">
+                                    <canvas id="aladinn-lab-trend-canvas" style="width:100%; height:180px; display:block;"></canvas>
+                                </div>
+                            </div>
                             ${tablesHtml}
                         </div>
                         <div id="aladinn-content-cdha" style="display:none;">
@@ -2572,6 +2594,175 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         targetDoc.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
+
+        // ── Lab Trend Chart Drawing Logic ──
+        function drawLabTrendChart(canvas, indicatorName, points, unit, refMin, refMax) {
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            const width = canvas.clientWidth || 600;
+            const height = canvas.clientHeight || 180;
+            
+            // Set scale for high DPI
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, width, height);
+
+            const validPoints = points.filter(p => p.value !== null && !isNaN(p.value));
+            if (validPoints.length === 0) return;
+
+            let minVal = Math.min(...validPoints.map(p => p.value));
+            let maxVal = Math.max(...validPoints.map(p => p.value));
+
+            const parsedMin = parseFloat(refMin);
+            const parsedMax = parseFloat(refMax);
+            if (!isNaN(parsedMin)) minVal = Math.min(minVal, parsedMin);
+            if (!isNaN(parsedMax)) maxVal = Math.max(maxVal, parsedMax);
+
+            const diff = maxVal - minVal;
+            const paddingPercent = 0.15;
+            let yMin = minVal - (diff === 0 ? 1 : diff * paddingPercent);
+            let yMax = maxVal + (diff === 0 ? 1 : diff * paddingPercent);
+            if (yMin < 0 && minVal >= 0) yMin = 0;
+
+            const leftMargin = 45;
+            const rightMargin = 20;
+            const topMargin = 25;
+            const bottomMargin = 25;
+
+            const chartWidth = width - leftMargin - rightMargin;
+            const chartHeight = height - topMargin - bottomMargin;
+
+            function getX(index) {
+                if (validPoints.length <= 1) return leftMargin + chartWidth / 2;
+                return leftMargin + (index / (validPoints.length - 1)) * chartWidth;
+            }
+
+            function getY(val) {
+                return topMargin + chartHeight - ((val - yMin) / (yMax - yMin)) * chartHeight;
+            }
+
+            // Draw Reference Range Area
+            if (!isNaN(parsedMin) || !isNaN(parsedMax)) {
+                const yRefMin = !isNaN(parsedMin) ? getY(parsedMin) : topMargin + chartHeight;
+                const yRefMax = !isNaN(parsedMax) ? getY(parsedMax) : topMargin;
+                
+                ctx.fillStyle = 'rgba(166, 201, 226, 0.12)';
+                ctx.fillRect(leftMargin, yRefMax, chartWidth, yRefMin - yRefMax);
+                
+                ctx.strokeStyle = 'rgba(166, 201, 226, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                if (!isNaN(parsedMin)) {
+                    ctx.beginPath(); ctx.moveTo(leftMargin, yRefMin); ctx.lineTo(leftMargin + chartWidth, yRefMin); ctx.stroke();
+                    ctx.fillStyle = '#666666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+                    ctx.fillText(`Ref Min: ${refMin}`, leftMargin + 5, yRefMin - 4);
+                }
+                if (!isNaN(parsedMax)) {
+                    ctx.beginPath(); ctx.moveTo(leftMargin, yRefMax); ctx.lineTo(leftMargin + chartWidth, yRefMax); ctx.stroke();
+                    ctx.fillStyle = '#666666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+                    ctx.fillText(`Ref Max: ${refMax}`, leftMargin + 5, yRefMax + 12);
+                }
+                ctx.setLineDash([]);
+            }
+
+            // Draw Y-Axis Grid & Labels
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            const gridCount = 3;
+            for (let i = 0; i <= gridCount; i++) {
+                const val = yMin + (i / gridCount) * (yMax - yMin);
+                const y = getY(val);
+                ctx.beginPath(); ctx.moveTo(leftMargin, y); ctx.lineTo(leftMargin + chartWidth, y); ctx.stroke();
+
+                ctx.fillStyle = '#888888'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(1), leftMargin - 6, y + 3);
+            }
+
+            // Draw Line Chart
+            ctx.beginPath();
+            ctx.strokeStyle = '#1e5494';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < validPoints.length; i++) {
+                const cx = getX(i); const cy = getY(validPoints[i].value);
+                if (i === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.stroke();
+
+            // Draw Nodes & Values & X Labels
+            validPoints.forEach((pt, i) => {
+                const cx = getX(i); const cy = getY(pt.value);
+                const isAbn = pt.status ? _isAbnormal(pt.status) : false;
+
+                // Vertical grid lines
+                ctx.strokeStyle = '#eef2f6'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, topMargin + chartHeight); ctx.stroke();
+
+                ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                ctx.fillStyle = isAbn ? '#c62828' : '#1e5494';
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+                ctx.fill(); ctx.stroke();
+
+                // Values Text
+                ctx.fillStyle = isAbn ? '#c62828' : '#333333'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText(pt.rawValue, cx, cy - 8);
+
+                // Date Label
+                ctx.fillStyle = '#666666'; ctx.font = '10px sans-serif';
+                ctx.fillText(pt.date, cx, topMargin + chartHeight + 14);
+            });
+        }
+
+        // Attach click handlers to lab rows
+        modal.addEventListener('click', (e) => {
+            const row = e.target.closest('.aladinn-lab-row');
+            if (!row) return;
+            e.stopPropagation();
+
+            const trendValuesStr = row.dataset.trendValues || '[]';
+            const points = JSON.parse(trendValuesStr);
+            const indicatorName = row.dataset.indicatorName || 'Xét Nghiệm';
+            const unit = row.dataset.indicatorUnit || '';
+            const refMin = row.dataset.refMin || '';
+            const refMax = row.dataset.refMax || '';
+
+            if (points.length === 0) {
+                window.VNPTRealtime?.showToast('⚠️ Không có dữ liệu lịch sử để vẽ biểu đồ.', 'warning');
+                return;
+            }
+
+            const trendContainer = modal.querySelector('#aladinn-lab-trend-container');
+            const trendTitle = modal.querySelector('#aladinn-lab-trend-title');
+            const trendCanvas = modal.querySelector('#aladinn-lab-trend-canvas');
+
+            if (trendContainer && trendTitle && trendCanvas) {
+                trendContainer.style.display = 'block';
+                trendTitle.textContent = `${indicatorName} (${unit ? unit : 'không có đơn vị'})${refMin || refMax ? ` [Khoảng Ref: ${refMin} - ${refMax}]` : ''}`;
+                
+                // Set scale for high DPI explicitly on click too
+                const width = trendCanvas.clientWidth || 600;
+                const height = trendCanvas.clientHeight || 180;
+                trendCanvas.style.width = width + 'px';
+                trendCanvas.style.height = height + 'px';
+                
+                drawLabTrendChart(trendCanvas, indicatorName, points, unit, refMin, refMax);
+                
+                const contentXn = modal.querySelector('#aladinn-content-xn');
+                if (contentXn) {
+                    contentXn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        });
+
+        modal.querySelector('#aladinn-lab-trend-close')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const trendContainer = modal.querySelector('#aladinn-lab-trend-container');
+            if (trendContainer) trendContainer.style.display = 'none';
+        });
 
         // ── Tab logic (4 tabs: Lâm sàng, XN, CĐHA, AI) ─────────────────────
         const tabKhamVaoVien = modal.querySelector('#aladinn-tab-khamvaovien');
