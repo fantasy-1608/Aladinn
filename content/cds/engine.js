@@ -664,6 +664,95 @@ export async function runBhytAuditRules(context) {
     };
 }
 
+function runCriticalLabAlerts(context) {
+    const alerts = [];
+    const labs = context.labs || [];
+    const labMap = new Map();
+    for (const lab of labs) {
+        labMap.set(lab.code, lab);
+    }
+
+    // 1. Kiểm tra Glucose nguy kịch (Đường huyết tăng quá cao)
+    const glucose = labMap.get('glucose');
+    if (glucose) {
+        if (glucose.value > 16.5) { // Tương đương > 300 mg/dL
+            alerts.push({
+                rule_code: 'CRIT-LAB-GLUCOSE-HIGH',
+                domain: 'critical_lab',
+                severity: 'high',
+                title: '🚨 Báo động đỏ: Tăng Đường Huyết Nguy Kịch!',
+                effect: `Đường huyết mao mạch/tĩnh mạch tăng rất cao (${glucose.value} mmol/L ~ ${(glucose.value * 18).toFixed(0)} mg/dL). Nguy cơ cao tiến triển thành Nhiễm toan ceton (DKA) hoặc Hội chứng tăng áp lực thẩm thấu (HHS).`,
+                recommendation: 'Đề xuất: Kiểm tra khí máu động mạch, ceton niệu. Xử trí truyền dịch tĩnh mạch và tiêm Insulin khẩn cấp theo phác đồ.',
+                matched_items: { lab: ['glucose'], value: [String(glucose.value)] }
+            });
+        }
+    }
+
+    // 2. Kiểm tra Kali nguy kịch (Nguy cơ loạn nhịp tim nguy hiểm)
+    const potassium = labMap.get('potassium');
+    if (potassium) {
+        if (potassium.value < 3.0) {
+            alerts.push({
+                rule_code: 'CRIT-LAB-K-LOW-SEVERE',
+                domain: 'critical_lab',
+                severity: 'high',
+                title: '🚨 Báo động đỏ: Hạ Kali Máu Nặng!',
+                effect: `Nồng độ Kali máu giảm nặng đe dọa tính mạng (${potassium.value} mmol/L). Nguy cơ rất cao gây xoắn đỉnh, rung thất và ngừng tim.`,
+                recommendation: 'Đề xuất: Khẩn cấp bù Kali đường tĩnh mạch dưới sự theo dõi sát của monitor tim.',
+                matched_items: { lab: ['potassium'], value: [String(potassium.value)] }
+            });
+        } else if (potassium.value < 3.5) {
+            alerts.push({
+                rule_code: 'CRIT-LAB-K-LOW',
+                domain: 'critical_lab',
+                severity: 'medium',
+                title: '⚠️ Cảnh báo: Hạ Kali Máu!',
+                effect: `Nồng độ Kali máu thấp (${potassium.value} mmol/L, khoảng bình thường: 3.5 - 5.0). Có thể gây mệt mỏi cơ, yếu liệt chi hoặc loạn nhịp tim nhẹ.`,
+                recommendation: 'Đề xuất: Khuyến nghị bổ sung Kali đường uống (Kaleorid/K-Lyte) và hướng dẫn chế độ ăn giàu Kali (chuối, nước cam).',
+                matched_items: { lab: ['potassium'], value: [String(potassium.value)] }
+            });
+        } else if (potassium.value > 5.5) {
+            alerts.push({
+                rule_code: 'CRIT-LAB-K-HIGH',
+                domain: 'critical_lab',
+                severity: 'high',
+                title: '🚨 Báo động đỏ: Tăng Kali Máu!',
+                effect: `Nồng độ Kali máu tăng cao nguy hiểm (${potassium.value} mmol/L, khoảng bình thường: 3.5 - 5.0). Nguy cơ gây ngừng tim đột ngột.`,
+                recommendation: 'Đề xuất: Calci Clorid/Calci Gluconat tiêm tĩnh mạch bảo vệ cơ tim, truyền Insulin + Glucose, khí dung Ventolin hoặc lọc máu cấp cứu.',
+                matched_items: { lab: ['potassium'], value: [String(potassium.value)] }
+            });
+        }
+    }
+
+    // 3. Kiểm tra Natri nguy kịch (Rối loạn thẩm thấu não)
+    const sodium = labMap.get('sodium');
+    if (sodium) {
+        if (sodium.value < 125) {
+            alerts.push({
+                rule_code: 'CRIT-LAB-NA-LOW-SEVERE',
+                domain: 'critical_lab',
+                severity: 'high',
+                title: '🚨 Báo động đỏ: Hạ Natri Máu Nặng!',
+                effect: `Natri máu giảm nghiêm trọng (${sodium.value} mmol/L). Có thể gây phù não, co giật, hôn mê.`,
+                recommendation: 'Đề xuất: Xem xét bù Natri Clorid ưu trương (3%) chậm và thận trọng dưới sự kiểm soát chặt chẽ.',
+                matched_items: { lab: ['sodium'], value: [String(sodium.value)] }
+            });
+        } else if (sodium.value > 150) {
+            alerts.push({
+                rule_code: 'CRIT-LAB-NA-HIGH-SEVERE',
+                domain: 'critical_lab',
+                severity: 'high',
+                title: '🚨 Báo động đỏ: Tăng Natri Máu Nặng!',
+                effect: `Natri máu tăng rất cao (${sodium.value} mmol/L). Gây mất nước tế bào não, co giật, xuất huyết.`,
+                recommendation: 'Đề xuất: Bù nước tự do (uống nước hoặc truyền Glucose 5%) chậm để tránh thay đổi áp lực thẩm thấu não quá nhanh.',
+                matched_items: { lab: ['sodium'], value: [String(sodium.value)] }
+            });
+        }
+    }
+
+    return alerts;
+}
+
 export async function analyzeLocally(context, filterLow = true) {
     const db = await openDatabase();
     const enrichedContext = injectCalculatedEgfr(context);
@@ -707,7 +796,8 @@ export async function analyzeLocally(context, filterLow = true) {
         ...runDuplicateTherapyRules(normalized, genericMap),
         ...runDdiRules(ddiRules, normalized),
         ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
-        ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext)
+        ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext),
+        ...runCriticalLabAlerts(enrichedContext)
     ]);
 
     // Lọc Alert Fatigue theo Setting

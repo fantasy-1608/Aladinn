@@ -950,43 +950,45 @@ export const CDSExtractor = {
         const value = parseFloat(String(rawValue).replace(',', '.'));
         if (isNaN(value)) return null;
 
-        const n = (name || '').toLowerCase().trim();
+        // Chuẩn hóa tên xét nghiệm sang không dấu, chữ thường để so khớp chính xác 100% tiếng Việt
+        const n = this._cleanName(name);
         let code = null;
 
         // === Kidney / Renal ===
-        if (n.includes('egfr') || n.includes('mức lọc cầu thận') || n.includes('gfr')) code = 'eGFR';
-        else if (n.includes('creatinin') || n.includes('créatinine')) code = 'creatinine';
+        if (n.includes('egfr') || n.includes('muc loc cau than') || n.includes('gfr')) code = 'eGFR';
+        else if (n.includes('creatinin')) code = 'creatinine';
         else if (n.includes('ure') && !n.includes('uric')) code = 'urea';
-        else if (n.includes('acid uric') || n.includes('uric acid')) code = 'uric_acid';
+        else if (n.includes('acid uric') || n.includes('uric acid') || n.includes('uric')) code = 'uric_acid';
         
         // === Liver ===
         else if (/\bast\b|sgot|aspartate/i.test(n)) code = 'AST';
         else if (/\balt\b|sgpt|alanine/i.test(n)) code = 'ALT';
-        else if (n.includes('bilirubin') && n.includes('toàn phần') || n.includes('bilirubin') && n.includes('total')) code = 'bilirubin_total';
-        else if (n.includes('bilirubin') && (n.includes('trực tiếp') || n.includes('direct'))) code = 'bilirubin_direct';
+        else if (n.includes('bilirubin toan phan') || (n.includes('bilirubin') && n.includes('total'))) code = 'bilirubin_total';
+        else if (n.includes('bilirubin truc tiep') || (n.includes('bilirubin') && n.includes('direct'))) code = 'bilirubin_direct';
         else if (/\bggt\b|gamma/i.test(n)) code = 'GGT';
 
         // === Blood Sugar ===
-        else if (n.includes('glucose') || n.includes('đường huyết') || n.includes('glycemi')) code = 'glucose';
+        else if (n.includes('glucose') || n.includes('duong huyet') || n.includes('duong mau') || n.includes('glycemi') || n.includes('mao mach')) code = 'glucose';
         else if (n.includes('hba1c') || n.includes('hemoglobin a1c')) code = 'HbA1c';
 
-        // === Electrolytes ===
-        else if (/\bkali\b|\bk\+|\bpotassium/i.test(n)) code = 'potassium';
-        else if (/\bnatri\b|\bna\+|\bsodium/i.test(n)) code = 'sodium';
+        // === Electrolytes (Nhận diện thêm chữ K, Na, Cl đơn lẻ cực kỳ chính xác) ===
+        else if (/\bkali\b|^k$|\bk\+|\bpotassium/i.test(n)) code = 'potassium';
+        else if (/\bnatri\b|^na$|\bna\+|\bsodium/i.test(n)) code = 'sodium';
+        else if (/\bcl\b|^cl$|\bchloride/i.test(n)) code = 'chloride';
 
         // === Coagulation ===
         else if (n.includes('pt inr') || n === 'inr') code = 'INR';
-        else if (n.includes('pt %') || n.includes('tỷ lệ prothrombin') || (n.includes('pt') && n.includes('%'))) code = 'PT_percent';
+        else if (n.includes('pt %') || n.includes('ty le prothrombin') || (n.includes('pt') && n.includes('%'))) code = 'PT_percent';
         else if (n.includes('aptt') || n.includes('ptt')) code = 'aPTT';
 
         // === Hematology ===
         else if (/\bhemoglobin\b|\bhgb\b|\bhb\b/i.test(n) && !n.includes('a1c')) code = 'hemoglobin';
-        else if (n.includes('tiểu cầu') || n.includes('platelet') || /\bplt\b/i.test(n)) code = 'platelet';
-        else if (n.includes('bạch cầu') || n.includes('wbc') || n.includes('white blood')) code = 'WBC';
-        else if (n.includes('neut') || n.includes('trung tính') || n.includes('neutrophil')) code = 'neutrophil';
+        else if (n.includes('tieu cau') || n.includes('platelet') || /\bplt\b/i.test(n)) code = 'platelet';
+        else if (n.includes('bach cau') || n.includes('wbc') || n.includes('white blood')) code = 'WBC';
+        else if (n.includes('neut') || n.includes('trung tinh') || n.includes('neutrophil')) code = 'neutrophil';
 
         // === Lipids ===
-        else if (n.includes('cholesterol') && n.includes('toàn phần') || n === 'cholesterol') code = 'cholesterol';
+        else if (n.includes('cholesterol toan phan') || n === 'cholesterol') code = 'cholesterol';
         else if (n.includes('triglycerid')) code = 'triglyceride';
         else if (n.includes('ldl')) code = 'LDL';
         else if (n.includes('hdl')) code = 'HDL';
@@ -997,12 +999,23 @@ export const CDSExtractor = {
 
         // === Cardiac ===
         else if (n.includes('troponin')) code = 'troponin';
-        else if (n.includes('ck-mb') || n.includes('ckmb')) code = 'CK_MB';
-        else if (n.includes('bnp') || n.includes('nt-probnp')) code = 'BNP';
+        else if (n.includes('ck mb') || n.includes('ckmb')) code = 'CK_MB';
+        else if (n.includes('bnp') || n.includes('nt probnp')) code = 'BNP';
 
         if (!code) return null;
 
-        return { code, value, unit: unit || '', refRange: refRange || '' };
+        let parsedValue = value;
+        // Quy đổi glucose từ mg/dL hoặc mg% sang mmol/L y khoa thống nhất cho CDS
+        if (code === 'glucose') {
+            const isMgDl = (unit && String(unit).toLowerCase().includes('mg')) || 
+                           (refRange && String(refRange).toLowerCase().includes('mg')) ||
+                           value > 25; // Chỉ số glucose mmol/L hiếm khi vượt quá 25, nếu >25 chắc chắn là mg/dL (mg%)
+            if (isMgDl) {
+                parsedValue = parseFloat((value / 18).toFixed(2));
+            }
+        }
+
+        return { code, value: parsedValue, unit: unit || '', refRange: refRange || '' };
     },
 
 

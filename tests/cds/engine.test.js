@@ -186,4 +186,99 @@ describe('CDS Engine', () => {
             expect(alert).toBeDefined();
         });
     });
+
+    describe('Critical Lab Alerts (Panic Values)', () => {
+        it('should trigger Red Alert for critical high Glucose', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'glucose', value: 26.44, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-GLUCOSE-HIGH');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('high');
+            expect(alert.domain).toBe('critical_lab');
+            expect(alert.title).toContain('Tăng Đường Huyết Nguy Kịch');
+        });
+
+        it('should trigger Yellow Warning for moderate low Potassium', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'potassium', value: 3.25, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-K-LOW');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('medium');
+            expect(alert.title).toContain('Hạ Kali Máu');
+        });
+
+        it('should trigger Red Alert for severe low Potassium', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'potassium', value: 2.8, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-K-LOW-SEVERE');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('high');
+        });
+
+        it('should trigger Red Alert for high Potassium', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'potassium', value: 5.8, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-K-HIGH');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('high');
+        });
+
+        it('should trigger Red Alert for severe low Sodium', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'sodium', value: 120, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-NA-LOW-SEVERE');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('high');
+        });
+
+        it('should trigger Red Alert for severe high Sodium', async () => {
+            const context = {
+                medications: [],
+                encounter: { diagnoses: [] },
+                labs: [
+                    { code: 'sodium', value: 155, unit: 'mmol/L' }
+                ]
+            };
+
+            const result = await analyzeLocally(context);
+            const alert = result.alerts.find(a => a.rule_code === 'CRIT-LAB-NA-HIGH-SEVERE');
+            expect(alert).toBeDefined();
+            expect(alert.severity).toBe('high');
+        });
+    });
 });
