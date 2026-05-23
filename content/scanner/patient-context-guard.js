@@ -72,6 +72,19 @@ window.VNPTPatientContextGuard = (function () {
         return true;
     }
 
+    async function hashPatientId(pid) {
+        if (!pid) return null;
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(pid + 'ALADINN_SALT_123');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 12);
+        } catch (_e) {
+            return 'err_hash';
+        }
+    }
+
     async function assertValidOrThrow(token, options = {}) {
         const isValid = validate(token, options);
         if (!isValid) {
@@ -90,7 +103,7 @@ window.VNPTPatientContextGuard = (function () {
                         details: {
                             stage: options.stage,
                             tokenFormType: token?.formType,
-                            expectedPidHash: token?.initialSelectedPatientId ? btoa(token.initialSelectedPatientId).substring(0, 8) : null
+                            expectedPidHash: await hashPatientId(token?.initialSelectedPatientId)
                         }
                     });
                 }

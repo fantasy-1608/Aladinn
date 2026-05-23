@@ -68,17 +68,26 @@ const VNPTClinicalFill = (function () {
     // INIT
     // ==========================================
     function init() {
+        let scanTimeout = null;
+        const throttledCheck = () => {
+            if (scanTimeout) return;
+            scanTimeout = setTimeout(() => {
+                checkForClinicalForm();
+                scanTimeout = null;
+            }, 500);
+        };
+
         const observer = new MutationObserver(() => {
-            if (!window.VNPTStore) return;
-            checkForClinicalForm();
+            if (typeof window === 'undefined' || !window.VNPTStore) return;
+            throttledCheck();
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 
         // Bổ sung polling nhẹ để bypass giới hạn MutationObserver xuyên iframe
         // Thêm guard: tạm dừng khi tab ẩn (tiết kiệm CPU)
         setInterval(() => {
-            if (document.hidden) return;
-            checkForClinicalForm();
+            if (typeof window === 'undefined' || document.hidden) return;
+            throttledCheck();
         }, 2000);
         checkForClinicalForm();
 

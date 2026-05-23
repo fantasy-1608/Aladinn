@@ -21,6 +21,7 @@ class CDSCacheManager {
             diagnoses: [], // { code: 'M15.0', is_primary: true }
             medications: [], // { display_name: 'Paracetamol', generic_candidate: 'Acetaminophen' }
             labs: [], // { code: 'eGFR', value: 90, unit: '', refRange: '' }
+            vitals: [], // { p, t, bp, b, spo2, h, time }
             _medsTimestamp: 0 // TTL tracking: when medications were last updated
         };
         // Sử dụng Map để gộp labs nhanh chóng
@@ -168,6 +169,17 @@ class CDSCacheManager {
             if (this.cache.labs.length > 200) {
                 this.labsMap.clear();
                 this.cache.labs = [];
+            }
+        }
+
+        if (payload.vitals && Array.isArray(payload.vitals)) {
+            for (const vit of payload.vitals) {
+                this.cache.vitals.push(vit);
+                hasChanges = true;
+            }
+            // Giới hạn số lượng
+            if (this.cache.vitals.length > 200) {
+                this.cache.vitals = this.cache.vitals.slice(-100);
             }
         }
 

@@ -4,6 +4,9 @@
  * Fits into the Aladinn namespace.
  */
 
+import { extractVitals } from './vital-extractor.js';
+import { generateSparklineImage } from './sparkline.js';
+
 window.Aladinn = window.Aladinn || {};
 window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
@@ -502,14 +505,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         (d) => d.demographics || null,
                         5000, 'demo'
                     );
+                    const fetchVitalsFromBridge = (rowId) => bridgeFetch(
+                        'REQ_FETCH_VITALS', 'FETCH_VITALS_RESULT', rowId,
+                        (d) => d.vitals || null,
+                        8000, 'vitals'
+                    );
 
-                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary, demographics] = await Promise.all([
+                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary, demographics, vitalsFromApi] = await Promise.all([
                         fetchLabsFromBridge(pid),
                         fetchDrugsFromBridge(pid),
                         fetchHistoryFromBridge(pid),
                         fetchTreatmentFromBridge(pid),
                         fetchClinicalSummaryFromBridge(pid),
-                        fetchDemographicsFromBridge(pid)
+                        fetchDemographicsFromBridge(pid),
+                        fetchVitalsFromBridge(pid)
                     ]);
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
@@ -592,7 +601,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             yLenhList,
                             admissionTimes: clinicalSummary?.admissionTimes || {},
                             treatmentContext: treatmentResult?.treatmentContext || clinicalSummary?.treatmentContext || {}
-                        }
+                        },
+                        vitalsData: vitalsFromApi || null
                     };
 
                     // Phase 1: Cache demographics vào Store cho history.js và các module khác sử dụng
@@ -2063,6 +2073,127 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;">📋 ${currDiags.size} CĐ</span>`;
                 if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#edf4fc;color:#1565c0;border:1px solid #b3d4fc;">💊 ${dayDrugs.length} thuốc</span>`;
 
+                // Vital Signs Sparkline extraction
+                let dayVitals = [];
+                let hasSnoopedVitals = false;
+                
+                // Ưu tiên 1: Lấy sinh hiệu từ API NT.006 (đã gọi song song qua fetchVitals)
+                if (patientInfo.vitalsData) {
+                    const v = patientInfo.vitalsData;
+                    const pulse = v.pulse ? parseFloat(v.pulse) : null;
+                    const temp = v.temperature ? parseFloat(v.temperature) : null;
+                    const bp = v.bloodPressure || null;
+                    const resp = v.respiratoryRate ? parseInt(v.respiratoryRate) : null;
+                    if (pulse || temp || bp || resp) {
+                        // API NT.006 trả về sinh hiệu lúc nhập viện (chỉ 1 bản ghi)
+                        // Hiển thị cho tất cả các ngày (vì đây là sinh hiệu duy nhất có sẵn)
+                        dayVitals = [{ p: pulse, t: temp, bp: bp, b: resp }];
+                        hasSnoopedVitals = true;
+                    }
+                }
+                
+                // Ưu tiên 2: Lấy sinh hiệu từ CDSCache (nếu AJAX interceptor bắt được)
+                if (!hasSnoopedVitals && window.AladinnCDSCache && window.AladinnCDSCache.cache && window.AladinnCDSCache.cache.vitals) {
+                    const allVitals = window.AladinnCDSCache.cache.vitals;
+                    const filteredVitals = allVitals.filter(v => v.time && v.time.includes(dt));
+                    if (filteredVitals.length > 0) {
+                        dayVitals = filteredVitals.sort((a,b) => a.time.localeCompare(b.time));
+                        hasSnoopedVitals = true;
+                    }
+                }
+
+                // Fallback: Nếu không có API Sinh hiệu từ Cache, thì lấy trực tiếp từ object tờ điều trị hoặc quét chữ
+                if (!hasSnoopedVitals) {
+                    dayTreatments.forEach(t => {
+                        // 1. Kiểm tra xem object tờ điều trị có chứa sẵn field Sinh Hiệu không (KHAMBENH_MACH)
+                        const m = t.MACH || t.KHAMBENH_MACH;
+                        const t_nhiet = t.NHIETDO || t.KHAMBENH_NHIETDO;
+                        const bp = t.HUYETAP || t.KHAMBENH_HUYETAP;
+                        const b_nhip = t.NHIPTHO || t.KHAMBENH_NHIPTHO;
+                        
+                        if (m || t_nhiet || bp || b_nhip) {
+                            dayVitals.push({
+                                p: m ? parseFloat(m) : null,
+                                t: t_nhiet ? parseFloat(t_nhiet) : null,
+                                bp: bp ? String(bp) : null,
+                                b: b_nhip ? parseInt(b_nhip) : null
+                            });
+                            return; // Có thông số chuẩn, không cần quét Regex
+                        }
+
+                        // 2. Không có field chuẩn -> Sử dụng vital-extractor để quét chữ Diễn Biến
+                        if (!t.DIENBIEN) return;
+                        const extracted = extractVitals(t.DIENBIEN);
+                        const v = {
+                            p: extracted.hr,
+                            t: extracted.temp,
+                            bp: extracted.bp,
+                            b: extracted.rr,
+                            spo2: extracted.spo2
+                        };
+                        if (v.p || v.t || v.bp || v.b || v.spo2) {
+                            dayVitals.push(v);
+                        }
+                    });
+                }
+
+                let sparklineHtml;
+                // Chuẩn bị dữ liệu cho Sparkline: đổi sang tên thuộc tính hr, temp như sparkline.js kỳ vọng
+                const sparklineData = dayVitals.map(v => ({
+                    hr: typeof v.hr === 'number' ? v.hr : (typeof v.p === 'number' ? v.p : (v.p ? parseFloat(v.p) : null)),
+                    temp: typeof v.temp === 'number' ? v.temp : (typeof v.t === 'number' ? v.t : (v.t ? parseFloat(v.t) : null))
+                }));
+
+                const sparklineImg = generateSparklineImage(sparklineData, {
+                    hrColor: '#004f9e',
+                    tempColor: '#c62828',
+                    bgColor: '#ffffff',
+                    width: 120,
+                    height: 32
+                });
+
+                if (sparklineImg) {
+                    const latest = dayVitals[dayVitals.length - 1];
+                    let tooltipParts = [];
+                    let valueTextParts = [];
+                    const latestP = latest.p || latest.hr;
+                    const latestT = latest.t || latest.temp;
+                    const latestB = latest.b || latest.rr;
+                    
+                    if (latestP) {
+                        valueTextParts.push(`<span style="color:#004f9e;font-weight:700;">❤️ ${latestP}</span>`);
+                        tooltipParts.push(`Mạch: ${latestP} l/p`);
+                    }
+                    if (latestT) {
+                        valueTextParts.push(`<span style="color:#c62828;font-weight:700;">🌡️ ${latestT}°C</span>`);
+                        tooltipParts.push(`Nhiệt độ: ${latestT}°C`);
+                    }
+                    if (latest.bp) {
+                        valueTextParts.push(`<span style="color:#2e7d32;font-weight:700;">🩸 ${latest.bp}</span>`);
+                        tooltipParts.push(`Huyết áp: ${latest.bp} mmHg`);
+                    }
+                    if (latestB) {
+                        valueTextParts.push(`<span style="color:#757575;font-weight:700;">🫁 ${latestB}</span>`);
+                        tooltipParts.push(`Nhịp thở: ${latestB} l/p`);
+                    }
+                    if (latest.spo2) {
+                        valueTextParts.push(`<span style="color:#00838f;font-weight:700;">🌐 ${latest.spo2}%</span>`);
+                        tooltipParts.push(`SpO2: ${latest.spo2}%`);
+                    }
+                    
+                    const tooltip = tooltipParts.join(' | ');
+                    
+                    sparklineHtml = `
+                        <div style="display:flex;align-items:center;gap:8px;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;" title="${escapeHtml(tooltip)}">
+                            <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px;line-height:1.1;text-align:right;">
+                                ${valueTextParts.join(' ')}
+                            </div>
+                            <img src="${sparklineImg}" style="width:120px;height:32px;border:1px solid #a6c9e2;border-radius:0px !important;display:block;background:#ffffff;padding:1px;" />
+                        </div>`;
+                } else {
+                    sparklineHtml = '<div style="display:flex;align-items:center;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;font-size:11.5px;color:#a0aab5;font-style:italic;" title="Không tìm thấy thông số sinh hiệu hợp lệ">(Chưa nhập sinh hiệu)</div>';
+                }
+
                 // ── Day card ──
                 combinedTimelineHtml += `<div style="border:1px solid #cccccc;border-radius:0px !important;overflow:hidden;background:#ffffff;margin-bottom:8px;">
                   <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid #cccccc;">
@@ -2071,11 +2202,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                       <div style="font-size:10.8px;color:#555555;font-weight:600;">${dt.substring(3,5)}</div>
                     </div>
                     <div style="width:1px;height:28px;background:#cccccc;flex-shrink:0;"></div>
-                    <div style="flex:1;">
-                      <div style="color:${numColor};font-weight:600;font-size:15px;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
-                      <div style="color:#666666;font-size:12.6px;margin-top:1px;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="color:${numColor};font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
+                      <div style="color:#666666;font-size:12.6px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
                     </div>
-                    <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
+                    <div style="display:flex;align-items:center;justify-content:flex-end;">
+                        ${sparklineHtml}
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">${pills}</div>
+                    </div>
                   </div>
                   <div style="display:flex;flex-direction:column;">`;
 

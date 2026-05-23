@@ -313,11 +313,10 @@
                     }
                 }
 
-                // Fallback: synchronous wrapper (will block main thread, but better than nothing)
-                const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
-                resolve(result);
+                // Fallback: safe async resolve to release UI thread
+                resolve(null);
             } catch (e) {
-                console.error('[API-Bridge] Sync jabsorb fallback failed:', e);
+                console.error('[API-Bridge] Async jabsorb exception:', e);
                 resolve(null);
             }
         });
@@ -1170,7 +1169,71 @@
                         }
                     }));
 
-                    const allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+                    let allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+
+                    // Tích hợp dữ liệu thời gian thực từ DOM Tờ điều trị đang soạn thảo
+                    try {
+                        const domSheet = scrapeTreatmentSheetFromDOM();
+                        if (domSheet) {
+                            const now = new Date();
+                            const timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                          ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                          now.getFullYear() + ' ' +
+                                          ('0' + now.getHours()).slice(-2) + ':' +
+                                          ('0' + now.getMinutes()).slice(-2) + ':' +
+                                          ('0' + now.getSeconds()).slice(-2);
+
+                            const virtualSheet = {
+                                DIENBIEN: domSheet.dienBienBenh || '',
+                                GHICHU: domSheet.huongXuLy || '',
+                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
+                                CHANDOAN: domSheet.chanDoanChinh || '',
+                                CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                                IS_REALTIME: true
+                            };
+
+                            const virtualDetails = [];
+                            if (domSheet.yLenh) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.yLenh,
+                                    NHOMYLENH: 'Y lệnh khác',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+                            if (domSheet.diet) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.diet,
+                                    NHOMYLENH: 'Chế độ ăn',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+                            if (domSheet.care) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.care,
+                                    NHOMYLENH: 'Chế độ chăm sóc',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+
+                            // Đưa tờ điều trị và y lệnh ảo lên đầu
+                            treatments.unshift(virtualSheet);
+                            allYLenh = virtualDetails.concat(allYLenh);
+                        }
+                    } catch (domErr) {
+                        console.warn('[API-Bridge] fetchTreatment realtime error:', domErr);
+                    }
+
                     const combinedTreatments = treatments.concat(allYLenh);
                     sendResult('FETCH_TREATMENT_RESULT', rowId, {
                         treatmentList: combinedTreatments,
@@ -1183,9 +1246,74 @@
             }
 
             if (!foundRows) {
+                let finalYLenhList = yLenhList;
+                let finalTreatmentList = yLenhList;
+
+                // Tích hợp dữ liệu thời gian thực nếu đang soạn thảo nhưng API chưa lưu dữ liệu
+                try {
+                    const domSheet = scrapeTreatmentSheetFromDOM();
+                    if (domSheet) {
+                        const now = new Date();
+                        const timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                      ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                      now.getFullYear() + ' ' +
+                                      ('0' + now.getHours()).slice(-2) + ':' +
+                                      ('0' + now.getMinutes()).slice(-2) + ':' +
+                                      ('0' + now.getSeconds()).slice(-2);
+
+                        const virtualSheet = {
+                            DIENBIEN: domSheet.dienBienBenh || '',
+                            GHICHU: domSheet.huongXuLy || '',
+                            NGUOITAO: 'Bác sĩ đang soạn thảo',
+                            NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                            MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
+                            CHANDOAN: domSheet.chanDoanChinh || '',
+                            CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                            IS_REALTIME: true
+                        };
+
+                        const virtualDetails = [];
+                        if (domSheet.yLenh) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.yLenh,
+                                NHOMYLENH: 'Y lệnh khác',
+                                GHICHU: '',
+                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+                        if (domSheet.diet) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.diet,
+                                NHOMYLENH: 'Chế độ ăn',
+                                GHICHU: '',
+                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+                        if (domSheet.care) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.care,
+                                NHOMYLENH: 'Chế độ chăm sóc',
+                                GHICHU: '',
+                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+
+                        finalYLenhList = virtualDetails.concat(yLenhList);
+                        finalTreatmentList = [virtualSheet].concat(finalYLenhList);
+                    }
+                } catch (domErr) {
+                    console.warn('[API-Bridge] fetchTreatment realtime (no rows) error:', domErr);
+                }
+
                 sendResult('FETCH_TREATMENT_RESULT', rowId, {
-                    treatmentList: yLenhList,
-                    yLenhList,
+                    treatmentList: finalTreatmentList,
+                    yLenhList: finalYLenhList,
                     treatmentContext: contextInfo
                 }, requestId);
             }
@@ -1827,6 +1955,120 @@
     }
 
     /**
+     * Trích xuất dữ liệu lâm sàng thời gian thực từ DOM Tờ điều trị Nội trú đang mở (NTU02D021_BuongDieuTri)
+     * Ưu tiên dữ liệu trực quan bác sĩ đang nhập chưa bấm Lưu.
+     */
+    function scrapeTreatmentSheetFromDOM() {
+        var marker = _findDomElement('tcDieuTritxtDIENBIENBENH');
+        if (!marker) return null;
+
+        var _val = function(id) {
+            var el = _findDomElement(id);
+            return el ? (el.value || el.textContent || '').trim() : '';
+        };
+
+        // Lấy Y lệnh thô từ CKEditor một cách an toàn thông qua tìm kiếm đệ quy
+        var yLenhRaw = '';
+        try {
+            function findCKEditor() {
+                function searchWin(w) {
+                    try {
+                        if (w.CKEDITOR && w.CKEDITOR.instances && w.CKEDITOR.instances.tcDieuTritxtYLENH) {
+                            return w.CKEDITOR.instances.tcDieuTritxtYLENH;
+                        }
+                        var frames = w.frames;
+                        for (var i = 0; i < frames.length; i++) {
+                            var found = searchWin(frames[i]);
+                            if (found) return found;
+                        }
+                    } catch (_e) {}
+                    return null;
+                }
+                return searchWin(window);
+            }
+
+            var ck = findCKEditor();
+            if (ck) {
+                yLenhRaw = ck.getData() || '';
+            } else {
+                var el = _findDomElement('tcDieuTritxtYLENH');
+                yLenhRaw = el ? (el.value || el.textContent || el.innerHTML || '') : '';
+            }
+        } catch (e) {
+            console.warn('[API-Bridge] Error reading CKEditor tcDieuTritxtYLENH:', e);
+        }
+
+        // Làm sạch mã HTML sang dạng văn bản thô để phân tích Regex
+        var textYLenh = yLenhRaw.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').trim();
+        var diet = '';
+        var care = '';
+
+        // Tách Chế độ ăn: "Chế độ ăn: BT02..." hoặc "Chế độ ăn : BT02"
+        var dietMatch = textYLenh.match(/Chế độ ăn\s*[:\-–]\s*([^\n]+)/i);
+        if (dietMatch) diet = dietMatch[1].trim();
+
+        // Tách Chế độ chăm sóc: "Chế độ chăm sóc: cấp III"
+        var careMatch = textYLenh.match(/Chế độ chăm sóc\s*[:\-–]\s*([^\n]+)/i);
+        if (careMatch) care = careMatch[1].trim();
+
+        // Lọc sạch Y lệnh khác thực sự, bỏ đi dòng Chế độ ăn và Chế độ chăm sóc
+        var lines = textYLenh.split('\n');
+        var filteredLines = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            if (line.match(/^(?:Chế độ ăn|Chế độ chăm sóc)\s*[:\-–]/i)) continue;
+            if (line.match(/^\*?Y lệnh khác\s*[:\-–]?$/i)) continue;
+            filteredLines.push(lines[i]);
+        }
+        var cleanYLenh = filteredLines.join('\n').trim();
+
+        // Chẩn đoán chính và kèm theo từ DOM
+        var chanDoanChinh = _val('tcDieuTritxtCHUANDOAN');
+        var chanDoanKemTheo = _val('tcDieuTritxtBENHKEMTHEO');
+
+        var chanDoanMoiNhat = chanDoanChinh;
+        if (chanDoanKemTheo) {
+            if (chanDoanMoiNhat) {
+                chanDoanMoiNhat += '; ' + chanDoanKemTheo;
+            } else {
+                chanDoanMoiNhat = chanDoanKemTheo;
+            }
+        }
+
+        // Lấy huyết áp từ 2 ô nhập liệu của HIS
+        var ha1 = _val('tcDieuTritxtHUYETAP1');
+        var ha2 = _val('tcDieuTritxtHUYETAP2');
+        var huyetAp = '';
+        if (ha1 || ha2) {
+            huyetAp = (ha1 || '?') + '/' + (ha2 || '?');
+        }
+
+        return {
+            dienBienBenh: _val('tcDieuTritxtDIENBIENBENH'),
+            khamToanThanTDT: _val('tcDieuTritxtTOANTHAN'),
+            khamBoPhan: _val('tcDieuTritxtKHAMBOPHAN'),
+            ketQuaCLS: _val('tcDieuTritxtKETQUACLS'),
+            huongXuLy: _val('tcDieuTritxtXULY'),
+            chanDoanMoiNhat: chanDoanMoiNhat,
+            chanDoanChinh: chanDoanChinh,
+            chanDoanKemTheo: chanDoanKemTheo,
+            yLenh: cleanYLenh || textYLenh,
+            diet: diet,
+            care: care,
+            sinhHieu: {
+                pulse: _val('tcDieuTritxtMACH'),
+                temperature: _val('tcDieuTritxtNHIETDO'),
+                bloodPressure: huyetAp,
+                respiratoryRate: _val('tcDieuTritxtNHIPTHO'),
+                weight: _val('tcDieuTritxtCANNANG'),
+                height: _val('tcDieuTritxtCHIEUCAO'),
+                spo2: _val('tcDieuTritxtSPO2')
+            }
+        };
+    }
+
+    /**
      * Fetch gộp bệnh sử (HSBA) + diễn tiến (tờ điều trị mới nhất) + sinh hiệu.
      * Dùng cho module ClinicalFill (Hội chẩn / Chuyển viện).
      * 
@@ -2236,6 +2478,46 @@
                 result.sinhHieu = vitals;
             } catch (e) {
                 console.warn('[API-Bridge] fetchClinicalSummary Vitals error:', e);
+            }
+
+            // === PHẦN 4: Ưu tiên ghi đè bằng DOM thời gian thực từ tờ điều trị đang mở (nếu có) ===
+            try {
+                var domSheet = scrapeTreatmentSheetFromDOM();
+                if (domSheet) {
+                    debugLog('[API-Bridge] fetchClinicalSummary: Ghi đè bằng dữ liệu DOM thời gian thực từ tờ điều trị đang mở');
+                    if (domSheet.dienBienBenh) result.dienBienBenh = domSheet.dienBienBenh;
+                    if (domSheet.khamToanThanTDT) result.khamToanThanTDT = domSheet.khamToanThanTDT;
+                    if (domSheet.khamBoPhan) result.khamBoPhan = domSheet.khamBoPhan;
+                    if (domSheet.ketQuaCLS) result.tomTatCLS = domSheet.ketQuaCLS;
+                    if (domSheet.huongXuLy) result.huongXuLy = domSheet.huongXuLy;
+                    if (domSheet.chanDoanMoiNhat) result.chanDoanMoiNhat = domSheet.chanDoanMoiNhat;
+
+                    // Ghi đè sinh hiệu từ DOM
+                    if (domSheet.sinhHieu) {
+                        for (var vk in domSheet.sinhHieu) {
+                            if (domSheet.sinhHieu[vk]) {
+                                result.sinhHieu[vk] = domSheet.sinhHieu[vk];
+                            }
+                        }
+                    }
+                    
+                    // Ghi nhận thêm các thông tin bóc tách đặc biệt từ tờ điều trị
+                    result.diet = domSheet.diet || '';
+                    result.care = domSheet.care || '';
+                    result.yLenhRealtime = domSheet.yLenh || '';
+
+                    // Tạo mốc thời gian ảo "Đang soạn thảo"
+                    var now = new Date();
+                    var timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                  ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                  now.getFullYear() + ' ' +
+                                  ('0' + now.getHours()).slice(-2) + ':' +
+                                  ('0' + now.getMinutes()).slice(-2) + ':' +
+                                  ('0' + now.getSeconds()).slice(-2);
+                    result.ngayToDieuTriMoiNhat = timeStr + ' (Đang soạn thảo)';
+                }
+            } catch (domErr) {
+                console.warn('[API-Bridge] fetchClinicalSummary: Lỗi ghi đè DOM thời gian thực:', domErr);
             }
 
             sendResult('FETCH_CLINICAL_SUMMARY_RESULT', effectiveRowId, result, requestId);

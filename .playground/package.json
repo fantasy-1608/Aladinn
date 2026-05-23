@@ -14,7 +14,6 @@
     "demo:rag-query": "node poc-rag/query-protocol.js"
   },
   "dependencies": {
-    "tesseract.js": "^5.1.1",
-    "orama": "^3.1.3"
+    "tesseract.js": "^5.1.1"
   }
 }

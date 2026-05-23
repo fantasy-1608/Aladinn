@@ -38,7 +38,7 @@
 
             // --- Heuristic Snooping for CDS ---
             try {
-                let payload = { patientId: null, benhnhanId: null, khambenhId: null, maBa: null, weight: null, diagnoses: [], medications: [], labs: [] };
+                let payload = { patientId: null, benhnhanId: null, khambenhId: null, maBa: null, weight: null, diagnoses: [], medications: [], labs: [], vitals: [] };
                 let hasData = false;
                 
 
@@ -151,7 +151,9 @@
                         // 3. Chẩn đoán (Diagnoses & ICD)
                         // Bắt cả mã chính và các mã phụ (thường bị ngăn cách bởi dấu phẩy)
                         let combinedIcd = '';
-                        Object.values(item).forEach(val => {
+                        const targetKeys = ['MABENH', 'MACDC', 'MA_BENH', 'ICD10', 'CHANDOAN', 'KHAMBENH_CHANDOAN'];
+                        targetKeys.forEach(key => {
+                            const val = item[key];
                             if (typeof val === 'string' && val.length >= 3) {
                                 combinedIcd += ',' + val;
                             }
@@ -174,6 +176,28 @@
                         // 4. Sinh hiệu (Vitals / Weight)
                         if (item.CANNANG && item.CANNANG !== '0') {
                             payload.weight = parseFloat(item.CANNANG);
+                            hasData = true;
+                        }
+                        
+                        // Đánh chặn API Phiếu Chăm Sóc / Đo Sinh Hiệu / Form Khám
+                        const m = item.MACH || item.KHAMBENH_MACH;
+                        const t = item.NHIETDO || item.KHAMBENH_NHIETDO;
+                        const bp = item.HUYETAP || item.KHAMBENH_HUYETAP;
+                        const b = item.NHIPTHO || item.KHAMBENH_NHIPTHO;
+                        const spo2 = item.SPO2 || item.KHAMBENH_SPO2;
+                        const h = item.CHIEUCAO || item.KHAMBENH_CHIEUCAO;
+                        const timeDo = item.NGAYTHUCHIEN || item.NGAYMAUBENHPHAM || item.NGAYYLENH || item.NGAYKHAM || '';
+                        
+                        if ((m || t || bp || b || spo2 || h) && isPatientSpecific) {
+                            payload.vitals.push({
+                                p: m ? parseFloat(m) : null,
+                                t: t ? parseFloat(t) : null,
+                                bp: bp ? String(bp) : null,
+                                b: b ? parseInt(b) : null,
+                                spo2: spo2 ? parseFloat(spo2) : null,
+                                h: h ? parseFloat(h) : null,
+                                time: timeDo
+                            });
                             hasData = true;
                         }
                     });

@@ -11,14 +11,15 @@ import { describe, it, expect } from 'vitest';
 
 // ========== Import POC modules ==========
 // AI Router
-import { containsPHI, routeDecision } from '../.playground/poc-local-llm/ai-router.js';
+import { containsPHI, routeDecision } from '../../.playground/poc-local-llm/ai-router.js';
 // RAG
-import { createProtocolDB, ingestProtocol, queryProtocol, chunkText, buildRAGPrompt, getDBStats } from '../.playground/poc-rag/rag-pipeline.js';
-import { SAMPLE_PROTOCOLS } from '../.playground/poc-rag/sample-protocols.js';
+import { createProtocolDB, ingestProtocol, queryProtocol, chunkText, buildRAGPrompt, getDBStats } from '../../.playground/poc-rag/rag-pipeline.js';
+import { SAMPLE_PROTOCOLS } from '../../.playground/poc-rag/sample-protocols.js';
 // OCR
-import { extractLabValues } from '../.playground/poc-ocr/ocr-engine.js';
+import { extractLabValues } from '../../.playground/poc-ocr/ocr-engine.js';
 // Voice
-import { postProcessSpeech, simulateVoiceInput } from '../.playground/poc-voice/voice-engine.js';
+import { postProcessSpeech, simulateVoiceInput } from '../../.playground/poc-voice/voice-engine.js';
+
 
 
 // ═══════════════════════════════════════════

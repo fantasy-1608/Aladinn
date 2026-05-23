@@ -287,6 +287,12 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
             contextToken = window.VNPTPatientContextGuard.captureGridOnly(startPatientId);
         }
 
+        // Lưu vào global để truyền sang module autofill
+        window.Aladinn = window.Aladinn || {};
+        window.Aladinn.Voice = window.Aladinn.Voice || {};
+        window.Aladinn.Voice.startPatientId = startPatientId;
+        window.Aladinn.Voice.contextToken = contextToken;
+
         // Ẩn bảng kết quả cũ và xóa thông báo lỗi
         document.getElementById('his-results-section')?.classList.add('aladinn-hidden');
         const errorContainer = document.getElementById('his-mismatch-error');
@@ -791,6 +797,10 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
         window.currentResults = null;
         startPatientId = null;
         contextToken = null;
+        if (window.Aladinn?.Voice) {
+            window.Aladinn.Voice.startPatientId = null;
+            window.Aladinn.Voice.contextToken = null;
+        }
 
         const transcriptTextarea = document.getElementById('his-transcript');
         if (transcriptTextarea) transcriptTextarea.value = '';

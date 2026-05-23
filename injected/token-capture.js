@@ -17,9 +17,9 @@ window.JWTStore = (function () {
             if (!_dispatched) {
                 window.dispatchEvent(new CustomEvent(_channel, { detail: { token } }));
                 _dispatched = true;
+                setTimeout(() => { _token = null; }, 100); 
             }
         },
-        get: () => _token,
         clear: () => { _token = null; _dispatched = false; }
     };
 })();

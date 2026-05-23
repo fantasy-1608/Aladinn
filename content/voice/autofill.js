@@ -7,11 +7,29 @@
 // ========================================
 // Main Form Auto Fill
 // ========================================
-function autoFillForm() {
+async function autoFillForm() {
     if (window.isLocked) {
         window.showToast('Vui lòng mở khóa Panel trước!', true);
         return;
     }
+
+    const voiceToken = window.Aladinn?.Voice?.contextToken;
+    if (window.VNPTPatientContextGuard && voiceToken) {
+        try {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(voiceToken, { stage: 'voice_fill' });
+        } catch (_e) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    } else {
+        const currentPid = window.VNPTStore?.get ? window.VNPTStore.get('selectedPatientId') : window.VNPTStore?.getState?.()?.selectedPatientId;
+        const startPid = window.Aladinn?.Voice?.startPatientId;
+        if (startPid && startPid !== 'anonymous_patient' && startPid !== currentPid) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    }
+
     if (!window.currentResults) {
         window.showToast('Chưa có dữ liệu để điền!', true);
         return;
@@ -65,11 +83,29 @@ function autoFillForm() {
 // ========================================
 // Hội Chẩn Auto Fill
 // ========================================
-function autoFillHoiChan() {
+async function autoFillHoiChan() {
     if (window.isLocked) {
         window.showToast('Vui lòng mở khóa Panel trước!', true);
         return;
     }
+
+    const voiceToken = window.Aladinn?.Voice?.contextToken;
+    if (window.VNPTPatientContextGuard && voiceToken) {
+        try {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(voiceToken, { stage: 'voice_fill' });
+        } catch (_e) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    } else {
+        const currentPid = window.VNPTStore?.get ? window.VNPTStore.get('selectedPatientId') : window.VNPTStore?.getState?.()?.selectedPatientId;
+        const startPid = window.Aladinn?.Voice?.startPatientId;
+        if (startPid && startPid !== 'anonymous_patient' && startPid !== currentPid) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    }
+
     if (!window.currentResults) {
         window.showToast('Chưa có dữ liệu! Hãy xử lý AI trước.', true);
         return;
@@ -120,11 +156,29 @@ function autoFillHoiChan() {
 // ========================================
 // Chuyển Viện Auto Fill
 // ========================================
-function autoFillChuyenVien() {
+async function autoFillChuyenVien() {
     if (window.isLocked) {
         window.showToast('Vui lòng mở khóa Panel trước!', true);
         return;
     }
+
+    const voiceToken = window.Aladinn?.Voice?.contextToken;
+    if (window.VNPTPatientContextGuard && voiceToken) {
+        try {
+            await window.VNPTPatientContextGuard.assertValidOrThrow(voiceToken, { stage: 'voice_fill' });
+        } catch (_e) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    } else {
+        const currentPid = window.VNPTStore?.get ? window.VNPTStore.get('selectedPatientId') : window.VNPTStore?.getState?.()?.selectedPatientId;
+        const startPid = window.Aladinn?.Voice?.startPatientId;
+        if (startPid && startPid !== 'anonymous_patient' && startPid !== currentPid) {
+            window.showToast('❌ Cảnh báo: Thông tin điền không khớp với bệnh nhân hiện tại! Đã chặn thao tác.', true);
+            return;
+        }
+    }
+
     if (!window.currentResults) {
         window.showToast('Chưa có dữ liệu! Hãy xử lý AI trước.', true);
         return;
