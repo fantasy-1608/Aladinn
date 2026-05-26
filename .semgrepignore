@@ -1,0 +1,9 @@
+# Exclude build output and dependencies from static analysis
+dist/
+dist-zip/
+node_modules/
+coverage/
+.playground/
+.agents/
+*.cjs
+*.html
