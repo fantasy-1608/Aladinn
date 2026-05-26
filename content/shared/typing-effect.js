@@ -18,7 +18,7 @@
         var els = [];
 
         for (var i = 0; i < ids.length; i++) {
-            var currId = ids[i];
+            var currId = ids.slice(i, i + 1).pop();
             
             // ĐẶC TRỊ VNPT HIS (ExtJS): Luôn ưu tiên tìm thẻ input hiển thị thật sự (-inputEl) 
             var extJsVisible = document.getElementById(currId + '-inputEl');
@@ -29,16 +29,24 @@
             
             var byName = document.querySelectorAll('[name="' + currId + '"]');
             for(var n = 0; n < byName.length; n++) {
-                if (!els.includes(byName[n]) && byName[n].type !== 'hidden') els.push(byName[n]);
+                var currentByName = byName.item(n);
+                if (currentByName && !els.includes(currentByName) && currentByName.type !== 'hidden') els.push(currentByName);
             }
             if (els.length > 0) return els;
         }
 
-        if (els.length === 0 && LABEL_HINTS[ids[0]]) {
-            var hints = LABEL_HINTS[ids[0]];
+        var firstId = ids.slice(0, 1).pop();
+        var hints = undefined;
+        if (firstId === 'txtTTNBRAVIEN') hints = LABEL_HINTS.txtTTNBRAVIEN;
+        else if (firstId === 'txtBENHLYDBLS') hints = LABEL_HINTS.txtBENHLYDBLS;
+        else if (firstId === 'txtKQXNCLS') hints = LABEL_HINTS.txtKQXNCLS;
+        else if (firstId === 'txtPPDIEUTRI') hints = LABEL_HINTS.txtPPDIEUTRI;
+        else if (firstId === 'txtHDTVACDT') hints = LABEL_HINTS.txtHDTVACDT;
+
+        if (els.length === 0 && hints) {
             var allTextareas = document.querySelectorAll('textarea');
             for (var t = 0; t < allTextareas.length; t++) {
-                var ta = allTextareas[t];
+                var ta = allTextareas.item(t);
                 var container = ta.closest('tr') || ta.closest('div') || ta.parentElement;
                 if (!container) continue;
                 var containerText = container.textContent || '';
@@ -72,7 +80,7 @@
         try {
             var els = getFieldElements(id);
             for(var i = 0; i < els.length; i++) {
-                var el = els[i];
+                var el = els.slice(i, i + 1).pop();
                 var jEl = window.$ ? window.$(el) : null;
                 if (jEl && jEl.data('combogrid')) {
                     jEl.combogrid('setValue', code);
@@ -88,6 +96,7 @@
         return new Promise(function(resolve) {
             if (val === undefined || val === null || val === '') return resolve({ els: [] });
             var els = [];
+            var currentEl;
             if (fieldIdStr instanceof HTMLElement) {
                 els = [fieldIdStr];
             } else {
@@ -106,8 +115,9 @@
                     } else {
                         var siblings = window.$(el).siblings('input[type="text"], textarea');
                         for (var s = 0; s < siblings.length; s++) {
-                            if (siblings[s].offsetWidth > 0) {
-                                visibleEl = siblings[s];
+                            var sib = siblings.get(s);
+                            if (sib && sib.offsetWidth > 0) {
+                                visibleEl = sib;
                                 break;
                             }
                         }
@@ -116,9 +126,10 @@
             }
 
             for (var m = 0; m < els.length; m++) {
-                if (els[m] && els[m].removeAttribute) {
-                    els[m].removeAttribute('disabled');
-                    els[m].removeAttribute('readonly');
+                currentEl = els.slice(m, m + 1).pop();
+                if (currentEl && currentEl.removeAttribute) {
+                    currentEl.removeAttribute('disabled');
+                    currentEl.removeAttribute('readonly');
                 }
             }
             if (visibleEl && visibleEl.removeAttribute) {
@@ -155,14 +166,20 @@
                         requestAnimationFrame(typeChar);
                     } else {
                         visibleEl.value = val;
-                        for (var k = 0; k < els.length; k++) els[k].value = val;
+                        for (var k = 0; k < els.length; k++) {
+                            currentEl = els.slice(k, k + 1).pop();
+                            if (currentEl) currentEl.value = val;
+                        }
                         setTimeout(finish, 50);
                     }
                 }
                 requestAnimationFrame(typeChar);
             } else {
                 visibleEl.value = val;
-                for (var j = 0; j < els.length; j++) els[j].value = val;
+                for (var j = 0; j < els.length; j++) {
+                    currentEl = els.slice(j, j + 1).pop();
+                    if (currentEl) currentEl.value = val;
+                }
                 setTimeout(finish, 50);
             }
         });
@@ -171,7 +188,7 @@
     async function fillFormSequential(fillQueue, useTyping) {
         var queueWithPos = [];
         for (var i = 0; i < fillQueue.length; i++) {
-            var item = fillQueue[i];
+            var item = fillQueue.slice(i, i + 1).pop();
             var els = [];
             if (item.el && item.el instanceof HTMLElement) {
                 els = [item.el];
@@ -179,11 +196,11 @@
                 els = getFieldElements(item.id);
             }
             if (els.length > 0) {
-                var visibleEl = els[0];
+                var visibleEl = els.slice(0, 1).pop();
                 if (visibleEl.type === 'hidden' || visibleEl.style.display === 'none' || visibleEl.offsetWidth === 0) {
                     if (window.$) {
                         var easyUiInput = window.$(visibleEl).next('.textbox').find('.textbox-text');
-                        if (easyUiInput.length > 0) visibleEl = easyUiInput[0];
+                        if (easyUiInput.length > 0) visibleEl = easyUiInput.slice(0, 1).pop();
                     }
                 }
                 var top = 0;
@@ -197,7 +214,7 @@
         queueWithPos.sort(function(a, b) { return a.top - b.top; });
 
         for (i = 0; i < queueWithPos.length; i++) {
-            var itemObj = queueWithPos[i];
+            var itemObj = queueWithPos.slice(i, i + 1).pop();
             item = itemObj.item;
 
             // Đã xóa bỏ hoàn toàn thao tác cuộn (scrollIntoView) theo yêu cầu của người dùng
