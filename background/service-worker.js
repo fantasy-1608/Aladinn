@@ -437,10 +437,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (action === 'disableAutoSign') {
-        if (!message.sessionId || message.sessionId !== globalThis._currentSignSessionId) {
-            sendResponse({ ok: false, error: 'SESSION_MISMATCH' });
-            return false;
-        }
         autoSignEnabled = false;
         globalThis._currentSignSessionId = null;
         AuditEvents.autosignStopped('manual');

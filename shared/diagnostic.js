@@ -15,6 +15,14 @@ class HISDiagnostic {
     static async logError(error, actionName = 'UNKNOWN_ACTION', source = 'ALADINN_BUG') {
         const timestamp = new Date().toISOString();
         
+        let errMsg = error?.message || String(error);
+        let errStack = error?.stack ? error.stack.split('\n').slice(0, 3).join('\n') : '';
+
+        if (window.HIS && window.HIS.Logger && window.HIS.Logger.sanitize) {
+            errMsg = window.HIS.Logger.sanitize(errMsg);
+            errStack = window.HIS.Logger.sanitize(errStack);
+        }
+
         // Chỉ lưu thông tin kỹ thuật, TUYỆT ĐỐI không lưu phiển bản raw data
         const safeLog = {
             id: `err-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -22,8 +30,8 @@ class HISDiagnostic {
             action: actionName,
             source, // 'VNPT_UI_CHANGE', 'ALADINN_BUG', 'NETWORK_CHANGE'
             errorName: error?.name || 'UnknownError',
-            errorMessage: error?.message || String(error),
-            stack: error?.stack ? error.stack.split('\n').slice(0, 3).join('\n') : ''
+            errorMessage: errMsg,
+            stack: errStack
         };
 
         return new Promise((resolve) => {

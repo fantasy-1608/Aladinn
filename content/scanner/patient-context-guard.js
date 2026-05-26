@@ -69,6 +69,15 @@ window.VNPTPatientContextGuard = (function () {
              return false;
         }
 
+        if (typeof currentPid === 'string') {
+            if (currentPid.startsWith('TEMP_')) {
+                console.warn('[ContextGuard] TEMP_ context blocked');
+                return false;
+            }
+        } else {
+            return false;
+        }
+
         return true;
     }
 

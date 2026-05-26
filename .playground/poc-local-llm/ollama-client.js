@@ -163,7 +163,7 @@ export async function queryLocalLLM({
   } catch (err) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') {
-      throw new Error('[Ollama] Request bị hủy hoặc timeout');
+      throw new Error('[Ollama] Request bị hủy hoặc timeout', { cause: err });
     }
     throw err;
   }

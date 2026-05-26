@@ -7,7 +7,21 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
-## [2.0.0] — 2026-05-21
+## [2.0.6] — 2026-05-26
+
+### 🛠️ Bản vá tích hợp API CLS (Hospital Safe Mode - API Bridge Update)
+
+- **Vá lỗi truy vấn TraCuuKetQuaHDG**: Chuyển đổi cuộc gọi API từ màn hình `TraCuuKetQuaHDG` cũ (bị lỗi cú pháp và thiếu tham số) sang Store Procedure chính thức **`GET_DV_KQ_CLS_HDG`** chạy qua cỗ máy jabsorb gốc của HIS (**`dbCALL_SP_R`**).
+- **Mô hình Dự phòng Tuần tự Tách biệt (Split Sequential Fallback Strategy)**: 
+  - Khắc phục lỗi hiển thị **XN (0)** khi bệnh nhân có cả Xét nghiệm (XN) và Chẩn đoán hình ảnh (CĐHA) nhưng XN bị lệch ID từ API mới còn CĐHA chạy thành công.
+  - Tách biệt hoàn toàn luồng xử lý XN và CĐHA độc lập nhau. Luồng nào trống dữ liệu chi tiết khi lấy từ API mới sẽ tự động kích hoạt fallback tuần tự sang cách cũ (`NT.024.DSPHIEU` + `NT.024.2`) mà không gây ảnh hưởng tới luồng còn lại.
+  - Đảm bảo tối ưu hóa tài nguyên máy chủ 100% bằng cách chỉ fallback khi thực sự cần thiết đối với từng loại dịch vụ cụ thể.
+- **Tuân thủ Eslint & E2E Tests**: Hoàn tất 319 ca kiểm thử (100% Passed) và vượt qua kiểm tra cú pháp khắt khe của eslint không có bất kỳ lỗi nào.
+
+### 🛡️ Bản vá Bảo mật & Context Guard (Safety & Context Guard Patch)
+
+- **Sửa lỗi chặn điền bệnh án ngoại khoa (ContextGuard)**: Loại bỏ kiểm tra định dạng ID chứa dấu gạch dưới (`_`) trong `patient-context-guard.js`. VNPT HIS nội trú sử dụng số thứ tự dòng dạng chuỗi đơn thuần (ví dụ: `'3'`, `'16'`) làm `rowId` thay vì composite key, do đó việc bắt buộc chứa `_` đã vô tình chặn đứng các thao tác điền form. Cơ chế bảo vệ vẫn hoạt động an toàn tuyệt đối nhờ so khớp `initialSelectedPatientId` và chặn hồ sơ tạm `TEMP_`.
+- **Sửa lỗi định dạng thời gian "Ra khoa lúc" khi điền Xử trí**: Loại bỏ đuôi nhãn ảo ` (Đang soạn thảo)` khỏi chuỗi thời gian khi tự động điền vào datepicker của HIS. Aladinn tạo nhãn `(Đang soạn thảo)` cho các tờ điều trị thời gian thực chưa lưu để bác sĩ nhận biết, nhưng việc đưa nhãn text này vào ô ngày giờ của HIS gây lỗi hiển thị và xử lý ngày tháng. Chuỗi hiện được làm sạch thành định dạng chuẩn 100% trước khi điền vào datepicker, trong khi nhãn hiển thị trên Aladinn Clinical Overview vẫn được giữ nguyên để bác sĩ tham chiếu.
 
 ### ✨ Tính năng mới & Cải tiến Lâm sàng Vượt trội (Aladinn Clinical OS Upgrade)
 
@@ -32,6 +46,16 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 - **Hộp Kính Mờ Thương Hiệu (Glassmorphic Capsule):** Khắc phục lỗi tương phản màu chữ bằng việc tạo một hộp kính mờ sang trọng bao quanh tên Bác sĩ, với viền gradient phát sáng neon và màu chữ trắng tinh khiết nổi bật 100%.
 - **Biểu tượng lai Aladinn x Gemini Intelligent Động:** Tích hợp logo Đèn Thần Gold lấp lánh kết hợp làn khói ma thuật uốn lượn bay ra 2 ngôi sao Gemini lấp lánh (một to phập phồng tự xoay chậm, một nhỏ nhấp nháy lấp lánh lệch pha cực đẹp).
 - **Chữ thương hiệu SHIMMER:** Bổ sung dòng chữ nhỏ "ALADINN" màu vàng Gold lấp lánh (shimmer effect) ngay trước tên Bác sĩ, khẳng định rõ trạng thái hoạt động của hệ điều hành lâm sàng.
+
+### 🛡️ Safety Patch (Hospital Safe Mode - R1 to R12)
+
+- **Vô hiệu hóa Retry AJAX:** Chuyển `ajax-interceptor.js` thành bộ lắng nghe thụ động. Không gửi lại request HIS khi có lỗi, ngăn chặn rủi ro vòng lặp vô hạn.
+- **Manual Safe Sign:** Tắt tính năng tự động bấm "Đồng ý" khi ký số. Yêu cầu bác sĩ trực tiếp xác nhận thao tác ký cuối cùng.
+- **Fail-Safe Remote Config:** Mặc định vô hiệu hóa mọi tính năng tự động (autoClick, autoSign) khi mất kết nối Internet, chỉ cho phép Scanner hoạt động ở chế độ đọc.
+- **On-Demand Auto-fill:** Typing-effect chỉ được inject và giải phóng thuộc tính readonly khi bác sĩ chủ động ấn nút "Điền vào form". Khôi phục trạng thái ban đầu ngay sau khi hoàn tất.
+- **Patient Context Guard:** Chặn hoàn toàn các thao tác ghi (ký số/điền form) đối với hồ sơ tạm (`TEMP_`) hoặc khi phát hiện lệch `benhnhanId` / `khambenhId` giữa bộ nhớ đệm và giao diện gốc.
+- **Safe Logging (PHI-free):** Ẩn toàn bộ thông tin nhạy cảm (Tên, BHYT, CCCD, mã BN) trong log thành `[REDACTED]`.
+- **API Bridge Hardening:** Chỉ cho phép các API intent đọc (`READ_ONLY_INTENTS`). Vô hiệu hóa tính năng in phiếu PTTT từ xa, áp dụng giới hạn request chống quá tải HIS.
 
 ---
 

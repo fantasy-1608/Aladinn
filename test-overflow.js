@@ -1,3 +1,4 @@
+/* global global */
 import { JSDOM } from 'jsdom';
 import { createSparklineElement } from './content/scanner/sparkline.js';
 

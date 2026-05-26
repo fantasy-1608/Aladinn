@@ -1,28 +1,40 @@
-# Hướng dẫn Rollback Khẩn cấp (Emergency Rollback)
+# Hướng dẫn Khôi phục (Rollback Guide) Aladinn V2 - Dành cho Phòng CNTT
 
-Nếu phiên bản Pilot gây lỗi nghiêm trọng (block công việc chuyên môn), người dùng hoặc IT cần thực hiện các bước sau để quay về phiên bản ổn định gần nhất.
+Tài liệu này hướng dẫn cách vô hiệu hóa tạm thời hoặc gỡ bỏ hoàn toàn bản cập nhật Aladinn V2 nếu phát hiện sự cố ảnh hưởng đến phần mềm VNPT HIS.
 
-## 1. Rollback Extension
+## 1. Phương án Vô hiệu hóa khẩn cấp bằng Cấu hình từ xa (Remote Switch)
+Nếu Bệnh viện đang sử dụng hệ thống quản lý tập trung qua file JSON cấu hình:
+1. Mở file quản lý cấu hình từ xa (`remote-config.json`).
+2. Thay đổi toàn bộ các tham số thành `false`:
+   ```json
+   {
+     "scanner": false,
+     "autoSign": false,
+     "autoClick": false,
+     "aiVoice": false,
+     "cdsEngine": false
+   }
+   ```
+3. Thông báo Bác sĩ **F5 (Tải lại trang)** HIS. Aladinn sẽ tự động nhận cấu hình mới và "ngủ đông" hoàn toàn, không can thiệp bất kỳ script nào vào trang web.
 
-1. Truy cập `chrome://extensions/`.
-2. Gạt công tắc tắt (Disable) hoặc Xóa (Remove) extension "Aladinn" phiên bản Pilot (ví dụ `v1.2.4`).
-3. Tải và giải nén phiên bản ổn định cũ (vd: `v1.2.0`). IT Department luôn cung cấp song song file ZIP bản Stable.
-4. Chọn **Load unpacked** và trỏ vào thư mục phiên bản cũ.
-5. F5 tải lại trang VNPT HIS.
+## 2. Phương án Khóa qua Google Admin (Đối với mạng diện rộng)
+Trường hợp bệnh viện quản lý Chrome bằng Google Workspace / Chrome Enterprise:
+1. Đăng nhập vào Admin Console.
+2. Điều hướng đến **Devices > Chrome > Apps & extensions > Users & browsers**.
+3. Chọn ứng dụng Aladinn từ danh sách cài đặt bắt buộc (Force-installed).
+4. Chuyển trạng thái sang **Block (Chặn)** hoặc xóa khỏi danh sách.
+5. Cập nhật chính sách (Force policy update) trên máy trạm của Bác sĩ.
 
-## 2. Remote Kill Switch (Cho phía IT)
+## 3. Phương án Gỡ cài đặt thủ công tại máy trạm
+Nếu gặp sự cố trực tiếp trên 1 máy tính cụ thể:
+1. Mở Chrome, gõ vào thanh địa chỉ: `chrome://extensions/`.
+2. Tìm đến tiện ích **Aladinn V2**.
+3. Gạt nút màu xanh sang trái để **TẮT (Disable)** tiện ích.
+4. (Hoặc) Nhấn nút **Xóa (Remove)** để gỡ bỏ hoàn toàn.
+5. Khởi động lại trình duyệt Chrome và đăng nhập lại vào VNPT HIS.
 
-Nếu phát hiện lỗi hệ thống trên diện rộng do Auto-Sign, CDS hoặc AI:
-
-1. IT Admin sửa đổi file `remote-config.json` trên nhánh main của GitHub:
-   - Chuyển `autoSign.enabled: false`
-   - Hoặc `cds.enabled: false`
-   - Hoặc đổi `minimumVersion: "9.9.9"` để buộc toàn bộ extension client ngưng hoạt động cho đến khi cập nhật.
-2. Hệ thống sẽ tự động tắt các module nguy hiểm trong vòng tối đa 15-30 phút mà không cần người dùng tự gỡ cài đặt.
-
-## 3. Xóa bộ nhớ đệm (Cache)
-
-Nếu lỗi liên quan đến lưu trữ sai lệch:
-
-1. Đăng xuất khỏi HIS (Extension sẽ tự động gọi purge data).
-2. Hoặc mở `chrome://settings/clearBrowserData`, chọn mục **Cookies and other site data** và **Cached images and files**.
+## 4. Báo cáo sự cố về Đội phát triển
+Nếu phải sử dụng phương án Rollback, vui lòng thu thập:
+1. **Lỗi hiển thị trên màn hình:** Chụp ảnh màn hình bị kẹt hoặc báo lỗi đỏ trên HIS.
+2. **Log Console:** Bấm `F12`, chuyển sang tab `Console`, click chuột phải chọn "Save as..." để lưu lại thông báo lỗi. Log này hoàn toàn an toàn và đã được loại bỏ thông tin bệnh nhân.
+3. Gửi thông tin về cho đội ngũ hỗ trợ kỹ thuật Aladinn để phân tích và khắc phục trong bản vá kế tiếp.

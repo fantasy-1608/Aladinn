@@ -114,8 +114,8 @@
                         visibleEl = easyUiInput[0];
                     } else {
                         var siblings = window.$(el).siblings('input[type="text"], textarea');
-                        for (var s = 0; s < siblings.length; s++) {
-                            var sib = siblings.get(s);
+                        for (var sibIdx = 0; sibIdx < siblings.length; sibIdx++) {
+                            var sib = siblings.get(sibIdx);
                             if (sib && sib.offsetWidth > 0) {
                                 visibleEl = sib;
                                 break;
@@ -125,14 +125,36 @@
                 }
             }
 
+            var originalStates = [];
+            var ALLOWLIST = ['txtTTNBRAVIEN', 'txtBENHLYDBLS', 'txtKQXNCLS', 'txtPPDIEUTRI', 'txtHDTVACDT'];
+            function isAllowed(element) {
+                if (!element) return false;
+                if (element.id && ALLOWLIST.includes(element.id)) return true;
+                if (element.name && ALLOWLIST.includes(element.name)) return true;
+                // Also allow if it's the inputEl corresponding to the ExtJS id
+                if (element.id && element.id.endsWith('-inputEl')) {
+                    var baseId = element.id.replace('-inputEl', '');
+                    if (ALLOWLIST.includes(baseId)) return true;
+                }
+                return false;
+            }
+
             for (var m = 0; m < els.length; m++) {
                 currentEl = els.slice(m, m + 1).pop();
-                if (currentEl && currentEl.removeAttribute) {
+                if (currentEl && currentEl.removeAttribute && isAllowed(currentEl)) {
+                    originalStates.push({ el: currentEl, disabled: currentEl.hasAttribute('disabled'), readonly: currentEl.hasAttribute('readonly') });
                     currentEl.removeAttribute('disabled');
                     currentEl.removeAttribute('readonly');
                 }
             }
-            if (visibleEl && visibleEl.removeAttribute) {
+            if (visibleEl && visibleEl.removeAttribute && isAllowed(visibleEl)) {
+                var found = false;
+                for (var stIdx = 0; stIdx < originalStates.length; stIdx++) {
+                    if (originalStates[stIdx].el === visibleEl) found = true;
+                }
+                if (!found) {
+                    originalStates.push({ el: visibleEl, disabled: visibleEl.hasAttribute('disabled'), readonly: visibleEl.hasAttribute('readonly') });
+                }
                 visibleEl.removeAttribute('disabled');
                 visibleEl.removeAttribute('readonly');
             }
@@ -145,6 +167,13 @@
             var finish = function() {
                 visibleEl.style.backgroundColor = originalBg;
                 setTimeout(function() { visibleEl.style.transition = originalTransition; }, 300);
+                
+                for (var stIdx2 = 0; stIdx2 < originalStates.length; stIdx2++) {
+                    var st = originalStates[stIdx2];
+                    if (st.disabled) st.el.setAttribute('disabled', 'disabled');
+                    if (st.readonly) st.el.setAttribute('readonly', 'readonly');
+                }
+
                 resolve({ els: els, val: val, visibleEl: visibleEl });
             };
 

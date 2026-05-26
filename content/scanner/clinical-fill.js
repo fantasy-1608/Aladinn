@@ -687,10 +687,14 @@ const VNPTClinicalFill = (function () {
 
     function buildXuTriData(raw) {
         const parsed = parseICD(raw.chanDoanMoiNhat) || {};
+        let ngayRa = raw.ngayToDieuTriMoiNhat || '';
+        if (ngayRa) {
+            ngayRa = ngayRa.replace(/\s*\(Đang\s+soạn\s+thảo\)/gi, '').trim();
+        }
         return {
             mainDiag: parsed.mainDiag || { code: '', text: '' },
             subDiag: parsed.subDiag || { code: '', text: '' },
-            ngayRaKhoa: raw.ngayToDieuTriMoiNhat || ''
+            ngayRaKhoa: ngayRa
         };
     }
 

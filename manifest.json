@@ -82,7 +82,6 @@
             ],
             "js": [
                 "content/shared/self-healing.js",
-                "content/shared/typing-effect.js",
                 "content/scanner/history-iframe-helper.js",
                 "content/scanner/nutrition-iframe-helper.js",
                 "content/scanner/emergency-iframe-helper.js",
@@ -91,20 +90,6 @@
                 "content/scanner/discharge-iframe-helper.js",
                 "content/scanner/nhapbenhnhan-iframe-helper.js",
                 "content/cds/cds-iframe-helper.js"
-            ],
-            "run_at": "document_end",
-            "all_frames": true
-        },
-        {
-            "matches": [
-                "https://*.vncare.vn/*"
-            ],
-            "exclude_matches": [
-                "*://*.vncare.vn/*/jasper/*",
-                "*://*.vncare.vn/**/*.pdf"
-            ],
-            "js": [
-                "content/sign/auto-click-helper.js"
             ],
             "run_at": "document_end",
             "all_frames": true

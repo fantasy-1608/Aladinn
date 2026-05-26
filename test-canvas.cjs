@@ -1,3 +1,4 @@
+/* global require */
 const { createCanvas } = require('canvas');
 
 try {

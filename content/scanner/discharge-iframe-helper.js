@@ -114,6 +114,7 @@
             // 3. Điền Ra Khoa Lúc (Datepicker / Text)
             // ==========================================
             if (data.ngayRaKhoa) {
+                var cleanDate = data.ngayRaKhoa.replace(/\s*\(Đang\s+soạn\s+thảo\)/gi, '').trim();
                 var dpFilled = false;
                 
                 var dpEls = [];
@@ -122,7 +123,7 @@
                 }
                 if (dpEls.length > 0) {
                     for (var i = 0; i < dpEls.length; i++) {
-                        if (setDatepickerVal(dpEls[i], data.ngayRaKhoa)) {
+                        if (setDatepickerVal(dpEls[i], cleanDate)) {
                             dpFilled = true;
                         }
                     }
@@ -133,7 +134,7 @@
                     var fallbackEl = findDatepickerByLabel();
                     if (fallbackEl) {
                         console.log('[XuTri Iframe] Tìm thấy datepicker qua nhãn "Ra khoa lúc"');
-                        dpFilled = setDatepickerVal(fallbackEl, data.ngayRaKhoa);
+                        dpFilled = setDatepickerVal(fallbackEl, cleanDate);
                     }
                 }
 

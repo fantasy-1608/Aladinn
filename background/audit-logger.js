@@ -23,13 +23,49 @@ function openAuditDB() {
     });
 }
 
+const SENSITIVE_KEYS = new Set([
+    'HOTENBENTHAN', 'HOTEN', 'TEN_BENHNHAN', 'patientName', 'TENBENHNHAN',
+    'SOBHYT', 'SOTHE', 'SOCMND', 'SOCCCD', 'DIENTHOAI', 'DIACHI',
+    'apiKey', 'geminiApiKey', 'api_key', 'pin', 'password',
+    'cookie', 'session', 'jwt', 'token', 'patientId', 'phi'
+]);
+
+function _sanitizeString(text) {
+    if (typeof text !== 'string') return text;
+    text = text.replace(/AIza[A-Za-z0-9_-]{30,}/g, '[API_KEY]');
+    text = text.replace(/[A-Z]{2}\d{13}/g, '[BHYT]');
+    text = text.replace(/\b\d{12}\b/g, '[CCCD]');
+    text = text.replace(/\b\d{9}\b/g, '[CMND]');
+    text = text.replace(/(?:0|\+84)\d{9,10}/g, '[PHONE]');
+    text = text.replace(/(cookie|session|jwt|token)[=:]\s*[A-Za-z0-9._-]{20,}/gi, '$1=[TOKEN]');
+    return text;
+}
+
+function _sanitizeObject(obj) {
+    if (Array.isArray(obj)) {
+        return obj.map(item => _sanitizeObject(item));
+    }
+    if (obj && typeof obj === 'object') {
+        const clone = {};
+        for (const key of Object.keys(obj)) {
+            if (SENSITIVE_KEYS.has(key)) {
+                clone[key] = '[REDACTED]';
+            } else if (typeof obj[key] === 'string') {
+                clone[key] = _sanitizeString(obj[key]);
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                clone[key] = _sanitizeObject(obj[key]);
+            } else {
+                clone[key] = obj[key];
+            }
+        }
+        return clone;
+    }
+    return obj;
+}
+
 export async function logAudit(type, details = {}) {
     try {
-        // SAFETY: Cấm log bất cứ field nào tên là name, patient, id chứa PHI
-        const safeDetails = { ...details };
-        delete safeDetails.patientName;
-        delete safeDetails.patientId;
-        delete safeDetails.phi;
+        const safeDetails = _sanitizeObject(details);
         
         const record = {
             timestamp: new Date().toISOString(),

@@ -110,19 +110,19 @@ HIS.Logger = (() => {
     // ========================================
 
     function info(module, ...args) {
-        console.log(`%c${_getPrefix()}[${module}]`, _style('#3b82f6'), ...args);
+        console.log(`%c${_getPrefix()}[${module}]`, _style('#3b82f6'), ...args.map(sanitize));
     }
 
     function success(module, ...args) {
-        console.log(`%c${_getPrefix()}[${module}]`, _style('#10b981'), ...args);
+        console.log(`%c${_getPrefix()}[${module}]`, _style('#10b981'), ...args.map(sanitize));
     }
 
     function warn(module, ...args) {
-        console.warn(`%c${_getPrefix()}[${module}]`, _style('#f59e0b'), ...args);
+        console.warn(`%c${_getPrefix()}[${module}]`, _style('#f59e0b'), ...args.map(sanitize));
     }
 
     function error(module, ...args) {
-        console.error(`%c${_getPrefix()}[${module}]`, _style('#ef4444'), ...args);
+        console.error(`%c${_getPrefix()}[${module}]`, _style('#ef4444'), ...args.map(sanitize));
     }
 
     /**
@@ -131,7 +131,7 @@ HIS.Logger = (() => {
      */
     function debug(module, ...args) {
         if (!_debugMode) return;
-        console.debug(`%c${_getPrefix()}[${module}]`, _style('#8b5cf6'), ...args);
+        console.debug(`%c${_getPrefix()}[${module}]`, _style('#8b5cf6'), ...args.map(sanitize));
     }
 
     function group(module, label) {

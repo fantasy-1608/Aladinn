@@ -10,15 +10,10 @@
     if (!_$ || !_$.ajax) return;
 
     const originalAjax = _$.ajax;
-    const RETRY_CONFIG = {
-        maxRetries: 3,
-        baseDelayMs: 500
-    };
 
     _$.ajax = function (options) {
         const success = options.success;
         const error = options.error;
-        const currentAttempt = options._vnptRetryAttempt || 0;
 
         // 1. Token Capture
         if (options.data) {
@@ -214,17 +209,7 @@
         };
 
         options.error = function (jqXHR, textStatus, _errorThrown) {
-            const shouldRetry = (textStatus === 'timeout' || textStatus === 'error' || jqXHR.status >= 500);
-            if (shouldRetry && currentAttempt < RETRY_CONFIG.maxRetries) {
-                const delay = RETRY_CONFIG.baseDelayMs * Math.pow(2, currentAttempt);
-                setTimeout(() => {
-                    const retryOptions = _$.extend(true, {}, options);
-                    retryOptions._vnptRetryAttempt = currentAttempt + 1;
-                    originalAjax.call(_$, retryOptions);
-                }, delay);
-            } else {
-                if (error) error.apply(this, arguments);
-            }
+            if (error) error.apply(this, arguments);
         };
 
         try {

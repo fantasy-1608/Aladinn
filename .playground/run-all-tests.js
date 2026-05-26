@@ -1,3 +1,4 @@
+/* global process */
 /**
  * 🧞 Aladinn v2 — Bộ Test Tự Động (Zero Dependencies)
  * 

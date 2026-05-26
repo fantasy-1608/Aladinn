@@ -27,17 +27,19 @@ const REMOTE_CONFIG = {
     storageKey: 'aladinn_remote_config'
 };
 
-// Giá trị mặc định (fail-open: mọi thứ đều BẬT)
+// Giá trị mặc định (fail-safe: tắt module rủi ro)
 const DEFAULT_CONFIG = {
     version: 0,
     features: {
-        autoSign: true,
-        cdsEngine: true,
-        aiVoice: true,
+        autoSign: false,
+        autoClick: false,
+        signSearch: true,
+        cdsEngine: false,
+        aiVoice: false,
         scanner: true,
         enableSmartPath: false
     },
-    mode: 'full_mode',
+    mode: 'safe_mode',
     emergencyMessage: '',
     _fetchedAt: 0,
     _source: 'default'
