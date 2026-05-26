@@ -944,6 +944,16 @@ const VNPTHistory = (function () {
                 }
             } else {
                 // CHO TAB A (Bệnh án ngoại khoa)
+                // Fallback Lý do vào viện bằng Chẩn đoán chính nếu rỗng
+                if (!history.LYDOVAOVIEN && history.mainDiag && history.mainDiag.text) {
+                    history.LYDOVAOVIEN = history.mainDiag.text;
+                }
+
+                // Fallback Quá trình bệnh lý bằng Diễn biến hoặc Bệnh sử nếu rỗng
+                if (!history.QUATRINHBENHLY) {
+                    history.QUATRINHBENHLY = formattedDienBien || history.KHAMBENH_BENHSU || '';
+                }
+
                 const parts = [];
                 if (history.LYDOVAOVIEN) parts.push(`Vào viện vì: ${history.LYDOVAOVIEN}`);
                 if (history.QUATRINHBENHLY) parts.push(`Bệnh sử: ${history.QUATRINHBENHLY}`);
@@ -954,7 +964,7 @@ const VNPTHistory = (function () {
 
                 history = {
                     ...history,
-                    KHAMBENH_BENHSU: formattedDienBien || history.KHAMBENH_BENHSU,
+                    KHAMBENH_BENHSU: history.QUATRINHBENHLY,
                     GENERATED_SUMMARY: tomtatBA
                 };
             }
@@ -1048,17 +1058,26 @@ const VNPTHistory = (function () {
         if (old) old.remove();
 
         return new Promise((resolve, reject) => {
-            const script = doc.createElement('script');
-            script.id = 'vnpt-history-helper';
-            const _chrome = (/** @type {any} */(window)).chrome;
-            if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/history-iframe-helper.js');
-                script.onload = () => resolve(undefined);
-                script.onerror = () => reject(new Error('Inject failed'));
+            const _chrome = (typeof window !== 'undefined' && window.chrome) ? window.chrome : null;
+            if (!_chrome || !_chrome.runtime) return reject(new Error('Chrome unavailable'));
+
+            const loadScript = (src, id) => new Promise((res, rej) => {
+                const existing = doc.getElementById(id);
+                if (existing) {
+                    existing.remove();
+                }
+                const script = doc.createElement('script');
+                script.id = id;
+                script.src = _chrome.runtime.getURL(src);
+                script.onload = res;
+                script.onerror = rej;
                 (doc.head || doc.documentElement).appendChild(script);
-            } else {
-                reject(new Error('Chrome unavailable'));
-            }
+            });
+
+            loadScript('content/shared/typing-effect.js', 'vnpt-typing-effect-lib')
+                .then(() => loadScript('content/scanner/history-iframe-helper.js', 'vnpt-history-helper'))
+                .then(resolve)
+                .catch(() => reject(new Error('Inject failed')));
         });
     }
 

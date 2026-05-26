@@ -108,3 +108,86 @@ Vẽ biểu đồ mini-chart (sử dụng Canvas hoặc SVG) hiển thị xu hư
 - [ ] Lệnh `pnpm run build` đóng gói ra thư mục `dist/` không có lỗi.
 - [ ] Sử dụng `gitnexus_detect_changes()` để kiểm tra trước khi kết thúc tác vụ.
 
+## Follow-up — 2026-05-23T11:58:25Z
+
+Dự án này nhằm hoàn thiện hệ thống hiển thị lâm sàng trên Dòng thời gian (Timeline) của tiện ích Aladinn V2 tích hợp trong hệ thống VNPT HIS. Dự án tập chuyên giải quyết 2 yêu cầu cốt lõi:
+1. **Sửa lỗi sinh hiệu ổn định**: Nhận diện trạng thái "Sinh hiệu ổn định" khi bác sĩ ghi nhận bằng chữ (như "sinh hiệu ổn", "sh ổn", "shổn", "sinh hiệu ổn định") thay vì bỏ trống hoặc hiện màu xám "(Chưa nhập sinh hiệu)".
+2. **Tích hợp bảng Tổng quan Lâm sàng Khẩn cấp (Clinical Overview)**: Bổ sung bảng tóm tắt 3 cột (Khám toàn thân, Khám bộ phận, Hướng xử lý) được bóc tách trực tiếp từ API/DOM vào đầu mỗi ngày điều trị trên Dòng thời gian để hỗ trợ bác sĩ xem nhanh khi cấp cứu.
+
+Working directory: /Users/trunganh/CNTT/Aladinn-v2
+Integrity mode: development
+
+## Requirements
+
+### R1. Tự động nhận diện và hiển thị trạng thái Sinh hiệu ổn định
+- **Xử lý trích xuất**: Cập nhật module `content/scanner/vital-extractor.js` để quét diễn tiến lâm sàng (`DIENBIEN`). Nhận diện các cụm từ tiếng Việt không dấu/có dấu viết tắt phổ biến: `"sinh hiệu ổn"`, `"sh ổn"`, `"shổn"`, `"sinh hiệu ổn định"`, `"sh ổn định"`. Trả về thuộc tính `stable: true` nếu khớp.
+- **Xử lý kiểm thử (Unit Tests)**: Viết bổ sung các ca kiểm thử trong `__tests__/vital-extractor.test.js` để đảm bảo độ chính xác của Regex, không nhận diện sai các từ không liên quan.
+- **Giao diện Dòng thời gian**: Cập nhật hàm render timeline trong `content/scanner/scanner-init.js`.
+  - Nếu ngày điều trị có các số đo cụ thể (Mạch, Nhiệt độ...), vẽ biểu đồ Sparkline bình thường.
+  - Nếu ngày điều trị không có số đo cụ thể NHƯNG diễn tiến lâm sàng có ghi nhận ổn định (`stable: true`), thay thế dòng chữ xám `(Chưa nhập sinh hiệu)` bằng một nhãn phẳng, vuông vức, chuẩn HIS-ify:
+    - Nền: màu xanh lá nhạt (`#e8f5e9`)
+    - Viền: xanh lá cây nhạt (`#c8e6c9`)
+    - Chữ: xanh lá đậm (`#2e7d32`), in đậm, cỡ chữ `11px`, kèm icon lá cờ hoặc chấm tròn xanh: `🟢 Sinh hiệu ổn định`.
+    - Thiết kế vuông vức không bo góc (`border-radius: 0px !important`).
+  - Nếu hoàn toàn không có số đo lẫn ghi nhận ổn định, giữ nguyên dòng chữ xám `(Chưa nhập sinh hiệu)`.
+
+### R2. Tích hợp bảng thông tin Khám & Xử lý nhanh (Clinical Overview) phục vụ Cấp cứu
+- **API/DOM Bridge**: Cập nhật hàm fetch danh sách phiếu điều trị trong `injected/api-bridge.js`. Khi ánh xạ danh sách dòng dữ liệu từ API `NT.024.DSPHIEU` (hoặc DOM khi đang soạn thảo), bổ sung bóc tách các trường:
+  - Khám toàn thân (`TOANTHAN`): Scan các trường chứa `TOANTHAN`, `KHAMTOAN`, `KHAMBENH_TOANTHAN` v.v.
+  - Khám bộ phận (`KHAMBOPHAN`): Scan các trường chứa `BOPHAN`, `KHAMBENH_BOPHAN` v.v.
+  - Hướng xử lý (`XULY`): Scan các trường chứa `XULY`, `HUONGXULY`, `HUONG_XU_LY` v.v.
+- **Giao diện Clinical Overview**: Thiết kế một bảng tổng quan phẳng, vuông vức đặt ngay đầu mỗi thẻ ngày điều trị trên Dòng thời gian (dưới tiêu đề ngày và trên diễn tiến chi tiết giờ giấc).
+  - Cấu trúc: Chia thành 3 phần bằng nhau theo hàng ngang (hoặc lưới 3 cột) hiển thị:
+    - **[TOÀN THÂN]**: Tóm tắt trạng thái khám toàn thân.
+    - **[BỘ PHẬN]**: Tóm tắt tình trạng các cơ quan bộ phận.
+    - **[XỬ LÝ]**: Hướng xử lý, y lệnh lâm sàng khẩn cấp.
+  - Thẩm mỹ:
+    - Seed Color: Màu xanh dương VNPT HIS (`#004f9e`).
+    - Nền panel: Màu xám siêu nhạt (`#f9f9f9`), viền màu xanh nhạt đặc trưng của HIS (`#a6c9e2`), độ dày `1px`.
+    - Phẳng và vuông vức hoàn toàn (`border-radius: 0px !important`).
+    - Có nhãn tiêu đề nhỏ gọn, trực quan, chuyên nghiệp cho từng cột.
+    - Nếu một trong các trường bị rỗng, hiển thị chữ xám nhẹ `(Chưa ghi nhận)` để bác sĩ biết thông tin còn thiếu.
+    - Chỉ hiển thị bảng này khi có ít nhất một trong ba trường có dữ liệu, tránh chiếm diện tích vô ích nếu ngày đó hoàn toàn trống thông tin.
+
+## Acceptance Criteria
+
+### Tiêu chí Sinh hiệu
+- [ ] Hàm `extractVitals` nhận diện chính xác ít nhất 5 biến thể của cụm từ ổn định (ví dụ: "sh ổn", "sinh hiệu ổn định", "shổn") và trả về thuộc tính `stable: true`.
+- [ ] Chạy lệnh `pnpm run test` vượt qua 100% unit tests của `vital-extractor.js`.
+- [ ] Khi xem Dòng thời gian, ngày chỉ ghi diễn tiến "sinh hiệu ổn" hiển thị nhãn phẳng `🟢 Sinh hiệu ổn định` với nền `#e8f5e9`, viền `#c8e6c9`, chữ `#2e7d32`, góc vuông `border-radius: 0px`.
+
+### Tiêu chí Clinical Overview
+- [ ] Dòng thời gian hiển thị bảng Tổng quan 3 cột phẳng vuông vức khi có dữ liệu `TOANTHAN`, `KHAMBOPHAN` hoặc `XULY`.
+- [ ] Tích hợp mượt mà dữ liệu thời gian thực từ DOM Tờ điều trị đang soạn thảo lên bảng Clinical Overview khi bác sĩ đang gõ.
+- [ ] Phong cách thiết kế bám sát 100% giao diện VNPT HIS (Seed color `#004f9e`, viền `#a6c9e2`, phẳng hoàn toàn `border-radius: 0px`).
+- [ ] Dự án build thành công bằng lệnh `pnpm run build` không có bất kỳ lỗi cú pháp hay linting nào.
+
+
+
+## Follow-up — 2026-05-25T16:14:09Z
+
+# Teamwork Project Prompt
+
+Tích hợp API Tra cứu kết quả Cận lâm sàng (từ trang TraCuuKetQuaHDG) vào hệ thống Aladinn v2 để lấy toàn bộ kết quả xét nghiệm trong 1 lần gọi, đồng thời giữ lại cơ chế cũ làm phương án dự phòng (fallback).
+
+Working directory: /Users/trunganh/CNTT/Aladinn-v2
+Integrity mode: development
+
+## Requirements
+
+### R1. Tích hợp API mới vào `fetchLabs`
+Cập nhật hàm `fetchLabs` trong `injected/api-bridge.js`. Nghiên cứu và gọi trực tiếp API (Store Procedure hoặc RestService) tương đương với chức năng của trang `TraCuuKetQuaHDG` để lấy toàn bộ dữ liệu CLS của đợt điều trị (sử dụng KHAMBENHID hoặc HOSOBENHANID). 
+
+### R2. Xây dựng phương án dự phòng (Fallback)
+Nếu API mới thất bại (lỗi mạng, timeout, không có quyền, hoặc trả về cấu trúc lỗi), hệ thống phải tự động fallback về cơ chế cũ (gọi `NT.024.DSPHIEU` để lấy danh sách phiếu, sau đó lấy chi tiết từng phiếu). Đảm bảo không làm gián đoạn luồng công việc của bác sĩ.
+
+### R3. Tuân thủ Quy tắc An toàn Lâm sàng (PHI)
+Mọi xử lý dữ liệu phải tuân thủ tuyệt đối quy tắc trong `AGENTS.md`. Dữ liệu trả về phải được làm sạch, map đúng định dạng cũ để các module tiêu thụ dữ liệu (như CDS, Autofill) hoạt động bình thường mà không cần sửa đổi lớn. Không ghi log dữ liệu PHI thô ra console.
+
+## Acceptance Criteria
+
+### Xác minh kỹ thuật & An toàn
+- [ ] Hàm `fetchLabs` phải chứa logic `try/catch` bọc quanh lời gọi API mới, với nhánh `catch` chuyển hướng mượt mà sang logic cũ.
+- [ ] Chạy `gitnexus_impact` trước khi sửa code để đánh giá rủi ro lên các flow thực thi.
+- [ ] Chạy `pnpm run test` (nếu có test liên quan) và đảm bảo không phá vỡ các test hiện tại.
+- [ ] Không có thông tin nhạy cảm (PHI) nào bị in ra console.warn hoặc console.error ngoài các thông báo lỗi chung chung (để phục vụ debug).

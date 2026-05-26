@@ -11,7 +11,7 @@ const mockCtx = {
     moveTo: (x, y) => {
         console.log('moveTo called with:', x, y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) {
-            throw new Error("moveTo arguments must be finite");
+            throw new Error('moveTo arguments must be finite');
         }
     },
     lineTo: () => {},
@@ -33,7 +33,7 @@ try {
     const dataPoints = [{ hr: Number.MAX_VALUE }];
     const options = { height: 1e100 };
     createSparklineElement(dataPoints, options);
-    console.log("No error thrown!");
+    console.log('No error thrown!');
 } catch (e) {
-    console.log("Error thrown:", e.message);
+    console.log('Error thrown:', e.message);
 }

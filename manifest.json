@@ -82,6 +82,7 @@
             ],
             "js": [
                 "content/shared/self-healing.js",
+                "content/shared/typing-effect.js",
                 "content/scanner/history-iframe-helper.js",
                 "content/scanner/nutrition-iframe-helper.js",
                 "content/scanner/emergency-iframe-helper.js",
@@ -122,6 +123,7 @@
             "resources": [
                 "injected/*.js",
                 "content/shared/self-healing.js",
+                "content/shared/typing-effect.js",
                 "content/scanner/*-iframe-helper.js",
                 "styles/aladinn-scanner.css",
                 "styles/aladinn-voice.css",

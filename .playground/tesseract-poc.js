@@ -6,7 +6,7 @@ import { createWorker } from 'tesseract.js';
  */
 
 async function runLocalOCR() {
-  console.log("🚀 Bắt đầu khởi tạo máy quét hình ảnh ngoại tuyến (Tesseract)...");
+  console.log('🚀 Bắt đầu khởi tạo máy quét hình ảnh ngoại tuyến (Tesseract)...');
   
   try {
     const worker = await createWorker('vie');
@@ -17,12 +17,12 @@ async function runLocalOCR() {
     console.log(`📸 Đang phân tích hình ảnh: ${testImageUrl}`);
     const { data: { text } } = await worker.recognize(testImageUrl);
     
-    console.log("\n✅ Kết quả quét văn bản:\n");
+    console.log('\n✅ Kết quả quét văn bản:\n');
     console.log(text);
     
     await worker.terminate();
   } catch (error) {
-    console.error("❌ Lỗi quét văn bản:", error.message);
+    console.error('❌ Lỗi quét văn bản:', error.message);
   }
 }
 

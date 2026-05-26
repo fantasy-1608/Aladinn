@@ -431,6 +431,8 @@ const VNPTNutrition = (function () {
 
         // Inject self-healing script first
         await injectScript(iframe, 'content/shared/self-healing.js', 'vnpt-self-healing-helper');
+        // Inject typing effect script
+        await injectScript(iframe, 'content/shared/typing-effect.js', 'vnpt-typing-effect-lib');
         // Inject nutrition helper script
         await injectScript(iframe, 'content/scanner/nutrition-iframe-helper.js', 'vnpt-nutrition-helper');
     }

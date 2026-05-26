@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản Test - Dòng Thời Gian Lâm Sàng (Aladinn V2)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            color: #333;
+        }
+        #aladinn-timeline-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #004f9e;
+        }
+        .header-bar {
+            background-color: #004f9e;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .escapeHtml {
+            white-space: pre-wrap;
+        }
+        /* Styles from scanner-init.js */
+        .aladinn-dept-group {
+            margin-bottom: 12px;
+        }
+        .aladinn-dept-badge {
+            display: inline-block;
+            font-size: 11.4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            margin-bottom: 8px;
+            margin-top: 8px;
+            border-radius: 0px !important;
+            letter-spacing: 0.5px;
+        }
+        .badge-cc { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .badge-pm { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+        .badge-hs { background: #fff3e0; color: #ef6c00; border: 1px solid #ffcc80; }
+        .badge-default { background: #e8eaf6; color: #283593; border: 1px solid #c5cae9; }
+        
+        .aladinn-time-block {
+            display: flex;
+            gap: 15px;
+            padding: 10px 15px;
+        }
+        .aladinn-time-label {
+            width: 50px;
+            font-size: 14.4px;
+            font-weight: 700;
+            color: #444444;
+            flex-shrink: 0;
+            text-align: right;
+            padding-top: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="margin-bottom: 20px; max-width: 900px; margin-left: auto; margin-right: auto;">
+        <h2>Bản Test - Dòng Thời Gian Lâm Sàng (Mock Data)</h2>
+        <p>Bản test tĩnh này chứa đầy đủ các tính năng nãy giờ chúng ta trao đổi:</p>
+        <ul>
+            <li>Gom nhóm theo khoa (Cấp cứu -> CTCH -> Phòng mổ -> CTCH).</li>
+            <li>Bảng tổng quan 3 cột (Toàn thân, Bộ phận, Xử lý) chuẩn HIS-ify.</li>
+            <li><strong>Mới:</strong> Biểu đồ Sparkline thể hiện sự thay đổi sinh hiệu (Mạch/Nhiệt độ) trên thanh ngày. Hãy rẽ chuột (hover) vào biểu đồ để xem chi tiết.</li>
+            <li>Đã fix lỗi "Kính chuyển ngoại TK - CTCH" chỉ nằm trong ô Xử lý mà không có Diễn biến.</li>
+            <li>Tên bác sĩ nằm góc phải bên dưới, có chữ "Bs. ".</li>
+        </ul>
+    </div>
+
+    <div id="aladinn-timeline-container">
+        <div class="header-bar">
+            <span>CLS + Thuốc (BẢN TEST/ 2001/ Nam)</span>
+        </div>
+        <div id="timeline-content" style="padding: 15px; background: #f0f2f5;"></div>
+    </div>
+
+    <script>
+        // MOCK DATA: Chuyển qua lại nhiều khoa, có đầy đủ sinh hiệu biến động để vẽ Sparkline
+        const treatments = [
+            // --- NGÀY 24/05/2026 ---
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 19:15',
+                TENKHOA: 'KHOA CHẤN THƯƠNG CHỈNH HÌNH',
+                DIENBIEN: '', // Cố tình để trống để test lỗi "mất Y lệnh Xử lý"
+                TOANTHAN: 'Bệnh nhân tỉnh, tiếp xúc tốt, vết mổ khô.',
+                KHAMBOPHAN: 'Chân trái giảm sưng, ngón chân hồng ấm.',
+                XULY: 'Kính chuyển ngoại TK - CTCH',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 14:30',
+                TENKHOA: 'KHOA PHÒNG MỔ',
+                DIENBIEN: 'Bệnh nhân sau mổ kết hợp xương đòn. Mạch: 88 l/p, Nhiệt độ: 37.5 C, HA: 110/70, NT: 22, SpO2: 98%. Bệnh nhân còn lơ mơ sau gây mê.',
+                NGUOITAO: 'Lê Văn Bác Sĩ'
+            },
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 10:15',
+                TENKHOA: 'KHOA CHẤN THƯƠNG CHỈNH HÌNH',
+                DIENBIEN: 'Bệnh nhân chuẩn bị chuyển mổ. Mạch: 95 l/p, Nhiệt độ: 38 C, HA: 120/80, NT: 20. Đau nhiều vùng vai trái.',
+                NGUOITAO: 'Dương Nhật Khánh'
+            },
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 09:00',
+                TENKHOA: 'KHOA CHẤN THƯƠNG CHỈNH HÌNH',
+                DIENBIEN: 'Bệnh nhân than đau nhiều. Mạch: 100 l/p, Nhiệt độ: 38.5 C, HA: 110/70. Bác sĩ chỉ định thêm thuốc giảm đau.',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 07:25',
+                TENKHOA: 'KHOA CẤP CỨU',
+                DIENBIEN: 'Bệnh nhân vừa nhập viện do tai nạn giao thông. Mạch: 110 l/p, Nhiệt độ: 39 C, HA: 90/60, NT: 24, SpO2: 95%. Tỉnh, đau vai Trái, tim đều, phổi thô, bụng mềm, vết thương xây xát rỉ dịch.',
+                NGUOITAO: 'Bs. Nguyễn Sơn Tùng'
+            },
+            
+            // --- NGÀY 23/05/2026 ---
+            {
+                NGAYMAUBENHPHAM: '23/05/2026 22:30',
+                TENKHOA: 'KHOA CẤP CỨU',
+                DIENBIEN: 'Bệnh nhân ngủ được, sinh hiệu ổn định hơn. Mạch: 85 l/p, Nhiệt độ: 37.2 C, HA: 115/75, NT: 20.',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM: '23/05/2026 20:00',
+                TENKHOA: 'KHOA CẤP CỨU',
+                DIENBIEN: 'Bệnh nhân đau nhẹ vùng xây xát. Mạch: 82 l/p, Nhiệt độ: 37 C, HA: 120/80, NT: 20.',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM: '23/05/2026 15:45',
+                TENKHOA: 'KHOA CẤP CỨU',
+                DIENBIEN: 'Bệnh nhân vật vã, kích thích. Mạch: 105 l/p, Nhiệt độ: 38 C, HA: 130/80. Đã tiêm an thần.',
+                NGUOITAO: 'Bs. Lê Thị C'
+            },
+            {
+                NGAYMAUBENHPHAM: '23/05/2026 10:10',
+                TENKHOA: 'KHOA CẤP CỨU',
+                DIENBIEN: 'Nhập viện giờ đầu. Đau đầu chóng mặt. Mạch: 90 l/p, Nhiệt độ: 37.5 C.',
+                NGUOITAO: 'Bs. Trần Văn D'
+            },
+            
+            // --- NGÀY 22/05/2026 ---
+            {
+                NGAYMAUBENHPHAM: '22/05/2026 18:20',
+                TENKHOA: 'PHÒNG KHÁM CẤP CỨU',
+                DIENBIEN: 'Bệnh nhân theo dõi tại trạm y tế trước khi chuyển tuyến. Mạch: 80 l/p, Nhiệt độ: 37 C, HA: 120/70, NT: 18, SpO2: 99%.',
+                NGUOITAO: 'Bs. Phạm Văn E'
+            },
+            {
+                NGAYMAUBENHPHAM: '22/05/2026 09:15',
+                TENKHOA: 'PHÒNG KHÁM CẤP CỨU',
+                DIENBIEN: 'Tiếp nhận bệnh nhân. Khám sơ bộ: Trầy xước tay chân. Sinh hiệu trong giới hạn bình thường.',
+                NGUOITAO: 'Bs. Phạm Văn E'
+            }
+        ];
+
+        // Giả lập Y lệnh
+        const yLenhList = [
+            {
+                NGAYMAUBENHPHAM_SUDUNG: '24/05/2026 19:15',
+                TENKHOA: 'KHOA CHẤN THƯƠNG CHỈNH HÌNH',
+                YLENH: 'Sodium Chloride Injection (0,9%, dung tích 500ml)',
+                NHOMYLENH: 'Thuốc',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM: '24/05/2026 14:30',
+                TENKHOA: 'KHOA PHÒNG MỔ',
+                YLENH: 'Chăm sóc cấp I',
+                NHOMYLENH: 'Chế độ chăm sóc',
+                NGUOITAO: 'Lê Văn Bác Sĩ'
+            },
+            {
+                NGAYMAUBENHPHAM_SUDUNG: '23/05/2026 20:00',
+                TENKHOA: 'KHOA CẤP CỨU',
+                YLENH: 'Paracetamol 500mg viên',
+                NHOMYLENH: 'Thuốc',
+                NGUOITAO: 'Huỳnh Ngọc Tân'
+            },
+            {
+                NGAYMAUBENHPHAM_SUDUNG: '22/05/2026 18:20',
+                TENKHOA: 'PHÒNG KHÁM CẤP CỨU',
+                YLENH: 'Rửa vết thương',
+                NHOMYLENH: 'Dịch vụ kỹ thuật',
+                NGUOITAO: 'Bs. Phạm Văn E'
+            }
+        ];
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Logic Regex trích xuất sinh hiệu siêu tinh gọn (mô phỏng extractVitals)
+        function extractVitals(text) {
+            let hr = text.match(/M(?:ạch|ach)?\s*[:=\-]?\s*(\d{2,3})/i);
+            let temp = text.match(/Nh(?:iệt|iet) đ(?:ộ|o)?\s*[:=\-]?\s*(\d{2}(\.\d)?)/i) || text.match(/T(?:^\w)?\s*[:=\-]?\s*(\d{2}(\.\d)?)/i);
+            let bp = text.match(/H(?:uyết|uyet) [aá]p\s*[:=\-]?\s*(\d{2,3}\/\d{2,3})/i) || text.match(/HA\s*[:=\-]?\s*(\d{2,3}\/\d{2,3})/i);
+            let rr = text.match(/Nh(?:ịp|ip) th(?:ở|o)?\s*[:=\-]?\s*(\d{2})/i) || text.match(/NT\s*[:=\-]?\s*(\d{2})/i);
+            let spo2 = text.match(/SpO2\s*[:=\-]?\s*(\d{2,3})/i);
+            return {
+                hr: hr ? hr[1] : null,
+                temp: temp ? temp[1] : null,
+                bp: bp ? bp[1] : null,
+                rr: rr ? rr[1] : null,
+                spo2: spo2 ? spo2[1] : null
+            };
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-content');
+            let combinedTimelineHtml = '';
+            
+            // Nhóm theo ngày
+            const treatmentsByDate = {};
+            [...treatments, ...yLenhList].forEach(t => {
+                const date = (t.NGAYMAUBENHPHAM || t.NGAYMAUBENHPHAM_SUDUNG || '').split(' ')[0];
+                if (!date) return;
+                if (!treatmentsByDate[date]) treatmentsByDate[date] = { treatments: [], orders: [] };
+                if (t.DIENBIEN !== undefined || t.TOANTHAN !== undefined) {
+                    treatmentsByDate[date].treatments.push(t);
+                } else {
+                    treatmentsByDate[date].orders.push(t);
+                }
+            });
+
+            const allDates = Object.keys(treatmentsByDate).sort((a, b) => {
+                const pa = a.split('/').reverse().join('');
+                const pb = b.split('/').reverse().join('');
+                return pb.localeCompare(pa);
+            });
+
+            allDates.forEach((dt, di) => {
+                const dayTreatments = treatmentsByDate[dt].treatments.sort((a,b) => b.NGAYMAUBENHPHAM.localeCompare(a.NGAYMAUBENHPHAM));
+                const dayOrders = treatmentsByDate[dt].orders;
+                const isFirst = (di === allDates.length - 1);
+
+                // TRÍCH XUẤT SINH HIỆU & SPARKLINE
+                let dayVitals = [];
+                dayTreatments.forEach(t => {
+                    const time = (t.NGAYMAUBENHPHAM || '').split(' ')[1] || '00:00';
+                    const extracted = extractVitals(t.DIENBIEN || '');
+                    if (extracted.hr || extracted.temp || extracted.bp || extracted.rr || extracted.spo2) {
+                        dayVitals.push({
+                            time: time,
+                            p: extracted.hr ? parseFloat(extracted.hr) : null,
+                            t: extracted.temp ? parseFloat(extracted.temp) : null,
+                            bp: extracted.bp,
+                            b: extracted.rr ? parseInt(extracted.rr) : null,
+                            spo2: extracted.spo2
+                        });
+                    }
+                });
+
+                // Sắp xếp tăng dần để biểu đồ đi từ sáng đến tối
+                dayVitals.sort((a,b) => a.time.localeCompare(b.time));
+
+                let sparklineHtml = '';
+                
+                if (dayVitals.length > 0) {
+                    const latest = dayVitals[dayVitals.length - 1];
+                    let tooltipParts = [];
+                    let valueTextParts = [];
+                    if (latest.p) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#004f9e;font-weight:700;line-height:1;">❤️ ${latest.p}</span>`); tooltipParts.push(`Mạch: ${latest.p}`); }
+                    if (latest.t) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#c62828;font-weight:700;line-height:1;">🌡️ ${latest.t}°C</span>`); tooltipParts.push(`Nhiệt: ${latest.t}°C`); }
+                    if (latest.bp) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#2e7d32;font-weight:700;line-height:1;">🩸 ${latest.bp}</span>`); tooltipParts.push(`HA: ${latest.bp}`); }
+                    if (latest.b) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#757575;font-weight:700;line-height:1;">🫁 ${latest.b}</span>`); tooltipParts.push(`Nhịp thở: ${latest.b}`); }
+                    if (latest.spo2) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#00838f;font-weight:700;line-height:1;"><span style="font-size:10px;font-weight:800;background:#e0f7fa;padding:1px 3px;border-radius:3px;border:1px solid #b2ebf2;">SpO₂</span> ${latest.spo2}%</span>`); tooltipParts.push(`SpO2: ${latest.spo2}%`); }
+                    if (valueTextParts.length > 0) {
+                        sparklineHtml = `<div style="display:flex;align-items:center;gap:12px;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;font-size:12.6px;" title="${escapeHtml(tooltipParts.join(' | ') + ' (' + latest.time + ')')}">${valueTextParts.join(' ')}</div>`;
+                    }
+                }
+                
+                if (!sparklineHtml) {
+                    sparklineHtml = '<div style="margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;font-size:11.5px;color:#a0aab5;font-style:italic;">(Chưa nhập sinh hiệu)</div>';
+                }
+
+                // Render Day Card
+                const isToday = di === 0;
+                combinedTimelineHtml += `
+                <div style="border:1px solid #cccccc;border-radius:0px;background:#ffffff;margin-bottom:15px;box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 15px;background:#fef5e6;border-bottom:1px solid #e0c8a0;box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="text-align:center;min-width:35px;">
+                            <div style="font-size:24px;font-weight:800;color:#c67a00;line-height:1;">${dt.substring(0,2)}</div>
+                            <div style="font-size:12px;color:#8a5600;font-weight:600;">${dt.substring(3,5)}</div>
+                        </div>
+                        <div style="width:1px;height:35px;background:#e0c8a0;flex-shrink:0;"></div>
+                        <div style="flex:1;">
+                            <div style="color:#c67a00;font-weight:700;font-size:16px;">${isToday ? 'Hôm nay, ' : ''}${dt}${isFirst ? ' — Ngày nhập viện' : ''}</div>
+                            <div style="color:#8a5600;font-size:13px;margin-top:2px;">Ngày điều trị ${allDates.length - di}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;">
+                            ${sparklineHtml}
+                            <div style="font-size:12px; font-weight:600; color:#1565c0;">💊 ${dayOrders.length} Y lệnh</div>
+                        </div>
+                    </div>`;
+
+                // Clinical Overview (3 columns)
+                let dayToanThan = '', dayKhamBoPhan = '', dayXuLy = '';
+                dayTreatments.forEach(tr => {
+                    if (tr.TOANTHAN && !dayToanThan) dayToanThan = tr.TOANTHAN;
+                    if (tr.KHAMBOPHAN && !dayKhamBoPhan) dayKhamBoPhan = tr.KHAMBOPHAN;
+                    if (tr.XULY && !dayXuLy) dayXuLy = tr.XULY;
+                });
+                
+                if (dayToanThan || dayKhamBoPhan || dayXuLy) {
+                    combinedTimelineHtml += `
+                    <div style="display:flex; flex-wrap:wrap; background:#f9f9f9; border-bottom:1px solid #a6c9e2; padding:0;">
+                        <div style="flex:1; min-width:30%; border-right:1px solid #e0e0e0; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[TOÀN THÂN]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayToanThan ? escapeHtml(dayToanThan) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                        <div style="flex:1; min-width:30%; border-right:1px solid #e0e0e0; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[BỘ PHẬN]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayKhamBoPhan ? escapeHtml(dayKhamBoPhan) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                        <div style="flex:1; min-width:30%; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[XỬ LÝ]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayXuLy ? escapeHtml(dayXuLy) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                    </div>`;
+                }
+
+                // Render Timeline Blocks
+                let lastDept = null;
+                
+                // Thu thập tất cả các mốc thời gian (của cả Treatment và Y lệnh)
+                const timeSet = new Set();
+                dayTreatments.forEach(t => { 
+                    // CHÚ Ý CHỖ NÀY LÀ BUG CŨ: Phải lấy cả những tờ KHÔNG có diễn biến nhưng CÓ toàn thân/xử lý
+                    if (t.DIENBIEN || t.TOANTHAN || t.KHAMBOPHAN || t.XULY) {
+                        timeSet.add(t.NGAYMAUBENHPHAM.split(' ')[1]);
+                    }
+                });
+                dayOrders.forEach(t => timeSet.add(t.NGAYMAUBENHPHAM_SUDUNG?.split(' ')[1] || t.NGAYMAUBENHPHAM?.split(' ')[1]));
+                
+                const dayTimes = Array.from(timeSet).sort().reverse(); // Mới nhất xuống cũ nhất (hoặc ngược lại tuỳ HIS, thường là mới nhất trên cùng)
+
+                dayTimes.forEach((tp, ti) => {
+                    const isLastTime = (ti === dayTimes.length - 1);
+                    
+                    // Lọc treatment & order cho mốc thời gian này
+                    const timeProgress = dayTreatments.filter(t => t.NGAYMAUBENHPHAM.includes(tp) && (t.DIENBIEN || t.TOANTHAN || t.KHAMBOPHAN || t.XULY));
+                    const timeOrders = dayOrders.filter(t => (t.NGAYMAUBENHPHAM_SUDUNG || t.NGAYMAUBENHPHAM || '').includes(tp));
+                    
+                    const currentDept = timeProgress[0]?.TENKHOA || timeOrders[0]?.TENKHOA || lastDept || '';
+                    
+                    if (currentDept !== lastDept && currentDept !== '') {
+                        if (lastDept !== null) combinedTimelineHtml += '</div>'; // Close prev group
+                        
+                        let badgeClass = 'badge-default';
+                        const deptLower = currentDept.toLowerCase();
+                        if (deptLower.includes('cấp cứu')) badgeClass = 'badge-cc';
+                        else if (deptLower.includes('phòng mổ') || deptLower.includes('phẫu thuật')) badgeClass = 'badge-pm';
+                        else if (deptLower.includes('hồi sức') || deptLower.includes('tích cực')) badgeClass = 'badge-hs';
+
+                        combinedTimelineHtml += `<div class="aladinn-dept-group">
+                            <div style="padding: 0 15px;">
+                                <div class="aladinn-dept-badge ${badgeClass}">🏥 ${escapeHtml(currentDept)}</div>
+                            </div>`;
+                        lastDept = currentDept;
+                    }
+
+                    combinedTimelineHtml += `
+                    <div class="aladinn-time-block" style="${!isLastTime ? 'border-bottom:1px dashed #e5e7eb;' : ''}">
+                        <div class="aladinn-time-label">${tp}</div>
+                        <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr;">
+                            <div style="padding-right: 15px; border-right: 1px solid #e5e7eb;">`;
+                    
+                    // LEFT COLUMN: Diễn biến
+                    if (timeProgress.length > 0) {
+                        timeProgress.forEach(tr => {
+                            let db = '', tt = '', bp = '', xl = '';
+                            if (tr.DIENBIEN) db = `<div style="font-size:14.4px;color:#333;line-height:1.55;margin-bottom:6px;">${escapeHtml(tr.DIENBIEN)}</div>`;
+                            if (tr.TOANTHAN) tt = `<div style="font-size:13.8px;color:#444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[TOÀN THÂN]</strong> ${escapeHtml(tr.TOANTHAN)}</div>`;
+                            if (tr.KHAMBOPHAN) bp = `<div style="font-size:13.8px;color:#444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[BỘ PHẬN]</strong> ${escapeHtml(tr.KHAMBOPHAN)}</div>`;
+                            if (tr.XULY) xl = `<div style="font-size:13.8px;color:#444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[XỬ LÝ]</strong> ${escapeHtml(tr.XULY)}</div>`;
+                            
+                            let docName = tr.NGUOITAO || '';
+                            if (docName && !/^bs\.?\s*/i.test(docName)) docName = 'Bs. ' + docName;
+                            
+                            combinedTimelineHtml += `
+                            <div style="padding:8px 12px;border-left:2px solid #1e5494;background:#f9f9f9;margin-bottom:8px;">
+                                ${db}${tt}${bp}${xl}
+                                <div style="margin-top:8px;font-size:11.5px;color:#888;text-align:right;font-style:italic;">✍️ ${escapeHtml(docName)}</div>
+                            </div>`;
+                        });
+                    } else if (timeOrders.length > 0) {
+                        combinedTimelineHtml += `<div style="font-size:13.2px;color:#777;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>`;
+                    }
+                    
+                    combinedTimelineHtml += `</div><div style="padding-left: 15px;">`;
+                    
+                    // RIGHT COLUMN: Y lệnh
+                    if (timeOrders.length > 0) {
+                        combinedTimelineHtml += `
+                        <div style="padding:8px 12px;border-left:2px solid #2e7d32;background:#e8f5e9;">
+                            <div style="font-size:11.5px;color:#2e7d32;font-weight:700;text-transform:uppercase;margin-bottom:6px;">▣ Y lệnh / chăm sóc</div>`;
+                        timeOrders.forEach(order => {
+                            const group = order.NHOMYLENH ? `<span style="font-size:11px;color:#2e7d32;background:#c8e6c9;border:1px solid #a5d6a7;padding:1px 5px;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
+                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#333;line-height:1.55;margin-bottom:5px;">${group}${escapeHtml(order.YLENH)}</div>`;
+                        });
+                        combinedTimelineHtml += `</div>`;
+                    }
+                    
+                    combinedTimelineHtml += `</div></div></div>`; // Đóng columns & time-block
+                });
+                
+                if (lastDept !== null) combinedTimelineHtml += '</div>'; // Đóng dept-group cuối cùng
+                combinedTimelineHtml += `</div>`; // Đóng day card
+            });
+
+            container.innerHTML = combinedTimelineHtml;
+        }
+
+        renderTimeline();
+    </script>
+</body>
+</html>

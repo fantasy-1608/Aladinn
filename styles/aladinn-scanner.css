@@ -1274,3 +1274,79 @@ details.aladinn-details[open] summary ~ * {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ========================================
+   Grouped Timeline CSS
+======================================== */
+.aladinn-dept-group {
+    position: relative; 
+    padding-left: 20px; 
+    margin-bottom: 25px;
+}
+.aladinn-dept-group::before {
+    content: ''; 
+    position: absolute; 
+    left: 8px; 
+    top: 12px; 
+    bottom: -25px; 
+    width: 2px; 
+    background: #e5e7eb;
+}
+.aladinn-dept-group:last-child::before { 
+    bottom: 0; 
+}
+.aladinn-dept-badge {
+    position: relative; 
+    display: inline-flex; 
+    align-items: center; 
+    background: #e3f2fd; 
+    border: 1px solid #90caf9; 
+    color: #004f9e;
+    padding: 2px 8px; 
+    font-size: 11px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    margin-bottom: 12px; 
+    z-index: 1;
+}
+.aladinn-dept-badge::before {
+    content: ''; 
+    position: absolute; 
+    left: -19px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    width: 8px; 
+    height: 8px;
+    background: #004f9e; 
+    border: 2px solid #fff; 
+    border-radius: 50%; 
+    box-shadow: 0 0 0 1px #90caf9;
+}
+.aladinn-dept-badge.badge-cc { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
+.aladinn-dept-badge.badge-cc::before { background: #c62828; box-shadow: 0 0 0 1px #ef9a9a; }
+
+.aladinn-dept-badge.badge-pm { background: #f3e5f5; border-color: #ce93d8; color: #6a1b9a; }
+.aladinn-dept-badge.badge-pm::before { background: #6a1b9a; box-shadow: 0 0 0 1px #ce93d8; }
+
+.aladinn-dept-badge.badge-hs { background: #fff8e1; border-color: #ffe082; color: #ff8f00; }
+.aladinn-dept-badge.badge-hs::before { background: #ff8f00; box-shadow: 0 0 0 1px #ffe082; }
+
+.aladinn-time-block {
+    display: flex; 
+    margin-bottom: 12px; 
+    position: relative;
+}
+.aladinn-time-label {
+    width: 55px; 
+    flex-shrink: 0; 
+    font-size: 13px; 
+    font-weight: 700; 
+    color: #555; 
+    text-align: right; 
+    padding-right: 12px; 
+    margin-top: 4px;
+}
+.aladinn-event-card {
+    flex: 1; 
+    min-width: 0;
+}

@@ -10,6 +10,7 @@ describe('Vital Extractor', () => {
       bp: '120/80',
       rr: 20,
       spo2: 98,
+      stable: false
     });
   });
 
@@ -21,6 +22,7 @@ describe('Vital Extractor', () => {
       bp: '110/70',
       rr: 18,
       spo2: 99,
+      stable: false
     });
   });
 
@@ -32,6 +34,7 @@ describe('Vital Extractor', () => {
       bp: '130/80',
       rr: 22,
       spo2: null,
+      stable: false
     });
   });
 
@@ -43,6 +46,7 @@ describe('Vital Extractor', () => {
       bp: '120/80',
       rr: 20,
       spo2: 98,
+      stable: false
     });
   });
 
@@ -54,6 +58,7 @@ describe('Vital Extractor', () => {
       bp: '130/85',
       rr: null,
       spo2: null,
+      stable: false
     });
   });
 
@@ -65,6 +70,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: null,
       spo2: null,
+      stable: false
     });
   });
 
@@ -76,6 +82,7 @@ describe('Vital Extractor', () => {
       bp: '140/90',
       rr: null,
       spo2: null,
+      stable: false
     });
   });
 
@@ -87,6 +94,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: null,
       spo2: null,
+      stable: false
     });
   });
 
@@ -98,6 +106,7 @@ describe('Vital Extractor', () => {
       bp: null, // Vượt ngoài giới hạn sinh lý an toàn 220/130
       rr: 40,
       spo2: 50,
+      stable: false
     });
   });
 
@@ -109,6 +118,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: null,
       spo2: null,
+      stable: false
     });
   });
 
@@ -119,6 +129,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: null,
       spo2: null,
+      stable: false
     });
     expect(extractVitals(123)).toEqual({
       hr: null,
@@ -126,6 +137,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: null,
       spo2: null,
+      stable: false
     });
   });
   it('12. Adversarial / False Positive Checks', () => {
@@ -136,6 +148,7 @@ describe('Vital Extractor', () => {
       bp: null,
       rr: 20,
       spo2: null,
+      stable: false
     });
   });
 
@@ -147,6 +160,7 @@ describe('Vital Extractor', () => {
       bp: '120/80',
       rr: 20,
       spo2: 98,
+      stable: false
     });
   });
 
@@ -218,5 +232,33 @@ describe('Vital Extractor', () => {
     // SpO2 ngoài khoảng 50 - 100
     expect(extractVitals('spo2 45').spo2).toBeNull();
     expect(extractVitals('spo2 105').spo2).toBeNull();
+  });
+
+  it('22. Stable Vitals Detection (R1)', () => {
+    // sinh hiệu ổn
+    expect(extractVitals('sinh hiệu ổn').stable).toBe(true);
+    // sh ổn
+    expect(extractVitals('sh ổn').stable).toBe(true);
+    // shổn
+    expect(extractVitals('shổn').stable).toBe(true);
+    // sinh hiệu ổn định
+    expect(extractVitals('sinh hiệu ổn định').stable).toBe(true);
+    // sh ổn định
+    expect(extractVitals('sh ổn định').stable).toBe(true);
+    // sinh hieu on (không dấu)
+    expect(extractVitals('sinh hieu on').stable).toBe(true);
+    // sh on
+    expect(extractVitals('sh on').stable).toBe(true);
+    // shon
+    expect(extractVitals('shon').stable).toBe(true);
+    // sinh hieu on dinh
+    expect(extractVitals('sinh hieu on dinh').stable).toBe(true);
+    // sh on dinh
+    expect(extractVitals('sh on dinh').stable).toBe(true);
+
+    // Negative / unrelated cases
+    expect(extractVitals('sinh hoạt bình thường').stable).toBe(false);
+    expect(extractVitals('bệnh nhân ổn định').stable).toBe(false);
+    expect(extractVitals('không ổn định').stable).toBe(false);
   });
 });

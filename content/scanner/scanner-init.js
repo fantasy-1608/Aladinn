@@ -5,7 +5,6 @@
  */
 
 import { extractVitals } from './vital-extractor.js';
-import { generateSparklineImage } from './sparkline.js';
 
 window.Aladinn = window.Aladinn || {};
 window.Aladinn.Scanner = window.Aladinn.Scanner || {};
@@ -289,19 +288,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const labelRaw = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
             const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
             const contentHtml = contentRaw
-                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#9ECAFF">$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em style="color:#E1E2E8">$1</em>');
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#004f9e">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em style="color:#555555">$1</em>');
             return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
-                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:rgba(158,202,255,0.18);border:1px solid rgba(158,202,255,0.4);display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#9ECAFF;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
-                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#9ECAFF;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#cbd5e1;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
+                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:#e6f2ff;border:1px solid #a6c9e2;display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#004f9e;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
+                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#004f9e;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#333333;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
                 '</div>';
         });
         text = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#9ECAFF">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em style="color:#E1E2E8">$1</em>');
-        text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#cbd5e1;line-height:1.65;font-size:${basePx}px;">$1</li>`);
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#004f9e">$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em style="color:#555555">$1</em>');
+        text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#333333;line-height:1.65;font-size:${basePx}px;">$1</li>`);
         text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
-            return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#cbd5e1;">${rest}</span></div>`;
+            return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#333333;">${rest}</span></div>`;
         });
         return text.replace(/\n/g, '<br>');
     }
@@ -1945,10 +1944,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         let _totalAdded = 0, _totalStopped = 0;
 
         // --- Combined Timeline (Diễn tiến & Thuốc) ---
-        const treatments = patientInfo?.clinicalData?.treatments || [];
-        const yLenhList = patientInfo?.clinicalData?.yLenhList || treatments.filter(t => t.SOURCE_API === 'NGT02K015.YLENH' || t.SOURCE_API === 'NT.024.2.DETAIL');
+        const treatments = [
+            ...(patientInfo?.clinicalData?.treatments || []),
+            ...(patientInfo?.clinicalData?.yLenhList || [])
+        ];
+        const yLenhList = patientInfo?.clinicalData?.yLenhList || [];
         const admissionTimes = patientInfo?.clinicalData?.admissionTimes || {};
-        const isOtherOrder = (item) => item?.SOURCE_API === 'NGT02K015.YLENH' || item?.SOURCE_API === 'NT.024.2.DETAIL';
+        const isOtherOrder = (item) => 
+            item?.SOURCE_API === 'NGT02K015.YLENH' || 
+            item?.SOURCE_API === 'NT.024.2.DETAIL' || 
+            item?.SOURCE_API === 'NGT02K015.LAYDL' ||
+            item?.SOURCE_API === 'REALTIME_DOM';
         const treatmentsByDate = {};
         for (const tr of treatments) {
             const rawDate = tr.NGAYMAUBENHPHAM || '';
@@ -2037,7 +2043,27 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const isFirst = di === allDates.length - 1;
                 const dayDrugs = drugsByDate[dt] || [];
                 const dayTreatments = treatmentsByDate[dt] || [];
-                const dayOrders = dayTreatments.filter(t => isOtherOrder(t) && (t.YLENH || t.GHICHU));
+                const rawDayOrders = dayTreatments.filter(t => isOtherOrder(t) && (t.YLENH || t.GHICHU));
+                const dayOrders = [];
+                for (const d of rawDayOrders) {
+                    if (d.NHOMYLENH === 'Chế độ ăn' || d.NHOMYLENH === 'Chế độ chăm sóc') {
+                        continue;
+                    }
+                    let cleanYlenh = String(d.YLENH || '')
+                        .replace(/^\*?\s*Y lệnh khác\s*([;:\-–c]*)\s*/gi, '')
+                        .replace(/\*?\s*Chế độ ăn\s*[:\-–]\s*[^*]+/gi, '')
+                        .replace(/\*?\s*Chế độ chăm sóc\s*[:\-–]\s*[^*]+/gi, '')
+                        .trim();
+                    
+                    cleanYlenh = cleanYlenh.replace(/^[;,\s*]+|[;,\s*]+$/g, '').trim();
+                    const finalYlenh = cleanYlenh || d.GHICHU || '';
+                    if (finalYlenh && finalYlenh.length > 1) {
+                        dayOrders.push({
+                            ...d,
+                            YLENH: finalYlenh
+                        });
+                    }
+                }
                 const dayProgressTreatments = dayTreatments.filter(t => !isOtherOrder(t));
 
                 // Drug comparison
@@ -2060,9 +2086,6 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 const parts = dt.split('/');
                 const dateObj = parts.length === 3 ? new Date(+parts[2], +parts[1]-1, +parts[0]) : null;
                 const dowStr = dateObj ? dowMap[dateObj.getDay()] : '';
-                const doctorName = dayProgressTreatments[0]?.NGUOITAO || dayOrders[0]?.NGUOITAO || '';
-                const numColor = isFirst ? '#d87a00' : isToday ? '#2e7d32' : '#1e5494';
-                const stripBg = isFirst ? '#fff9db' : isToday ? '#e8f5e9' : '#f2f5f8';
 
                 // Tag pills
                 const hasProgress = dayTreatments.some(t => t.DIENBIEN?.trim());
@@ -2073,138 +2096,86 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (currDiags.size > 0 && isFirst) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;">📋 ${currDiags.size} CĐ</span>`;
                 if (dayDrugs.length > 0) pills += `<span style="font-size:12px;font-weight:600;padding:2px 7px;border-radius:0px !important;background:#edf4fc;color:#1565c0;border:1px solid #b3d4fc;">💊 ${dayDrugs.length} thuốc</span>`;
 
-                // Vital Signs Sparkline extraction
+                // Text Vitals extraction
                 let dayVitals = [];
                 let hasSnoopedVitals = false;
                 
-                // Ưu tiên 1: Lấy sinh hiệu từ API NT.006 (đã gọi song song qua fetchVitals)
-                if (patientInfo.vitalsData) {
-                    const v = patientInfo.vitalsData;
-                    const pulse = v.pulse ? parseFloat(v.pulse) : null;
-                    const temp = v.temperature ? parseFloat(v.temperature) : null;
-                    const bp = v.bloodPressure || null;
-                    const resp = v.respiratoryRate ? parseInt(v.respiratoryRate) : null;
-                    if (pulse || temp || bp || resp) {
-                        // API NT.006 trả về sinh hiệu lúc nhập viện (chỉ 1 bản ghi)
-                        // Hiển thị cho tất cả các ngày (vì đây là sinh hiệu duy nhất có sẵn)
-                        dayVitals = [{ p: pulse, t: temp, bp: bp, b: resp }];
+                // 1. Ưu tiên hàng đầu: Trích xuất từ các tờ điều trị của chính ngày hôm đó (dayTreatments)
+                dayTreatments.forEach(t => {
+                    const m = t.MACH || t.KHAMBENH_MACH;
+                    const t_nhiet = t.NHIETDO || t.KHAMBENH_NHIETDO;
+                    const bp = t.HUYETAP || t.KHAMBENH_HUYETAP;
+                    const b_nhip = t.NHIPTHO || t.KHAMBENH_NHIPTHO;
+                    const sp = t.SPO2;
+                    
+                    if (m || t_nhiet || bp || b_nhip || sp) {
+                        dayVitals.push({
+                            p: m ? parseFloat(m) : null,
+                            t: t_nhiet ? parseFloat(t_nhiet) : null,
+                            bp: bp ? String(bp) : null,
+                            b: b_nhip ? parseInt(b_nhip) : null,
+                            spo2: sp ? parseFloat(sp) : null
+                        });
+                        hasSnoopedVitals = true;
+                        return;
+                    }
+
+                    // Nếu không ghi nhận trực tiếp dạng số, thử bóc tách bằng Regex từ ô Diễn biến bệnh
+                    if (!t.DIENBIEN) return;
+                    const extracted = extractVitals(t.DIENBIEN);
+                    const v = {
+                        p: extracted.hr,
+                        t: extracted.temp,
+                        bp: extracted.bp,
+                        b: extracted.rr,
+                        spo2: extracted.spo2
+                    };
+                    if (v.p || v.t || v.bp || v.b || v.spo2) {
+                        dayVitals.push(v);
                         hasSnoopedVitals = true;
                     }
-                }
+                });
                 
-                // Ưu tiên 2: Lấy sinh hiệu từ CDSCache (nếu AJAX interceptor bắt được)
+                // 2. Ưu tiên thứ hai: Tìm trong cache sinh hiệu của chính ngày hôm đó
                 if (!hasSnoopedVitals && window.AladinnCDSCache && window.AladinnCDSCache.cache && window.AladinnCDSCache.cache.vitals) {
                     const allVitals = window.AladinnCDSCache.cache.vitals;
                     const filteredVitals = allVitals.filter(v => v.time && v.time.includes(dt));
                     if (filteredVitals.length > 0) {
                         dayVitals = filteredVitals.sort((a,b) => a.time.localeCompare(b.time));
-                        hasSnoopedVitals = true;
                     }
                 }
 
-                // Fallback: Nếu không có API Sinh hiệu từ Cache, thì lấy trực tiếp từ object tờ điều trị hoặc quét chữ
-                if (!hasSnoopedVitals) {
-                    dayTreatments.forEach(t => {
-                        // 1. Kiểm tra xem object tờ điều trị có chứa sẵn field Sinh Hiệu không (KHAMBENH_MACH)
-                        const m = t.MACH || t.KHAMBENH_MACH;
-                        const t_nhiet = t.NHIETDO || t.KHAMBENH_NHIETDO;
-                        const bp = t.HUYETAP || t.KHAMBENH_HUYETAP;
-                        const b_nhip = t.NHIPTHO || t.KHAMBENH_NHIPTHO;
-                        
-                        if (m || t_nhiet || bp || b_nhip) {
-                            dayVitals.push({
-                                p: m ? parseFloat(m) : null,
-                                t: t_nhiet ? parseFloat(t_nhiet) : null,
-                                bp: bp ? String(bp) : null,
-                                b: b_nhip ? parseInt(b_nhip) : null
-                            });
-                            return; // Có thông số chuẩn, không cần quét Regex
-                        }
-
-                        // 2. Không có field chuẩn -> Sử dụng vital-extractor để quét chữ Diễn Biến
-                        if (!t.DIENBIEN) return;
-                        const extracted = extractVitals(t.DIENBIEN);
-                        const v = {
-                            p: extracted.hr,
-                            t: extracted.temp,
-                            bp: extracted.bp,
-                            b: extracted.rr,
-                            spo2: extracted.spo2
-                        };
-                        if (v.p || v.t || v.bp || v.b || v.spo2) {
-                            dayVitals.push(v);
-                        }
-                    });
-                }
-
-                let sparklineHtml;
-                // Chuẩn bị dữ liệu cho Sparkline: đổi sang tên thuộc tính hr, temp như sparkline.js kỳ vọng
-                const sparklineData = dayVitals.map(v => ({
-                    hr: typeof v.hr === 'number' ? v.hr : (typeof v.p === 'number' ? v.p : (v.p ? parseFloat(v.p) : null)),
-                    temp: typeof v.temp === 'number' ? v.temp : (typeof v.t === 'number' ? v.t : (v.t ? parseFloat(v.t) : null))
-                }));
-
-                const sparklineImg = generateSparklineImage(sparklineData, {
-                    hrColor: '#004f9e',
-                    tempColor: '#c62828',
-                    bgColor: '#ffffff',
-                    width: 120,
-                    height: 32
-                });
-
-                if (sparklineImg) {
+                let sparklineHtml = '';
+                if (dayVitals.length > 0) {
                     const latest = dayVitals[dayVitals.length - 1];
                     let tooltipParts = [];
                     let valueTextParts = [];
-                    const latestP = latest.p || latest.hr;
-                    const latestT = latest.t || latest.temp;
-                    const latestB = latest.b || latest.rr;
-                    
-                    if (latestP) {
-                        valueTextParts.push(`<span style="color:#004f9e;font-weight:700;">❤️ ${latestP}</span>`);
-                        tooltipParts.push(`Mạch: ${latestP} l/p`);
+                    if (latest.p) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#004f9e;font-weight:700;line-height:1;">❤️ ${latest.p}</span>`); tooltipParts.push(`Mạch: ${latest.p}`); }
+                    if (latest.t) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#c62828;font-weight:700;line-height:1;">🌡️ ${latest.t}°C</span>`); tooltipParts.push(`Nhiệt: ${latest.t}°C`); }
+                    if (latest.bp) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#2e7d32;font-weight:700;line-height:1;">🩸 ${latest.bp}</span>`); tooltipParts.push(`HA: ${latest.bp}`); }
+                    if (latest.b) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#757575;font-weight:700;line-height:1;">🫁 ${latest.b}</span>`); tooltipParts.push(`Nhịp thở: ${latest.b}`); }
+                    if (latest.spo2) { valueTextParts.push(`<span style="display:flex;align-items:center;gap:3px;color:#00838f;font-weight:700;line-height:1;"><span style="font-size:10px;font-weight:800;background:#e0f7fa;padding:1px 3px;border-radius:3px;border:1px solid #b2ebf2;">SpO₂</span> ${latest.spo2}%</span>`); tooltipParts.push(`SpO2: ${latest.spo2}%`); }
+                    if (valueTextParts.length > 0) {
+                        sparklineHtml = `<div style="display:flex;align-items:center;gap:12px;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;font-size:12.6px;" title="${escapeHtml(tooltipParts.join(' | '))}">${valueTextParts.join(' ')}</div>`;
                     }
-                    if (latestT) {
-                        valueTextParts.push(`<span style="color:#c62828;font-weight:700;">🌡️ ${latestT}°C</span>`);
-                        tooltipParts.push(`Nhiệt độ: ${latestT}°C`);
-                    }
-                    if (latest.bp) {
-                        valueTextParts.push(`<span style="color:#2e7d32;font-weight:700;">🩸 ${latest.bp}</span>`);
-                        tooltipParts.push(`Huyết áp: ${latest.bp} mmHg`);
-                    }
-                    if (latestB) {
-                        valueTextParts.push(`<span style="color:#757575;font-weight:700;">🫁 ${latestB}</span>`);
-                        tooltipParts.push(`Nhịp thở: ${latestB} l/p`);
-                    }
-                    if (latest.spo2) {
-                        valueTextParts.push(`<span style="color:#00838f;font-weight:700;">🌐 ${latest.spo2}%</span>`);
-                        tooltipParts.push(`SpO2: ${latest.spo2}%`);
-                    }
-                    
-                    const tooltip = tooltipParts.join(' | ');
-                    
-                    sparklineHtml = `
-                        <div style="display:flex;align-items:center;gap:8px;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;" title="${escapeHtml(tooltip)}">
-                            <div style="display:flex;flex-direction:column;gap:2px;font-size:11.5px;line-height:1.1;text-align:right;">
-                                ${valueTextParts.join(' ')}
-                            </div>
-                            <img src="${sparklineImg}" style="width:120px;height:32px;border:1px solid #a6c9e2;border-radius:0px !important;display:block;background:#ffffff;padding:1px;" />
-                        </div>`;
-                } else {
-                    sparklineHtml = '<div style="display:flex;align-items:center;margin-right:12px;padding-right:12px;border-right:1px solid #cccccc;font-size:11.5px;color:#a0aab5;font-style:italic;" title="Không tìm thấy thông số sinh hiệu hợp lệ">(Chưa nhập sinh hiệu)</div>';
+                }
+                
+                if (!sparklineHtml) {
+                    sparklineHtml = ''; // Bỏ hẳn dòng sinh hiệu ra luôn nếu khuyết sinh hiệu ngày đó
                 }
 
+
                 // ── Day card ──
-                combinedTimelineHtml += `<div style="border:1px solid #cccccc;border-radius:0px !important;overflow:hidden;background:#ffffff;margin-bottom:8px;">
-                  <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:${stripBg};border-bottom:1px solid #cccccc;">
-                    <div style="text-align:center;min-width:28px;">
-                      <div style="font-size:21.6px;font-weight:800;color:${numColor};line-height:1;">${dt.substring(0,2)}</div>
-                      <div style="font-size:10.8px;color:#555555;font-weight:600;">${dt.substring(3,5)}</div>
+                combinedTimelineHtml += `<div style="border:1px solid #cccccc;border-radius:0px !important;background:#ffffff;margin-bottom:15px;box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                  <div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 15px;background:#fef5e6;border-bottom:1px solid #e0c8a0;box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="text-align:center;min-width:35px;">
+                      <div style="font-size:24px;font-weight:800;color:#c67a00;line-height:1;">${dt.substring(0,2)}</div>
+                      <div style="font-size:12px;color:#8a5600;font-weight:600;">${dt.substring(3,5)}</div>
                     </div>
-                    <div style="width:1px;height:28px;background:#cccccc;flex-shrink:0;"></div>
+                    <div style="width:1px;height:35px;background:#e0c8a0;flex-shrink:0;"></div>
                     <div style="flex:1;min-width:0;">
-                      <div style="color:${numColor};font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
-                      <div style="color:#666666;font-size:12.6px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngày điều trị ${allDates.length - di}${doctorName?' · '+doctorName:''}</div>
+                      <div style="color:#c67a00;font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${isToday?'Hôm nay, ':''}${dowStr?dowStr+', ':''}${dt}${isFirst?' — Ngày nhập viện':''}</div>
+                      <div style="color:#8a5600;font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ngày điều trị ${allDates.length - di}</div>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:flex-end;">
                         ${sparklineHtml}
@@ -2213,10 +2184,45 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                   </div>
                   <div style="display:flex;flex-direction:column;">`;
 
+                // Clinical Overview (3 columns)
+                let dayToanThan = '', dayKhamBoPhan = '', dayXuLy = '';
+                dayTreatments.forEach(tr => {
+                    if (tr.TOANTHAN && !dayToanThan) dayToanThan = tr.TOANTHAN;
+                    if (tr.KHAMBOPHAN && !dayKhamBoPhan) dayKhamBoPhan = tr.KHAMBOPHAN;
+                    if (tr.XULY && !dayXuLy) dayXuLy = tr.XULY;
+                });
+                
+                if (dayToanThan || dayKhamBoPhan || dayXuLy) {
+                    combinedTimelineHtml += `
+                    <div style="display:flex; flex-wrap:wrap; background:#f9f9f9; border-bottom:1px solid #a6c9e2; padding:0;">
+                        <div style="flex:1; min-width:30%; border-right:1px solid #e0e0e0; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[TOÀN THÂN]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayToanThan ? escapeHtml(dayToanThan) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                        <div style="flex:1; min-width:30%; border-right:1px solid #e0e0e0; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[BỘ PHẬN]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayKhamBoPhan ? escapeHtml(dayKhamBoPhan) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                        <div style="flex:1; min-width:30%; padding:12px 15px;">
+                            <div style="font-size:11px; font-weight:700; color:#004f9e; text-transform:uppercase; margin-bottom:5px; letter-spacing:0.5px;">[XỬ LÝ]</div>
+                            <div style="font-size:13.5px; color:#333; line-height:1.5;">${dayXuLy ? escapeHtml(dayXuLy) : '<span style="color:#999;font-style:italic;">(Chưa ghi nhận)</span>'}</div>
+                        </div>
+                    </div>`;
+                }
+
+
                 // 1) Find all unique times for this day
                 const dayTimesSet = new Set();
                 dayTreatments.forEach(t => {
                     const tp = (t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5);
+                    // CHÚ Ý CHỖ NÀY LÀ BUG CŨ: Phải lấy cả những tờ KHÔNG có diễn biến nhưng CÓ toàn thân/xử lý
+                    if (tp && (t.DIENBIEN || t.TOANTHAN || t.KHAMBOPHAN || t.XULY)) {
+                        dayTimesSet.add(tp);
+                    }
+                });
+                dayOrders.forEach(d => {
+                    const rawDate = d.NGAYMAUBENHPHAM_SUDUNG || d.NGAYMAUBENHPHAM || '';
+                    const tp = rawDate.split(' ')[1]?.substring(0,5);
                     if (tp) dayTimesSet.add(tp);
                 });
                 dayDrugs.forEach(d => {
@@ -2227,27 +2233,46 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (dayTimes.length === 0) dayTimes.push(''); // fallback for items without time
 
                 let legendRendered = false;
+                let lastDept = null; // Track department changes
 
                 for (let ti = 0; ti < dayTimes.length; ti++) {
                     const tp = dayTimes[ti];
                     const isLastTime = ti === dayTimes.length - 1;
                     
-                    const timeProgress = dayProgressTreatments.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp && t.DIENBIEN?.trim());
+                    const timeProgress = dayProgressTreatments.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp && (t.DIENBIEN?.trim() || t.TOANTHAN?.trim() || t.KHAMBOPHAN?.trim() || t.XULY?.trim()));
                     const timeOrders = dayOrders.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp);
                     const timeGhichus = dayProgressTreatments.filter(t => ((t.NGAYMAUBENHPHAM || '').split(' ')[1]?.substring(0,5) || '') === tp && t.GHICHU?.trim());
                     const timeDrugs = dayDrugs.filter(d => ((d.NGAYMAUBENHPHAM_SUDUNG || '').split(' ')[1]?.substring(0,5) || '') === tp);
                     
                     if (timeProgress.length === 0 && timeOrders.length === 0 && timeGhichus.length === 0 && timeDrugs.length === 0 && !isLastTime) continue;
 
-                    combinedTimelineHtml += `<div style="display:grid;grid-template-columns:1fr 1fr;${!isLastTime ? 'border-bottom:1px solid #e5e7eb;' : ''}">`;
+                    const currentDept = timeProgress[0]?.TENKHOA || timeOrders[0]?.TENKHOA || timeGhichus[0]?.TENKHOA || (lastDept !== null ? lastDept : '');
                     
-                    // --- LEFT COLUMN (Notes) ---
-                    combinedTimelineHtml += '<div style="padding:10px 12px;border-right:1px solid #e5e7eb;">';
+                    if (currentDept !== lastDept && currentDept !== '') {
+                        if (lastDept !== null) combinedTimelineHtml += '</div>'; // Close prev group
+                        
+                        let badgeClass = 'badge-default';
+                        const deptLower = currentDept.toLowerCase();
+                        if (deptLower.includes('cấp cứu')) badgeClass = 'badge-cc';
+                        else if (deptLower.includes('phòng mổ') || deptLower.includes('phẫu thuật')) badgeClass = 'badge-pm';
+                        else if (deptLower.includes('hồi sức') || deptLower.includes('tích cực')) badgeClass = 'badge-hs';
+
+                        combinedTimelineHtml += `<div class="aladinn-dept-group">
+                            <div style="padding: 0 15px;">
+                                <div class="aladinn-dept-badge ${badgeClass}">🏥 ${escapeHtml(currentDept)}</div>
+                            </div>`;
+                        lastDept = currentDept;
+                    }
+
+                    combinedTimelineHtml += `
+                    <div class="aladinn-time-block" style="${!isLastTime ? 'border-bottom:1px dashed #e5e7eb;' : ''}">
+                        <div class="aladinn-time-label">${tp}</div>
+                        <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div style="padding-right: 15px; border-right: 1px solid #e5e7eb;">`;
                     
+                    // LEFT COLUMN: Diễn biến
                     if (timeProgress.length > 0) {
                         for (const tr of timeProgress) {
-                            const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#333333;background:#edf4fc;border:1px solid #cccccc;padding:1px 6px;border-radius:0px !important;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span>` : '';
-                            
                             let inlineDiagHtml = '';
                             const sheetKey = (tr.MAUBENHPHAMID || '') + '_' + (tr.NGAYMAUBENHPHAM || '');
                             const label = sheetLabels[sheetKey];
@@ -2263,33 +2288,26 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 </div>`;
                             }
                             
-                            combinedTimelineHtml += `<div style="padding:7px 10px;border-left:2px solid #1e5494;background:#f9f9f9;border-radius:0px !important;margin-bottom:6px;">${timeTag}${tp?'<br>':''}<span style="font-size:14.4px;color:#333333;line-height:1.65;white-space:pre-wrap;">${tr.DIENBIEN}</span>${inlineDiagHtml}</div>`;
-                        }
-                    } else if (timeDrugs.length > 0 || timeOrders.length > 0 || timeGhichus.length > 0) {
-                        const timeTag = tp ? `<span style="font-size:12px;font-weight:700;color:#333333;background:#edf4fc;border:1px solid #cccccc;padding:1px 6px;border-radius:0px !important;margin-bottom:5px;display:inline-block;">🕐 ${tp}</span><br>` : '';
-                        combinedTimelineHtml += `${timeTag}<div style="font-size:13.2px;color:#777777;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>`;
-                    }
-                    
-                    if (timeOrders.length > 0) {
-                        combinedTimelineHtml += `<div style="margin-top:8px;padding:7px 10px;border-left:2px solid #2e7d32;background:#e8f5e9;border-radius:0px !important;">
-                          <div style="font-size:11.4px;color:#2e7d32;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác / chăm sóc / chế độ ăn</div>`;
-                        for (const order of timeOrders) {
-                            const group = order.NHOMYLENH ? `<span style="font-size:11.4px;color:#2e7d32;background:#c8e6c9;border:1px solid #a5d6a7;padding:1px 5px;border-radius:0px !important;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
-                            const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#555555;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
-                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#333333;line-height:1.55;margin-bottom:4px;">${group}${escapeHtml(order.YLENH)}${note}</div>`;
-                        }
-                        combinedTimelineHtml += '</div>';
-                    }
-                    
-                    if (timeGhichus.length > 0) {
-                        for (const gc of timeGhichus) {
-                            combinedTimelineHtml += `<div style="margin-top:6px;padding:6px 10px;border-left:2px solid #1e5494;background:#f9f9f9;border-radius:0px !important;">
-                              <div style="font-size:11.4px;color:#1e5494;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
-                              <div style="font-size:13.8px;color:#333333;line-height:1.5;font-style:italic;">${gc.GHICHU}</div>
+                            let dbHtml = '', ttHtml = '', bpHtml = '', xlHtml = '', ylHtml = '';
+                            if (tr.DIENBIEN) dbHtml = `<div style="font-size:14.4px;color:#333333;line-height:1.65;margin-bottom:6px;white-space:pre-wrap;">${escapeHtml(tr.DIENBIEN)}</div>`;
+                            if (tr.TOANTHAN) ttHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[TOÀN THÂN]</strong> ${escapeHtml(tr.TOANTHAN)}</div>`;
+                            if (tr.KHAMBOPHAN) bpHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[BỘ PHẬN]</strong> ${escapeHtml(tr.KHAMBOPHAN)}</div>`;
+                            if (tr.XULY) xlHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[XỬ LÝ]</strong> ${escapeHtml(tr.XULY)}</div>`;
+                            if (tr.YLENH) ylHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#2e7d32;">[Y LỆNH]</strong> ${escapeHtml(tr.YLENH)}</div>`;
+                            
+                            let docName = tr.NGUOITAO || '';
+                            if (docName && !/^bs\.?\s*/i.test(docName)) docName = 'Bs. ' + docName;
+                            const docHtml = docName ? `<div style="margin-top:8px;font-size:11.5px;color:#888888;text-align:right;font-style:italic;">✍️ ${escapeHtml(docName)}</div>` : '';
+
+                            combinedTimelineHtml += `
+                            <div style="padding:8px 12px;border-left:2px solid #1e5494;background:#f9f9f9;margin-bottom:8px;position:relative;cursor:pointer;" data-key="${sheetKey}" onmouseover="this.style.backgroundColor='#edf4fc'" onmouseout="this.style.backgroundColor='#f9f9f9'">
+                                ${dbHtml}${ttHtml}${bpHtml}${xlHtml}${ylHtml}${inlineDiagHtml}${docHtml}
                             </div>`;
                         }
+                    } else if (timeDrugs.length > 0 || timeOrders.length > 0 || timeGhichus.length > 0) {
+                        combinedTimelineHtml += '<div style="font-size:13.2px;color:#777777;font-style:italic;padding:4px 2px;">(Không có diễn tiến)</div>';
                     }
-
+                    
                     // Render Day's Diagnosis at the bottom of the left column (only on the LAST time block of the day)
                     if (isLastTime) {
                         if (dayProgressTreatments.filter(t => t.DIENBIEN?.trim()).length === 0 && diagChanged && currDiags.size > 0) {
@@ -2325,10 +2343,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                         combinedTimelineHtml += '</div>';
                     }
-                    combinedTimelineHtml += '</div>'; // End Left column
+
+                    combinedTimelineHtml += '</div><div style="padding-left: 15px;">'; // End Left column, start Right column
                     
-                    // --- RIGHT COLUMN (Drugs) ---
-                    combinedTimelineHtml += '<div style="padding:10px 12px;">';
+                    // --- RIGHT COLUMN (Orders, Drugs, Notes) ---
                     
                     // Legend
                     if (!legendRendered && (timeDrugs.length > 0 || (isLastTime && prevDrugs.length > 0))) {
@@ -2340,55 +2358,83 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         legendRendered = true;
                     }
                     
-                    if (timeDrugs.length > 0) {
-                        for (const drug of timeDrugs) {
-                            const name = drug.TENTHUOC || '—';
-                            const isNew = !isFirst && prevDrugs.length > 0 && !prevDrugNames.has(name);
-                            if (isNew) _totalAdded++;
-                            let fullName = name;
-                            if (drug.HOATCHAT && drug.HOATCHAT.trim().toLowerCase() !== fullName.trim().toLowerCase()) fullName += ` (${drug.HOATCHAT.trim()})`;
-                            if (drug.HAMLUONG?.trim()) { const hl = drug.HAMLUONG.trim(); fullName += hl.startsWith('(')&&hl.endsWith(')')?` ${hl}`:`  (${hl})`; }
-                            let totalDose;
-                            const dm = (drug.LIEUDUNG||'').match(/\[(.*?)\]/);
-                            if (dm?.[1]) totalDose = dm[1];
-                            else if (drug.SOLUONG) totalDose = `${drug.SOLUONG} ${drug.DONVITINH||''}/ngày`.trim();
-                            else totalDose = drug.LIEUDUNG || '';
-                            const dotC = (isNew||isFirst)?'#2e7d32':'#757575';
-                            const nameC = '#333333';
-                            const doseStyle = (isNew||isFirst)?'background:#c8e6c9;color:#2e7d32;':'background:#e0e0e0;color:#616161;';
-                            const itemBg = (isNew||isFirst)?'background:#e8f5e9;border:1px solid #c8e6c9;':'background:#f9f9f9;border:1px solid #e0e0e0;';
-                            const newBadge = (isNew&&!isFirst)?'<span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#c8e6c9;color:#2e7d32;margin-left:4px;vertical-align:middle;">MỚI</span>':'';
-                            const ksDays = drug.SOLAN_SD_KHANGSINH ? parseInt(drug.SOLAN_SD_KHANGSINH, 10) : 0;
-                            const _ksBadge = ksDays > 0 ? `<span style="font-size:10.2px;font-weight:700;padding:1px 5px;border-radius:0px !important;background:#edf4fc;color:#1e5494;border:1px solid #cccccc;margin-left:4px;vertical-align:middle;" title="Số ngày sử dụng kháng sinh: ${ksDays} ngày">💊KS ${ksDays}d</span>` : '';
-                            combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:0px !important;margin-bottom:4px;${itemBg}">
-                              <span style="width:6px;height:6px;border-radius:50%;background:${dotC};flex-shrink:0;margin-top:5px;"></span>
-                              <span style="flex:1;font-size:14.4px;color:${nameC};line-height:1.4;" title="${fullName}">${ksDays > 0 ? `<span style="font-weight:700;color:#1e5494;">(${ksDays})</span> ` : ''}${fullName}${newBadge}</span>
-                              ${totalDose?`<span style="font-size:12px;font-weight:600;padding:2px 6px;border-radius:0px !important;white-space:nowrap;flex-shrink:0;${doseStyle}">${totalDose}</span>`:''}
-                            </div>`;
+                    if (timeOrders.length > 0) {
+                        combinedTimelineHtml += `
+                        <div style="padding:8px 12px;border-left:2px solid #2e7d32;background:#e8f5e9;margin-bottom:8px;">
+                          <div style="font-size:11.4px;color:#2e7d32;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">▣ Y lệnh khác</div>`;
+                        for (const order of timeOrders) {
+                            const group = order.NHOMYLENH ? `<span style="font-size:11px;color:#2e7d32;background:#c8e6c9;border:1px solid #a5d6a7;padding:1px 5px;border-radius:0px !important;margin-right:5px;">${escapeHtml(order.NHOMYLENH)}</span>` : '';
+                            const note = order.GHICHU && order.GHICHU !== order.YLENH ? `<span style="color:#555555;"> — ${escapeHtml(order.GHICHU)}</span>` : '';
+                            combinedTimelineHtml += `<div style="font-size:13.8px;color:#333333;line-height:1.55;margin-bottom:4px;">${group}${escapeHtml(order.YLENH)}${note}</div>`;
                         }
-                    } else if (timeProgress.length > 0 || timeOrders.length > 0) {
-                        combinedTimelineHtml += '<div style="font-size:13.2px;color:#777777;font-style:italic;padding:4px 2px;">(Không có y lệnh thuốc)</div>';
+                        combinedTimelineHtml += '</div>';
                     }
-                    
-                    // Render stopped drugs ONLY at the last time block of the day
-                    if (isLastTime && !isFirst) {
-                        let hasStopped = false;
-                        for (const pd of prevDrugs) {
-                            if (!currDrugNames.has(pd.TENTHUOC)) {
-                                _totalStopped++;
-                                combinedTimelineHtml += `<div style="display:flex;align-items:baseline;gap:7px;padding:5px 8px;border-radius:0px !important;margin-top:${hasStopped?'4px':'12px'};margin-bottom:4px;background:#ffebee;border:1px solid #ffcdd2;">
-                                  <span style="width:6px;height:6px;border-radius:50%;background:#c62828;flex-shrink:0;margin-top:5px;"></span>
-                                  <span style="flex:1;font-size:14.4px;color:#c62828;text-decoration:line-through;">${pd.TENTHUOC}</span>
-                                  <span style="font-size:10.2px;font-weight:700;padding:1px 4px;border-radius:0px !important;background:#ffcdd2;color:#c62828;flex-shrink:0;">NGƯNG</span>
-                                </div>`;
-                                hasStopped = true;
-                            }
+
+                    if (timeGhichus.length > 0) {
+                        for (const gc of timeGhichus) {
+                            combinedTimelineHtml += `
+                            <div style="padding:6px 10px;border-left:2px solid #1e5494;background:#f9f9f9;border-radius:0px !important;margin-bottom:8px;">
+                              <div style="font-size:11.4px;color:#1e5494;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">📝 Ghi chú</div>
+                              <div style="font-size:13.8px;color:#333333;line-height:1.5;font-style:italic;">${gc.GHICHU}</div>
+                            </div>`;
                         }
                     }
 
-                    combinedTimelineHtml += '</div></div>'; // End Right column and Grid row
+                    if (timeDrugs.length > 0) {
+                        for (const d of timeDrugs) {
+                            const isNew = !isFirst && !prevDrugs.find(pd => pd.TENTHUOC === d.TENTHUOC);
+                            const cleanTen = String(d.TENTHUOC || '').trim().toLowerCase();
+                            const cleanHC = String(d.HOATCHAT || '').trim().toLowerCase();
+                            const hasDiffHoatChat = d.HOATCHAT && cleanHC !== cleanTen && cleanHC !== '';
+                            const activeKey = hasDiffHoatChat ? ` <span style="font-size:11.4px;color:#666666;font-weight:normal;font-style:italic;">(${escapeHtml(d.HOATCHAT)})</span>` : '';
+                            
+                            // Ghép thông tin hướng dẫn sử dụng siêu chi tiết và rõ ràng cho bác sĩ
+                            let sigParts = [];
+                            if (d.LIEUDUNG) sigParts.push(`Liều: ${d.LIEUDUNG}`);
+                            if (d.DUONGDUNG) sigParts.push(d.DUONGDUNG);
+                            if (d.CACHDUNG) sigParts.push(d.CACHDUNG);
+                            const sigText = sigParts.join(' · ');
+                            const sig = sigText ? `<div style="font-size:12.6px;color:#004f9e;margin-top:3px;font-weight:600;font-style:italic;">👉 ${escapeHtml(sigText)}</div>` : '';
+                            
+                            const unit = d.DONVITINH ? ` ${d.DONVITINH}` : '';
+                            const qty = d.SOLUONG ? `${d.SOLUONG}${unit}` : '';
+                            combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid #eeeeee;">
+                                <div style="width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;background:${isNew?'#2e7d32':'#757575'};"></div>
+                                <div style="flex:1;">
+                                    <div style="font-size:13.8px;font-weight:700;color:#333333;line-height:1.35;">${escapeHtml(d.TENTHUOC)}${activeKey}</div>
+                                    ${sig}
+                                </div>
+                                <div style="font-size:13.8px;font-weight:700;color:#c62828;text-align:right;white-space:nowrap;min-width:60px;">${qty}</div>
+                            </div>`;
+                        }
+                    }
+
+                    if (isLastTime && !isFirst) {
+                        const stoppedDrugs = prevDrugs.filter(pd => !dayDrugs.find(cd => cd.TENTHUOC === pd.TENTHUOC));
+                        if (stoppedDrugs.length > 0) {
+                            combinedTimelineHtml += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ffcdd2;">';
+                            for (const d of stoppedDrugs) {
+                                const cleanTen = String(d.TENTHUOC || '').trim().toLowerCase();
+                                const cleanHC = String(d.HOATCHAT || '').trim().toLowerCase();
+                                const hasDiffHoatChat = d.HOATCHAT && cleanHC !== cleanTen && cleanHC !== '';
+                                const activeKey = hasDiffHoatChat ? ` <span style="font-size:11.4px;color:#c62828;font-weight:normal;font-style:italic;">(${escapeHtml(d.HOATCHAT)})</span>` : '';
+                                combinedTimelineHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;opacity:0.6;">
+                                    <div style="width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0;background:#c62828;"></div>
+                                    <div style="flex:1;text-decoration:line-through;">
+                                        <div style="font-size:13.2px;font-weight:600;color:#c62828;line-height:1.35;">${escapeHtml(d.TENTHUOC)}${activeKey}</div>
+                                    </div>
+                                </div>`;
+                            }
+                            combinedTimelineHtml += '</div>';
+                        }
+                    }
+                    
+                    combinedTimelineHtml += '</div></div></div>'; // Close Time Block Columns & Time Block Wrapper
                 }
-                combinedTimelineHtml += '</div></div>'; // End Day card
+
+                if (lastDept !== null) combinedTimelineHtml += '</div>'; // Close last dept-group
+                combinedTimelineHtml += '</div></div>'; // Close day card Wrapper & Content Wrapper
+
             }
         } else {
             combinedTimelineHtml = '<div style="text-align:center;padding:20px;color:#8C9099;font-style:italic;">Không có dữ liệu Diễn tiến / Thuốc.</div>';
@@ -2601,10 +2647,43 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 @keyframes aisDot { 0%,80%,100%{transform:scale(0.55);opacity:0.35} 40%{transform:scale(1);opacity:1} }
                 @keyframes aisTabFadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
                 .ais-dot-wrap{display:inline-flex;gap:3px;align-items:center;vertical-align:middle;}
-                .ais-dot-wrap span{width:5px;height:5px;border-radius:50%;background:#1e5494;display:inline-block;animation:aisDot 1.2s infinite ease-in-out;}
+                .ais-dot-wrap span{width:5px;height:5px;border-radius:50%;background:#004f9e;display:inline-block;animation:aisDot 1.2s infinite ease-in-out;}
                 .ais-dot-wrap span:nth-child(2){animation-delay:0.15s}
                 .ais-dot-wrap span:nth-child(3){animation-delay:0.3s}
                 #aladinn-content-ai { animation: aisTabFadeIn 0.25s ease; }
+                
+                /* V2 Clinical Timeline Styles */
+                .aladinn-dept-group { margin-bottom: 12px; }
+                .aladinn-dept-badge {
+                    display: inline-block;
+                    font-size: 11.4px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    padding: 3px 8px;
+                    margin-bottom: 8px;
+                    margin-top: 8px;
+                    border-radius: 0px !important;
+                    letter-spacing: 0.5px;
+                }
+                .badge-cc { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+                .badge-pm { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+                .badge-hs { background: #fff3e0; color: #ef6c00; border: 1px solid #ffcc80; }
+                .badge-default { background: #e8eaf6; color: #283593; border: 1px solid #c5cae9; }
+                
+                .aladinn-time-block {
+                    display: flex;
+                    gap: 15px;
+                    padding: 10px 15px;
+                }
+                .aladinn-time-label {
+                    width: 50px;
+                    font-size: 14.4px;
+                    font-weight: 700;
+                    color: #444444;
+                    flex-shrink: 0;
+                    text-align: right;
+                    padding-top: 2px;
+                }
             </style>
             <div style="display:flex; border-bottom:1px solid #cccccc; margin-bottom:14px; gap:3px;">
                 <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
@@ -2619,18 +2698,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         `;
 
         modal.innerHTML = `
-            <div style="width:96vw; max-width:1400px; height:94vh; max-height:94vh; display:flex; flex-direction:column; padding:0px !important; background:#ffffff !important; color:#333333 !important; border:2px solid #1e5494 !important; border-radius:0px !important; box-shadow:2px 2px 10px rgba(0,0,0,0.15) !important; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; overflow:hidden;">
+            <div style="width:96vw; max-width:1400px; height:94vh; max-height:94vh; display:flex; flex-direction:column; padding:0px !important; background:#ffffff !important; color:#333333 !important; border:2px solid #004f9e !important; border-radius:0px !important; box-shadow:2px 2px 10px rgba(0,0,0,0.15) !important; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; overflow:hidden;">
                 <!-- Thanh tiêu đề (Header) xanh đặc sát mép 100% chuẩn HIS Hình 2 -->
-                <div style="background:#1e5494; color:#ffffff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-radius:0px !important;">
+                <div style="background:#004f9e; color:#ffffff; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; border-radius:0px !important;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <img src="${chrome.runtime.getURL('assets/icons/icon128.png')}" style="width:20px;height:20px;">
                         <span style="font-weight:700; font-size:16px; color:#ffffff;">${headerTitleText}</span>
                     </div>
-                    <button id="lab-timeline-close" style="background:none;border:none;color:#ffffff;font-size:24px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;opacity:0.9;transition:0.2s;" onmouseover="this.style.opacity='1';this.style.color='#ffcdd2'" onmouseout="this.style.opacity='0.9';this.style.color='#ffffff'" title="Đóng">&times;</button>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button id="lab-timeline-close" style="background:none;border:none;color:#ffffff;font-size:24px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;opacity:0.9;transition:0.2s;" onmouseover="this.style.opacity='1';this.style.color='#ffcdd2'" onmouseout="this.style.opacity='0.9';this.style.color='#ffffff'" title="Đóng">&times;</button>
+                    </div>
                 </div>
                 
                 <!-- Phần thân chứa dữ liệu (Body) có padding cân đối -->
-                <div style="padding:16px; display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+                <div style="padding:16px; display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; background:#ffffff !important;">
                     ${headerSubtitleHtml ? `<div style="margin-bottom:10px; border-bottom:1px dashed #cccccc; padding-bottom:8px;">${headerSubtitleHtml}</div>` : ''}
                     ${tabsHeaderHtml}
                     <div style="flex:1; min-height:0; overflow-y:auto; padding-right:6px; color:#333333;">
@@ -2720,14 +2801,29 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             <div id="ai-tab-error" style="display:none;padding:16px;background:#ffebee;border:1px solid #ffcdd2;border-radius:0px !important;color:#c62828;font-size:15.6px;"></div>
                         </div>
                     </div>
-                    <div style="margin-top:14px; flex-shrink:0; display:flex; justify-content:flex-end; border-top:1px solid #cccccc; padding-top:12px;">
-                        <button style="background:#eeeeee; border:1px solid #cccccc; color:#333333; padding:6px 16px; border-radius:0px !important; font-size:13px; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#dddddd'" onmouseout="this.style.background='#eeeeee'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng</button>
+                    <div style="margin:16px -16px -16px -16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; background:#f5f5f5; border-top:1px solid #cccccc; padding:10px 16px; border-radius:0px !important;">
+                        <span style="font-size:12.6px; color:#666666; font-weight:600; font-family:'Segoe UI',sans-serif;">✨ Aladinn V2 — Trợ lý quét và tóm tắt thông tin lâm sàng chuyên sâu VNPT HIS</span>
+                        <button style="background:#004f9e; border:1px solid #003d7a; color:#ffffff; padding:6px 18px; border-radius:0px !important; font-size:13px; font-weight:700; cursor:pointer; transition:0.15s; font-family:'Segoe UI',sans-serif;" onmouseover="this.style.background='#003d7a'" onmouseout="this.style.background='#004f9e'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng cửa sổ</button>
                     </div>
                 </div>
             </div>`;
 
         targetDoc.documentElement.appendChild(modal);
         modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
+
+        // Hỗ trợ đóng nhanh bằng phím Esc cực kỳ tiện lợi cho bác sĩ
+        const targetWindow = targetDoc.defaultView || window;
+        targetWindow.addEventListener('keydown', function handleEsc(e) {
+            const m = targetDoc.getElementById('vnpt-lab-timeline-modal');
+            if (!m) {
+                targetWindow.removeEventListener('keydown', handleEsc);
+                return;
+            }
+            if (e.key === 'Escape') {
+                m.remove();
+                targetWindow.removeEventListener('keydown', handleEsc);
+            }
+        });
 
         // ── Lab Trend Chart Drawing Logic ──
         function drawLabTrendChart(canvas, indicatorName, points, unit, refMin, refMax) {

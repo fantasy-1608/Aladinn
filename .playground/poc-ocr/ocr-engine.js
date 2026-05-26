@@ -64,7 +64,7 @@ const REFERENCE_RANGES = {
 export async function createOCRWorker(lang = 'vie+eng') {
   console.log(`[OCR] 🔄 Đang khởi tạo Tesseract (${lang})...`);
   const worker = await createWorker(lang);
-  console.log(`[OCR] ✅ Tesseract sẵn sàng`);
+  console.log('[OCR] ✅ Tesseract sẵn sàng');
   return worker;
 }
 
@@ -75,7 +75,7 @@ export async function createOCRWorker(lang = 'vie+eng') {
  * @returns {Promise<{text: string, confidence: number}>}
  */
 export async function recognizeImage(worker, image) {
-  console.log(`[OCR] 📸 Đang phân tích hình ảnh...`);
+  console.log('[OCR] 📸 Đang phân tích hình ảnh...');
   const { data } = await worker.recognize(image);
   console.log(`[OCR] ✅ Nhận diện xong (confidence: ${data.confidence}%)`);
   return {

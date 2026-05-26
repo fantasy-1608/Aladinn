@@ -141,15 +141,15 @@ function testOCRExtraction() {
   
   const wbc = labs.find(l => l.code === 'WBC');
   assert(wbc && wbc.value === 12.5, `WBC = ${wbc?.value} (expected 12.5)`);
-  assert(wbc && wbc.flag === 'high', `WBC flagged high`);
+  assert(wbc && wbc.flag === 'high', 'WBC flagged high');
   
   const plt = labs.find(l => l.code === 'PLT');
   assert(plt && plt.value === 85, `PLT = ${plt?.value} (expected 85)`);
-  assert(plt && plt.flag === 'low', `PLT flagged low`);
+  assert(plt && plt.flag === 'low', 'PLT flagged low');
   
   const creat = labs.find(l => l.code === 'Creatinine');
   assert(creat && creat.value === 142, `Creatinine = ${creat?.value} (expected 142)`);
-  assert(creat && creat.flag === 'high', `Creatinine flagged high`);
+  assert(creat && creat.flag === 'high', 'Creatinine flagged high');
   
   const na = labs.find(l => l.code === 'Na');
   assert(na && na.flag === 'normal', `Na = ${na?.value} flagged normal`);
@@ -159,7 +159,7 @@ function testOCRExtraction() {
   
   const hba1c = labs.find(l => l.code === 'HbA1c');
   assert(hba1c && hba1c.value === 8.2, `HbA1c = ${hba1c?.value}`);
-  assert(hba1c && hba1c.flag === 'high', `HbA1c flagged high (uncontrolled DM)`);
+  assert(hba1c && hba1c.flag === 'high', 'HbA1c flagged high (uncontrolled DM)');
   
   const abnormal = labs.filter(l => l.flag !== 'normal');
   assert(abnormal.length >= 6, `Detected ${abnormal.length} abnormal values (≥6 expected)`);
@@ -172,23 +172,23 @@ function testVoiceEngine() {
   console.log('\n🎙️ === TEST: Voice Engine ===');
   
   const t1 = postProcessSpeech('Bệnh nhân đau bụng hố chậu phải, ốm đau nhiều khi ấn');
-  assert(t1.includes('ấn đau'), `"ốm đau" → "ấn đau"`);
+  assert(t1.includes('ấn đau'), '"ốm đau" → "ấn đau"');
   
   const t2 = postProcessSpeech('sin hiệu: mạch 80, nhiệt 38 độ');
-  assert(t2.includes('sinh hiệu'), `"sin hiệu" → "sinh hiệu"`);
+  assert(t2.includes('sinh hiệu'), '"sin hiệu" → "sinh hiệu"');
   
   const t3 = postProcessSpeech('trận đấu sơ bộ: viên phối cộng đồng');
-  assert(t3.includes('chẩn đoán'), `"trận đấu" → "chẩn đoán"`);
-  assert(t3.includes('viêm phổi'), `"viên phối" → "viêm phổi"`);
+  assert(t3.includes('chẩn đoán'), '"trận đấu" → "chẩn đoán"');
+  assert(t3.includes('viêm phổi'), '"viên phối" → "viêm phổi"');
   
   const t4 = postProcessSpeech('huyết áp 150 trên 80');
-  assert(t4.includes('150/80 mmHg'), `"150 trên 80" → "150/80 mmHg"`);
+  assert(t4.includes('150/80 mmHg'), '"150 trên 80" → "150/80 mmHg"');
   
   const t5 = postProcessSpeech('nặng 65 ký');
-  assert(t5.includes('cân nặng 65 kg'), `"nặng 65 ký" → "cân nặng 65 kg"`);
+  assert(t5.includes('cân nặng 65 kg'), '"nặng 65 ký" → "cân nặng 65 kg"');
   
   const t6 = postProcessSpeech('cao 1 m 72');
-  assert(t6.includes('chiều cao 172 cm'), `"cao 1 m 72" → "chiều cao 172 cm"`);
+  assert(t6.includes('chiều cao 172 cm'), '"cao 1 m 72" → "chiều cao 172 cm"');
   
   const sim = simulateVoiceInput('Bệnh nhân đau bụng, bên sở: tiểu đường, huyết áp 140 trên 90');
   assert(sim.correctedText.includes('bệnh sử'), 'Full sim: "bên sở" → "bệnh sử"');

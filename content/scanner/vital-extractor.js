@@ -1,6 +1,6 @@
 export function extractVitals(text) {
   if (!text || typeof text !== 'string') {
-    return { hr: null, temp: null, bp: null, rr: null, spo2: null };
+    return { hr: null, temp: null, bp: null, rr: null, spo2: null, stable: false };
   }
 
   const result = {
@@ -8,7 +8,8 @@ export function extractVitals(text) {
     temp: null,
     bp: null,
     rr: null,
-    spo2: null
+    spo2: null,
+    stable: false
   };
 
   // 1. Mạch (HR) - Ngưỡng an toàn sinh lý: 40 - 180 bpm
@@ -74,6 +75,12 @@ export function extractVitals(text) {
     if (val >= 50 && val <= 100) {
       result.spo2 = val;
     }
+  }
+
+  // 6. Nhận diện sinh hiệu ổn định
+  const stableRegex = /(?<![\p{L}\d])(?:(?:sinh\s*hi[eệ]u|sh)\s*[oổôốon]n(?:\s*[dđ][iị]nh)?|sh[oổôốon]n)(?!\p{L})/iu;
+  if (stableRegex.test(text)) {
+    result.stable = true;
   }
 
   return result;

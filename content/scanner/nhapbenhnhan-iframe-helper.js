@@ -19,7 +19,7 @@
         window.removeEventListener('message', window._vnptNhapBenhNhanHandler);
     }
 
-    window._vnptNhapBenhNhanHandler = function (event) {
+    window._vnptNhapBenhNhanHandler = async function (event) {
         if (event.source !== window.parent && event.source !== window.top) return;
         if (!event.data || event.data.type !== 'NHAPBENHNHAN_FILL_FORM') return;
 
@@ -59,7 +59,9 @@
 
                 // 1a. Điền mã vào Combogrid txtTKCHANDOANVAOKHOA
                 if (mainCode) {
-                    setComboGrid('txtTKCHANDOANVAOKHOA', mainCode);
+                    if (window.VNPT_TypingEffect) {
+                        window.VNPT_TypingEffect.setComboGrid('txtTKCHANDOANVAOKHOA', mainCode);
+                    }
                     inputsFilled++;
                 }
 
@@ -81,15 +83,18 @@
                         selectEl.add(opt);
                         selectEl.value = mainCode;
                     }
-                    triggerChange(selectEl);
+                    if (window.VNPT_TypingEffect) {
+                        window.VNPT_TypingEffect.triggerHisEvents([selectEl]);
+                    }
                     inputsFilled++;
                 }
 
-                // 1c. Điền vào ô chỉnh sửa text nếu đang hiển thị (txtEditCDVaoKhoa)
                 var editCDEl = document.getElementById('txtEditCDVaoKhoa');
                 if (editCDEl) {
                     var fullDiagText = mainCode ? (mainCode + '-' + (mainText || '')) : (mainText || '');
-                    setVal(editCDEl, fullDiagText);
+                    if (window.VNPT_TypingEffect) {
+                        await window.VNPT_TypingEffect.fillFormSequential([{ el: editCDEl, val: fullDiagText }], true);
+                    }
                 }
             }
 
@@ -102,7 +107,9 @@
 
                 // 2a. Điền mã đầu tiên vào Combogrid txtTKCHANDOANVAOKHOA_KEMTHEO
                 if (subCode) {
-                    setComboGrid('txtTKCHANDOANVAOKHOA_KEMTHEO', subCode);
+                    if (window.VNPT_TypingEffect) {
+                        window.VNPT_TypingEffect.setComboGrid('txtTKCHANDOANVAOKHOA_KEMTHEO', subCode);
+                    }
                     inputsFilled++;
                 }
 
@@ -114,7 +121,9 @@
 
                 var subTextEl = document.getElementById('txtCHANDOANVAOKHOA_KEMTHEO');
                 if (subTextEl) {
-                    setVal(subTextEl, subDiagFullText);
+                    if (window.VNPT_TypingEffect) {
+                        await window.VNPT_TypingEffect.fillFormSequential([{ el: subTextEl, val: subDiagFullText }], true);
+                    }
                     inputsFilled++;
                 }
             }
@@ -157,49 +166,7 @@
     // UTILITY FUNCTIONS
     // ==========================================
 
-    function setVal(el, val) {
-        if (!el || val === undefined || val === null) return;
-        el.removeAttribute('disabled');
-        el.removeAttribute('readonly');
-        el.value = val;
-        triggerChange(el);
-    }
-
-    function triggerChange(el) {
-        if (!el) return;
-        if ($) {
-            $(el).trigger('change').trigger('input');
-        } else {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
-
-    function setComboGrid(id, code) {
-        if (!code) return;
-        try {
-            var el = document.getElementById(id);
-            if (!el) {
-                // Fallback: tìm theo name
-                var byName = document.querySelector('[name="' + id + '"]');
-                if (byName) el = byName;
-            }
-            if (!el) return;
-
-            el.removeAttribute('disabled');
-            el.removeAttribute('readonly');
-            var jEl = $ ? $(el) : null;
-            if (jEl && jEl.data && jEl.data('combogrid')) {
-                jEl.combogrid('setValue', code);
-                jEl.val(code);
-            } else {
-                el.value = code;
-            }
-            triggerChange(el);
-        } catch (_e) {
-            console.warn('[NhapBN Iframe] setComboGrid error for', id, _e);
-        }
-    }
+    // Removed setVal, triggerChange, setComboGrid
 
     function sendResponse(success, filledCount, error) {
         var target = window.parent || window.top;

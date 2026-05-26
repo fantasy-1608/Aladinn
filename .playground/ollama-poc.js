@@ -4,7 +4,7 @@
  */
 
 async function runLocalLLM() {
-  console.log("🚀 Bắt đầu gửi yêu cầu tới Local LLM (Ollama)...");
+  console.log('🚀 Bắt đầu gửi yêu cầu tới Local LLM (Ollama)...');
   
   const rawClinicalText = `
     Bệnh nhân nam 45 tuổi, đau bụng hố chậu phải ngày thứ 2.
@@ -14,11 +14,11 @@ async function runLocalLLM() {
   `;
 
   try {
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: "llama3", // Hoặc model y khoa bạn đã tải
+        model: 'llama3', // Hoặc model y khoa bạn đã tải
         prompt: `Bạn là trợ lý bác sĩ. Hãy tóm tắt bệnh sử sau thành 3 gạch đầu dòng ngắn gọn:\n${rawClinicalText}`,
         stream: false
       })
@@ -29,12 +29,12 @@ async function runLocalLLM() {
     }
 
     const data = await response.json();
-    console.log("\n✅ Kết quả từ Local LLM:\n");
+    console.log('\n✅ Kết quả từ Local LLM:\n');
     console.log(data.response);
 
   } catch (error) {
-    console.error("❌ Lỗi kết nối Ollama:", error.message);
-    console.log("💡 Mẹo: Hãy chắc chắn Ollama đang chạy ở port 11434");
+    console.error('❌ Lỗi kết nối Ollama:', error.message);
+    console.log('💡 Mẹo: Hãy chắc chắn Ollama đang chạy ở port 11434');
   }
 }
 

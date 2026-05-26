@@ -452,6 +452,84 @@
         if (Logger) Logger.success('Main', '🧞 Aladinn đã sẵn sàng!');
     }
 
+    /**
+     * Smart DOM Scanner — Trích xuất ngữ cảnh bệnh nhân từ các dialog/hộp thoại đang hoạt động
+     */
+    function scanActiveDialogPatientContext() {
+        const frames = [window];
+        try {
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(f => {
+                try {
+                    if (f.contentDocument && f.contentWindow) frames.push(f.contentWindow);
+                } catch (_e) {}
+            });
+        } catch (_e) {}
+
+        for (const win of frames) {
+            try {
+                // HIS UI dùng .ui-dialog-title, .panel-title hoặc .title cho tiêu đề
+                const titleEls = win.document.querySelectorAll('.ui-dialog-title, .panel-title, .title, [class*="title"]');
+                for (const el of titleEls) {
+                    const text = (el.textContent || '').trim();
+                    // Khớp định dạng: CLS + Thuốc (HUỲNH THỊ NGỌC MINH/ 2022/ Nữ)
+                    const m = text.match(/\(([^/]+)\/\s*(\d{4})\/\s*([^)]+)\)/);
+                    if (m) {
+                        const name = m[1].trim();
+                        const birthYear = m[2].trim();
+                        const gender = m[3].trim();
+
+                        // Tìm container bao quanh của el
+                        const dialogContainer = el.closest('.ui-dialog, .panel, .modal, body');
+                        let pid = '';
+                        let diagnosis = '';
+                        
+                        if (dialogContainer) {
+                            const allText = dialogContainer.textContent || '';
+                            // Tìm mã bệnh án, vd: "| TE1878724338549" hoặc "TE1878724338549" (Ưu tiên TE lên trước, và lọc bỏ mã BHYT)
+                            let finalCode = '';
+                            const teMatch = allText.match(/\b(TE\d{10,15})\b/i);
+                            if (teMatch) {
+                                finalCode = teMatch[1].trim();
+                            } else {
+                                const allMatches = allText.matchAll(/\|\s*([A-Z0-9-]{10,25})\b/gi);
+                                for (const match of allMatches) {
+                                    const code = match[1].trim();
+                                    if (!/^[A-Z]{2}\d{13}$/i.test(code)) {
+                                        finalCode = code;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (finalCode) {
+                                pid = finalCode;
+                            }
+
+                            // Tìm chẩn đoán
+                            const diagMatch = allText.match(/(?:CĐ|Chẩn đoán|Chan doan)\s*:\s*([^||\n]+)/i);
+                            if (diagMatch) {
+                                diagnosis = diagMatch[1].trim().replace(/\s*\|\s*[A-Z]{2}\d{13}\s*$/i, '').replace(/\s*\b[A-Z]{2}\d{13}\b\s*$/i, '').trim();
+                            }
+
+                            if (!pid) {
+                                pid = 'TEMP_' + name.replace(/\s+/g, '') + '_' + birthYear;
+                            }
+                        }
+
+                        return {
+                            name,
+                            pid,
+                            birthYear,
+                            gender,
+                            diagnosis
+                        };
+                    }
+                }
+            } catch (_e) {}
+        }
+        return null;
+    }
+
     // ========================================
     // MESSAGE LISTENER (Unified)
     // ========================================
@@ -600,32 +678,51 @@
             if (type === 'GET_PATIENT_CONTEXT') {
                 try {
                     const store = window.VNPTStore?.getState() || {};
-                    const name = store.selectedPatientName || '';
-                    const pid = store.selectedPatientId;
+                    let name = store.selectedPatientName || '';
+                    let pid = store.selectedPatientId;
+                    let birthYear = '';
+                    let bed = '';
+                    let dayCount = '';
+                    let diagnosis = '';
+
+                    if (!name && !pid) {
+                        // Fallback: Quét tìm hộp thoại chi tiết bệnh nhân đang hoạt động trên màn hình
+                        const activeCtx = scanActiveDialogPatientContext();
+                        if (activeCtx) {
+                            name = activeCtx.name;
+                            pid = activeCtx.pid;
+                            birthYear = activeCtx.birthYear || '';
+                            diagnosis = activeCtx.diagnosis || '';
+
+                            // Đồng bộ ngược dữ liệu bệnh nhân đã trích xuất vào Store
+                            if (window.VNPTStore) {
+                                if (pid) window.VNPTStore.actions.selectPatient(pid);
+                                if (name) window.VNPTStore.set('selectedPatientName', name);
+                            }
+                        }
+                    }
+
                     if (!name && !pid) {
                         sendResponse(null);
                     } else {
                         // Try to get more info from the grid
-                        let birthYear = '';
-                        let bed = '';
-                        let dayCount = '';
-                        let diagnosis = '';
-
                         // Attempt to read from the highlighted row in the patient grid
                         const selectedRow = document.querySelector('.datagrid-row-selected, tr.datagrid-row-selected, tr[class*="selected"]');
                         if (selectedRow) {
                             const cells = selectedRow.querySelectorAll('td');
                             // HIS grid columns: index, icons, MA_BA, MA_BN, Giờ vào, Vào khoa, Họ tên, Năm sinh, SNĐT, ...
                             if (cells.length >= 8) {
-                                birthYear = (cells[7]?.textContent || '').trim();
+                                if (!birthYear) birthYear = (cells[7]?.textContent || '').trim();
                                 dayCount = (cells[8]?.textContent || '').trim();
                             }
                             // Chẩn đoán thường ở cột cuối
-                            for (let i = cells.length - 1; i >= 9; i--) {
-                                const txt = (cells[i]?.textContent || '').trim();
-                                if (txt && txt.length > 5 && /[A-Z]\d/.test(txt)) {
-                                    diagnosis = txt;
-                                    break;
+                            if (!diagnosis) {
+                                for (let i = cells.length - 1; i >= 9; i--) {
+                                    const txt = (cells[i]?.textContent || '').trim();
+                                    if (txt && txt.length > 5 && /[A-Z]\d/.test(txt)) {
+                                        diagnosis = txt;
+                                        break;
+                                    }
                                 }
                             }
                         }

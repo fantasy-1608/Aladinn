@@ -6,13 +6,13 @@ try {
   
   // Test large numbers
   ctx.moveTo(0, Number.MAX_VALUE);
-  console.log("moveTo with MAX_VALUE succeeded");
+  console.log('moveTo with MAX_VALUE succeeded');
   ctx.lineTo(0, Number.MAX_VALUE);
-  console.log("lineTo with MAX_VALUE succeeded");
+  console.log('lineTo with MAX_VALUE succeeded');
   
   // Test arc with MAX_VALUE
   ctx.arc(0, Number.MAX_VALUE, 2, 0, 2 * Math.PI);
-  console.log("arc with MAX_VALUE succeeded");
+  console.log('arc with MAX_VALUE succeeded');
 } catch (e) {
-  console.log("Error:", e.message);
+  console.log('Error:', e.message);
 }

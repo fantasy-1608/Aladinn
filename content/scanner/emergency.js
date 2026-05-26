@@ -430,19 +430,25 @@ const VNPTEmergency = (function () {
         if (old) old.remove();
 
         return new Promise((resolve, reject) => {
-            const script = doc.createElement('script');
-            script.id = 'vnpt-emergency-helper';
-            
-            if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/emergency-iframe-helper.js');
-            } else {
-                reject(new Error('Chrome runtime unavailable'));
-                return;
-            }
+            const _chrome = (typeof window !== 'undefined' && window.chrome) ? window.chrome : null;
+            if (!_chrome || !_chrome.runtime) return reject(new Error('Chrome unavailable'));
 
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Inject failed'));
-            (doc.head || doc.documentElement).appendChild(script);
+            const loadScript = (src, id) => new Promise((res, rej) => {
+                const existing = doc.getElementById(id);
+                if (existing) existing.remove();
+                
+                const script = doc.createElement('script');
+                script.id = id;
+                script.src = _chrome.runtime.getURL(src);
+                script.onload = res;
+                script.onerror = rej;
+                (doc.head || doc.documentElement).appendChild(script);
+            });
+
+            loadScript('content/shared/typing-effect.js', 'vnpt-typing-effect-lib')
+                .then(() => loadScript('content/scanner/emergency-iframe-helper.js', 'vnpt-emergency-helper'))
+                .then(resolve)
+                .catch(() => reject(new Error('Inject failed')));
         });
     }
 

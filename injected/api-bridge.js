@@ -230,11 +230,33 @@
         return null;
     }
 
+    function _decodeHtmlEntities(str) {
+        if (!str) return '';
+        try {
+            var txt = document.createElement('textarea');
+            txt.innerHTML = str;
+            return txt.value.normalize('NFC');
+        } catch (_e) {
+            return str.normalize('NFC');
+        }
+    }
+
     function _cleanHisText(value) {
-        return String(value || '')
+        if (!value) return '';
+        var decoded = _decodeHtmlEntities(String(value));
+        return decoded
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
+    }
+
+    function _cleanLydoVaoVien(val) {
+        if (!val) return '';
+        var trimmed = String(val).trim();
+        if (/^[.\-\s_?]+$/.test(trimmed) || trimmed.match(/^\.+\s*$/)) {
+            return '';
+        }
+        return trimmed;
     }
 
     function _firstValue(row, keys) {
@@ -313,8 +335,14 @@
                     }
                 }
 
-                // Fallback: safe async resolve to release UI thread
-                resolve(null);
+                // Fallback: Thực hiện cuộc gọi đồng bộ (sync) nguyên bản để khôi phục dữ liệu
+                try {
+                    const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
+                    resolve(result);
+                } catch (e2) {
+                    console.error('[API-Bridge] Sync fallback failed for', sp, ':', e2);
+                    resolve(null);
+                }
             } catch (e) {
                 console.error('[API-Bridge] Async jabsorb exception:', e);
                 resolve(null);
@@ -576,27 +604,26 @@
             }
             const { rowData } = resolveActiveGrid(rowId, { strict: true });
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID;
+            const kbIdHienTai = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
 
-            if (!hsbaId) {
+            if (!hsbaId && !kbIdHienTai) {
                 sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
                 return;
             }
 
-            const params = JSON.stringify({ HOSOBENHANID: hsbaId });
-            const result = await _asyncCallSpO('NT.006.HSBA.HIS', params, 0);
-            const data = (typeof result === 'string' && result.trim() !== '') ? JSON.parse(result) : result;
-            const records = Array.isArray(data) ? data : [data];
-
             let historyData = {};
-            for (let i = records.length - 1; i >= 0; i--) {
-                const rec = records[i];
-                if (!rec) continue;
-                if (rec.LYDOVAOVIEN && !historyData.LYDOVAOVIEN) historyData.LYDOVAOVIEN = rec.LYDOVAOVIEN;
-                if (rec.QUATRINHBENHLY && !historyData.QUATRINHBENHLY) historyData.QUATRINHBENHLY = rec.QUATRINHBENHLY;
-                if (rec.TIENSUBENH_BANTHAN && !historyData.TIENSUBENH_BANTHAN) historyData.TIENSUBENH_BANTHAN = rec.TIENSUBENH_BANTHAN;
-                if (rec.KHAMBENH_TOANTHAN && !historyData.KHAMBENH_TOANTHAN) historyData.KHAMBENH_TOANTHAN = rec.KHAMBENH_TOANTHAN;
-                if (rec.KHAMBENH_BOPHAN && !historyData.KHAMBENH_BOPHAN) historyData.KHAMBENH_BOPHAN = rec.KHAMBENH_BOPHAN;
-                if (rec.TOMTATKQCANLAMSANG && !historyData.TOMTATKQCANLAMSANG) historyData.TOMTATKQCANLAMSANG = rec.TOMTATKQCANLAMSANG;
+
+            const accumulate = (rec) => {
+                if (!rec) return;
+                
+                if (!historyData.LYDOVAOVIEN) historyData.LYDOVAOVIEN = rec.LYDOVAOVIEN || rec.LY_DO_VAO_VIEN || '';
+                if (!historyData.QUATRINHBENHLY) historyData.QUATRINHBENHLY = rec.QUATRINHBENHLY || rec.QUA_TRINH_BENH_LY || rec.BENHSU || rec.BENH_SU || '';
+                if (!historyData.TIENSUBENH_BANTHAN) historyData.TIENSUBENH_BANTHAN = rec.TIENSUBENH_BANTHAN || rec.TIEN_SU_BAN_THAN || rec.TIENSU_BANTHAN || rec.TIENSU || rec.TIEN_SU || '';
+                if (!historyData.TIENSUBENH_GIADINH) historyData.TIENSUBENH_GIADINH = rec.TIENSUBENH_GIADINH || rec.TIENSUGIADINH || rec.TIEN_SU_GIA_DINH || '';
+                if (!historyData.KHAMBENH_TOANTHAN) historyData.KHAMBENH_TOANTHAN = rec.KHAMBENH_TOANTHAN || rec.KHAM_TOAN_THAN || rec.TOANTHAN || '';
+                if (!historyData.KHAMBENH_BOPHAN) historyData.KHAMBENH_BOPHAN = rec.KHAMBENH_BOPHAN || rec.KHAM_BO_PHAN || rec.BOPHAN || '';
+                if (!historyData.TOMTATKQCANLAMSANG) historyData.TOMTATKQCANLAMSANG = rec.TOMTATKQCANLAMSANG || rec.TOMTAT_CLS || rec.TOM_TAT_CLS || rec.TOM_TAT_KQ_CAN_LAM_SANG || '';
+
                 // Universal scan: Extract CHANDOAN and MABENHCHINH
                 if (!historyData.CHANDOAN) {
                     let tempChanDoan = '';
@@ -616,7 +643,7 @@
                                 tempChanDoan = val;
                             }
                         }
-                        if (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH') {
+                        if (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD') {
                             tempMa = val;
                         }
                         if (uk === 'MABENHKEMTHEO' || uk === 'MA_BENHKEMTHEO' || uk === 'MACDCKEMTHEO') {
@@ -626,12 +653,28 @@
 
                     if (tempChanDoan) {
                         historyData.CHANDOAN = (tempMa && !tempChanDoan.includes(tempMa)) ? `${tempMa}-${tempChanDoan}` : tempChanDoan;
+                        historyData.CHANDOAN = historyData.CHANDOAN.replace(/\s*\|\s*[A-Z]{2}\d{13}/i, '').replace(/\b[A-Z]{2}\d{13}\b/i, '').trim();
                     }
                     if (tempChanDoanPhu && !historyData.CHANDOAN_KEMTHEO) {
                         historyData.CHANDOAN_KEMTHEO = (tempMaPhu && !tempChanDoanPhu.includes(tempMaPhu)) ? `${tempMaPhu}-${tempChanDoanPhu}` : tempChanDoanPhu;
+                        historyData.CHANDOAN_KEMTHEO = historyData.CHANDOAN_KEMTHEO.replace(/\s*\|\s*[A-Z]{2}\d{13}/i, '').replace(/\b[A-Z]{2}\d{13}\b/i, '').trim();
                     }
                 }
-            }
+            };
+
+            const trySP = async (sp, p) => {
+                try {
+                    const params = (typeof p === 'object') ? JSON.stringify(p) : p;
+                    const res = await _asyncCallSpO(sp, params, 0);
+                    if (!res) return;
+                    const data = (typeof res === 'string' && res.trim() !== '') ? JSON.parse(res) : res;
+                    const recs = Array.isArray(data) ? data : [data];
+                    for (let i = recs.length - 1; i >= 0; i--) accumulate(recs[i]);
+                } catch (_e) { }
+            };
+
+            if (kbIdHienTai) await trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+            if (hsbaId) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hsbaId });
 
             sendResult('FETCH_HISTORY_RESULT', rowId, { 
                 history: historyData,
@@ -691,7 +734,7 @@
                     diagnosis = sv;
                 }
                 // Mã bệnh chính (ICD)
-                if (!maBenhChinh && (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH' || uk === 'MACHANDOANVAOKHOA')) {
+                if (!maBenhChinh && (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MACHANDOANVAOKHOA')) {
                     maBenhChinh = sv;
                 }
                 // Chẩn đoán kèm theo
@@ -722,6 +765,12 @@
                 if (!patientName && (uk === 'TENBENHNHAN' || uk === 'HOTEN' || uk === 'TEN_BN' || uk === 'TEN_BENHNHAN')) {
                     patientName = sv;
                 }
+            }
+
+            // Loại bỏ mã BHYT rác (ví dụ: | GD4828723165180) dính vào cuối chuỗi chẩn đoán
+            if (diagnosis) {
+                diagnosis = diagnosis.replace(/\s*\|\s*[A-Z]{2}\d{13}\s*$/i, '').trim();
+                diagnosis = diagnosis.replace(/\s*\b[A-Z]{2}\d{13}\b\s*$/i, '').trim();
             }
 
             // Gộp mã bệnh chính và tên bệnh chính vào diagnosis nếu có mã nhưng chưa gộp
@@ -985,9 +1034,20 @@
                             GHICHU: r.GHICHUPDT || r.GHICHU || r.CHITIETGHICHU || '',
                             NGUOITAO: r.NGUOITAO || '',
                             NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || r.NGAY_Y_LENH || '',
-                            MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                            MAUBENHPHAMID: r.MAUBENHPHAMID || r.PHIEUDIEUTRIID || r.MADIEUTRI || r.ID_PHIEU_DIEU_TRI || '',
                             CHANDOAN: '',
-                            CHANDOANKEMTHEO: ''
+                            CHANDOANKEMTHEO: '',
+                            YLENH: _cleanHisText(r.YLENH || ''),
+                            XULY: _cleanHisText(r.XULY || r.HUONGXUTRI || r.HUONGXULY || r.HUONG_XU_TRI || r.XUTRI || r.XU_TRI || ''),
+                            TOANTHAN: _cleanHisText(r.KHAMTOANTHAN || r.TOANTHAN || r.KHAMBENH_TOANTHAN || r.KHAMBENHTOANTHAN || r.KHAM_TOAN_THAN || ''),
+                            KHAMBOPHAN: _cleanHisText(r.KHAMBOPHAN || r.BOPHAN || r.KHAMBENH_BOPHAN || ''),
+                            MACH: r.MACH || r.KHAMBENH_MACH || '',
+                            NHIETDO: r.NHIETDO || r.KHAMBENH_NHIETDO || '',
+                            HUYETAP: (r.HUYETAP_HI && r.HUYETAP_LOW) ? (r.HUYETAP_HI + '/' + r.HUYETAP_LOW) : (r.HUYETAP || r.KHAMBENH_HUYETAP || ''),
+                            NHIPTHO: r.NHIPTHO || r.KHAMBENH_NHIPTHO || '',
+                            CANNANG: r.CANNANG || '',
+                            CHIEUCAO: r.CHIEUCAO || '',
+                            SPO2: r.SPO2 || ''
                         };
                         // Universal scan for diagnosis fields in sheet list
                         for (const k in r) {
@@ -1024,6 +1084,36 @@
                                 }
                             }
                         }
+                        // Trích xuất Y lệnh khác từ dòng tờ điều trị đại diện r
+                        let sheetYLenh = '';
+                        for (const k in r) {
+                            const uk = k.toUpperCase();
+                            if (uk.includes('YLENH') || uk.includes('Y_LENH')) {
+                                const val = String(r[k] || '').trim();
+                                if (val && val.length > 2 && val !== t.DIENBIEN && val !== t.GHICHU) {
+                                    sheetYLenh = val;
+                                    break;
+                                }
+                            }
+                        }
+                        if (sheetYLenh) {
+                            const cleanText = _cleanHisText(sheetYLenh);
+                            if (cleanText) {
+                                const key = `${t.NGAYMAUBENHPHAM}|Phiếu điều trị|${cleanText}|`;
+                                if (!seenDetailOrders.has(key)) {
+                                    seenDetailOrders.add(key);
+                                    detailOrders.push({
+                                        NGAYMAUBENHPHAM: t.NGAYMAUBENHPHAM || '',
+                                        YLENH: cleanText,
+                                        NHOMYLENH: 'Y lệnh khác',
+                                        GHICHU: '',
+                                        NGUOITAO: t.NGUOITAO || '',
+                                        SOURCE_API: 'NT.024.2.DETAIL'
+                                    });
+                                }
+                            }
+                        }
+
                         return t;
                     });
                     console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
@@ -1034,7 +1124,70 @@
                     const toFetch = sheetsNeedDetail.slice(0, 20);
                     await Promise.all(toFetch.map(async (sheet) => {
                         try {
-                            const detailRes = await _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0);
+                            // Gọi song song cả chỉ định con và chi tiết tờ điều trị gốc (chứa YLENH CKEditor, XULY, TOANTHAN, KHAMBOPHAN)
+                            const [detailRes, laydlRes] = await Promise.all([
+                                _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0),
+                                _asyncCallSpO('NGT02K015.LAYDL', String(sheet.MAUBENHPHAMID), 0)
+                            ]);
+
+                            // Phân tích kết quả chi tiết tờ điều trị gốc (LAYDL)
+                            let laydlObj = null;
+                            try {
+                                if (laydlRes) {
+                                    let parsed = null;
+                                    if (typeof laydlRes === 'string' && laydlRes.trim() !== '') {
+                                        parsed = JSON.parse(laydlRes);
+                                    } else {
+                                        parsed = laydlRes;
+                                    }
+
+                                    if (parsed) {
+                                        if (Array.isArray(parsed)) {
+                                            laydlObj = parsed[0];
+                                        } else if (parsed.rows && Array.isArray(parsed.rows)) {
+                                            laydlObj = parsed.rows[0];
+                                        } else {
+                                            laydlObj = parsed;
+                                        }
+                                    }
+                                }
+                            } catch (_parseErr) {
+                                console.warn('[API-Bridge] Failed to parse LAYDL result for sheet.');
+                            }
+
+                            if (laydlObj) {
+                                sheet.YLENH = _cleanHisText(laydlObj.YLENH || laydlObj.Y_LENH || sheet.YLENH || '');
+                                sheet.XULY = _cleanHisText(laydlObj.XULY || laydlObj.HUONGXUTRI || laydlObj.HUONGXULY || laydlObj.HUONG_XU_TRI || sheet.XULY || '');
+                                sheet.TOANTHAN = _cleanHisText(laydlObj.KHAMTOANTHAN || laydlObj.TOANTHAN || laydlObj.KHAMBENH_TOANTHAN || laydlObj.KHAM_TOAN_THAN || sheet.TOANTHAN || '');
+                                sheet.KHAMBOPHAN = _cleanHisText(laydlObj.KHAMBOPHAN || laydlObj.BOPHAN || laydlObj.KHAMBENH_BOPHAN || sheet.KHAMBOPHAN || '');
+                                if (laydlObj.DIENBIENBENH || laydlObj.DIENBIEN) {
+                                    sheet.DIENBIEN = _cleanHisText(laydlObj.DIENBIENBENH || laydlObj.DIENBIEN || sheet.DIENBIEN || '');
+                                }
+                                sheet.MACH = laydlObj.MACH || laydlObj.KHAMBENH_MACH || sheet.MACH || '';
+                                sheet.NHIETDO = laydlObj.NHIETDO || laydlObj.KHAMBENH_NHIETDO || sheet.NHIETDO || '';
+                                sheet.HUYETAP = (laydlObj.HUYETAP_HI && laydlObj.HUYETAP_LOW) ? (laydlObj.HUYETAP_HI + '/' + laydlObj.HUYETAP_LOW) : (laydlObj.HUYETAP || laydlObj.KHAMBENH_HUYETAP || sheet.HUYETAP || '');
+                                sheet.NHIPTHO = laydlObj.NHIPTHO || laydlObj.KHAMBENH_NHIPTHO || sheet.NHIPTHO || '';
+                                sheet.CANNANG = laydlObj.CANNANG || sheet.CANNANG || '';
+                                sheet.CHIEUCAO = laydlObj.CHIEUCAO || sheet.CHIEUCAO || '';
+                                sheet.SPO2 = laydlObj.SPO2 || sheet.SPO2 || '';
+
+                                // Trích xuất y lệnh tự do từ CKEditor đưa vào cột Y lệnh của timeline
+                                if (sheet.YLENH) {
+                                    const key = `${sheet.NGAYMAUBENHPHAM}|Phiếu điều trị|${sheet.YLENH}|`;
+                                    if (!seenDetailOrders.has(key)) {
+                                        seenDetailOrders.add(key);
+                                        detailOrders.push({
+                                            NGAYMAUBENHPHAM: sheet.NGAYMAUBENHPHAM || '',
+                                            YLENH: sheet.YLENH,
+                                            NHOMYLENH: 'Y lệnh khác',
+                                            GHICHU: '',
+                                            NGUOITAO: sheet.NGUOITAO || '',
+                                            SOURCE_API: 'NGT02K015.LAYDL'
+                                        });
+                                    }
+                                }
+                            }
+
                             let records = [];
                             if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
                             else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
@@ -1165,11 +1318,21 @@
                             if (sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = finalClean(sheet.CHANDOANKEMTHEO);
 
                         } catch (_detailErr) {
-                            console.warn('[API-Bridge] Detail fetch failed for sheet', sheet.MAUBENHPHAMID);
+                            console.warn('[API-Bridge] Detail fetch failed for sheet.');
                         }
                     }));
 
-                    let allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+                    // Gộp và loại bỏ trùng lặp giữa yLenhList và detailOrders
+                    const mergedYLenh = [...yLenhList];
+                    const seenKeys = new Set(yLenhList.map(o => `${o.NGAYMAUBENHPHAM}|${o.NHOMYLENH}|${o.YLENH}|${o.GHICHU}`));
+                    for (const detail of detailOrders) {
+                        const key = `${detail.NGAYMAUBENHPHAM}|${detail.NHOMYLENH}|${detail.YLENH}|${detail.GHICHU}`;
+                        if (!seenKeys.has(key)) {
+                            seenKeys.add(key);
+                            mergedYLenh.push(detail);
+                        }
+                    }
+                    let allYLenh = mergedYLenh;
 
                     // Tích hợp dữ liệu thời gian thực từ DOM Tờ điều trị đang soạn thảo
                     try {
@@ -1191,6 +1354,17 @@
                                 MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
                                 CHANDOAN: domSheet.chanDoanChinh || '',
                                 CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                                YLENH: domSheet.yLenh || '',
+                                XULY: domSheet.huongXuLy || '',
+                                TOANTHAN: domSheet.khamToanThanTDT || '',
+                                KHAMBOPHAN: domSheet.khamBoPhan || '',
+                                MACH: domSheet.sinhHieu?.pulse || '',
+                                NHIETDO: domSheet.sinhHieu?.temperature || '',
+                                HUYETAP: domSheet.sinhHieu?.bloodPressure || '',
+                                NHIPTHO: domSheet.sinhHieu?.respiratoryRate || '',
+                                CANNANG: domSheet.sinhHieu?.weight || '',
+                                CHIEUCAO: domSheet.sinhHieu?.height || '',
+                                SPO2: domSheet.sinhHieu?.spo2 || '',
                                 IS_REALTIME: true
                             };
 
@@ -1269,6 +1443,17 @@
                             MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
                             CHANDOAN: domSheet.chanDoanChinh || '',
                             CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                            YLENH: domSheet.yLenh || '',
+                            XULY: domSheet.huongXuLy || '',
+                            TOANTHAN: domSheet.khamToanThanTDT || '',
+                            KHAMBOPHAN: domSheet.khamBoPhan || '',
+                            MACH: domSheet.sinhHieu?.pulse || '',
+                            NHIETDO: domSheet.sinhHieu?.temperature || '',
+                            HUYETAP: domSheet.sinhHieu?.bloodPressure || '',
+                            NHIPTHO: domSheet.sinhHieu?.respiratoryRate || '',
+                            CANNANG: domSheet.sinhHieu?.weight || '',
+                            CHIEUCAO: domSheet.sinhHieu?.height || '',
+                            SPO2: domSheet.sinhHieu?.spo2 || '',
                             IS_REALTIME: true
                         };
 
@@ -1566,7 +1751,7 @@
                                     }
                                 }
                             } catch (err) {
-                                console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
+                                console.warn('[API-Bridge] Mode 2 parsing error:', err.message || 'Unknown error');
                             }
                         }
 
@@ -1999,7 +2184,8 @@
         }
 
         // Làm sạch mã HTML sang dạng văn bản thô để phân tích Regex
-        var textYLenh = yLenhRaw.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').trim();
+        var decodedYLenh = _decodeHtmlEntities(yLenhRaw);
+        var textYLenh = decodedYLenh.replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ').trim();
         var diet = '';
         var care = '';
 
@@ -2128,7 +2314,9 @@
                     for (let i = records.length - 1; i >= 0; i--) {
                         const rec = records[i];
                         if (!rec) continue;
-                        if (rec.LYDOVAOVIEN && !result.lyDoVaoVien) result.lyDoVaoVien = rec.LYDOVAOVIEN;
+                        if (rec.LYDOVAOVIEN && !result.lyDoVaoVien) {
+                            result.lyDoVaoVien = _cleanLydoVaoVien(rec.LYDOVAOVIEN);
+                        }
                         if (rec.QUATRINHBENHLY && !result.quaTrinhBenhLy) result.quaTrinhBenhLy = rec.QUATRINHBENHLY;
                         if (rec.TIENSUBENH_BANTHAN && !result.tienSuBanThan) result.tienSuBanThan = rec.TIENSUBENH_BANTHAN;
                         if (rec.KHAMBENH_TOANTHAN && !result.khamToanThan) result.khamToanThan = rec.KHAMBENH_TOANTHAN;
@@ -2164,7 +2352,9 @@
                         return (el.value || el.textContent || '').trim();
                     };
                     // Đọc từ các field tabBenhAntxt* trong tab "Bệnh án"
-                    if (!result.lyDoVaoVien) result.lyDoVaoVien = _domVal('tabBenhAntxtLYDOVAOVIEN');
+                    if (!result.lyDoVaoVien) {
+                        result.lyDoVaoVien = _cleanLydoVaoVien(_domVal('tabBenhAntxtLYDOVAOVIEN'));
+                    }
                     if (!result.quaTrinhBenhLy) result.quaTrinhBenhLy = _domVal('tabBenhAntxtQUATRINHBENHLY');
                     if (!result.tienSuBanThan) result.tienSuBanThan = _domVal('tabBenhAntxtTIENSUBENH_BANTHAN');
                     if (!result.tienSuGiaDinh) result.tienSuGiaDinh = _domVal('tabBenhAntxtTIENSUBENH_GIADINH');
@@ -2895,6 +3085,113 @@
                 return [];
             };
 
+            const _context = {
+                rowId,
+                KHAMBENHID: khambenhId,
+                HOSOBENHANID: hsbaId,
+                BENHNHANID: benhnhanId,
+                patientName: patientName
+            };
+
+            try {
+                let newApiRows = [];
+                if (khambenhId) {
+                    newApiRows = await _fetchSheets('TraCuuKetQuaHDG', [{ name: '[0]', value: String(khambenhId) }]);
+                }
+                if ((!newApiRows || newApiRows.length === 0) && hsbaId) {
+                    newApiRows = await _fetchSheets('TraCuuKetQuaHDG', [{ name: '[0]', value: String(hsbaId) }]);
+                }
+
+                if (!newApiRows || newApiRows.length === 0) {
+                    throw new Error('No data from TraCuuKetQuaHDG, triggering fallback');
+                }
+
+                const newAllLabs = [];
+                const newImagingData = [];
+
+                for (const item of newApiRows) {
+                    const getVal = (obj, keys) => {
+                        if (!obj) return '';
+                        for (const k of Object.keys(obj)) {
+                            if (keys.includes(k.toUpperCase())) return obj[k];
+                        }
+                        return '';
+                    };
+
+                    const testName = getVal(item, ['TENXETNGHIEM', 'TENDICHVU_CHA', 'LOAIXETNGHIEM', 'TENDICHVU', 'TEN_DICHVU_KYTHUAT', 'TENLOAICHIDINH']);
+                    const code = getVal(item, ['TEN', 'TENCHISO', 'TENCHIDINH', 'TENTONGHOP', 'MADICHVU', 'MA']);
+                    const value = getVal(item, ['GIATRI_KETQUA', 'KETQUA', 'KETQUACLS']);
+                    const unit = getVal(item, ['DONVITINH', 'DONVI']);
+                    const refMin = item.GIATRINHONHAT || item.GIATRI_MIN || '';
+                    const refMax = item.GIATRILONNHAT || item.GIATRI_MAX || '';
+                    const refDisplay = item.TRISOBINHTHUONG || '';
+                    const sheetId = item.MAUBENHPHAMID || item.SOPHIEUID || item.SOPHIEU || item.IDPHIEU || '';
+                    const sheetDate = item.NGAYMAUBENHPHAM || item.NGAYCHIDINH || item.THOIGIAN || '';
+
+                    let status = '';
+                    const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
+                    if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                        status = 'Cao';
+                    } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                        status = 'Thấp';
+                    }
+                    if (!status && value) {
+                        const numVal = parseFloat(String(value).replace(',', '.'));
+                        const numMin = parseFloat(String(refMin).replace(',', '.'));
+                        const numMax = parseFloat(String(refMax).replace(',', '.'));
+                        if (!isNaN(numVal)) {
+                            if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
+                            else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
+                        }
+                    }
+
+                    const linkDicom = item.LINK_DICOM || '';
+                    const conclusion = getVal(item, ['KETLUAN']);
+                    
+                    const isCDHA = linkDicom !== '' || conclusion !== '' || String(testName || '').toUpperCase().includes('CHỤP') || String(testName || '').toUpperCase().includes('SIÊU ÂM') || String(testName || '').toUpperCase().includes('X-QUANG');
+
+                    if (isCDHA) {
+                        newImagingData.push({
+                            sheetId: sheetId,
+                            maubenhphamid: sheetId,
+                            sophieu: item.SOPHIEU || item.IDPHIEU || '',
+                            madichvu: item.MADICHVU || item.MA || '',
+                            linkDicom: linkDicom,
+                            sheetDate: sheetDate,
+                            name: testName || code || 'CĐHA',
+                            code: item.MADICHVU || item.MA || '',
+                            conclusion: conclusion || value || '',
+                            status: item.TRANGTHAI || item.TRANGTHAIKETQUA || '',
+                            department: item.KHOADIEUTRI || item.TENPHONG || ''
+                        });
+                    } else {
+                        if (value || code) {
+                            newAllLabs.push({
+                                sheetId: sheetId,
+                                sheetDate: sheetDate,
+                                testName: testName || code,
+                                code: code,
+                                value: value,
+                                unit: unit,
+                                refMin: refMin,
+                                refMax: refMax,
+                                refDisplay: refDisplay,
+                                status: status
+                            });
+                        }
+                    }
+                }
+
+                if (newAllLabs.length === 0 && newImagingData.length === 0) {
+                    throw new Error('Mapped empty labsData/imagingData from TraCuuKetQuaHDG');
+                }
+
+                sendResult('FETCH_LABS_RESULT', rowId, { labsData: newAllLabs, imagingData: newImagingData, patientName, _context }, requestId);
+                return;
+            } catch (newApiErr) {
+                console.warn('[API-Bridge] TraCuuKetQuaHDG failed, falling back:', newApiErr.message || 'Unknown error');
+            }
+
             const strategies = [];
 
             // --- XÉT NGHIỆM (type=1) ---
@@ -3040,7 +3337,7 @@
                         });
                     }
                 } catch (_e) {
-                    console.error('[API-Bridge] Error fetching details for sheet', sheetId, _e);
+                    console.error('[API-Bridge] Error fetching details for sheet:', _e.message || 'Unknown error');
                 }
             });
 
@@ -3087,18 +3384,12 @@
             });
             await Promise.all(cdhaDetailPromises);
 
-            const _context = {
-                rowId,
-                KHAMBENHID: khambenhId,
-                HOSOBENHANID: hsbaId,
-                BENHNHANID: benhnhanId,
-                patientName: patientName
-            };
+
 
             sendResult('FETCH_LABS_RESULT', rowId, { labsData: allLabs, imagingData, patientName, _context }, requestId);
 
         } catch (err) {
-            console.error('[API-Bridge] fetchLabs error:', err);
+            console.error('[API-Bridge] fetchLabs error:', err.message || 'Unknown error');
             sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '', _context: null }, requestId);
         }
     }

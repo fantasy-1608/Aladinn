@@ -17,7 +17,7 @@
         window.removeEventListener('message', window._vnptNutritionHandler);
     }
 
-    window._vnptNutritionHandler = function (event) {
+    window._vnptNutritionHandler = async function (event) {
         if (event.source !== window.parent) return;
         if (!event.data || event.data.type !== 'NUTRITION_FILL_FORM') return;
 
@@ -46,6 +46,7 @@
             var admissionDate = d.admissionDate || '';
 
             console.log('[Nutrition Iframe] Nhận tín hiệu điền form:', d);
+            var fillQueue = [];
 
             // Cứu cánh: Nếu TOP frame báo về rỗng, Helper sẽ tự tìm trong nội bộ Iframe của nó
             if (!admissionDate) {
@@ -72,7 +73,7 @@
                 var dp = document.getElementById('datepicker_TGTH');
                 if (dp) {
                     dp.removeAttribute('disabled'); // Mở khóa trường bị disable
-                    setVal('datepicker_TGTH', admissionDate);
+                    fillQueue.push({ el: dp, val: admissionDate });
                     console.log('[Nutrition Iframe] ĐỀ ĐIỀN CHUẨN XÁC VÀO #datepicker_TGTH:', admissionDate);
                 } else {
                     // Ưu tiên 2: Tìm thẻ chứa chữ "Ngày thực hiện" rồi lấy input kế nó (Cho form dự phòng)
@@ -88,7 +89,7 @@
                                 var input = container.querySelector('input[type="text"]');
                                 if (input) {
                                     input.removeAttribute('disabled');
-                                    setVal(input.id, admissionDate);
+                                    fillQueue.push({ el: input, val: admissionDate });
                                     injectedDate = true;
                                     console.log('[Nutrition Iframe] Đã điền Ngày Nhập Khoa vào:', input.id);
                                     break;
@@ -105,7 +106,7 @@
                             var val = el.value || '';
                             if (val && val.match(/\d{2}\/\d{2}\/\d{4}/)) {
                                 el.removeAttribute('disabled');
-                                setVal(el.id, admissionDate);
+                                fillQueue.push({ el: el, val: admissionDate });
                                 console.log('[Nutrition Iframe] Fallback điền Ngày Nhập Khoa vào:', el.id);
                                 break; 
                             }
@@ -116,16 +117,16 @@
                 console.log('[Nutrition Iframe] Cảnh báo: admissionDate rỗng, không thể điền Ngày thực hiện.');
             }
 
-            setVal('textfield_1535', weight);
-            setVal('textfield_1536', height);
+            fillQueue.push({ id: 'textfield_1535', val: weight });
+            fillQueue.push({ id: 'textfield_1536', val: height });
 
             // Xử lý Huyết áp (nếu có định dạng 120/80)
             if (bp && bp.includes('/')) {
                 var parts = bp.split('/');
-                setVal('textfield_1537', parts[0]);
-                setVal('textfield_1538', parts[1]);
+                fillQueue.push({ id: 'textfield_1537', val: parts[0] });
+                fillQueue.push({ id: 'textfield_1538', val: parts[1] });
             } else if (bp) {
-                setVal('textfield_1537', bp);
+                fillQueue.push({ id: 'textfield_1537', val: bp });
             }
 
             // Tự tính BMI = cân nặng / (chiều cao ^ 2)
@@ -135,7 +136,7 @@
             if (!isNaN(w) && !isNaN(h) && h > 0) {
                 bmi = (w / (h * h)).toFixed(2);
             }
-            setVal('textfield_1526', bmi);
+            fillQueue.push({ id: 'textfield_1526', val: bmi });
 
 
             // Sụt cân trong 3 tháng gần đây: tick "Không"
@@ -152,6 +153,10 @@
             var bsMieng = document.getElementById('checkbox_1546');
             if (bsMieng && !bsMieng.checked) bsMieng.click();
 
+            if (window.VNPT_TypingEffect && fillQueue.length > 0) {
+                await window.VNPT_TypingEffect.fillFormSequential(fillQueue, true);
+            }
+
             sendResponse(true);
         } catch (e) {
             sendResponse(false, e.message || 'Lỗi không xác định');
@@ -160,17 +165,7 @@
 
     window.addEventListener('message', window._vnptNutritionHandler);
 
-    function setVal(id, val) {
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.value = val;
-        if ($) {
-            $(el).trigger('change').trigger('input');
-        } else {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
+    // Removed unused setVal
 
     function sendResponse(success, error) {
         var msg = { type: 'NUTRITION_FILL_RESULT', success: success };
