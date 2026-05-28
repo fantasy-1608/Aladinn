@@ -32,6 +32,10 @@
 
         if (event.data.type !== 'HISTORY_FILL_FORM') return;
 
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
+
         try {
             if (event.data.contextToken) {
                 var expectedName = event.data.expectedPatientName || '';

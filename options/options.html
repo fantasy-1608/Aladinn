@@ -124,6 +124,28 @@
             border-radius: 12px;
         }
 
+        .badge-vip-pro {
+            font-size: 9px;
+            font-weight: 800;
+            color: #00e676;
+            background: rgba(0, 230, 118, 0.15);
+            border: 1px solid #00e676;
+            padding: 2px 6px;
+            border-radius: 0px;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+            animation: badge-glow-breath-opt 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes badge-glow-breath-opt {
+            0% { box-shadow: 0 0 2px rgba(0, 230, 118, 0.2); }
+            100% { box-shadow: 0 0 8px rgba(0, 230, 118, 0.5); }
+        }
+
         .nav-menu {
             display: flex;
             flex-direction: column;
@@ -573,7 +595,8 @@
             <div class="app-brand">
                 <img src="../assets/icons/aladinn-vector.svg" alt="Aladinn Genie Icon" class="genie-img">
                 <div>
-                    <h1>Aladinn</h1>
+                    <h1 style="display: inline-block; vertical-align: middle;">Aladinn</h1>
+                    <span class="badge-vip-pro">VIP PRO</span>
                     <span class="version" id="aladinn-version-tag" title="Phiên bản hiện tại">Version ...</span>
                 </div>
             </div>

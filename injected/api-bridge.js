@@ -1378,7 +1378,7 @@
                             const virtualSheet = {
                                 DIENBIEN: domSheet.dienBienBenh || '',
                                 GHICHU: domSheet.huongXuLy || '',
-                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
                                 NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
                                 MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
                                 CHANDOAN: domSheet.chanDoanChinh || '',
@@ -1404,7 +1404,7 @@
                                     YLENH: domSheet.yLenh,
                                     NHOMYLENH: 'Y lệnh khác',
                                     GHICHU: '',
-                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
                                     SOURCE_API: 'REALTIME_DOM'
                                 });
                             }
@@ -1414,7 +1414,7 @@
                                     YLENH: domSheet.diet,
                                     NHOMYLENH: 'Chế độ ăn',
                                     GHICHU: '',
-                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
                                     SOURCE_API: 'REALTIME_DOM'
                                 });
                             }
@@ -1424,7 +1424,7 @@
                                     YLENH: domSheet.care,
                                     NHOMYLENH: 'Chế độ chăm sóc',
                                     GHICHU: '',
-                                    NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
                                     SOURCE_API: 'REALTIME_DOM'
                                 });
                             }
@@ -1467,7 +1467,7 @@
                         const virtualSheet = {
                             DIENBIEN: domSheet.dienBienBenh || '',
                             GHICHU: domSheet.huongXuLy || '',
-                            NGUOITAO: 'Bác sĩ đang soạn thảo',
+                            NGUOITAO: 'Bản nháp — chưa lưu',
                             NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
                             MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
                             CHANDOAN: domSheet.chanDoanChinh || '',
@@ -1493,7 +1493,7 @@
                                 YLENH: domSheet.yLenh,
                                 NHOMYLENH: 'Y lệnh khác',
                                 GHICHU: '',
-                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
                                 SOURCE_API: 'REALTIME_DOM'
                             });
                         }
@@ -1503,7 +1503,7 @@
                                 YLENH: domSheet.diet,
                                 NHOMYLENH: 'Chế độ ăn',
                                 GHICHU: '',
-                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
                                 SOURCE_API: 'REALTIME_DOM'
                             });
                         }
@@ -1513,7 +1513,7 @@
                                 YLENH: domSheet.care,
                                 NHOMYLENH: 'Chế độ chăm sóc',
                                 GHICHU: '',
-                                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
                                 SOURCE_API: 'REALTIME_DOM'
                             });
                         }
@@ -1880,7 +1880,7 @@
                 sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context: null }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
             const _context = {
                 rowId,
                 KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
@@ -2259,7 +2259,7 @@
             huyetAp = (ha1 || '?') + '/' + (ha2 || '?');
         }
 
-        return {
+        var scraped = {
             dienBienBenh: _val('tcDieuTritxtDIENBIENBENH'),
             khamToanThanTDT: _val('tcDieuTritxtTOANTHAN'),
             khamBoPhan: _val('tcDieuTritxtKHAMBOPHAN'),
@@ -2281,6 +2281,25 @@
                 spo2: _val('tcDieuTritxtSPO2')
             }
         };
+
+        // PA3: Kiểm tra nội dung thực tế — nếu form hoàn toàn trống thì bỏ qua
+        // Tránh tạo tờ ảo "đang soạn thảo" khi bác sĩ chỉ đang xem hồ sơ
+        var hasContent = !!(
+            scraped.dienBienBenh ||
+            scraped.khamToanThanTDT ||
+            scraped.khamBoPhan ||
+            scraped.huongXuLy ||
+            scraped.yLenh ||
+            scraped.chanDoanChinh ||
+            scraped.chanDoanKemTheo ||
+            scraped.sinhHieu.pulse ||
+            scraped.sinhHieu.temperature ||
+            scraped.sinhHieu.bloodPressure ||
+            scraped.sinhHieu.respiratoryRate
+        );
+        if (!hasContent) return null;
+
+        return scraped;
     }
 
     /**
@@ -2796,6 +2815,19 @@
                     }
                 }
             }
+
+            // Fallback guard: nếu data không có _context nhưng có rowId, so sánh rowId với grid đang chọn
+            const _fbCtx = data._context || data.treatmentContext || data;
+            const _fbBnId = String((_fbCtx && (_fbCtx.BENHNHANID || _fbCtx.benhnhanId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            const _fbKbId = String((_fbCtx && (_fbCtx.KHAMBENHID || _fbCtx.khambenhId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            const _fbHsbaId = String((_fbCtx && (_fbCtx.HOSOBENHANID || _fbCtx.hosobenhanid || _fbCtx.HSBAID || _fbCtx.hsbaId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            if (!_fbBnId && !_fbKbId && !_fbHsbaId && rowId) {
+                const { effectiveRowId } = resolveActiveGrid(null, { strict: false });
+                if (effectiveRowId && String(effectiveRowId).trim() !== String(rowId).trim()) {
+                    console.warn(`[Aladinn API-Bridge] Row ID mismatch fallback guard: requested=${rowId}, active=${effectiveRowId}. Suppressing: ${type}`);
+                    return;
+                }
+            }
         }
 
         window.postMessage({
@@ -3060,7 +3092,7 @@
                 sendResult('FETCH_LABS_RESULT', rowId, { labsData: [] }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
 
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
             const benhnhanId = rowData.BENHNHANID || '';

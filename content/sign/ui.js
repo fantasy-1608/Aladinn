@@ -51,7 +51,7 @@ window.Aladinn.Sign.UI = (function () {
     }
 
     /**
-     * Hiển thị HUD khi đang dò tìm kho báu
+     * Hiển thị HUD khi đang quét hồ sơ bệnh án
      */
     function showSigningHUD() {
         try {
@@ -61,9 +61,9 @@ window.Aladinn.Sign.UI = (function () {
             hudElement.innerHTML = `
                 <div class="his-hud-scanner"></div>
                 <div class="his-hud-label">
-                    <div class="his-hud-lamp">🪔</div>
+                    <div class="his-hud-lamp">⏳</div>
                     <div class="his-hud-dot"></div>
-                    <span>Aladinn đang dò tìm kho báu...</span>
+                    <span>Aladinn đang quét danh sách bệnh án...</span>
                     <div class="his-hud-sparkles">
                         <div class="his-sparkle"></div>
                         <div class="his-sparkle"></div>

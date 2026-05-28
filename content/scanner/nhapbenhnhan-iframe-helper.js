@@ -23,6 +23,10 @@
         if (event.source !== window.parent && event.source !== window.top) return;
         if (!event.data || event.data.type !== 'NHAPBENHNHAN_FILL_FORM') return;
 
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
+
         try {
             // ==========================================
             // Patient Identity Security Guard (Fail-Closed)

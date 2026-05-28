@@ -124,6 +124,28 @@ body::after {
     letter-spacing: -0.5px;
 }
 
+.badge-vip-pro {
+    font-size: 9px;
+    font-weight: 800;
+    color: #00e676;
+    background: rgba(0, 230, 118, 0.15);
+    border: 1px solid #00e676;
+    padding: 1px 4px;
+    border-radius: 0px;
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1;
+    animation: badge-glow-breath 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes badge-glow-breath {
+    0% { box-shadow: 0 0 2px rgba(0, 230, 118, 0.2); }
+    100% { box-shadow: 0 0 8px rgba(0, 230, 118, 0.5); }
+}
+
 .header-right {
     display: flex;
     align-items: center;

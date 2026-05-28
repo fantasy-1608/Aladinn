@@ -1,11 +1,13 @@
 /**
- * 🧞 Aladinn — SmartCA Guard Module
+ * 🧞 Aladinn — SmartCA Guard Module (V2 Enhanced)
  * Monitors SmartCA login state and verifies signer identity.
  *
  * Features:
- * - Enhances the HIS #smartcaicon with always-on-top status badge
- * - When e-Seal dialog appears, scrapes signer name and compares with HIS user
- * - If mismatch → blocks auto-click + shows prominent warning
+ * - PA1: Tooltip chi tiết khi hover icon SmartCA
+ * - PA2: Thanh trạng thái luôn hiển thị bên cạnh icon (tên người đăng nhập SmartCA)
+ * - PA3: Auto-toast cảnh báo chủ động khi mismatch (không cần mở dialog)
+ * - PA4: Block auto-sign khi mismatch (giữ nguyên)
+ * - Injects mismatch warning into e-Seal dialog khi mở
  * - Provides quick "Đổi tài khoản" action (clicks SmartCA logout)
  *
  * Placement: Scanner module (independent of Sign module)
@@ -22,9 +24,14 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
     // State
     let _hisUserName = '';        // Doctor logged into HIS (from footer)
     let _smartcaUserName = '';    // User currently in SmartCA session
+    let _smartcaEmail = '';       // Email from SmartCA session
+    let _smartcaUserId = '';      // UserID from SmartCA session
     let _isMonitoring = false;
     let _observer = null;
     let _badgeEl = null;
+    let _statusEl = null;         // PA2: Inline status text element
+    let _tooltipEl = null;        // PA1: Tooltip element
+    let _persistentToastEl = null; // PA3: Persistent mismatch toast
 
     let _checkInterval = null;
 
@@ -199,6 +206,258 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         return false;
     }
 
+    // =============================================
+    // PA1: Tooltip khi hover icon SmartCA
+    // =============================================
+    function createTooltip() {
+        if (_tooltipEl) return;
+
+        _tooltipEl = document.createElement('div');
+        _tooltipEl.id = 'aladinn-smartca-tooltip';
+        _tooltipEl.style.cssText = [
+            'position: absolute',
+            'top: calc(100% + 6px)',
+            'left: 50%',
+            'transform: translateX(-50%)',
+            'z-index: 2147483646',
+            'background: #ffffff',
+            'border: 1px solid #a6c9e2',
+            'box-shadow: 0 4px 12px rgba(0, 79, 158, 0.15)',
+            'padding: 10px 14px',
+            'min-width: 220px',
+            'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
+            'font-size: 12px',
+            'color: #333',
+            'line-height: 1.5',
+            'display: none',
+            'pointer-events: none',
+            'border-radius: 0px',
+            'white-space: nowrap'
+        ].join(';');
+        
+        document.body.appendChild(_tooltipEl);
+    }
+
+    function updateTooltipContent() {
+        if (!_tooltipEl) return;
+
+        const match = namesMatch(_hisUserName, _smartcaUserName);
+        let statusIcon, statusText, statusColor;
+
+        if (!_smartcaUserName) {
+            statusIcon = '⚪';
+            statusText = 'Chưa xác định';
+            statusColor = '#888';
+        } else if (match === true) {
+            statusIcon = '✅';
+            statusText = 'Khớp tài khoản HIS';
+            statusColor = '#166534';
+        } else {
+            statusIcon = '🚨';
+            statusText = 'KHÔNG KHỚP TÀI KHOẢN HIS';
+            statusColor = '#dc2626';
+        }
+
+        const rows = [];
+        rows.push('<div style="font-weight:700;font-size:11px;color:#004f9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;">VNPT SmartCA</div>');
+        
+        if (_smartcaUserName) {
+            rows.push('<div style="margin-bottom:3px;"><b>Người ký:</b> ' + _escHtml(_smartcaUserName) + '</div>');
+        }
+        if (_smartcaEmail) {
+            rows.push('<div style="margin-bottom:3px;color:#666;"><b>Email:</b> ' + _escHtml(_smartcaEmail) + '</div>');
+        }
+        if (_smartcaUserId) {
+            rows.push('<div style="margin-bottom:3px;color:#666;"><b>UserID:</b> ' + _escHtml(_smartcaUserId) + '</div>');
+        }
+        if (_hisUserName) {
+            rows.push('<div style="margin-bottom:3px;"><b>BS HIS:</b> ' + _escHtml(_hisUserName) + '</div>');
+        }
+
+        rows.push('<div style="margin-top:6px;padding-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:' + statusColor + ';">' + statusIcon + ' ' + statusText + '</div>');
+
+        _tooltipEl.innerHTML = rows.join('');
+    }
+
+    function showTooltip() {
+        if (!_tooltipEl) return;
+        // Chưa có thông tin SmartCA → không hiện tooltip (tránh hiện khung trống)
+        if (!_smartcaUserName) return;
+        updateTooltipContent();
+
+        const icon = document.getElementById('smartcaicon');
+        if (!icon) return;
+
+        _tooltipEl.style.position = 'fixed';
+        _tooltipEl.style.left = '';
+        _tooltipEl.style.top = '';
+        _tooltipEl.style.bottom = '';
+        _tooltipEl.style.transform = 'none';
+        _tooltipEl.style.display = 'block';
+
+        // Đo lại sau khi render → clamp trong viewport
+        requestAnimationFrame(function() {
+            if (!_tooltipEl) return;
+            var iconRect = icon.getBoundingClientRect();
+            var tipW = _tooltipEl.offsetWidth;
+            var tipH = _tooltipEl.offsetHeight;
+            var vw = window.innerWidth;
+            var vh = window.innerHeight;
+
+            // Dọc: nếu icon ở nửa dưới → hiện tooltip LÊN TRÊN
+            var top;
+            if (iconRect.top > vh / 2) {
+                top = iconRect.top - tipH - 6;
+            } else {
+                top = iconRect.bottom + 6;
+            }
+            // Clamp dọc
+            if (top + tipH > vh - 8) top = vh - tipH - 8;
+            if (top < 8) top = 8;
+
+            // Ngang: căn giữa icon, clamp trái/phải
+            var left = iconRect.left + iconRect.width / 2 - tipW / 2;
+            if (left + tipW > vw - 8) left = vw - tipW - 8;
+            if (left < 8) left = 8;
+
+            _tooltipEl.style.top = top + 'px';
+            _tooltipEl.style.left = left + 'px';
+        });
+    }
+
+    function hideTooltip() {
+        if (_tooltipEl) _tooltipEl.style.display = 'none';
+    }
+
+    // PA2: Đã loại bỏ thanh trạng thái — chỉ giữ badge dot + tooltip khi hover
+    function createStatusLabel() { /* no-op */ }
+    function updateStatusLabel() { /* no-op */ }
+
+    // =============================================
+    // PA3: Persistent Toast cảnh báo chủ động
+    // =============================================
+    function showPersistentMismatchToast() {
+        // Đã hiện rồi thì không hiện nữa
+        if (_persistentToastEl && document.body.contains(_persistentToastEl)) return;
+
+        _persistentToastEl = document.createElement('div');
+        _persistentToastEl.id = 'aladinn-smartca-persistent-toast';
+        _persistentToastEl.style.cssText = [
+            'position: fixed',
+            'top: 12px',
+            'left: 50%',
+            'transform: translateX(-50%)',
+            'z-index: 2147483647',
+            'background: #ffffff',
+            'border: 2px solid #dc2626',
+            'border-left: 6px solid #dc2626',
+            'box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1)',
+            'padding: 0',
+            'min-width: 420px',
+            'max-width: 520px',
+            'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
+            'border-radius: 0px',
+            'animation: aladinnSmartcaShake 0.5s ease'
+        ].join(';');
+
+        _persistentToastEl.innerHTML = [
+            '<div style="padding:12px 16px;">',
+            '  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">',
+            '    <span style="font-size:20px;">🚨</span>',
+            '    <span style="font-size:13px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;">Chữ ký số không khớp tài khoản HIS</span>',
+            '  </div>',
+            '  <div style="font-size:12.5px;color:#444;line-height:1.6;margin-bottom:10px;">',
+            '    <div style="display:flex;gap:6px;margin-bottom:3px;">',
+            '      <span style="color:#004f9e;font-weight:700;min-width:60px;">BS HIS:</span>',
+            '      <span style="color:#004f9e;">' + _escHtml(_hisUserName) + '</span>',
+            '    </div>',
+            '    <div style="display:flex;gap:6px;">',
+            '      <span style="color:#dc2626;font-weight:700;min-width:60px;">SmartCA:</span>',
+            '      <span style="color:#dc2626;font-weight:700;">' + _escHtml(_smartcaUserName) + '</span>',
+            '    </div>',
+            '  </div>',
+            '  <div style="font-size:11.5px;color:#666;line-height:1.5;margin-bottom:12px;padding:6px 8px;background:#fef2f2;border:1px solid #fecaca;">',
+            '    ⚠️ Nếu tiếp tục ký, chữ ký sẽ mang tên <b>' + _escHtml(_smartcaUserName) + '</b> — không phải bác sĩ đang điều trị.',
+            '  </div>',
+            '  <div style="display:flex;gap:8px;">',
+            '    <button id="aladinn-smartca-toast-logout" style="',
+            '      flex:1;background:#dc2626;color:white;border:none;padding:8px 12px;',
+            '      cursor:pointer;font-size:12px;font-weight:700;border-radius:0px;',
+            '      transition:background 200ms;display:flex;align-items:center;justify-content:center;gap:4px;',
+            '    ">🔄 Đăng xuất SmartCA ngay</button>',
+            '    <button id="aladinn-smartca-toast-dismiss" style="',
+            '      background:#f3f4f6;color:#666;border:1px solid #d1d5db;padding:8px 12px;',
+            '      cursor:pointer;font-size:12px;font-weight:600;border-radius:0px;',
+            '      transition:background 200ms;',
+            '    ">Bỏ qua</button>',
+            '  </div>',
+            '</div>'
+        ].join('');
+
+        // Inject animation keyframes
+        if (!document.getElementById('aladinn-smartca-shake-style')) {
+            const style = document.createElement('style');
+            style.id = 'aladinn-smartca-shake-style';
+            style.textContent = [
+                '@keyframes aladinnSmartcaShake {',
+                '  0%, 100% { transform: translateX(-50%) translateY(0); }',
+                '  10%, 30%, 50%, 70%, 90% { transform: translateX(-50%) translateY(-2px); }',
+                '  20%, 40%, 60%, 80% { transform: translateX(-50%) translateY(2px); }',
+                '}'
+            ].join('\n');
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(_persistentToastEl);
+
+        // Bind events
+        const logoutBtn = document.getElementById('aladinn-smartca-toast-logout');
+        const dismissBtn = document.getElementById('aladinn-smartca-toast-dismiss');
+
+        if (logoutBtn) {
+            logoutBtn.onmouseover = function() { this.style.background = '#b91c1c'; };
+            logoutBtn.onmouseout = function() { this.style.background = '#dc2626'; };
+            logoutBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                logoutBtn.innerHTML = '⏳ Đang đăng xuất...';
+                logoutBtn.style.opacity = '0.7';
+                logoutBtn.style.pointerEvents = 'none';
+
+                // Open SmartCA dialog
+                const icon = document.getElementById('smartcaicon');
+                if (icon) icon.click();
+
+                // Auto logout
+                handleSmartCALogout(function() {
+                    removePersistentMismatchToast();
+                    showGuardToast('✅ Đã đăng xuất SmartCA! Hãy đăng nhập lại đúng tài khoản.', 'success', 5000);
+                });
+            };
+        }
+
+        if (dismissBtn) {
+            dismissBtn.onmouseover = function() { this.style.background = '#e5e7eb'; };
+            dismissBtn.onmouseout = function() { this.style.background = '#f3f4f6'; };
+            dismissBtn.onclick = function(e) {
+                e.preventDefault();
+                removePersistentMismatchToast();
+            };
+        }
+
+        if (Logger) Logger.warn('SmartCA-Guard', '🚨 Persistent mismatch toast shown');
+    }
+
+    function removePersistentMismatchToast() {
+        if (_persistentToastEl && document.body.contains(_persistentToastEl)) {
+            _persistentToastEl.remove();
+        }
+        _persistentToastEl = null;
+    }
+
+    // =============================================
+    // Icon Enhancement (Badge + Tooltip + Status)
+    // =============================================
     function enhanceSmartCAIcon() {
         const icon = document.getElementById('smartcaicon');
         if (!icon || icon.dataset.aladinnGuard) return;
@@ -211,55 +470,69 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
             icon.style.position = 'relative';
         }
         icon.style.cursor = 'pointer';
-        icon.style.transition = 'filter 0.3s ease';
+        icon.style.transition = 'filter 0.2s ease';
 
         // Badge overlay
         _badgeEl = document.createElement('div');
         _badgeEl.id = 'aladinn-smartca-badge';
-        _badgeEl.style.cssText = `
-            position: absolute; top: -3px; right: -3px;
-            width: 14px; height: 14px; border-radius: 50%;
-            background: #7a6e5e; border: 2px solid #1a1510;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 4px rgba(0,0,0,0.3);
-            pointer-events: none;
-        `;
+        _badgeEl.style.cssText = [
+            'position: absolute',
+            'top: -3px',
+            'right: -3px',
+            'width: 14px',
+            'height: 14px',
+            'border-radius: 50%',
+            'background: #888',
+            'border: 2px solid #fff',
+            'transition: all 0.2s ease',
+            'box-shadow: 0 0 4px rgba(0,0,0,0.2)',
+            'pointer-events: none'
+        ].join(';');
         icon.appendChild(_badgeEl);
+
+        // PA1: Tooltip on hover
+        createTooltip();
+        icon.addEventListener('mouseenter', showTooltip);
+        icon.addEventListener('mouseleave', hideTooltip);
+
+        // PA2: Status label
+        createStatusLabel();
+        updateStatusLabel();
 
         // Styles
         if (!document.getElementById('aladinn-smartca-styles')) {
             const style = document.createElement('style');
             style.id = 'aladinn-smartca-styles';
-            style.textContent = `
-                @keyframes aladinnScaPulse {
-                    0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
-                    50% { box-shadow: 0 0 0 6px rgba(248,113,113,0); }
-                }
-                @keyframes aladinnScaGlow {
-                    0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); }
-                    50% { box-shadow: 0 0 12px rgba(34,197,94,0.6); }
-                }
-                #aladinn-smartca-badge.mismatch {
-                    background: #f87171 !important;
-                    animation: aladinnScaPulse 1.5s ease infinite;
-                }
-                #aladinn-smartca-badge.matched {
-                    background: #22c55e !important;
-                    animation: aladinnScaGlow 2s ease infinite;
-                }
-                #aladinn-smartca-badge.unknown {
-                    background: #7a6e5e !important;
-                    animation: none;
-                }
-                #smartcaicon:hover {
-                    filter: drop-shadow(0 2px 12px rgba(212,162,90,0.5)) brightness(1.1) !important;
-                    transform: scale(1.05);
-                }
-            `;
+            style.textContent = [
+                '@keyframes aladinnScaPulse {',
+                '    0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); }',
+                '    50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); }',
+                '}',
+                '@keyframes aladinnScaGlow {',
+                '    0%, 100% { box-shadow: 0 0 4px rgba(34,197,94,0.2); }',
+                '    50% { box-shadow: 0 0 8px rgba(34,197,94,0.5); }',
+                '}',
+                '#aladinn-smartca-badge.mismatch {',
+                '    background: #dc2626 !important;',
+                '    animation: aladinnScaPulse 1.5s ease infinite;',
+                '}',
+                '#aladinn-smartca-badge.matched {',
+                '    background: #22c55e !important;',
+                '    animation: aladinnScaGlow 2s ease infinite;',
+                '}',
+                '#aladinn-smartca-badge.unknown {',
+                '    background: #888 !important;',
+                '    animation: none;',
+                '}',
+                '#smartcaicon:hover {',
+                '    filter: brightness(1.08) !important;',
+                '    transform: scale(1.03);',
+                '}'
+            ].join('\n');
             document.head.appendChild(style);
         }
 
-        if (Logger) Logger.info('SmartCA-Guard', '🛡️ SmartCA icon enhanced');
+        if (Logger) Logger.info('SmartCA-Guard', '🛡️ SmartCA icon enhanced (V2: tooltip + status + badge)');
     }
 
     function updateBadgeState() {
@@ -273,6 +546,9 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         } else {
             _badgeEl.classList.add('mismatch');
         }
+
+        // PA2: Cập nhật status label
+        updateStatusLabel();
     }
 
     // =============================================
@@ -289,7 +565,7 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         }
 
         let attempts = 0;
-        const pollInterval = setInterval(() => {
+        const pollInterval = setInterval(function() {
             attempts++;
             const docs = [document];
             const iframes = document.querySelectorAll('iframe');
@@ -311,6 +587,7 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                     if (!(text.includes('đăng xuất') || text.includes('logout') || text.includes('sign out'))) continue;
                     if (el.offsetWidth === 0 && el.offsetHeight === 0) continue;
                     if (el.id === 'aladinn-smartca-logout-btn' || el.id === 'aladinn-smartca-tooltip') continue;
+                    if (el.id === 'aladinn-smartca-toast-logout' || el.id === 'aladinn-smartca-persistent-toast') continue;
                     
                     if (el.tagName === 'DIV' || el.tagName === 'SPAN') {
                         if (el.children.length > 2) continue; // Skip massive containers
@@ -345,16 +622,17 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 clearInterval(pollInterval);
                 if (Logger) Logger.info('SmartCA-Guard', 'Found correct SmartCA logout button, simulating click');
                 // Small delay to ensure event listeners are attached
-                setTimeout(() => {
+                setTimeout(function() {
                     simulateClick(bestTarget);
                     _smartcaUserName = ''; // Reset cached name
+                    _smartcaEmail = '';
+                    _smartcaUserId = '';
                     updateBadgeState();
-                    showGuardToast('🔄 Đã tự động click Đăng xuất SmartCA!', 'info');
                     if (typeof onSuccess === 'function') onSuccess();
                 }, 300);
             } else if (attempts >= 15) { // 7.5 seconds
                 clearInterval(pollInterval);
-                showGuardToast('⚠️ Không tìm thấy nút đăng xuất. Hãy đóng thông báo này và tự tìm nút "Đăng xuất" trên màn hình SmartCA.', 'warning', 6000);
+                showGuardToast('⚠️ Không tìm thấy nút đăng xuất. Hãy tự tìm nút "Đăng xuất" trên màn hình SmartCA.', 'warning', 6000);
             }
         }, 500);
     }
@@ -390,38 +668,49 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
 
             const warning = doc.createElement('div');
             warning.id = 'aladinn-smartca-mismatch-warning';
-            warning.style.cssText = `
-                background: #fff3f3;
-                border-left: 4px solid #ef4444;
-                padding: 10px;
-                margin: 10px 0;
-                font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-                animation: aladinnScaFadeIn 0.3s ease;
-                border-radius: 4px;
-            `;
-            warning.innerHTML = `
-                <div style="color: #b91c1c; font-weight: bold; font-size: 13px; margin-bottom: 6px;">
-                    ⚠️ CHỮ KÝ SỐ KHÔNG KHỚP TÀI KHOẢN HIS
-                </div>
-                <div style="font-size: 12px; color: #444; line-height: 1.5;">
-                    <b>HIS:</b> <span style="color:#1a6cc2">${_escHtml(_hisUserName)}</span><br/>
-                    <b>SmartCA:</b> <span style="color:#dc2626">${_escHtml(_smartcaUserName)}</span>
-                </div>
-            `;
+            warning.style.cssText = [
+                'background: #fef2f2',
+                'border-left: 4px solid #dc2626',
+                'padding: 10px',
+                'margin: 10px 0',
+                'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
+                'animation: aladinnScaFadeIn 0.3s ease',
+                'border-radius: 0px'
+            ].join(';');
+            warning.innerHTML = [
+                '<div style="color: #b91c1c; font-weight: bold; font-size: 13px; margin-bottom: 6px;">',
+                '    ⚠️ CHỮ KÝ SỐ KHÔNG KHỚP TÀI KHOẢN HIS',
+                '</div>',
+                '<div style="font-size: 12px; color: #444; line-height: 1.5;">',
+                '    <b>HIS:</b> <span style="color:#004f9e">' + _escHtml(_hisUserName) + '</span><br/>',
+                '    <b>SmartCA:</b> <span style="color:#dc2626">' + _escHtml(_smartcaUserName) + '</span>',
+                '</div>'
+            ].join('');
 
             // Create Auto-Logout Button
             const autoLogoutBtn = doc.createElement('button');
             autoLogoutBtn.innerHTML = '🔄 Đăng xuất SmartCA ngay';
-            autoLogoutBtn.style.cssText = `
-                margin-top: 8px; background: #ef4444; color: white; border: none; 
-                padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; 
-                font-weight: bold; display: flex; align-items: center; gap: 4px; width: 100%; justify-content: center;
-                transition: background 0.2s;
-            `;
-            autoLogoutBtn.onmouseover = () => autoLogoutBtn.style.background = '#dc2626';
-            autoLogoutBtn.onmouseout = () => autoLogoutBtn.style.background = '#ef4444';
+            autoLogoutBtn.style.cssText = [
+                'margin-top: 8px',
+                'background: #dc2626',
+                'color: white',
+                'border: none',
+                'padding: 6px 12px',
+                'border-radius: 0px',
+                'cursor: pointer',
+                'font-size: 12px',
+                'font-weight: bold',
+                'display: flex',
+                'align-items: center',
+                'gap: 4px',
+                'width: 100%',
+                'justify-content: center',
+                'transition: background 0.2s'
+            ].join(';');
+            autoLogoutBtn.onmouseover = function() { this.style.background = '#b91c1c'; };
+            autoLogoutBtn.onmouseout = function() { this.style.background = '#dc2626'; };
             
-            autoLogoutBtn.onclick = (e) => {
+            autoLogoutBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -434,40 +723,54 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 if (icon) icon.click();
 
                 // 2. Trigger robust SmartCA Logout polling
-                handleSmartCALogout(() => {
-                    // 3. On success, update the warning UI to explicitly guide the user
-                    warning.style.background = '#f0fdf4'; // Light green
+                handleSmartCALogout(function() {
+                    // 3. On success, update the warning UI
+                    warning.style.background = '#f0fdf4';
                     warning.style.borderLeftColor = '#22c55e';
-                    warning.innerHTML = `
-                        <div style="color: #166534; font-weight: bold; font-size: 13px; margin-bottom: 6px;">
-                            ✅ ĐÃ ĐĂNG XUẤT TÀI KHOẢN CŨ
-                        </div>
-                        <div style="font-size: 12px; color: #15803d; line-height: 1.5; font-weight: 600;">
-                            Hệ thống đã sẵn sàng. Vui lòng bấm nút bên dưới để đăng nhập lại đúng tài khoản Bác sĩ điều trị.
-                        </div>
-                    `;
+                    warning.innerHTML = [
+                        '<div style="color: #166534; font-weight: bold; font-size: 13px; margin-bottom: 6px;">',
+                        '    ✅ ĐÃ ĐĂNG XUẤT TÀI KHOẢN CŨ',
+                        '</div>',
+                        '<div style="font-size: 12px; color: #15803d; line-height: 1.5; font-weight: 600;">',
+                        '    Hệ thống đã sẵn sàng. Vui lòng bấm nút bên dưới để đăng nhập lại đúng tài khoản Bác sĩ điều trị.',
+                        '</div>'
+                    ].join('');
 
                     // Add Login Button
-                    const loginBtn = doc.createElement('button');
+                    var loginBtn = doc.createElement('button');
                     loginBtn.innerHTML = '🔑 ĐĂNG NHẬP SMARTCA LẠI';
-                    loginBtn.style.cssText = `
-                        margin-top: 8px; background: #22c55e; color: white; border: none; 
-                        padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; 
-                        font-weight: bold; display: flex; align-items: center; gap: 4px; width: 100%; justify-content: center;
-                        transition: background 0.2s; box-shadow: 0 2px 4px rgba(34,197,94,0.3);
-                    `;
-                    loginBtn.onmouseover = () => loginBtn.style.background = '#16a34a';
-                    loginBtn.onmouseout = () => loginBtn.style.background = '#22c55e';
+                    loginBtn.style.cssText = [
+                        'margin-top: 8px',
+                        'background: #22c55e',
+                        'color: white',
+                        'border: none',
+                        'padding: 8px 12px',
+                        'border-radius: 0px',
+                        'cursor: pointer',
+                        'font-size: 12px',
+                        'font-weight: bold',
+                        'display: flex',
+                        'align-items: center',
+                        'gap: 4px',
+                        'width: 100%',
+                        'justify-content: center',
+                        'transition: background 0.2s',
+                        'box-shadow: 0 2px 4px rgba(34,197,94,0.3)'
+                    ].join(';');
+                    loginBtn.onmouseover = function() { this.style.background = '#16a34a'; };
+                    loginBtn.onmouseout = function() { this.style.background = '#22c55e'; };
                     
-                    loginBtn.onclick = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Click the HIS SmartCA icon to open the Login dialog
-                        const icon = document.getElementById('smartcaicon');
-                        if (icon) icon.click();
+                    loginBtn.onclick = function(ev) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        var ic = document.getElementById('smartcaicon');
+                        if (ic) ic.click();
                     };
 
                     warning.appendChild(loginBtn);
+
+                    // Also remove persistent toast
+                    removePersistentMismatchToast();
                 });
             };
 
@@ -485,16 +788,16 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
             if (!doc.getElementById('aladinn-smartca-warning-style')) {
                 const style = doc.createElement('style');
                 style.id = 'aladinn-smartca-warning-style';
-                style.textContent = `
-                    @keyframes aladinnScaFadeIn {
-                        from { opacity: 0; transform: translateY(8px); }
-                        to   { opacity: 1; transform: translateY(0); }
-                    }
-                `;
+                style.textContent = [
+                    '@keyframes aladinnScaFadeIn {',
+                    '    from { opacity: 0; transform: translateY(8px); }',
+                    '    to   { opacity: 1; transform: translateY(0); }',
+                    '}'
+                ].join('\n');
                 doc.head.appendChild(style);
             }
 
-            if (Logger) Logger.warn('SmartCA-Guard', `🚨 Mismatch warning injected! HIS="${_hisUserName}" vs SmartCA="${_smartcaUserName}"`);
+            if (Logger) Logger.warn('SmartCA-Guard', '🚨 Mismatch warning injected! HIS="' + _hisUserName + '" vs SmartCA="' + _smartcaUserName + '"');
         }
     }
 
@@ -512,7 +815,7 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         enhanceSmartCAIcon();
 
         // Periodic check for e-Seal dialog
-        _checkInterval = setInterval(() => {
+        _checkInterval = setInterval(function() {
             // Re-detect HIS user if not found yet
             if (!_hisUserName) detectHISUser();
 
@@ -528,47 +831,57 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 // Cập nhật tên SmartCA nếu phát hiện mới
                 if (info.name && info.name !== _smartcaUserName) {
                     _smartcaUserName = info.name;
+                    _smartcaEmail = info.email || _smartcaEmail;
+                    _smartcaUserId = info.userId || _smartcaUserId;
                     updateBadgeState();
-                    if (Logger) Logger.info('SmartCA-Guard', `SmartCA user detected: "${_smartcaUserName}"`);
+                    if (Logger) Logger.info('SmartCA-Guard', 'SmartCA user detected: "' + _smartcaUserName + '"');
                 }
+                // Cập nhật email/userId nếu thiếu
+                if (info.email && !_smartcaEmail) _smartcaEmail = info.email;
+                if (info.userId && !_smartcaUserId) _smartcaUserId = info.userId;
+            }
 
-                // Luôn kiểm tra match/mismatch khi dialog đang mở
-                // (không chỉ khi tên thay đổi — vì warning bị mất khi dialog đóng/mở lại)
-                if (_smartcaUserName && _hisUserName) {
-                    const match = namesMatch(_hisUserName, _smartcaUserName);
-                    if (match === false) {
-                        // MISMATCH! Inject warning nếu chưa có
+            // PA3: Kiểm tra match/mismatch MỌI LÚC (không chỉ khi dialog mở)
+            // Đây là cải tiến cốt lõi — cảnh báo chủ động không đợi dialog
+            if (_smartcaUserName && _hisUserName) {
+                const match = namesMatch(_hisUserName, _smartcaUserName);
+                if (match === false) {
+                    // MISMATCH! 
+
+                    // PA3: Hiện toast cảnh báo chủ động (persistent, không tự ẩn)
+                    showPersistentMismatchToast();
+
+                    // Inject warning vào dialog nếu dialog đang mở
+                    if (isEsealDialogVisible()) {
                         injectMismatchWarning();
-                        
-                        // Chỉ toast 1 lần (tránh spam mỗi 1.5s)
-                        if (!window.__aladinnSmartCAMismatch) {
-                            showGuardToast(`🚨 SmartCA (${_smartcaUserName}) KHÔNG khớp với BS HIS (${_hisUserName})!`, 'error', 8000);
-                        }
+                    }
 
-                        // Block auto-click by setting a global flag
-                        window.__aladinnSmartCAMismatch = true;
-                    } else if (match === true) {
-                        window.__aladinnSmartCAMismatch = false;
-                        
-                        // REMOVE warning box if it exists (meaning they successfully logged in as the correct user)
-                        const docs = [document];
-                        const iframes = document.querySelectorAll('iframe');
-                        for (const iframe of iframes) {
-                            try {
-                                const doc = iframe.contentDocument || iframe.contentWindow.document;
-                                if (doc) docs.push(doc);
-                            } catch (_e) { /* cross-origin */ }
-                        }
-                        for (const doc of docs) {
-                            const warning = doc.getElementById('aladinn-smartca-mismatch-warning');
-                            if (warning) warning.remove();
-                        }
+                    // PA4: Block auto-sign
+                    window.__aladinnSmartCAMismatch = true;
+                } else if (match === true) {
+                    window.__aladinnSmartCAMismatch = false;
+
+                    // Gỡ persistent toast nếu đã khớp
+                    removePersistentMismatchToast();
+                    
+                    // REMOVE warning box if it exists
+                    const docs = [document];
+                    const iframes = document.querySelectorAll('iframe');
+                    for (const iframe of iframes) {
+                        try {
+                            const doc = iframe.contentDocument || iframe.contentWindow.document;
+                            if (doc) docs.push(doc);
+                        } catch (_e) { /* cross-origin */ }
+                    }
+                    for (const doc of docs) {
+                        const w = doc.getElementById('aladinn-smartca-mismatch-warning');
+                        if (w) w.remove();
                     }
                 }
             }
         }, 1500);
 
-        if (Logger) Logger.success('SmartCA-Guard', '🛡️ Monitoring started');
+        if (Logger) Logger.success('SmartCA-Guard', '🛡️ Monitoring started (V2: proactive alerts)');
     }
 
     function stopMonitoring() {
@@ -581,12 +894,14 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
             _observer.disconnect();
             _observer = null;
         }
+        removePersistentMismatchToast();
     }
 
     // =============================================
     // Toast Helper
     // =============================================
-    function showGuardToast(message, type = 'info', duration = 4000) {
+    function showGuardToast(message, type, duration) {
+        duration = duration || 4000;
         // Use existing toast system if available
         if (window.VNPTRealtime?.showToast) {
             window.VNPTRealtime.showToast(message, type);
@@ -598,30 +913,36 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         if (existing) existing.remove();
 
         const colors = {
-            info: { bg: 'rgba(212,162,90,0.95)', text: '#1a1510' },
-            success: { bg: 'rgba(34,197,94,0.95)', text: '#fff' },
-            error: { bg: 'rgba(239,68,68,0.95)', text: '#fff' },
-            warning: { bg: 'rgba(245,158,11,0.95)', text: '#1a1510' }
+            info: { bg: '#004f9e', text: '#fff' },
+            success: { bg: '#166534', text: '#fff' },
+            error: { bg: '#dc2626', text: '#fff' },
+            warning: { bg: '#d97706', text: '#fff' }
         };
         const c = colors[type] || colors.info;
 
         const toast = document.createElement('div');
         toast.id = 'aladinn-smartca-toast';
-        toast.style.cssText = `
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 2147483647;
-            background: ${c.bg}; color: ${c.text};
-            padding: 12px 24px; border-radius: 12px;
-            font-size: 13px; font-weight: 600;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            backdrop-filter: blur(8px);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            animation: aladinnScaFadeIn 0.2s ease;
-            max-width: 500px; text-align: center;
-        `;
+        toast.style.cssText = [
+            'position: fixed',
+            'top: 20px',
+            'left: 50%',
+            'transform: translateX(-50%)',
+            'z-index: 2147483647',
+            'background: ' + c.bg,
+            'color: ' + c.text,
+            'padding: 10px 20px',
+            'border-radius: 0px',
+            'font-size: 13px',
+            'font-weight: 600',
+            'box-shadow: 0 4px 16px rgba(0,0,0,0.2)',
+            'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
+            'animation: aladinnScaFadeIn 0.2s ease',
+            'max-width: 500px',
+            'text-align: center'
+        ].join(';');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), duration);
+        setTimeout(function() { toast.remove(); }, duration);
     }
 
     // =============================================
@@ -639,10 +960,10 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
     return {
         init: startMonitoring,
         stop: stopMonitoring,
-        getHISUser: () => _hisUserName,
-        getSmartCAUser: () => _smartcaUserName,
-        isMismatch: () => namesMatch(_hisUserName, _smartcaUserName) === false
+        getHISUser: function() { return _hisUserName; },
+        getSmartCAUser: function() { return _smartcaUserName; },
+        isMismatch: function() { return namesMatch(_hisUserName, _smartcaUserName) === false; }
     };
 })();
 
-console.log('[Aladinn] 🛡️ SmartCA Guard loaded');
+console.log('[Aladinn] 🛡️ SmartCA Guard V2 loaded (proactive alerts)');

@@ -435,18 +435,36 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
             // Standalone Ai Lab Summary function for Popup to call
             async function showAiLabSummary() {
+                // [SAFETY] AbortController + unsubscribe — cleanup khi chuyển BN hoặc kết thúc
+                let _clsAbortController = null;
+                let _clsUnsubPatient = null;
                 try {
                     const pid = window.VNPTStore?.get('selectedPatientId') || 'UNKNOWN';
                     if (pid === 'UNKNOWN') {
                         window.VNPTRealtime?.showToast('⚠️ Vui lòng chọn một bệnh nhân trên lưới trước.', 'warning');
                         return;
                     }
+
+                    // [SAFETY] Capture PatientContextGuard token — snapshot BN hiện tại
+                    const contextToken = window.VNPTPatientContextGuard
+                        ? window.VNPTPatientContextGuard.captureGridOnly(pid)
+                        : null;
+
+                    // [SAFETY] AbortController — hủy tất cả request khi chuyển BN
+                    _clsAbortController = new AbortController();
+                    const _clsAbortSignal = _clsAbortController.signal;
+                    _clsUnsubPatient = window.VNPTStore?.subscribe('selectedPatientId', () => {
+                        _clsAbortController.abort('CLS_PATIENT_CHANGED');
+                    });
                     
                     window.VNPTRealtime?.showToast('🪄 Đang tải CLS + Thuốc từ VNPT HIS...', 'info');
                     
                     // Đề xuất 3: Generic bridge fetch helper — thay thế 6 hàm lặp
                     const bridgeFetch = (reqType, resType, rowId, extractFn, timeout = 10000, prefix = 'req') => {
                         return new Promise((resolve) => {
+                            // [SAFETY] Kiểm tra abort trước khi gửi request
+                            if (_clsAbortSignal.aborted) return resolve(extractFn({}));
+
                             const requestId = prefix + '_' + Date.now().toString() + Math.random().toString().slice(2);
                             const token = window.__ALADINN_BRIDGE_TOKEN__ || '';
                             
@@ -458,6 +476,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             };
                             window.addEventListener('message', listener);
                             
+                            // [SAFETY] Hủy listener khi abort (chuyển BN)
+                            _clsAbortSignal.addEventListener('abort', () => {
+                                window.removeEventListener('message', listener);
+                                resolve(extractFn({}));
+                            }, { once: true });
+
                             window.postMessage({
                                 type: reqType,
                                 rowId: rowId,
@@ -519,14 +543,30 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         fetchDemographicsFromBridge(pid),
                         fetchVitalsFromBridge(pid)
                     ]);
+
+                    // ═══════════════════════════════════════════════════════════
+                    // [SAFETY] Checkpoint 1: Kiểm tra BN có thay đổi sau fetch
+                    // ═══════════════════════════════════════════════════════════
+                    if (_clsAbortSignal.aborted) {
+                        window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy để đảm bảo an toàn.', 'warning');
+                        return false;
+                    }
+                    if (window.VNPTPatientContextGuard && contextToken) {
+                        const stillValid = window.VNPTPatientContextGuard.validate(contextToken);
+                        if (!stillValid) {
+                            window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy để đảm bảo an toàn.', 'warning');
+                            return false;
+                        }
+                    }
+
                     const labs = result?.labs || [];
                     const imaging = result?.imaging || [];
                     const drugs = drugsResult?.drugList || [];
                     const treatmentList = treatmentResult?.treatmentList || [];
                     const yLenhList = treatmentResult?.yLenhList || [];
                     
-                    const storeName = window.VNPTStore?.get('selectedPatientName');
-                    const patientName = storeName || result?.patientName || 'Bệnh Nhân';
+                    // [SAFETY] Chỉ lấy tên BN từ API response — KHÔNG lấy từ Store để tránh mix tên khi chuyển BN
+                    const patientName = result?.patientName || 'Bệnh Nhân';
                     
                     // Phase 1: API-first for age & diagnosis, DOM fallback
                     let age = demographics?.age || demographics?.dob || '';
@@ -615,9 +655,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         return false;
                     }
 
+                    // ═══════════════════════════════════════════════════════════
+                    // [SAFETY] Checkpoint 2: Kiểm tra lần cuối trước khi render
+                    // ═══════════════════════════════════════════════════════════
+                    if (window.VNPTPatientContextGuard && contextToken) {
+                        await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, {
+                            stage: 'cls_before_render'
+                        });
+                    }
+
                     // Hiển thị trực tiếp thay vì chờ người dùng click widget
                     if (typeof showLabTimelineModal === 'function') {
-                        showLabTimelineModal(labs, imaging, drugs, patientName, patientInfo);
+                        showLabTimelineModal(labs, imaging, drugs, patientName, patientInfo, pid);
                     }
                     
                     // Reset trạng thái nút trên lưới
@@ -630,9 +679,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                     return true;
                 } catch (err) {
+                    // [SAFETY] Không hiển thị lỗi nếu chỉ là context mismatch (BN đã chuyển)
+                    if (err.message && err.message.includes('PATIENT_CONTEXT_MISMATCH')) {
+                        window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy.', 'warning');
+                        return false;
+                    }
                     console.error('[AI Lab] Lỗi:', err);
                     window.VNPTRealtime?.showToast('❌ Lỗi tạo tóm tắt: ' + (err.message || 'Lỗi không xác định'), 'warning');
                     return false;
+                } finally {
+                    // [SAFETY] Cleanup: hủy subscribe + abort controller
+                    if (_clsUnsubPatient) _clsUnsubPatient();
+                    _clsAbortController = null;
                 }
             }
             // 5. Patient Selection — subscribe to shared Event Bus
@@ -1520,10 +1578,16 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // ║  ~1400 lines — largest section, candidate for future split.    ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
-    function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}) {
+    function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}, originalPid = null) {
         let targetDoc = document;
         try { if (window.top && window.top.document) targetDoc = window.top.document; } catch(_e) {}
         
+        // [SAFETY] Cleanup subscriber cũ nếu có
+        if (window._clsModalUnsubPatient) {
+            window._clsModalUnsubPatient();
+            window._clsModalUnsubPatient = null;
+        }
+
         const existing = targetDoc.getElementById('vnpt-lab-timeline-modal');
         if (existing) existing.remove();
         
@@ -2276,6 +2340,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             let inlineDiagHtml = '';
                             const sheetKey = (tr.MAUBENHPHAMID || '') + '_' + (tr.NGAYMAUBENHPHAM || '');
                             const label = sheetLabels[sheetKey];
+                            const isDraft = tr.IS_REALTIME === true || tr.MAUBENHPHAMID === 'REALTIME_DOM_SHEET';
                             
                             if (label) {
                                 const mainD = (tr.CHANDOAN || '').trim();
@@ -2295,13 +2360,26 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             if (tr.XULY) xlHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#004f9e;">[XỬ LÝ]</strong> ${escapeHtml(tr.XULY)}</div>`;
                             if (tr.YLENH) ylHtml = `<div style="font-size:13.8px;color:#444444;line-height:1.5;margin-bottom:4px;"><strong style="color:#2e7d32;">[Y LỆNH]</strong> ${escapeHtml(tr.YLENH)}</div>`;
                             
-                            let docName = tr.NGUOITAO || '';
-                            if (docName && !/^bs\.?\s*/i.test(docName)) docName = 'Bs. ' + docName;
-                            const docHtml = docName ? `<div style="margin-top:8px;font-size:11.5px;color:#888888;text-align:right;font-style:italic;">✍️ ${escapeHtml(docName)}</div>` : '';
+                            // Tờ bản nháp: hiển thị tag rõ ràng, không thêm prefix "Bs."
+                            // Tờ chính thức: hiển thị tên bác sĩ bình thường
+                            let draftDocHtml;
+                            if (isDraft) {
+                                draftDocHtml = '<div style="margin-top:8px;font-size:11.5px;color:#e65100;text-align:right;font-style:italic;">📝 Bản nháp — chưa lưu</div>';
+                            } else {
+                                let docName = tr.NGUOITAO || '';
+                                if (docName && !/^bs\.?\s*/i.test(docName)) docName = 'Bs. ' + docName;
+                                draftDocHtml = docName ? `<div style="margin-top:8px;font-size:11.5px;color:#888888;text-align:right;font-style:italic;">✍️ ${escapeHtml(docName)}</div>` : '';
+                            }
+
+                            // Tờ bản nháp: viền nét đứt cam, nền vàng nhạt. Tờ chính thức: giữ nguyên.
+                            const cardBorder = isDraft ? '2px dashed #e65100' : '2px solid #1e5494';
+                            const cardBg = isDraft ? '#fffbf0' : '#f9f9f9';
+                            const cardHoverBg = isDraft ? '#fff3e0' : '#edf4fc';
+                            const draftBadge = isDraft ? '<div style="position:absolute;top:4px;right:8px;font-size:10px;font-weight:700;color:#e65100;background:#fff3e0;border:1px solid #ffcc80;padding:1px 6px;border-radius:0px;text-transform:uppercase;letter-spacing:0.5px;">Bản nháp</div>' : '';
 
                             combinedTimelineHtml += `
-                            <div style="padding:8px 12px;border-left:2px solid #1e5494;background:#f9f9f9;margin-bottom:8px;position:relative;cursor:pointer;" data-key="${sheetKey}" onmouseover="this.style.backgroundColor='#edf4fc'" onmouseout="this.style.backgroundColor='#f9f9f9'">
-                                ${dbHtml}${ttHtml}${bpHtml}${xlHtml}${ylHtml}${inlineDiagHtml}${docHtml}
+                            <div style="padding:8px 12px;border-left:${cardBorder};background:${cardBg};margin-bottom:8px;position:relative;cursor:pointer;" data-key="${sheetKey}" onmouseover="this.style.backgroundColor='${cardHoverBg}'" onmouseout="this.style.backgroundColor='${cardBg}'">
+                                ${draftBadge}${dbHtml}${ttHtml}${bpHtml}${xlHtml}${ylHtml}${inlineDiagHtml}${draftDocHtml}
                             </div>`;
                         }
                     } else if (timeDrugs.length > 0 || timeOrders.length > 0 || timeGhichus.length > 0) {
@@ -2803,13 +2881,60 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     </div>
                     <div style="margin:16px -16px -16px -16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; background:#f5f5f5; border-top:1px solid #cccccc; padding:10px 16px; border-radius:0px !important;">
                         <span style="font-size:12.6px; color:#666666; font-weight:600; font-family:'Segoe UI',sans-serif;">✨ Aladinn V2 — Trợ lý quét và tóm tắt thông tin lâm sàng chuyên sâu VNPT HIS</span>
-                        <button style="background:#004f9e; border:1px solid #003d7a; color:#ffffff; padding:6px 18px; border-radius:0px !important; font-size:13px; font-weight:700; cursor:pointer; transition:0.15s; font-family:'Segoe UI',sans-serif;" onmouseover="this.style.background='#003d7a'" onmouseout="this.style.background='#004f9e'" onclick="this.closest('#vnpt-lab-timeline-modal').remove()">Đóng cửa sổ</button>
+                        <button id="cls-modal-footer-close" style="background:#004f9e; border:1px solid #003d7a; color:#ffffff; padding:6px 18px; border-radius:0px !important; font-size:13px; font-weight:700; cursor:pointer; transition:0.15s; font-family:'Segoe UI',sans-serif;" onmouseover="this.style.background='#003d7a'" onmouseout="this.style.background='#004f9e'">Đóng cửa sổ</button>
                     </div>
                 </div>
             </div>`;
 
         targetDoc.documentElement.appendChild(modal);
-        modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => modal.remove());
+
+        // [SAFETY] Cleanup helper — hủy subscriber khi modal bị đóng bởi bất kỳ cách nào
+        function _cleanupCLSModal() {
+            if (window._clsModalUnsubPatient) {
+                window._clsModalUnsubPatient();
+                window._clsModalUnsubPatient = null;
+            }
+        }
+
+        // [SAFETY] Subscribe patient change → hiện banner cảnh báo + auto-đóng modal
+        if (originalPid && window.VNPTStore) {
+            window._clsModalUnsubPatient = window.VNPTStore.subscribe('selectedPatientId', (newPid) => {
+                if (newPid !== originalPid) {
+                    const existingModal = targetDoc.getElementById('vnpt-lab-timeline-modal');
+                    if (!existingModal) {
+                        _cleanupCLSModal();
+                        return;
+                    }
+                    // Hiển banner cảnh báo đỏ trên modal
+                    if (!existingModal.querySelector('#cls-context-warning-banner')) {
+                        const warningBanner = document.createElement('div');
+                        warningBanner.id = 'cls-context-warning-banner';
+                        warningBanner.style.cssText = 'background:#c62828; color:#fff; padding:10px 16px; font-size:13px; font-weight:700; text-align:center; position:absolute; top:0; left:0; right:0; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+                        warningBanner.innerHTML = '⚠️ CẢNH BÁO: Bạn đã chuyển sang bệnh nhân khác. Thông tin CLS bên dưới là của bệnh nhân TRƯỚc ĐÓ. Modal sẽ tự đóng sau 3 giây.';
+                        const innerContainer = existingModal.querySelector('.his-modal-body') || existingModal.firstElementChild;
+                        if (innerContainer) {
+                            innerContainer.style.position = 'relative';
+                            innerContainer.prepend(warningBanner);
+                        }
+                    }
+                    // Auto-đóng modal sau 3 giây
+                    setTimeout(() => {
+                        const m = targetDoc.getElementById('vnpt-lab-timeline-modal');
+                        if (m) m.remove();
+                        _cleanupCLSModal();
+                    }, 3000);
+                }
+            });
+        }
+
+        modal.querySelector('#lab-timeline-close')?.addEventListener('click', () => {
+            _cleanupCLSModal();
+            modal.remove();
+        });
+        modal.querySelector('#cls-modal-footer-close')?.addEventListener('click', () => {
+            _cleanupCLSModal();
+            modal.remove();
+        });
 
         // Hỗ trợ đóng nhanh bằng phím Esc cực kỳ tiện lợi cho bác sĩ
         const targetWindow = targetDoc.defaultView || window;
@@ -2817,11 +2942,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const m = targetDoc.getElementById('vnpt-lab-timeline-modal');
             if (!m) {
                 targetWindow.removeEventListener('keydown', handleEsc);
+                _cleanupCLSModal();
                 return;
             }
             if (e.key === 'Escape') {
                 m.remove();
                 targetWindow.removeEventListener('keydown', handleEsc);
+                _cleanupCLSModal();
             }
         });
 

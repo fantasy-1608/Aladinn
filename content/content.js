@@ -421,25 +421,55 @@
                 }
                 
                 function injectAuraStyles(targetEl) {
-                    targetEl.style.display = 'inline-block';
-                    targetEl.style.padding = '2px 8px';
-                    targetEl.style.borderRadius = '8px';
-                    targetEl.style.color = '#fdf8ec';
-                    targetEl.style.fontWeight = '500';
+                    targetEl.style.display = 'inline-flex';
+                    targetEl.style.alignItems = 'center';
+                    targetEl.style.gap = '6px';
+                    targetEl.style.padding = '0';
+                    targetEl.style.borderRadius = '0px';
+                    targetEl.style.background = 'transparent';
+                    targetEl.style.border = 'none';
+                    targetEl.style.color = '#ffffff';
+                    targetEl.style.fontWeight = '600';
                     targetEl.style.position = 'relative';
                     targetEl.style.zIndex = '1';
+                    targetEl.style.boxShadow = 'none';
+                    targetEl.style.fontSize = '12px';
                     
-                    if (!targetEl.querySelector('.aladinn-genie-icon')) {
-                        const icon = document.createElement('span');
-                        icon.className = 'aladinn-genie-icon';
-                        icon.textContent = ' 🧞';
-                        icon.style.fontSize = '14px';
-                        icon.style.marginLeft = '4px';
-                        icon.style.filter = 'drop-shadow(0 0 3px rgba(212, 162, 90, 0.4))';
-                        icon.style.display = 'inline-block';
-                        // Using pulse animation for the icon to match the mystic feel
-                        icon.style.animation = 'his-icon-pulse 3s infinite alternate ease-in-out';
-                        targetEl.appendChild(icon);
+                    // Dọn dẹp badge VIP PRO cũ và icon cũ nếu có
+                    const oldBadge = targetEl.querySelector('.aladinn-pro-badge');
+                    if (oldBadge) oldBadge.remove();
+                    const oldIcon = targetEl.querySelector('.aladinn-genie-icon');
+                    if (oldIcon) oldIcon.remove();
+                    
+                    if (!targetEl.querySelector('.aladinn-active-dot')) {
+                        const dot = document.createElement('span');
+                        dot.className = 'aladinn-active-dot';
+                        dot.style.width = '7px';
+                        dot.style.height = '7px';
+                        dot.style.background = '#00e676';
+                        dot.style.borderRadius = '50%';
+                        dot.style.display = 'inline-block';
+                        dot.style.boxShadow = '0 0 6px #00e676';
+                        dot.style.marginRight = '2px';
+                        dot.style.flexShrink = '0';
+                        
+                        // Hiệu ứng nhịp thở nhấp nháy êm dịu (chu kỳ 3s)
+                        if (!document.getElementById('aladinn-active-dot-animation')) {
+                            const style = document.createElement('style');
+                            style.id = 'aladinn-active-dot-animation';
+                            style.textContent = `
+                                @keyframes aladinn-active-dot-breath {
+                                    0% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                                    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px rgba(0, 230, 118, 0.8); }
+                                    100% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                        dot.style.animation = 'aladinn-active-dot-breath 3s infinite ease-in-out';
+                        
+                        // Chèn chấm xanh vào PHÍA TRƯỚC tên người dùng
+                        targetEl.insertBefore(dot, targetEl.firstChild);
                     }
                 }
 

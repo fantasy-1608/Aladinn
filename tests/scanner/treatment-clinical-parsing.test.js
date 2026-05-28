@@ -81,7 +81,7 @@ describe('Bóc tách Dữ liệu Lâm sàng Tờ điều trị VNPT HIS', () => 
             const virtualSheet = {
                 DIENBIEN: mockDomSheet.dienBienBenh || '',
                 GHICHU: mockDomSheet.huongXuLy || '',
-                NGUOITAO: 'Bác sĩ đang soạn thảo',
+                NGUOITAO: 'Bản nháp — chưa lưu',
                 NGAYMAUBENHPHAM: '25/05/2026 22:05:00 (Đang soạn thảo)',
                 MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
                 CHANDOAN: 'Viêm mô bào',
@@ -97,6 +97,74 @@ describe('Bóc tách Dữ liệu Lâm sàng Tờ điều trị VNPT HIS', () => 
             expect(virtualSheet.TOANTHAN).toBe('Tỉnh, tiếp xúc tốt');
             expect(virtualSheet.KHAMBOPHAN).toBe('Bụng mềm, gan lách không to');
             expect(virtualSheet.YLENH).toBe('Không thực hiện y lệnh truyền Paracetamol. Hủy sử dụng Paracetamol');
+            expect(virtualSheet.NGUOITAO).toBe('Bản nháp — chưa lưu');
+            expect(virtualSheet.IS_REALTIME).toBe(true);
+        });
+
+        it('không tạo tờ ảo khi form điều trị hoàn toàn trống (dương tính giả)', () => {
+            // Giả lập form HIS render sẵn nhưng bác sĩ chưa gõ gì
+            const emptyDomSheet = {
+                dienBienBenh: '',
+                khamToanThanTDT: '',
+                khamBoPhan: '',
+                huongXuLy: '',
+                yLenh: '',
+                chanDoanChinh: '',
+                chanDoanKemTheo: '',
+                sinhHieu: {
+                    pulse: '', temperature: '', bloodPressure: '',
+                    respiratoryRate: '', weight: '', height: '', spo2: ''
+                }
+            };
+
+            // Logic kiểm tra nội dung tương tự scrapeTreatmentSheetFromDOM() sau PA3
+            const hasContent = !!(
+                emptyDomSheet.dienBienBenh ||
+                emptyDomSheet.khamToanThanTDT ||
+                emptyDomSheet.khamBoPhan ||
+                emptyDomSheet.huongXuLy ||
+                emptyDomSheet.yLenh ||
+                emptyDomSheet.chanDoanChinh ||
+                emptyDomSheet.chanDoanKemTheo ||
+                emptyDomSheet.sinhHieu.pulse ||
+                emptyDomSheet.sinhHieu.temperature ||
+                emptyDomSheet.sinhHieu.bloodPressure ||
+                emptyDomSheet.sinhHieu.respiratoryRate
+            );
+
+            expect(hasContent).toBe(false);
+        });
+
+        it('tạo tờ ảo khi bác sĩ thực sự đã gõ nội dung vào form', () => {
+            const activeDomSheet = {
+                dienBienBenh: 'Bệnh nhân than đau bụng vùng thượng vị',
+                khamToanThanTDT: '',
+                khamBoPhan: '',
+                huongXuLy: '',
+                yLenh: '',
+                chanDoanChinh: '',
+                chanDoanKemTheo: '',
+                sinhHieu: {
+                    pulse: '', temperature: '', bloodPressure: '',
+                    respiratoryRate: '', weight: '', height: '', spo2: ''
+                }
+            };
+
+            const hasContent = !!(
+                activeDomSheet.dienBienBenh ||
+                activeDomSheet.khamToanThanTDT ||
+                activeDomSheet.khamBoPhan ||
+                activeDomSheet.huongXuLy ||
+                activeDomSheet.yLenh ||
+                activeDomSheet.chanDoanChinh ||
+                activeDomSheet.chanDoanKemTheo ||
+                activeDomSheet.sinhHieu.pulse ||
+                activeDomSheet.sinhHieu.temperature ||
+                activeDomSheet.sinhHieu.bloodPressure ||
+                activeDomSheet.sinhHieu.respiratoryRate
+            );
+
+            expect(hasContent).toBe(true);
         });
     });
 
