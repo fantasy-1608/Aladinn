@@ -7,6 +7,17 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.1.0] — 2026-05-30
+
+### ✨ AI Lâm sàng V3.0 (Clinical Intelligence Upgrade)
+
+- **System Instruction Độc lập:** Tách biệt vai trò bác sĩ chuyên khoa và quy tắc y khoa khỏi dữ liệu bệnh nhân, giúp AI tuân thủ tuyệt đối định dạng và ngôn ngữ y khoa chuyên nghiệp.
+- **Chain-of-Thought (CoT):** Kích hoạt luồng tư duy phân tích sâu (Thinking Mode) cho các mô hình Gemini hiện đại (Gemini 2.5+), giúp nhận diện mâu thuẫn giữa diễn tiến lâm sàng, kết quả xét nghiệm và thuốc điều trị.
+- **Biểu tượng Mức độ Nguy cơ:** Tự động phân loại điểm lưu ý bằng emoji cảnh báo (🔴 Cần can thiệp ngay, 🟡 Theo dõi sát, 🟢 Thường quy) và đánh giá xu hướng điều trị bằng biểu tượng định vị (✅ Cải thiện, ➡️ Không đổi, ⚠️ Xấu đi).
+- **Data Pipeline Tối ưu:** Khử trùng lặp mã bệnh ICD, mở rộng trích xuất dữ liệu "Khám toàn thân/Bộ phận", tự động loại trừ thuốc ngưng sử dụng và map thành công các dịch vụ PTTT vào ngữ cảnh bệnh án.
+
+---
+
 ## [2.0.5] — 2026-05-29
 
 ### 🛡️ Đánh giá & Vá Lỗi Bảo Mật Toàn Diện (Security Audit Remediation)
