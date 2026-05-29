@@ -3065,15 +3065,37 @@
 
                 const rows = await _fetchHisPagingRows('NT.024.DSPHIEUCLS', options, 100, 'sidx=NGAYMAUBENHPHAM&sord=desc');
                 if (rows && rows.length > 0) {
+                    // Map thêm tên dịch vụ từ raw row data
                     const pttts = rows.map(r => ({
                         SOPHIEU: r.SOPHIEU || '',
                         NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || '',
                         MAUBENHPHAMID: r.MAUBENHPHAMID || '',
                         KHOACHIDINH: r.KHOACHIDINH || '',
-                        PHONGCHIDINH: r.PHONGCHIDINH || ''
+                        PHONGCHIDINH: r.PHONGCHIDINH || '',
+                        TENDICHVU: r.TENDICHVU || r.TEN_DICHVU_KYTHUAT || r.TENLOAI || r.TENLOAICHIDINH || r.TENXETNGHIEM || '',
+                        TENDICHVU_CHA: r.TENDICHVU_CHA || '',
+                        KETQUA: r.KETQUA || r.GIATRI_KETQUA || r.KETQUACLS || '',
+                        KETLUAN: r.KETLUAN || ''
                     }));
+
+                    // Fetch chi tiết qua NT.024.2 để lấy tên cụ thể nếu TENDICHVU trống
+                    for (const pttt of pttts) {
+                        if (!pttt.TENDICHVU && pttt.MAUBENHPHAMID) {
+                            try {
+                                const detailRows = await _fetchHisPagingRows('NT.024.2', [
+                                    { name: '[0]', value: String(pttt.MAUBENHPHAMID) }
+                                ], 50);
+                                if (detailRows && detailRows.length > 0) {
+                                    const d = detailRows[0];
+                                    pttt.TENDICHVU = d.TEN || d.TENDICHVU || d.TEN_DICHVU_KYTHUAT || d.TENCHIDINH || '';
+                                    if (!pttt.KETQUA) pttt.KETQUA = d.KETQUA || d.GIATRI_KETQUA || '';
+                                    if (!pttt.KETLUAN) pttt.KETLUAN = d.KETLUAN || '';
+                                }
+                            } catch (_detailErr) { /* silent */ }
+                        }
+                    }
+
                     allPttt = allPttt.concat(pttts);
-                    // Found PTTT, send result
                     sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: allPttt }, requestId);
                     return;
                 }

@@ -465,18 +465,36 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
     }
 }
 
-export async function requestScannerAI({ prompt, model, requestId, generationConfig }) {
+export async function requestScannerAI({ prompt, model, requestId, generationConfig, systemInstruction }) {
+    const effectiveModel = model || 'gemini-2.0-flash';
+
+    // Tối ưu generationConfig mặc định cho clinical summary
+    const baseConfig = {
+        temperature: 0.1,
+        topP: 0.85,
+        topK: 40,
+        maxOutputTokens: 4096,
+        ...(generationConfig || {})
+    };
+
+    // Tự động bật Thinking Mode cho Gemini 2.5+ (suy luận lâm sàng sâu hơn)
+    const is25Plus = /gemini.*(2\.5|exp)/i.test(effectiveModel);
+    if (is25Plus && !baseConfig.thinkingConfig) {
+        baseConfig.thinkingConfig = { thinkingBudget: 2048 };
+    }
+
     const data = await callGeminiGenerateContent({
         prompt,
-        model,
+        model: effectiveModel,
         requestId,
-        generationConfig: generationConfig || { temperature: 0.1 }
+        generationConfig: baseConfig,
+        systemInstruction: systemInstruction || null
     });
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) {
         throw aiError(data.error?.message || 'Lỗi từ máy chủ AI', 'AI_EMPTY_RESPONSE');
     }
-    return { text, usageMetadata: data.usageMetadata || {}, model };
+    return { text, usageMetadata: data.usageMetadata || {}, model: effectiveModel };
 }
 
 export async function summarizeHistoryAI({ rawTreatments, model, targetField }) {
