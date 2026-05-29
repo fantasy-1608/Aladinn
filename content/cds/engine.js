@@ -785,10 +785,12 @@ export async function analyzeLocally(context, filterLow = true) {
     }
 
     // 🔍 DEBUG: Show what's being matched
-    console.log(`[Aladinn CDS] 🔍 DEBUG: normalized_drugs = [${normalized.normalized_drugs.join(', ')}]`);
-    console.log(`[Aladinn CDS] 🔍 DEBUG: DDI rules loaded = ${ddiRules.length}, Drug-Disease = ${drugDiseaseRules.length}`);
-    if (normalized.unmapped_drugs.length > 0) {
-        console.log(`[Aladinn CDS] ⚠️ Unmapped drugs: [${normalized.unmapped_drugs.join(', ')}]`);
+    if (typeof window !== 'undefined' && window.__ALADINN_DEBUG__) {
+        console.log(`[Aladinn CDS] 🔍 DEBUG: normalized_drugs = [${normalized.normalized_drugs.join(', ')}]`);
+        console.log(`[Aladinn CDS] 🔍 DEBUG: DDI rules loaded = ${ddiRules.length}, Drug-Disease = ${drugDiseaseRules.length}`);
+        if (normalized.unmapped_drugs.length > 0) {
+            console.log(`[Aladinn CDS] ⚠️ Unmapped drugs: [${normalized.unmapped_drugs.join(', ')}]`);
+        }
     }
 
     let allAlerts = dedupeAlerts([

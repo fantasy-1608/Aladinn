@@ -7,7 +7,23 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
-## [2.0.6] — 2026-05-26
+## [2.0.5] — 2026-05-29
+
+### 🛡️ Đánh giá & Vá Lỗi Bảo Mật Toàn Diện (Security Audit Remediation)
+
+- **Vá lỗ hổng XSS (P0):** Bổ sung hàm `_escapeHtml()` để làm sạch `emergencyMessage` từ remote config trước khi render DOM, ngăn chặn hoàn toàn rủi ro XSS injection.
+- **Tối ưu PHI Redactor (P0):** Thu hẹp regex cho CCCD (đúng 12 số bắt đầu bằng 0), CMND (yêu cầu nhãn nhận diện), và Mã bệnh nhân (yêu cầu tiền tố BN/HS/MA). Giảm thiểu đáng kể tỷ lệ nhận diện nhầm (false positive) đối với các dữ liệu sinh hiệu và kết quả xét nghiệm.
+- **Xác thực Sender cho Audit Logger (P0):** Khóa chặt cổng nhận tin nhắn của `audit-logger.js`, chỉ chấp nhận log từ chính extension và trang `vncare.vn`, ngăn chặn hoàn toàn việc ghi log giả mạo hoặc trích xuất dữ liệu trái phép.
+- **CI/CD Security Automation (P0/P1):** Tích hợp Semgrep SAST, Dependency Scanning (`pnpm audit`), Secret Scanning (gitleaks) và kiểm tra Test Coverage (≥80%) vào GitHub Actions workflow.
+- **Cải thiện An toàn Mã nguồn (P1/P2):**
+  - Đóng gói toàn bộ các dòng `console.log` debug phía sau cờ `window.__ALADINN_DEBUG__`.
+  - Thay thế `postMessage('*')` bằng `window.location.origin` an toàn hơn.
+  - Cập nhật tài liệu ALADINN_PRIVACY_MODEL.md đồng bộ thông số lặp PBKDF2 (310,000 vòng).
+- **Tăng cường Kiểm thử Bảo mật:** Bổ sung 59 test cases mới (nâng tổng số lên 384 tests - 100% Passed) nhằm bao phủ logic tự dừng Auto-Sign khi đổi tab và độ chính xác của hàm Logger.sanitize().
+
+---
+
+## [2.0.4] — 2026-05-26
 
 ### 🛠️ Bản vá tích hợp API CLS (Hospital Safe Mode - API Bridge Update)
 

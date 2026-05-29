@@ -10,12 +10,26 @@ describe('PHIRedactor', () => {
         expect(redacted).not.toContain('+84987654321');
     });
 
-    it('should redact CCCD/CMND', () => {
-        const text = 'Số CCCD là 079090123456 và CMND 123456789.';
+    it('should redact CCCD 12 digits (starts with 0)', () => {
+        const text = 'Số CCCD là 079090123456.';
         const redacted = PHIRedactor.redact(text);
         expect(redacted).toContain('[ID_CARD]');
         expect(redacted).not.toContain('079090123456');
+    });
+
+    it('should redact CMND 9 digits when prefixed with label', () => {
+        const text = 'CMND số 123456789 của bệnh nhân.';
+        const redacted = PHIRedactor.redact(text);
+        expect(redacted).toContain('[ID_CARD]');
         expect(redacted).not.toContain('123456789');
+    });
+
+    it('should NOT false-positive match 9-digit lab values or codes', () => {
+        const text = 'Tiểu cầu: 234500000, Bạch cầu: 123456789 cells/L.';
+        const redacted = PHIRedactor.redact(text);
+        // These should NOT be redacted since they're medical data, not CMND
+        expect(redacted).toContain('234500000');
+        expect(redacted).toContain('123456789');
     });
 
     it('should redact BHYT cards', () => {
@@ -25,11 +39,20 @@ describe('PHIRedactor', () => {
         expect(redacted).not.toContain('HC4010112345678');
     });
 
-    it('should redact VNPT HIS Patient IDs', () => {
-        const text = 'Mã bệnh nhân: 2400123456, Số hồ sơ: BN2400123456.';
+    it('should redact VNPT HIS Patient IDs with BN/HS/MA prefix', () => {
+        const text = 'Mã bệnh nhân: BN2400123456, Số hồ sơ: HS24001234.';
         const redacted = PHIRedactor.redact(text);
         expect(redacted).toContain('[PATIENT_ID]');
-        expect(redacted).not.toContain('2400123456');
+        expect(redacted).not.toContain('BN2400123456');
+        expect(redacted).not.toContain('HS24001234');
+    });
+
+    it('should NOT false-positive match bare numbers as Patient IDs', () => {
+        // Số không có prefix BN/HS/MA không nên bị redact
+        const text = 'Mã thuốc: 2400123456, Timestamp: 1732841600.';
+        const redacted = PHIRedactor.redact(text);
+        expect(redacted).toContain('2400123456');
+        expect(redacted).toContain('1732841600');
     });
 
     it('should redact emails', () => {
@@ -73,12 +96,20 @@ describe('PHIRedactor', () => {
         expect(redacted).not.toContain('0912345678');
     });
 
-    it('should detect remaining PHI', () => {
+    it('should detect remaining PHI (strict patterns)', () => {
         expect(PHIRedactor.containsPHI('0912345678')).toBe(true);
         expect(PHIRedactor.containsPHI('test@hospital.vn')).toBe(true);
         expect(PHIRedactor.containsPHI('HC4010112345678')).toBe(true);
         expect(PHIRedactor.containsPHI('079090123456')).toBe(true);
         
         expect(PHIRedactor.containsPHI('Bệnh nhân nhập viện vì đau bụng')).toBe(false);
+    });
+
+    it('should NOT false-positive block text with medical numbers', () => {
+        // containsPHI() phải dùng strict patterns, không block nhầm dữ liệu y khoa
+        expect(PHIRedactor.containsPHI('Tiểu cầu 234500000')).toBe(false);
+        expect(PHIRedactor.containsPHI('Mã thuốc: 2400123456')).toBe(false);
+        expect(PHIRedactor.containsPHI('Timestamp: 1732841600')).toBe(false);
+        expect(PHIRedactor.containsPHI('Liều lượng: 500mg x 3 lần')).toBe(false);
     });
 });

@@ -98,9 +98,25 @@
     /**
      * Hiển thị toast thông báo khẩn cấp (nếu admin đặt emergencyMessage)
      */
+    /**
+     * SECURITY: Escape HTML để chống XSS injection từ remote config
+     */
+    function _escapeHtml(str) {
+        if (typeof str !== 'string') return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function showEmergencyToast(message, isKill) {
         // Tránh hiển thị trùng
         if (document.getElementById('aladinn-emergency-toast')) return;
+
+        // SECURITY: Escape message từ remote config để chống XSS
+        const safeMessage = _escapeHtml(message);
 
         const toast = document.createElement('div');
         toast.id = 'aladinn-emergency-toast';
@@ -120,7 +136,7 @@
                 <span style="font-size:18px;">${isKill ? '🚨' : '📢'}</span>
                 <strong style="color:${isKill ? '#fca5a5' : '#d4a25a'};">Thông báo từ Aladinn</strong>
             </div>
-            <div>${message}</div>
+            <div>${safeMessage}</div>
             <button id="aladinn-toast-close" style="
                 position:absolute; top:8px; right:8px;
                 background:transparent; border:none; color:#e8dcc8;
@@ -700,7 +716,7 @@
             // Popup debug toggle
             if (type === 'POPUP_SET_DEBUG') {
                 if (window.VNPTConfig) window.VNPTConfig.DEBUG = message.state;
-                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: message.state }, '*');
+                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: message.state }, window.location.origin);
                 sendResponse({ success: true });
             }
 

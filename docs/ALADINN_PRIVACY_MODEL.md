@@ -42,7 +42,7 @@ Aladinn v2 sử dụng thư viện mật mã Web Crypto API tích hợp sẵn tr
 
 ### 2.1. Phái sinh khóa từ PIN (`PBKDF2`)
 - **Mục đích:** Chuyển đổi mã PIN đơn giản của bác sĩ thành một khóa mã hóa cực mạnh có độ dài 256-bit.
-- **Tham số:** Sử dụng thuật toán băm SHA-256, thực hiện lặp băm 100,000 vòng cùng với một chuỗi muối ngẫu nhiên (`Salt`) dài 16-byte độc nhất cho mỗi máy tính. Điều này ngăn chặn hoàn toàn các cuộc tấn công dò mật khẩu bằng bảng tra sẵn (Rainbow Table).
+- **Tham số:** Sử dụng thuật toán băm SHA-256, thực hiện lặp băm 310,000 vòng cùng với một chuỗi muối ngẫu nhiên (`Salt`) dài 16-byte độc nhất cho mỗi máy tính. Điều này ngăn chặn hoàn toàn các cuộc tấn công dò mật khẩu bằng bảng tra sẵn (Rainbow Table).
 
 ### 2.2. Mã hóa đối xứng (`AES-GCM 256-bit`)
 - **Mục đích:** Bảo vệ API Key của bác sĩ khi lưu trữ trên ổ cứng trạm làm việc.

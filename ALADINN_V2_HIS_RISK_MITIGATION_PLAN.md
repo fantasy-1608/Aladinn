@@ -7,7 +7,7 @@ Tài liệu này được lập để gửi Phòng CNTT xin ý kiến trước k
 | Hạng mục | Nội dung |
 | :--- | :--- |
 | Dự án | Aladinn V2 - Chrome Extension hỗ trợ VNPT HIS |
-| Phiên bản đang đánh giá | 2.0.4 |
+| Phiên bản đang đánh giá | 2.0.5 |
 | Mục tiêu chính | Giảm tối đa nguy cơ Aladinn làm ảnh hưởng thao tác HIS, đồng thời giữ nguyên giá trị cốt lõi của Scanner |
 | Lý do lập kế hoạch | HIS đang gặp lỗi vận hành, Phòng CNTT nghi ngờ Aladinn can thiệp vào HIS |
 | Triệu chứng đang được báo cáo | Có khả năng mất chẩn đoán, lỗi bệnh phụ, không lưu được thuốc; hiện chưa có bằng chứng chính xác |
@@ -19,7 +19,7 @@ Tài liệu này được lập để gửi Phòng CNTT xin ý kiến trước k
 
 ## 2. Kết luận định hướng gửi Phòng CNTT
 
-Aladinn V2 không được thiết kế để can thiệp trực tiếp vào database hoặc backend VNPT HIS. Tuy nhiên, ở phiên bản 2.0.4 có một số điểm có thể ảnh hưởng đến trải nghiệm và luồng thao tác trên trình duyệt HIS.
+Aladinn V2 không được thiết kế để can thiệp trực tiếp vào database hoặc backend VNPT HIS. Tuy nhiên, ở phiên bản 2.0.5 có một số điểm có thể ảnh hưởng đến trải nghiệm và luồng thao tác trên trình duyệt HIS.
 
 | Nhóm rủi ro | Nhận định | Mức độ ưu tiên |
 | :--- | :--- | :--- |
@@ -77,7 +77,7 @@ Aladinn V2 không được thiết kế để can thiệp trực tiếp vào dat
 
 | Mục | Nội dung |
 | :--- | :--- |
-| Mục tiêu | Ghi nhận hiện trạng Aladinn 2.0.4 để có bằng chứng với Phòng CNTT |
+| Mục tiêu | Ghi nhận hiện trạng Aladinn 2.0.5 để có bằng chứng với Phòng CNTT |
 | Lý do | Triệu chứng HIS chưa rõ; cần tách lỗi do HIS/backend với lỗi do extension |
 | Phạm vi | Không sửa code |
 | Việc cần làm | Chụp lại version extension, cấu hình feature, remote config, danh sách quyền Chrome, số máy bị lỗi/có Aladinn |

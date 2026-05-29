@@ -118,7 +118,23 @@ export async function exportAuditCsv() {
     }
 }
 
+// [P0-SEC-003] SECURITY: Validate sender — chỉ chấp nhận message từ chính extension này
+// và từ các trang hợp lệ (extension pages hoặc vncare.vn)
+function _isValidAuditSender(sender) {
+    if (sender.id !== chrome.runtime.id) return false;
+    const senderUrl = sender.tab?.url || sender.url || '';
+    if (senderUrl.startsWith(`chrome-extension://${chrome.runtime.id}/`)) return true;
+    if (sender.tab?.url && !sender.tab.url.match(/^https?:\/\/[^/]*\.vncare\.vn\//)) return false;
+    return true;
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // SECURITY: Reject unauthorized senders
+    if (!_isValidAuditSender(sender)) {
+        sendResponse({ success: false, error: 'UNAUTHORIZED_SENDER' });
+        return false;
+    }
+
     if (request.type === 'LOG_AUDIT') {
         logAudit(request.auditType, request.details).then(success => {
             sendResponse({ success });
@@ -131,3 +147,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 });
+

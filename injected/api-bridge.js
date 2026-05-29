@@ -1145,7 +1145,7 @@
 
                         return t;
                     });
-                    console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
+                    if (window.__ALADINN_DEBUG__) console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
 
                     // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet via background APIs.
                     const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
@@ -3194,7 +3194,7 @@
                                 }
                             }
                         });
-                        console.log(`[API-Bridge] Strategy A (New API): Fetched ${newApiSheets.length} XN, ${newApiCdha.length} CDHA sheets`);
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A (New API): Fetched ${newApiSheets.length} XN, ${newApiCdha.length} CDHA sheets`);
                     }
                 }
             } catch (newApiErr) {
@@ -3288,7 +3288,7 @@
 
                     if (allLabs.length > 0) {
                         loadedXnFromNewApi = true;
-                        console.log(`[API-Bridge] Strategy A XN Success: Loaded ${allLabs.length} details`);
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A XN Success: Loaded ${allLabs.length} details`);
                     }
                 } catch (errXnDetails) {
                     console.warn('[API-Bridge] Strategy A XN detail fetch failed:', errXnDetails.message || 'Unknown error');
@@ -3297,7 +3297,7 @@
 
             // Fallback XN sang Cách cũ nếu XN cách mới trống/lỗi
             if (!loadedXnFromNewApi) {
-                console.log('[API-Bridge] New API returned no XN detail. Triggering fallback for XN to Strategy B...');
+                if (window.__ALADINN_DEBUG__) console.log('[API-Bridge] New API returned no XN detail. Triggering fallback for XN to Strategy B...');
                 allLabs = []; // Reset mảng xét nghiệm
 
                 const strategies = [];
@@ -3452,7 +3452,7 @@
 
                     if (imagingData.length > 0) {
                         loadedCdhaFromNewApi = true;
-                        console.log(`[API-Bridge] Strategy A CDHA Success: Loaded ${imagingData.length} details`);
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A CDHA Success: Loaded ${imagingData.length} details`);
                     }
                 } catch (errCdhaDetails) {
                     console.warn('[API-Bridge] Strategy A CDHA detail fetch failed:', errCdhaDetails.message || 'Unknown error');
@@ -3461,7 +3461,7 @@
 
             // Fallback CDHA sang Cách cũ nếu CDHA cách mới trống/lỗi
             if (!loadedCdhaFromNewApi) {
-                console.log('[API-Bridge] New API returned no CDHA detail. Triggering fallback for CDHA to Strategy B...');
+                if (window.__ALADINN_DEBUG__) console.log('[API-Bridge] New API returned no CDHA detail. Triggering fallback for CDHA to Strategy B...');
                 imagingData = []; // Reset mảng chẩn đoán hình ảnh
 
                 const cdhaStrategies = [];

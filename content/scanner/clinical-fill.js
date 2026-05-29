@@ -928,7 +928,7 @@ const VNPTClinicalFill = (function () {
                             formData[key] = ta.value;
                         }
                     });
-                    console.log('[ClinicalFill] Form preview confirmed. Selected data:', JSON.stringify(formData));
+                    if (window.__ALADINN_DEBUG__) console.log('[ClinicalFill] Form preview confirmed. Selected data:', JSON.stringify(formData));
                     overlay.remove();
                     resolve(true);
                 } catch (err) {
