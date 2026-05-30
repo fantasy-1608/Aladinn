@@ -2638,7 +2638,7 @@
                                             if (allDiagStrings.length > 0) {
                                                 result.chanDoanMoiNhat = allDiagStrings[0];
                                                 if (allDiagStrings.length > 1) {
-                                                    result.chanDoanKemTheoTDT = allDiagStrings.slice(1).join('; ');
+                                                    result.chanDoanKemTheoTDT = allDiagStrings.slice(1).join(';');
                                                 }
                                             }
                                             debugLog('[API-Bridge] TĐT DETAIL universal scan:', allDiagStrings);
@@ -2655,7 +2655,7 @@
 
                                         var combined = cChinh;
                                         if (cPhu && !combined.includes(cPhu)) {
-                                            combined += (combined ? '; ' : '') + cPhu;
+                                            combined += (combined ? ';' : '') + cPhu;
                                         }
 
                                         result.chanDoanMoiNhat = combined;

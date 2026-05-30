@@ -281,28 +281,70 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
     function renderSafeAiMarkdown(rawText, { basePx, smPx, badgeSz, indPx }) {
         let text = escapeHtml(rawText);
-        text = text.replace(/([^\n])\s*(\d+\.\s)/g, '$1\n$2');
-        text = text.replace(/([^\n])\s*(\*\*[A-ZÀ-ỸĐ][^*]+:\*\*)/g, '$1\n$2');
-        text = text.replace(/^(\d+\.\s+)(.+)$/gm, (_, num, rawTitle) => {
-            const colonIdx = rawTitle.indexOf(':');
-            const labelRaw = colonIdx !== -1 ? rawTitle.slice(0, colonIdx + 1) : rawTitle;
-            const contentRaw = colonIdx !== -1 ? rawTitle.slice(colonIdx + 1).trim() : '';
-            const contentHtml = contentRaw
+        
+        // Helper to format content inside cards
+        const renderContent = (content) => {
+            let txt = content;
+            
+            // Format bold/italic
+            txt = txt
                 .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#004f9e">$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em style="color:#555555">$1</em>');
-            return '<div style="display:flex;align-items:flex-start;gap:8px;margin:14px 0 6px;">' +
-                `<span style="min-width:${badgeSz}px;height:${badgeSz}px;border-radius:50%;background:#e6f2ff;border:1px solid #a6c9e2;display:inline-flex;align-items:center;justify-content:center;font-size:${smPx}px;font-weight:800;color:#004f9e;flex-shrink:0;margin-top:1px;">${num.trim().replace('.', '')}</span>` +
-                `<span style="font-size:${basePx}px;line-height:1.6;"><strong style="color:#004f9e;font-weight:700;">${labelRaw}</strong>${contentHtml ? ' <span style="color:#333333;font-weight:400;">' + contentHtml + '</span>' : ''}</span>` +
-                '</div>';
-        });
-        text = text
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#004f9e">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em style="color:#555555">$1</em>');
-        text = text.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:7px;color:#333333;line-height:1.65;font-size:${basePx}px;">$1</li>`);
-        text = text.replace(/^(<strong[^>]*>(?:[^<]+:)<\/strong>)\s*(.*)$/gm, (_, heading, rest) => {
-            return `<div style="margin:10px 0 4px ${indPx}px;font-size:${basePx}px;"><span style="font-weight:700;">${heading}</span> <span style="color:#333333;">${rest}</span></div>`;
-        });
-        return text.replace(/\n/g, '<br>');
+
+            // Alert Blocks for 🔴 🟡 🟢
+            txt = txt.replace(/^[-*]\s*🔴(.*?)$/gm, (_, p1) => `<div style="background:#fff3f3; border-left:4px solid #d32f2f; padding:10px 14px; margin-bottom:8px; font-size:${basePx}px; color:#333;"><span style="color:#d32f2f; margin-right:6px">🔴</span>${p1.trim()}</div>`);
+            txt = txt.replace(/^[-*]\s*🟡(.*?)$/gm, (_, p1) => `<div style="background:#fffbf0; border-left:4px solid #f57c00; padding:10px 14px; margin-bottom:8px; font-size:${basePx}px; color:#333;"><span style="color:#f57c00; margin-right:6px">🟡</span>${p1.trim()}</div>`);
+            txt = txt.replace(/^[-*]\s*🟢(.*?)$/gm, (_, p1) => `<div style="background:#f2fdf4; border-left:4px solid #2e7d32; padding:10px 14px; margin-bottom:8px; font-size:${basePx}px; color:#333;"><span style="color:#2e7d32; margin-right:6px">🟢</span>${p1.trim()}</div>`);
+
+            // Standard lists
+            txt = txt.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:8px; line-height:1.65; font-size:${basePx}px; color:#333; margin-left:20px;">$1</li>`);
+
+            // Trends
+            txt = txt.replace(/✅\s*Cải thiện/gi, `<span style="background:#2e7d32; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">✅ CẢI THIỆN</span>`);
+            txt = txt.replace(/⚠️\s*Xấu đi/gi, `<span style="background:#d32f2f; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">⚠️ XẤU ĐI</span>`);
+            txt = txt.replace(/➡️\s*Không đổi/gi, `<span style="background:#757575; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">➡️ KHÔNG ĐỔI</span>`);
+
+            return txt.replace(/\n/g, '<br>');
+        };
+
+        // Split text by numbered headers (e.g. "1. ")
+        const parts = text.split(/^(\d+\.\s+)/gm);
+        let html = '';
+        
+        // Text before the first header (if any)
+        if (parts[0].trim()) {
+            html += `<div style="margin-bottom:16px;">${renderContent(parts[0])}</div>`;
+        }
+        
+        // Loop over the matched headers and their following content
+        for (let i = 1; i < parts.length; i += 2) {
+            const numText = parts[i].trim().replace('.', '');
+            const rawContent = parts[i + 1] || '';
+            
+            // Extract title from the first line
+            const firstLineBreak = rawContent.indexOf('\n');
+            let title = rawContent;
+            let body = '';
+            if (firstLineBreak !== -1) {
+                title = rawContent.slice(0, firstLineBreak).trim();
+                body = rawContent.slice(firstLineBreak + 1).trim();
+            }
+            
+            // Remove markdown asterisks from title and uppercase it
+            title = title.replace(/\*\*/g, '').toUpperCase();
+            
+            html += `<div style="border: 1px solid #e0e0e0; background: #ffffff; margin-bottom: 16px;">
+                <div style="background: #f4f6f9; border-bottom: 1px solid #e0e0e0; padding: 10px 16px; display: flex; align-items: center; gap: 10px;">
+                    <span style="background: #004f9e; color: #ffffff; padding: 2px 8px; font-weight: bold; font-size: ${smPx}px;">${numText}</span>
+                    <strong style="color: #004f9e; font-size: ${basePx}px;">${title}</strong>
+                </div>
+                <div style="padding: 16px;">
+                    ${renderContent(body)}
+                </div>
+            </div>`;
+        }
+        
+        return html;
     }
 
     async function requestScannerAI(prompt, model, systemInstruction) {

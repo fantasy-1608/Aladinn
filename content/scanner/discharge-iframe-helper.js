@@ -84,7 +84,7 @@
                     if (!exists) {
                         var opt = document.createElement('option');
                         opt.value = mainCode;
-                        opt.text = mainCode + '-' + (mainText || '');
+                        opt.text = mainText || '';
                         selectEl.add(opt);
                         selectEl.value = mainCode;
                     }

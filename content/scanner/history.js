@@ -529,7 +529,7 @@ const VNPTHistory = (function () {
 
                 let diagSource = mainDiagStr;
                 if (subDiagStr) {
-                    diagSource += (diagSource ? '; ' : '') + subDiagStr;
+                    diagSource += (diagSource ? ';' : '') + subDiagStr;
                 }
                 
                 if (diagSource) {
@@ -540,7 +540,7 @@ const VNPTHistory = (function () {
                         : { code: '', text: parts[0].trim() };
                         
                     if (parts.length > 1) {
-                        const subRaw = parts.slice(1).map(p => p.trim()).join('; ');
+                        const subRaw = parts.slice(1).map(p => p.trim()).join(';');
                         const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
                         history.subDiag = subMatch
                             ? { code: subMatch[1].trim(), text: subMatch[2].trim() }

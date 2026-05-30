@@ -83,7 +83,7 @@
                     if (!exists) {
                         var opt = document.createElement('option');
                         opt.value = mainCode;
-                        opt.text = mainCode + '-' + (mainText || '');
+                        opt.text = mainText || '';
                         selectEl.add(opt);
                         selectEl.value = mainCode;
                     }
@@ -95,9 +95,10 @@
 
                 var editCDEl = document.getElementById('txtEditCDVaoKhoa');
                 if (editCDEl) {
-                    var fullDiagText = mainCode ? (mainCode + '-' + (mainText || '')) : (mainText || '');
+                    // Chỉ điền tên bệnh chính, không ghép mã ICD (mã đã điền riêng ở combo grid)
+                    var diagTextOnly = mainText || '';
                     if (window.VNPT_TypingEffect) {
-                        await window.VNPT_TypingEffect.fillFormSequential([{ el: editCDEl, val: fullDiagText }], true);
+                        await window.VNPT_TypingEffect.fillFormSequential([{ el: editCDEl, val: diagTextOnly }], true);
                     }
                 }
             }
