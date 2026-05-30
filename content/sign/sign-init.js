@@ -203,6 +203,8 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         }
 
         window.addEventListener('message', function onJWT(event) {
+            // SECURITY: Chỉ chấp nhận JWT từ cùng origin
+            if (event.origin !== window.location.origin) return;
             if (event.data && event.data.type === 'ALADINN_HIS_UUID' && event.data.uuid) {
                 AdvSign.setJwtToken(event.data.uuid);
                 if (Logger) Logger.info('Sign', 'JWT from message');

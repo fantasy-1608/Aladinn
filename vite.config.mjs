@@ -16,11 +16,26 @@ const fixJQueryExport = () => ({
   }
 });
 
+// [H-06] SECURITY: Loại bỏ sign-mock.js khỏi bản build production
+// Tránh lộ file mock có thể bị khai thác trong môi trường thực tế
+const excludeSignMock = () => ({
+  name: 'exclude-sign-mock',
+  generateBundle(_options, bundle) {
+    for (const fileName in bundle) {
+      if (fileName.includes('sign-mock')) {
+        delete bundle[fileName];
+        console.log(`[Aladinn Build] 🚫 Excluded ${fileName} from production build`);
+      }
+    }
+  }
+});
+
 export default defineConfig({
   base: '',
   plugins: [
     crx({ manifest }),
-    fixJQueryExport()
+    fixJQueryExport(),
+    excludeSignMock()
   ],
   server: {
     port: 5173,

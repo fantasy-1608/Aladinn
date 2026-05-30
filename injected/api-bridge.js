@@ -12,7 +12,8 @@
     // SECURITY: Get token assigned by extension
     const SECURE_TOKEN = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : null;
     // [P1-SEC-006] SECURITY: Get nonce assigned by extension for mandatory message validation
-    const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : (window.__ALADINN_NONCE__ || null);
+    // SECURITY: Không fallback sang window global — nếu không có currentScript thì dùng random nonce (sẽ không khớp, vô hiệu hóa bridge)
+    const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : crypto.getRandomValues(new Uint8Array(16)).join('');
 
     // Đề xuất 5: Diagnostic logging toggle — bật bằng window.__ALADINN_DEBUG__ = true
     function debugLog(...args) {

@@ -125,6 +125,13 @@ async function checkForUpdate() {
                 checkedAt: new Date().toISOString()
             };
 
+            // SECURITY: Whitelist domain cho download URL
+            const TRUSTED_DOMAINS = ['https://github.com/', 'https://raw.githubusercontent.com/'];
+            if (updateInfo.downloadUrl && !TRUSTED_DOMAINS.some(d => updateInfo.downloadUrl.startsWith(d))) {
+                console.warn('[Aladinn Updater] ⚠️ Download URL không thuộc domain tin cậy, bỏ qua.');
+                updateInfo.downloadUrl = '';
+            }
+
             // Lưu vào storage
             await chrome.storage.local.set({ aladinn_update: updateInfo });
 

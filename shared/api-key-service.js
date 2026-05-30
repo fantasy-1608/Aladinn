@@ -15,6 +15,14 @@ window.HIS = window.HIS || {};
 HIS.ApiKeyService = (function () {
     'use strict';
 
+    // SECURITY: Hằng số chống brute-force PIN
+    const MAX_PIN_ATTEMPTS = 5;
+    const PIN_LOCKOUT_MS = 5 * 60 * 1000; // 5 phút khóa
+
+    // SECURITY: Biến trạng thái rate-limit PIN (trong bộ nhớ, reset khi reload trang)
+    let _pinAttemptCount = 0;
+    let _pinLockoutUntil = 0;
+
     /** @type {string} */
     let _cachedKey = '';
     /** @type {number} */
@@ -381,15 +389,39 @@ HIS.ApiKeyService = (function () {
                 const pin = getPin();
                 if (pin.length !== 6) return;
 
+                // SECURITY: Rate limiting — chống brute-force PIN
+                const now = Date.now();
+                if (_pinLockoutUntil > now) {
+                    const remainSec = Math.ceil((_pinLockoutUntil - now) / 1000);
+                    errorMsg.textContent = `🔒 Đã khóa do nhập sai quá nhiều lần. Thử lại sau ${remainSec} giây.`;
+                    errorMsg.style.color = '#dc2626';
+                    return;
+                }
+
                 submitBtn.disabled = true;
                 submitBtn.textContent = '⏳ Đang xác minh...';
                 errorMsg.textContent = '';
 
                 const key = await unlockWithPin(pin);
                 if (key) {
+                    // SECURITY: Reset bộ đếm khi nhập PIN đúng
+                    _pinAttemptCount = 0;
+                    _pinLockoutUntil = 0;
                     cleanup();
                     resolve(key);
                 } else {
+                    // SECURITY: Tăng bộ đếm khi nhập PIN sai
+                    _pinAttemptCount++;
+                    if (_pinAttemptCount >= MAX_PIN_ATTEMPTS) {
+                        _pinLockoutUntil = Date.now() + PIN_LOCKOUT_MS;
+                        _pinAttemptCount = 0;
+                        errorMsg.textContent = `🔒 Khóa 5 phút do nhập sai ${MAX_PIN_ATTEMPTS} lần.`;
+                        errorMsg.style.color = '#dc2626';
+                        submitBtn.textContent = '🔓 Xác nhận';
+                        submitBtn.disabled = true;
+                        inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+                        return;
+                    }
                     // Wrong PIN → shake + show error
                     inputs.forEach(i => {
                         i.classList.add('error');
@@ -397,7 +429,8 @@ HIS.ApiKeyService = (function () {
                     });
                     setTimeout(() => inputs.forEach(i => i.classList.remove('error')), 400);
                     inputs[0].focus();
-                    errorMsg.textContent = '❌ Sai mã PIN. Thử lại hoặc Hủy để dùng chế độ Bình thường.';
+                    const remain = MAX_PIN_ATTEMPTS - _pinAttemptCount;
+                    errorMsg.textContent = `❌ Sai mã PIN. Còn ${remain} lần thử. Hủy để dùng chế độ Bình thường.`;
                     submitBtn.textContent = '🔓 Xác nhận';
                     submitBtn.disabled = true;
                 }

@@ -151,14 +151,14 @@ async function _decryptWithKey(encryptedText, key) {
 }
 
 // ========================================
-// SECURITY: Auto-Lock PIN after 30 minutes of inactivity
+// SECURITY: Auto-Lock PIN after 15 minutes of inactivity
 // ========================================
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes — Hospital Safe Mode
 let _lastActivityTime = Date.now();
 
 function checkSessionTimeout() {
     if (_cachedDecryptKey && (Date.now() - _lastActivityTime > SESSION_TIMEOUT_MS)) {
-        console.log('[Aladinn Security] 🔒 Session timeout (30 min idle) — clearing cached decryption key.');
+        console.log('[Aladinn Security] 🔒 Session timeout (15 min idle) — clearing cached decryption key.');
         _cachedDecryptKey = null;
         _cachedEncryptKey = null; // [P1-SEC-001] Also clear encrypt key
         _cachedDecryptSalt = null;

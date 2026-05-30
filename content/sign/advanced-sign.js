@@ -339,6 +339,8 @@ window.Aladinn.Sign.AdvancedSign = (function () {
 
     // Listen for JWT token from intercepted requests
     window.addEventListener('message', (event) => {
+        // SECURITY: Chỉ chấp nhận JWT từ cùng origin
+        if (event.origin !== window.location.origin) return;
         if (event.data && event.data.type === 'ALADINN_HIS_UUID') {
             setJwtToken(event.data.uuid);
         }

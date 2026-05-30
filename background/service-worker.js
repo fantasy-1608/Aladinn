@@ -265,7 +265,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // ---- BACKGROUND CRYPTO SERVICE: Decrypt data (for transcript/results) ----
     // [P1-SEC-001] Content script sends ciphertext, background decrypts with CryptoKey
+    // [P1-SEC-009] SECURITY: Chỉ giải mã cho trang vncare.vn hoặc extension pages
     if (type === 'DECRYPT_DATA') {
+        const senderUrl = sender.tab?.url || sender.url || '';
+        const isTrustedSender = senderUrl.startsWith(`chrome-extension://${chrome.runtime.id}/`) ||
+            /^https?:\/\/[^/]*\.vncare\.vn\//.test(senderUrl);
+        if (!isTrustedSender) {
+            sendResponse({ ok: false, error: 'UNTRUSTED_SENDER' });
+            return false;
+        }
         const ciphertext = payload?.ciphertext;
         if (typeof ciphertext !== 'string') {
             sendResponse({ ok: false, error: 'INVALID_PAYLOAD' });
@@ -363,11 +371,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (type === 'FILL_FIELD') {
-        chrome.tabs.sendMessage(message.tabId, {
-            type: 'FILL_FIELD',
-            fieldKey: message.fieldKey,
-            value: message.value
-        }, (response) => sendResponse(response));
+        // SECURITY: Validate tab URL trước khi relay — chặn gửi message đến tab ngoài HIS
+        chrome.tabs.get(message.tabId).then(targetTab => {
+            if (!targetTab || !targetTab.url || !targetTab.url.includes('vncare.vn')) {
+                sendResponse({ ok: false, error: 'Tab không hợp lệ' });
+                return;
+            }
+            chrome.tabs.sendMessage(message.tabId, {
+                type: 'FILL_FIELD',
+                fieldKey: message.fieldKey,
+                value: message.value
+            }, (response) => sendResponse(response));
+        }).catch(() => {
+            sendResponse({ ok: false, error: 'Tab không hợp lệ' });
+        });
         return true;
     }
 

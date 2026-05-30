@@ -252,28 +252,31 @@ class CDSCacheManager {
         closeBtn.onclick = () => panel.remove();
         
         const ttlRemaining = this.cache._medsTimestamp ? Math.max(0, 300000 - (Date.now() - this.cache._medsTimestamp)) : 0;
+
+        // SECURITY: Escape HTML để chống XSS trong debug panel
+        const _escHtml = (str) => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         
         panel.innerHTML = `
             <h3 style="margin-top: 0; color: #d4a25a; border-bottom: 1px solid rgba(212,162,90,0.3); padding-bottom: 8px;">🧞 AI Cache Debug Panel</h3>
-            <div><strong>Patient Key:</strong> ${this._patientKey || 'N/A'}</div>
-            <div><strong>BenhNhan ID:</strong> ${this.cache.benhnhanId || 'N/A'}</div>
-            <div><strong>KhamBenh ID:</strong> ${this.cache.khambenhId || 'N/A'}</div>
-            <div><strong>Patient IDs:</strong> ${Array.from(this.cache.patientIds).join(', ') || 'None'}</div>
+            <div><strong>Patient Key:</strong> ${_escHtml(this._patientKey || 'N/A')}</div>
+            <div><strong>BenhNhan ID:</strong> ${_escHtml(this.cache.benhnhanId || 'N/A')}</div>
+            <div><strong>KhamBenh ID:</strong> ${_escHtml(this.cache.khambenhId || 'N/A')}</div>
+            <div><strong>Patient IDs:</strong> ${_escHtml(Array.from(this.cache.patientIds).join(', ') || 'None')}</div>
             <div><strong>Medications TTL:</strong> ${ttlRemaining > 0 ? Math.round(ttlRemaining/1000) + 's' : 'Expired/None'}</div>
             
             <h4 style="color: #d4a25a; margin: 10px 0 5px;">Diagnoses (${this.cache.diagnoses.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
-                ${this.cache.diagnoses.map(d => `[${d.code}] ${d.name || ''}`).join('<br>') || 'None'}
+                ${this.cache.diagnoses.map(d => `[${_escHtml(d.code)}] ${_escHtml(d.name || '')}`).join('<br>') || 'None'}
             </div>
             
             <h4 style="color: #d4a25a; margin: 10px 0 5px;">Medications (${this.cache.medications.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 150px; overflow-y: auto;">
-                ${this.cache.medications.map(m => m.display_name).join('<br>') || 'None'}
+                ${this.cache.medications.map(m => _escHtml(m.display_name)).join('<br>') || 'None'}
             </div>
             
             <h4 style="color: #d4a25a; margin: 10px 0 5px;">Labs (${this.cache.labs.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
-                ${this.cache.labs.map(l => `[${l.code}] ${l.value}`).join('<br>') || 'None'}
+                ${this.cache.labs.map(l => `[${_escHtml(l.code)}] ${_escHtml(l.value)}`).join('<br>') || 'None'}
             </div>
             
             <div style="margin-top: 15px; display: flex; gap: 10px;">

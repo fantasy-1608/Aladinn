@@ -75,6 +75,15 @@ async function fetchRemoteConfig() {
             return null;
         }
 
+        // SECURITY: Version phải tăng dần — không chấp nhận version cũ hơn
+        const cached = await getRemoteConfig();
+        if (cached._source !== 'default' && typeof data.version === 'number' && typeof cached.version === 'number') {
+            if (data.version < cached.version) {
+                console.log('[Aladinn SafeMode] ⚠️ Remote config version rollback detected, ignoring.');
+                return null;
+            }
+        }
+
         // Merge với default để đảm bảo không thiếu key
         const merged = {
             version: data.version || 0,
@@ -133,6 +142,11 @@ async function getRemoteConfig() {
  */
 async function isFeatureEnabled(featureName) {
     const config = await getRemoteConfig();
+    // SECURITY: Fail-closed cho tính năng cao rủi ro — chỉ bật khi giá trị rõ ràng là true
+    const FAIL_CLOSED_FEATURES = ['autoSign', 'autoClick'];
+    if (FAIL_CLOSED_FEATURES.includes(featureName)) {
+        return config.features[featureName] === true;
+    }
     // Fail-open: nếu key không tồn tại → coi như bật
     return config.features[featureName] !== false;
 }

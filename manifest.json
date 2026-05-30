@@ -14,8 +14,8 @@
     "host_permissions": [
         "https://*.vncare.vn/*",
         "https://generativelanguage.googleapis.com/*",
-        "https://raw.githubusercontent.com/*",
-        "https://api.github.com/*"
+        "https://raw.githubusercontent.com/fantasy-1608/Aladinn/*",
+        "https://api.github.com/repos/fantasy-1608/Aladinn/*"
     ],
     "action": {
         "default_popup": "popup/popup.html",
@@ -106,7 +106,10 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "injected/*.js",
+                "injected/token-capture.js",
+                "injected/ajax-interceptor.js",
+                "injected/grid-hook.js",
+                "injected/api-bridge.js",
                 "content/shared/self-healing.js",
                 "content/shared/typing-effect.js",
                 "content/scanner/*-iframe-helper.js",

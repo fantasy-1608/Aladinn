@@ -558,6 +558,11 @@ export async function initCDS(enabled = true, filter = true, shadow = false) {
 
 // Nhận dữ liệu từ iframe helper (CDS_IFRAME_DATA: thuốc + ICD)
 window.addEventListener('message', async (event) => {
+    // SECURITY: Kiểm tra origin — chặn message từ nguồn khác origin
+    if (event.origin !== window.location.origin) return;
+    // SECURITY: Message cùng window phải có nonce hợp lệ (chống giả mạo từ page script)
+    if (event.source === window && (!event.data?.nonce || event.data.nonce !== window.__ALADINN_NONCE__)) return;
+
     // Nhận trạng thái ngữ cảnh từ iframe helper (khắc phục lỗi F5 và MutationObserver iframe chéo nguồn)
     if (event.data && event.data.type === 'CDS_IFRAME_CONTEXT_STATUS') {
         const { enabled, mode } = event.data;

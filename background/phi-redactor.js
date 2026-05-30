@@ -116,7 +116,8 @@ export class PHIRedactor {
             /(?:0|\+84)\s?[35789]\d{2}\s?\d{3}\s?\d{3}\b|(?:0|\+84)[35789]\d{8}\b/, // Phone VN
             /\b0\d{11}\b/, // CCCD 12 số (bắt đầu bằng 0)
             /\b[A-Za-z]{2}\d{13}\b/, // BHYT
-            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/ // Email
+            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email
+            /\b(?:BN|HS|MA|MABA|MABN)\s*[:-]?\s*\d{6,15}\b/i  // PatientID — [M-08]
         ];
 
         for (const regex of strictPatterns) {
