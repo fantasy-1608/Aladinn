@@ -38,20 +38,75 @@ const VNPTSelectors = {
     nutritionForm: {
         iframe: '#divDlgThemPhieuifmView',
         fields: {
-            weight: '#textfield_1535',
-            height: '#textfield_1536',
-            bmi: '#textfield_1526'
+            weight: {
+                selector: '#textfield_1535',
+                type: 'input',
+                keywords: ['can nang', 'weight', 'trong luong', 'can nang (kg)']
+            },
+            height: {
+                selector: '#textfield_1536',
+                type: 'input',
+                keywords: ['chieu cao', 'height', 'chieu cao (cm)']
+            },
+            bmi: {
+                selector: '#textfield_1526',
+                type: 'input',
+                keywords: ['bmi', 'chi so khoi co the', 'chi so bmi']
+            },
+            systolic: {
+                selector: '#textfield_1537',
+                type: 'input',
+                keywords: ['huyet ap tam thu', 'systolic', 'tam thu']
+            },
+            diastolic: {
+                selector: '#textfield_1538',
+                type: 'input',
+                keywords: ['huyet ap tam truong', 'diastolic', 'tam truong']
+            }
         },
         section2: {
-            sutCan: 'input#checkbox_1539[value="1"]',
-            bmiThap: 'input#checkbox_1540[value="1"]',
-            teoCo: 'input#checkbox_1553[value="1"]',
-            phuNgoaiVi: 'input#checkbox_1554[value="1"]',
-            benhLyTieuHoa: 'input#checkbox_1542[value="1"]',
-            anUongGiamSut: 'input#checkbox_1543[value="1"]'
+            sutCanNo: {
+                selector: '#checkbox_1527',
+                type: 'checkbox',
+                keywords: ['sut can khong', 'sut can trong 3 thang gan day khong']
+            },
+            sutCan: {
+                selector: 'input#checkbox_1539[value="1"]',
+                type: 'checkbox',
+                keywords: ['sut can', 'sut can khong mong muon']
+            },
+            bmiThap: {
+                selector: 'input#checkbox_1540[value="1"]',
+                type: 'checkbox',
+                keywords: ['bmi thap', 'bmi < 18.5']
+            },
+            teoCo: {
+                selector: 'input#checkbox_1553[value="1"]',
+                type: 'checkbox',
+                keywords: ['teo co', 'co bap beo xop', 'teo co/beo xop']
+            },
+            phuNgoaiVi: {
+                selector: 'input#checkbox_1554[value="1"]',
+                type: 'checkbox',
+                keywords: ['phu ngoai vi', 'phu', 'phu chan']
+            },
+            benhLyTieuHoa: {
+                selector: 'input#checkbox_1542[value="1"]',
+                type: 'checkbox',
+                keywords: ['benh ly tieu hoa', 'duong tieu hoa', 'tieu hoa']
+            },
+            anUongGiamSut: {
+                selector: 'input#checkbox_1543[value="1"]',
+                type: 'checkbox',
+                keywords: ['an uong giam sut', 'giam an uong', 'an uong kem']
+            }
         },
         section3: {
-            boSungMieng: '#checkbox_1546'
+            boSungMieng: {
+                selector: '#checkbox_1546',
+                type: 'checkbox',
+                keywords: ['bo sung dinh duong duong mieng', 'bo sung dinh duong', 'dinh duong mieng']
+            }
         },
         buttons: {
             createNew: '#btnTaoMoi',

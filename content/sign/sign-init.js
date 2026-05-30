@@ -203,6 +203,8 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         }
 
         window.addEventListener('message', function onJWT(event) {
+            // SECURITY: Chỉ chấp nhận JWT từ cùng origin
+            if (event.origin !== window.location.origin) return;
             if (event.data && event.data.type === 'ALADINN_HIS_UUID' && event.data.uuid) {
                 AdvSign.setJwtToken(event.data.uuid);
                 if (Logger) Logger.info('Sign', 'JWT from message');
@@ -244,44 +246,124 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
     /**
      * Handler for ⚡ button click
      */
+    /**
+     * Tự động tìm kiếm grid #grdBenhNhan và context window của nó đệ quy xuyên qua các iframe (same-origin)
+     */
+    function findGridWindowAndElement(doc = document) {
+        const grid = doc.getElementById('grdBenhNhan');
+        if (grid) {
+            return {
+                grid: grid,
+                win: doc.defaultView || window
+            };
+        }
+
+        const iframes = doc.querySelectorAll('iframe');
+        for (const iframe of iframes) {
+            try {
+                const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+                if (iDoc) {
+                    const found = findGridWindowAndElement(iDoc);
+                    if (found) return found;
+                }
+            } catch (_e) {
+                // Bỏ qua iframe khác origin
+            }
+        }
+        return null;
+    }
+
     async function handleAdvancedSignClick() {
         const AdvSign = window.Aladinn?.Sign?.AdvancedSign;
         const AdvSignUI = window.Aladinn?.Sign?.AdvancedSignUI;
 
 
-        if (!AdvSign || !AdvSignUI) return;
+        if (!AdvSign || !AdvSignUI) {
+            showNotice('⚠️ Tính năng Ký số nâng cao đang được chuẩn bị. Vui lòng thử lại sau vài giây.');
+            return;
+        }
 
-        // Get the currently selected patient from the page
-        // On the sign page (NTU01H100), get from the grid directly
-        const isOnSignPage = window.location.href.includes('NTU01H100');
+        // Tự động quét tìm grid bệnh nhân và context window tương ứng (xuyên qua iframe phân hệ)
+        const gridContext = findGridWindowAndElement(document);
+
+        // Nhận diện trang ký số nếu URL chứa NTU01H100/ThongTinKySo/HSBA_DienTu hoặc tìm thấy grid trong bất kỳ iframe nào
+        const isOnSignPage = window.location.href.includes('NTU01H100') ||
+                             window.location.href.includes('ThongTinKySo') ||
+                             window.location.href.includes('HSBA_DienTu') ||
+                             !!gridContext;
 
         if (isOnSignPage) {
-            // We're on the signing page - use the selected row
-            const selectedRow = document.querySelector('tr.ui-state-highlight');
+            const targetWin = gridContext ? gridContext.win : window;
+            const selectedRow = targetWin.document.querySelector('tr.ui-state-highlight');
             if (!selectedRow) {
                 showNotice('⚠️ Chọn 1 bệnh nhân trước khi dùng Ký số nâng cao');
                 return;
             }
 
-            // Extract HOSOBENHANID and TIEPNHANID from jqGrid's userData
+            // Trích xuất HOSOBENHANID và TIEPNHANID từ jqGrid của đúng context
             try {
-                const grid = window.hisJQuery?.('#grdBenhNhan') || window.jQuery?.('#grdBenhNhan');
-                let rowData = null;
-                if (grid && grid.jqGrid) {
-                    const rowId = selectedRow.id;
-                    rowData = grid.jqGrid('getRowData', rowId);
+                const gridJQuery = targetWin.hisJQuery || targetWin.jQuery || targetWin.$;
+                let rawRowData = null;
+                const rowId = selectedRow.id;
+
+                if (gridJQuery && typeof gridJQuery.fn?.jqGrid === 'function') {
+                    const gridEl = gridJQuery('#grdBenhNhan');
+                    // Ưu tiên lấy getLocalRow (dữ liệu gốc đầy đủ trong bộ nhớ), fallback về getRowData
+                    rawRowData = gridEl.jqGrid('getLocalRow', rowId) || gridEl.jqGrid('getRowData', rowId);
                 }
 
-                if (!rowData) {
+                // Hàm tiện ích để trích xuất giá trị không phân biệt hoa thường
+                function getValIgnoreCase(obj, keyList) {
+                    if (!obj) return '';
+                    const keys = Object.keys(obj);
+                    for (const keyName of keyList) {
+                        const foundKey = keys.find(k => k.toLowerCase() === keyName.toLowerCase());
+                        if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
+                            return String(obj[foundKey]).trim();
+                        }
+                    }
+                    return '';
+                }
+
+                let hosobenhanId = getValIgnoreCase(rawRowData, ['HOSOBENHANID', 'HSBAID', 'HO_SO_BENH_AN_ID', 'hosobenhan_id', 'hsba_id']);
+                let tiepnhanId = getValIgnoreCase(rawRowData, ['TIEPNHANID', 'TIEP_NHAN_ID', 'tiepnhan_id']);
+                let mabenhan = getValIgnoreCase(rawRowData, ['MAHOSOBENHAN', 'MABENHAN', 'MA_BENH_AN', 'ma_hosobenhan', 'ma_benhan']);
+                let tenbenhnhan = getValIgnoreCase(rawRowData, ['TENBENHNHAN', 'HOTEN', 'TEN_BENH_NHAN', 'ho_ten', 'ten_benhnhan']);
+
+                // Fallback thông minh: Cào DOM nếu jqGrid không chứa các ID này hoặc jqGrid không hoạt động
+                if (!hosobenhanId) {
+                    hosobenhanId = selectedRow.getAttribute('data-hosobenhanid') || selectedRow.dataset?.hosobenhanid;
+                    if (!hosobenhanId && rowId && rowId.length > 5) {
+                        hosobenhanId = rowId; // Chỉ lấy rowId nếu nó là một ID thực sự (dài hơn 5 ký tự)
+                    }
+                }
+
+                if (!tiepnhanId) {
+                    tiepnhanId = selectedRow.getAttribute('data-tiepnhanid') || selectedRow.dataset?.tiepnhanid || hosobenhanId;
+                }
+
+                if (!mabenhan) {
+                    const maBAEl = selectedRow.querySelector('[aria-describedby*="MAHOSOBENHAN"], [aria-describedby*="MABENHAN"]');
+                    mabenhan = maBAEl ? maBAEl.textContent.trim() : '';
+                }
+
+                if (!tenbenhnhan) {
+                    const tenEl = selectedRow.querySelector('[aria-describedby*="TENBENHNHAN"], [aria-describedby*="HOTEN"]');
+                    tenbenhnhan = tenEl ? tenEl.textContent.trim() : 'Bệnh nhân';
+                }
+
+                if (Logger) Logger.info('Sign', `Extracted IDs: HSBA=${hosobenhanId}, TiepNhan=${tiepnhanId}, MaBA=${mabenhan}, Name=${tenbenhnhan}`);
+
+                if (!hosobenhanId) {
                     showNotice('⚠️ Không thể trích xuất thông tin bệnh nhân. Thử double-click vào bệnh nhân.');
                     return;
                 }
 
                 await openAdvancedSignModal({
-                    hosobenhanId: rowData.HOSOBENHANID,
-                    tiepnhanId: rowData.TIEPNHANID,
-                    mabenhan: rowData.MAHOSOBENHAN,
-                    tenbenhnhan: rowData.TENBENHNHAN
+                    hosobenhanId: hosobenhanId,
+                    tiepnhanId: tiepnhanId || hosobenhanId,
+                    mabenhan: mabenhan || '',
+                    tenbenhnhan: tenbenhnhan || 'Bệnh nhân'
                 });
             } catch (err) {
                 if (Logger) Logger.error('Sign', 'Error starting advanced sign', err);
@@ -1285,12 +1367,12 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             display:none;
             position:fixed; bottom:20px; right:20px; z-index:999999;
             width:340px;
-            background:linear-gradient(135deg, #1a1510 0%, #231c14 100%);
-            border:1px solid rgba(212,162,90,0.3);
-            border-radius:16px;
-            box-shadow:0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(212,162,90,0.1);
+            background:#ffffff;
+            border:1px solid #004f9e;
+            border-radius:0px;
+            box-shadow:0 4px 16px rgba(0,79,158,0.15);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            color:#e8dcc8;
+            color:#333333;
             overflow:hidden;
             transition: opacity 0.3s, transform 0.3s;
         `;
@@ -1298,41 +1380,42 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         panel.innerHTML = `
             <div id="ward-panel-header" style="
                 padding:12px 16px;
-                background:linear-gradient(90deg, rgba(212,162,90,0.15), rgba(196,136,60,0.1));
-                border-bottom:1px solid rgba(212,162,90,0.2);
+                background:#004f9e;
+                border-bottom:1px solid #003a75;
                 display:flex; align-items:center; justify-content:space-between;
                 cursor:move; user-select:none;
             ">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:16px">🧞</span>
-                    <span style="font-weight:600; font-size:14px; letter-spacing:0.3px; color:#e8dcc8;">Ký số Buồng ĐT</span>
+                    <span style="font-size:16px">🔑</span>
+                    <span style="font-weight:600; font-size:14px; letter-spacing:0.3px; color:#ffffff;">Ký số Buồng ĐT</span>
                 </div>
                 <span id="ward-queue-badge" style="
-                    background:rgba(212,162,90,0.2); color:#d4a25a;
-                    padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600;
+                    background:#ffffff; color:#004f9e;
+                    border:1px solid #004f9e;
+                    padding:2px 10px; border-radius:0px; font-size:12px; font-weight:600;
                 ">0/0</span>
             </div>
 
             <div id="ward-start-view" style="padding:14px 16px;">
                 <div style="margin-bottom:12px;">
-                    <label style="font-size:11px; color:#a0937e; display:block; margin-bottom:4px;">Tự động điền Người tạo:</label>
+                    <label style="font-size:11px; color:#444444; display:block; margin-bottom:4px;">Tự động điền Người tạo:</label>
                     <div style="position:relative;">
                         <input type="text" id="ward-creator-filter" placeholder="VD: trung anh" style="
                             width:100%; padding:8px 10px 8px 30px; box-sizing:border-box;
-                            background:rgba(35,28,20,0.8); border:1px solid rgba(212,162,90,0.3);
-                            border-radius:8px; color:#e8dcc8; font-size:13px;
+                            background:#ffffff; border:1px solid #a6c9e2;
+                            border-radius:0px; color:#333333; font-size:13px;
                             outline:none; transition:border-color 0.2s;
                         ">
-                        <svg style="position:absolute; left:8px; top:50%; transform:translateY(-50%); opacity:0.5; color:#d4a25a;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg style="position:absolute; left:8px; top:50%; transform:translateY(-50%); opacity:0.7; color:#004f9e;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
                 </div>
-                <p style="font-size:11px; color:#7a6e5e; margin:0 0 14px;">
+                <p style="font-size:11px; color:#666666; margin:0 0 14px;">
                     Tick ☑ bệnh nhân → Panel tự hiện → nhấn <b>Bắt đầu</b>.
                 </p>
                 <button id="ward-btn-start" disabled style="
-                    width:100%; padding:10px; border:none; border-radius:10px;
-                    background:linear-gradient(135deg, #d4a25a, #c4883c);
-                    color:#1a1510; font-size:14px; font-weight:600;
+                    width:100%; padding:10px; border:none; border-radius:0px;
+                    background:#004f9e;
+                    color:#ffffff; font-size:14px; font-weight:600;
                     cursor:pointer; opacity:0.5; transition:all 0.2s;
                     display:flex; align-items:center; justify-content:center; gap:8px;
                 ">
@@ -1343,67 +1426,64 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
 
             <div id="ward-process-view" style="display:none; padding:14px 16px;">
                 <div style="
-                    background:rgba(212,162,90,0.08); border:1px solid rgba(212,162,90,0.2);
-                    border-radius:10px; padding:10px 14px; margin-bottom:12px;
+                    background:#f9f9f9; border:1px solid #a6c9e2;
+                    border-radius:0px; padding:10px 14px; margin-bottom:12px;
                     position:relative; overflow:hidden;
                 ">
-                    <div style="position:absolute; top:0; left:0; right:0; height:2px;
-                         background:linear-gradient(90deg,transparent,#d4a25a,transparent);
-                         animation:ward-glow 2s ease-in-out infinite;"></div>
-                    <span style="font-size:10px; color:#a0937e; text-transform:uppercase; letter-spacing:1px;">Đang xử lý</span>
-                    <div id="ward-current-patient" style="font-size:15px; font-weight:700; color:#e8dcc8; margin-top:2px;">---</div>
+                    <span style="font-size:10px; color:#666666; text-transform:uppercase; letter-spacing:1px;">Đang xử lý</span>
+                    <div id="ward-current-patient" style="font-size:15px; font-weight:700; color:#004f9e; margin-top:2px;">---</div>
                 </div>
 
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span style="font-size:11px; color:#a0937e;">Tiến độ</span>
-                    <span id="ward-progress-pct" style="font-size:11px; color:#d4a25a; font-weight:600;">0%</span>
+                    <span style="font-size:11px; color:#444444;">Tiến độ</span>
+                    <span id="ward-progress-pct" style="font-size:11px; color:#004f9e; font-weight:600;">0%</span>
                 </div>
-                <div style="height:6px; background:rgba(35,28,20,0.8); border-radius:4px; overflow:hidden; margin-bottom:14px;">
-                    <div id="ward-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#c4883c,#d4a25a); border-radius:4px; transition:width 0.4s;"></div>
+                <div style="height:6px; background:#e5e5e5; border-radius:0px; overflow:hidden; margin-bottom:14px;">
+                    <div id="ward-progress-bar" style="height:100%; width:0%; background:#004f9e; border-radius:0px; transition:width 0.4s;"></div>
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
-                    <div style="text-align:center; padding:8px 4px; background:rgba(34,197,94,0.08); border-radius:8px;">
-                        <div style="font-size:10px; color:#6ee7a0;">Đã ký</div>
-                        <div id="ward-stat-done" style="font-size:18px; font-weight:700; color:#22c55e;">0</div>
+                    <div style="text-align:center; padding:8px 4px; background:#ebfbee; border:1px solid #c7f3d6; border-radius:0px;">
+                        <div style="font-size:10px; color:#2b8a3e;">Đã ký</div>
+                        <div id="ward-stat-done" style="font-size:18px; font-weight:700; color:#2f9e44;">0</div>
                     </div>
-                    <div style="text-align:center; padding:8px 4px; background:rgba(212,162,90,0.08); border-radius:8px;">
-                        <div style="font-size:10px; color:#d4a25a;">Bỏ qua</div>
-                        <div id="ward-stat-skip" style="font-size:18px; font-weight:700; color:#c4883c;">0</div>
+                    <div style="text-align:center; padding:8px 4px; background:#fff9db; border:1px solid #fbd38d; border-radius:0px;">
+                        <div style="font-size:10px; color:#d9480f;">Bỏ qua</div>
+                        <div id="ward-stat-skip" style="font-size:18px; font-weight:700; color:#e8590c;">0</div>
                     </div>
-                    <div style="text-align:center; padding:8px 4px; background:rgba(161,135,100,0.1); border-radius:8px;">
-                        <div style="font-size:10px; color:#a18764;">Còn lại</div>
-                        <div id="ward-stat-remain" style="font-size:18px; font-weight:700; color:#d4a25a;">0</div>
+                    <div style="text-align:center; padding:8px 4px; background:#f1f3f5; border:1px solid #dee2e6; border-radius:0px;">
+                        <div style="font-size:10px; color:#495057;">Còn lại</div>
+                        <div id="ward-stat-remain" style="font-size:18px; font-weight:700; color:#212529;">0</div>
                     </div>
                 </div>
 
                 <div style="display:flex; gap:8px; margin-bottom:8px;">
                     <button id="ward-btn-next" style="
-                        flex:1; padding:10px; border:none; border-radius:10px;
-                        background:linear-gradient(135deg, #22c55e, #16a34a);
+                        flex:1; padding:10px; border:none; border-radius:0px;
+                        background:#28a745;
                         color:white; font-size:13px; font-weight:600;
                         cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-                        transition:all 0.2s;
+                        transition:all 0.15s;
                     ">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
                         Ký tiếp
                     </button>
                     <button id="ward-btn-skip" style="
-                        flex:1; padding:10px; border:none; border-radius:10px;
-                        background:rgba(212,162,90,0.12); border:1px solid rgba(212,162,90,0.3);
-                        color:#d4a25a; font-size:13px; font-weight:600;
+                        flex:1; padding:10px; border:1px solid #a6c9e2; border-radius:0px;
+                        background:#f8f9fa;
+                        color:#004f9e; font-size:13px; font-weight:600;
                         cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-                        transition:all 0.2s;
+                        transition:all 0.15s;
                     ">
                         Bỏ qua
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </button>
                 </div>
                 <button id="ward-btn-stop" style="
-                    width:100%; padding:8px; border:1px solid rgba(239,68,68,0.3); border-radius:10px;
-                    background:transparent; color:#f87171; font-size:12px; font-weight:500;
+                    width:100%; padding:8px; border:1px solid #ffc9c9; border-radius:0px;
+                    background:#fff5f5; color:#fa5252; font-size:12px; font-weight:500;
                     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-                    transition:all 0.2s;
+                    transition:all 0.15s;
                 ">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
                     Dừng quy trình
@@ -1411,19 +1491,16 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             </div>
         `;
 
-        // Add glow animation
+        // Add style rules
         const style = document.createElement('style');
         style.textContent = `
-            @keyframes ward-glow {
-                0%,100% { opacity:0.3; }
-                50% { opacity:1; }
-            }
             #ward-workflow-panel button:hover {
-                filter: brightness(1.15);
-                transform: translateY(-1px);
+                filter: brightness(0.9);
+                transform: translateY(-0.5px);
             }
             #ward-workflow-panel input:focus {
-                border-color: #d4a25a !important;
+                border-color: #004f9e !important;
+                box-shadow: 0 0 0 2px rgba(0, 79, 158, 0.2);
             }
         `;
         document.head.appendChild(style);

@@ -221,12 +221,12 @@ const VNPTHistory = (function () {
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fab-pulse-base {
-                0%, 100% { box-shadow: 0 2px 8px rgba(255,152,0,0.4); }
-                50% { box-shadow: 0 4px 16px rgba(255,152,0,0.7); }
+                0%, 100% { box-shadow: 0 1px 4px rgba(0, 79, 158, 0.3); }
+                50% { box-shadow: 0 2px 10px rgba(0, 79, 158, 0.5); }
             }
             @keyframes fab-pulse-vip {
-                0%, 100% { box-shadow: 0 2px 12px rgba(212,168,83,0.5), 0 0 6px rgba(245,158,11,0.3); }
-                50% { box-shadow: 0 4px 24px rgba(212,168,83,0.8), 0 0 16px rgba(245,158,11,0.6); }
+                0%, 100% { box-shadow: 0 2px 10px rgba(0, 176, 255, 0.3), inset 0 0 4px rgba(0, 176, 255, 0.2); }
+                50% { box-shadow: 0 4px 20px rgba(0, 176, 255, 0.6), inset 0 0 8px rgba(0, 176, 255, 0.4); }
             }
             @keyframes fab-spin {
                 from { transform: rotate(0deg); }
@@ -246,61 +246,66 @@ const VNPTHistory = (function () {
                 top: 130px !important;
                 right: 15px !important;
                 z-index: 2147483647 !important;
-                width: 48px !important; height: 48px !important;
-                border-radius: 50% !important;
+                width: 44px !important; height: 44px !important;
+                border-radius: 0px !important;
                 display: flex !important; align-items: center !important; justify-content: center !important;
                 cursor: pointer !important;
                 user-select: none !important;
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                font-size: 22px !important;
-                border: 2px solid rgba(255,255,255,0.3) !important;
+                font-size: 20px !important;
+                border: 1px solid rgba(166, 201, 226, 0.5) !important;
             }
             #vnpt-history-fab.base {
-                background: linear-gradient(135deg, #FF9800, #F57C00) !important;
+                background: linear-gradient(135deg, #004f9e, #0066cc) !important;
                 animation: fab-pulse-base 2.5s ease-in-out infinite !important;
             }
             #vnpt-history-fab.vip {
-                background: linear-gradient(135deg, #d4a853, #f59e0b) !important;
-                border-color: rgba(255,255,255,0.5) !important;
+                background: linear-gradient(135deg, #004f9e, #00b0ff) !important;
+                border-color: rgba(0, 176, 255, 0.6) !important;
                 animation: fab-pulse-vip 2s ease-in-out infinite !important;
             }
             #vnpt-history-fab:hover {
-                transform: scale(1.12) !important;
+                transform: scale(1.08) !important;
+                box-shadow: 0 4px 15px rgba(0, 176, 255, 0.4) !important;
             }
             #vnpt-history-fab:active {
-                transform: scale(0.95) !important;
+                transform: scale(0.96) !important;
             }
             #vnpt-history-fab.processing {
                 animation: fab-spin 1s linear infinite !important;
                 opacity: 0.85 !important;
                 pointer-events: none !important;
+                background: #004f9e !important;
             }
             #vnpt-history-fab.done {
-                background: linear-gradient(135deg, #4CAF50, #2E7D32) !important;
+                background: linear-gradient(135deg, #28a745, #218838) !important;
                 animation: fab-bounce 0.5s ease !important;
+                border-color: #28a745 !important;
             }
             #vnpt-history-fab.error {
-                background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+                background: linear-gradient(135deg, #dc3545, #c82333) !important;
                 animation: fab-shake 0.4s ease !important;
+                border-color: #dc3545 !important;
             }
             /* Tooltip */
             #vnpt-history-fab::after {
                 content: attr(data-tooltip);
                 position: absolute;
-                right: 56px; top: 50%;
+                right: 52px; top: 50%;
                 transform: translateY(-50%);
                 background: rgba(15,23,42,0.95);
                 color: #f1f5f9;
                 padding: 6px 12px;
-                border-radius: 8px;
+                border-radius: 0px;
                 font-size: 12px;
-                font-weight: 500;
+                font-weight: 600;
                 white-space: nowrap;
                 pointer-events: none;
                 opacity: 0;
                 transition: opacity 0.2s;
                 font-family: 'Inter', system-ui, sans-serif;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                border: 1px solid rgba(166, 201, 226, 0.3);
             }
             #vnpt-history-fab:hover::after {
                 opacity: 1;
@@ -524,7 +529,7 @@ const VNPTHistory = (function () {
 
                 let diagSource = mainDiagStr;
                 if (subDiagStr) {
-                    diagSource += (diagSource ? '; ' : '') + subDiagStr;
+                    diagSource += (diagSource ? ';' : '') + subDiagStr;
                 }
                 
                 if (diagSource) {
@@ -535,7 +540,7 @@ const VNPTHistory = (function () {
                         : { code: '', text: parts[0].trim() };
                         
                     if (parts.length > 1) {
-                        const subRaw = parts.slice(1).map(p => p.trim()).join('; ');
+                        const subRaw = parts.slice(1).map(p => p.trim()).join(';');
                         const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
                         history.subDiag = subMatch
                             ? { code: subMatch[1].trim(), text: subMatch[2].trim() }
@@ -944,6 +949,16 @@ const VNPTHistory = (function () {
                 }
             } else {
                 // CHO TAB A (Bệnh án ngoại khoa)
+                // Fallback Lý do vào viện bằng Chẩn đoán chính nếu rỗng
+                if (!history.LYDOVAOVIEN && history.mainDiag && history.mainDiag.text) {
+                    history.LYDOVAOVIEN = history.mainDiag.text;
+                }
+
+                // Fallback Quá trình bệnh lý bằng Diễn biến hoặc Bệnh sử nếu rỗng
+                if (!history.QUATRINHBENHLY) {
+                    history.QUATRINHBENHLY = formattedDienBien || history.KHAMBENH_BENHSU || '';
+                }
+
                 const parts = [];
                 if (history.LYDOVAOVIEN) parts.push(`Vào viện vì: ${history.LYDOVAOVIEN}`);
                 if (history.QUATRINHBENHLY) parts.push(`Bệnh sử: ${history.QUATRINHBENHLY}`);
@@ -954,7 +969,7 @@ const VNPTHistory = (function () {
 
                 history = {
                     ...history,
-                    KHAMBENH_BENHSU: formattedDienBien || history.KHAMBENH_BENHSU,
+                    KHAMBENH_BENHSU: history.QUATRINHBENHLY,
                     GENERATED_SUMMARY: tomtatBA
                 };
             }
@@ -1048,17 +1063,26 @@ const VNPTHistory = (function () {
         if (old) old.remove();
 
         return new Promise((resolve, reject) => {
-            const script = doc.createElement('script');
-            script.id = 'vnpt-history-helper';
-            const _chrome = (/** @type {any} */(window)).chrome;
-            if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/history-iframe-helper.js');
-                script.onload = () => resolve(undefined);
-                script.onerror = () => reject(new Error('Inject failed'));
+            const _chrome = (typeof window !== 'undefined' && window.chrome) ? window.chrome : null;
+            if (!_chrome || !_chrome.runtime) return reject(new Error('Chrome unavailable'));
+
+            const loadScript = (src, id) => new Promise((res, rej) => {
+                const existing = doc.getElementById(id);
+                if (existing) {
+                    existing.remove();
+                }
+                const script = doc.createElement('script');
+                script.id = id;
+                script.src = _chrome.runtime.getURL(src);
+                script.onload = res;
+                script.onerror = rej;
                 (doc.head || doc.documentElement).appendChild(script);
-            } else {
-                reject(new Error('Chrome unavailable'));
-            }
+            });
+
+            loadScript('content/shared/typing-effect.js', 'vnpt-typing-effect-lib')
+                .then(() => loadScript('content/scanner/history-iframe-helper.js', 'vnpt-history-helper'))
+                .then(resolve)
+                .catch(() => reject(new Error('Inject failed')));
         });
     }
 

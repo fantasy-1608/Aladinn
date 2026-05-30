@@ -15,9 +15,13 @@
         window.removeEventListener('message', window._vnptChuyenVienHandler);
     }
 
-    window._vnptChuyenVienHandler = function (event) {
+    window._vnptChuyenVienHandler = async function (event) {
         if (event.source !== window.parent && event.source !== window.top) return;
         if (!event.data || event.data.type !== 'CHUYENVIEN_FILL_FORM') return;
+
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
 
         try {
             if (event.data.contextToken) {
@@ -40,25 +44,22 @@
             var d = event.data;
             var mapping = d.mapping || {};
             var data = d.clinicalData || {};
-            var inputsFilled = 0;
-
+            
+            var fillQueue = [];
             for (var key in mapping) {
                 var fieldIdStr = mapping[key];
                 var val = data[key];
 
                 if (val !== undefined && val !== null && String(val).trim() !== '') {
-                    if (setVal(fieldIdStr, val)) {
-                        inputsFilled++;
-                    }
+                    fillQueue.push({ id: fieldIdStr, val: val });
                 }
             }
 
-            console.log('[ChuyenVien Iframe] Đã điền ' + inputsFilled + ' trường.');
-
-            if (inputsFilled > 0) {
-                sendResponse(true, inputsFilled);
+            if (window.VNPT_TypingEffect) {
+                await window.VNPT_TypingEffect.fillFormSequential(fillQueue, true);
+                sendResponse(true, fillQueue.length);
             } else {
-                sendResponse(false, 0, 'Không tìm thấy trường nào để điền. Form có thể chưa load xong.');
+                sendResponse(false, 0, 'Thư viện VNPT_TypingEffect chưa được tải.');
             }
         } catch (e) {
             console.log('[ChuyenVien Iframe] Error:', e);
@@ -71,54 +72,6 @@
 
     if (window.parent !== window) {
         window.parent.postMessage({ type: 'CHUYENVIEN_HELPER_READY' }, PARENT_ORIGIN);
-    }
-
-    /**
-     * Tìm element bằng danh sách ID (pipe-separated) + fallback label search.
-     * @param {string} fieldIdStr - Pipe-separated list of possible IDs
-     * @returns {{el: HTMLElement, targetId: string} | null}
-     */
-    function getFieldElement(fieldIdStr) {
-        if (!fieldIdStr) return null;
-        var ids = fieldIdStr.split('|');
-
-        for (var i = 0; i < ids.length; i++) {
-            var currId = ids[i];
-            var el = document.getElementById(currId) || document.querySelector('[name="' + currId + '"]');
-            if (el) return { el: el, targetId: currId };
-        }
-        return null;
-    }
-
-    /**
-     * Set giá trị cho field và trigger change events.
-     * @param {string} fieldIdStr
-     * @param {string} val
-     * @returns {boolean}
-     */
-    function setVal(fieldIdStr, val) {
-        if (val === undefined || val === null) return false;
-        var found = getFieldElement(fieldIdStr);
-
-        if (!found) {
-            console.log('[ChuyenVien Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
-            return false;
-        }
-
-        var el = found.el;
-        el.removeAttribute('disabled');
-        el.removeAttribute('readonly');
-        el.value = val;
-
-        if ($) {
-            $(el).trigger('change').trigger('input');
-        } else {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        console.log('[ChuyenVien] Đã điền:', found.targetId, '->', String(val).substring(0, 60));
-        return true;
     }
 
     function sendResponse(success, filledCount, error) {

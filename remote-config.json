@@ -1,11 +1,14 @@
 {
-    "version": 1,
+    "version": 2,
     "features": {
-        "autoSign": true,
-        "cdsEngine": true,
-        "aiVoice": true,
-        "scanner": true
+        "autoSign": false,
+        "autoClick": false,
+        "signSearch": true,
+        "cdsEngine": false,
+        "aiVoice": false,
+        "scanner": true,
+        "enableSmartPath": false
     },
-    "mode": "pilot_safe_mode",
+    "mode": "hospital_safe_mode",
     "emergencyMessage": ""
 }

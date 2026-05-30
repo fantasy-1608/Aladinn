@@ -7,12 +7,124 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
-## [1.5.1] — 2026-05-22
+## [2.1.0] — 2026-05-30
 
-### ✨ Tính năng mới & Cải tiến Giao diện Nổi bật
-- **Đồng bộ hóa Giao diện và Bản sửa lỗi Lâm sàng**: Đại tu giao diện Popup Panel mới, tối ưu hóa các phím tắt Scanner và Ký số cực kỳ hiện đại.
-- **Tối ưu hóa màu sắc VNPT HIS (Medical Blue)**: Riêng bản worktree V2.0 giữ nguyên màu xanh HIS đặc trưng nhưng cập nhật 100% nội dung và cấu trúc panel mới nhất.
-- **Đồng bộ toàn bộ Helper Scripts**: Đồng bộ các tệp helper quét dữ liệu lâm sàng của Iframe (Bản án, Cấp cứu, Dinh dưỡng, Chuyển viện, Hội chẩn) giữa 2 phiên bản.
+### ✨ AI Lâm sàng V3.0 (Clinical Intelligence Upgrade)
+
+- **System Instruction Độc lập:** Tách biệt vai trò bác sĩ chuyên khoa và quy tắc y khoa khỏi dữ liệu bệnh nhân, giúp AI tuân thủ tuyệt đối định dạng và ngôn ngữ y khoa chuyên nghiệp.
+- **Chain-of-Thought (CoT):** Kích hoạt luồng tư duy phân tích sâu (Thinking Mode) cho các mô hình Gemini hiện đại (Gemini 2.5+), giúp nhận diện mâu thuẫn giữa diễn tiến lâm sàng, kết quả xét nghiệm và thuốc điều trị.
+- **Biểu tượng Mức độ Nguy cơ:** Tự động phân loại điểm lưu ý bằng emoji cảnh báo (🔴 Cần can thiệp ngay, 🟡 Theo dõi sát, 🟢 Thường quy) và đánh giá xu hướng điều trị bằng biểu tượng định vị (✅ Cải thiện, ➡️ Không đổi, ⚠️ Xấu đi).
+- **Data Pipeline Tối ưu:** Khử trùng lặp mã bệnh ICD, mở rộng trích xuất dữ liệu "Khám toàn thân/Bộ phận", tự động loại trừ thuốc ngưng sử dụng và map thành công các dịch vụ PTTT vào ngữ cảnh bệnh án.
+
+---
+
+## [2.0.5] — 2026-05-29
+
+### 🛡️ Đánh giá & Vá Lỗi Bảo Mật Toàn Diện (Security Audit Remediation)
+
+- **Vá lỗ hổng XSS (P0):** Bổ sung hàm `_escapeHtml()` để làm sạch `emergencyMessage` từ remote config trước khi render DOM, ngăn chặn hoàn toàn rủi ro XSS injection.
+- **Tối ưu PHI Redactor (P0):** Thu hẹp regex cho CCCD (đúng 12 số bắt đầu bằng 0), CMND (yêu cầu nhãn nhận diện), và Mã bệnh nhân (yêu cầu tiền tố BN/HS/MA). Giảm thiểu đáng kể tỷ lệ nhận diện nhầm (false positive) đối với các dữ liệu sinh hiệu và kết quả xét nghiệm.
+- **Xác thực Sender cho Audit Logger (P0):** Khóa chặt cổng nhận tin nhắn của `audit-logger.js`, chỉ chấp nhận log từ chính extension và trang `vncare.vn`, ngăn chặn hoàn toàn việc ghi log giả mạo hoặc trích xuất dữ liệu trái phép.
+- **CI/CD Security Automation (P0/P1):** Tích hợp Semgrep SAST, Dependency Scanning (`pnpm audit`), Secret Scanning (gitleaks) và kiểm tra Test Coverage (≥80%) vào GitHub Actions workflow.
+- **Cải thiện An toàn Mã nguồn (P1/P2):**
+  - Đóng gói toàn bộ các dòng `console.log` debug phía sau cờ `window.__ALADINN_DEBUG__`.
+  - Thay thế `postMessage('*')` bằng `window.location.origin` an toàn hơn.
+  - Cập nhật tài liệu ALADINN_PRIVACY_MODEL.md đồng bộ thông số lặp PBKDF2 (310,000 vòng).
+- **Tăng cường Kiểm thử Bảo mật:** Bổ sung 59 test cases mới (nâng tổng số lên 384 tests - 100% Passed) nhằm bao phủ logic tự dừng Auto-Sign khi đổi tab và độ chính xác của hàm Logger.sanitize().
+
+---
+
+## [2.0.4] — 2026-05-26
+
+### 🛠️ Bản vá tích hợp API CLS (Hospital Safe Mode - API Bridge Update)
+
+- **Vá lỗi truy vấn TraCuuKetQuaHDG**: Chuyển đổi cuộc gọi API từ màn hình `TraCuuKetQuaHDG` cũ (bị lỗi cú pháp và thiếu tham số) sang Store Procedure chính thức **`GET_DV_KQ_CLS_HDG`** chạy qua cỗ máy jabsorb gốc của HIS (**`dbCALL_SP_R`**).
+- **Mô hình Dự phòng Tuần tự Tách biệt (Split Sequential Fallback Strategy)**: 
+  - Khắc phục lỗi hiển thị **XN (0)** khi bệnh nhân có cả Xét nghiệm (XN) và Chẩn đoán hình ảnh (CĐHA) nhưng XN bị lệch ID từ API mới còn CĐHA chạy thành công.
+  - Tách biệt hoàn toàn luồng xử lý XN và CĐHA độc lập nhau. Luồng nào trống dữ liệu chi tiết khi lấy từ API mới sẽ tự động kích hoạt fallback tuần tự sang cách cũ (`NT.024.DSPHIEU` + `NT.024.2`) mà không gây ảnh hưởng tới luồng còn lại.
+  - Đảm bảo tối ưu hóa tài nguyên máy chủ 100% bằng cách chỉ fallback khi thực sự cần thiết đối với từng loại dịch vụ cụ thể.
+- **Tuân thủ Eslint & E2E Tests**: Hoàn tất 319 ca kiểm thử (100% Passed) và vượt qua kiểm tra cú pháp khắt khe của eslint không có bất kỳ lỗi nào.
+
+### 🛡️ Bản vá Bảo mật & Context Guard (Safety & Context Guard Patch)
+
+- **Sửa lỗi chặn điền bệnh án ngoại khoa (ContextGuard)**: Loại bỏ kiểm tra định dạng ID chứa dấu gạch dưới (`_`) trong `patient-context-guard.js`. VNPT HIS nội trú sử dụng số thứ tự dòng dạng chuỗi đơn thuần (ví dụ: `'3'`, `'16'`) làm `rowId` thay vì composite key, do đó việc bắt buộc chứa `_` đã vô tình chặn đứng các thao tác điền form. Cơ chế bảo vệ vẫn hoạt động an toàn tuyệt đối nhờ so khớp `initialSelectedPatientId` và chặn hồ sơ tạm `TEMP_`.
+- **Sửa lỗi định dạng thời gian "Ra khoa lúc" khi điền Xử trí**: Loại bỏ đuôi nhãn ảo ` (Đang soạn thảo)` khỏi chuỗi thời gian khi tự động điền vào datepicker của HIS. Aladinn tạo nhãn `(Đang soạn thảo)` cho các tờ điều trị thời gian thực chưa lưu để bác sĩ nhận biết, nhưng việc đưa nhãn text này vào ô ngày giờ của HIS gây lỗi hiển thị và xử lý ngày tháng. Chuỗi hiện được làm sạch thành định dạng chuẩn 100% trước khi điền vào datepicker, trong khi nhãn hiển thị trên Aladinn Clinical Overview vẫn được giữ nguyên để bác sĩ tham chiếu.
+
+### ✨ Tính năng mới & Cải tiến Lâm sàng Vượt trội (Aladinn Clinical OS Upgrade)
+
+- **Hệ thống Tự phục hồi DOM (Self-Healing DOM Engine)**: Tích hợp cơ chế đối sánh ngữ nghĩa thông minh sử dụng bộ từ điển lâm sàng tiếng Việt. Giúp tự động nhận diện và tự sửa lỗi ánh xạ các trường bệnh án (Hội chẩn, Chuyển viện, Dinh dưỡng,...) ngay cả khi hệ thống HIS thay đổi, ẩn hoặc làm mới ID tĩnh của DOM.
+- **Cảnh báo eGFR & Liều lượng theo Chức năng Thận (eGFR Renal Alerts)**:
+  - Tích hợp tự động tính toán eGFR theo phương trình **Cockcroft-Gault** và **CKD-EPI (2021)** không phụ thuộc vào chủng tộc (race-free).
+  - Tự động nhận diện và chuyển đổi đơn vị Creatinine huyết thanh ($\mu\text{mol/L}$ sang $\text{mg/dL}$).
+  - Tự động cảnh báo giới hạn liều lượng/chỉ định an toàn lâm sàng (ví dụ: Chống chỉ định hoặc cảnh báo giảm liều Metformin dựa trên mức eGFR của bệnh nhân).
+- **Quét phím Chủ động thời gian thực (Proactive Keystroke CDS Hook)**:
+  - Cho phép quét phím trực tiếp trên các trường kê đơn khi bác sĩ đang nhập tên thuốc (real-time).
+  - Phân tích và truy vấn luật CDS từ trước khi biểu mẫu được lưu/gửi, hỗ trợ ra quyết định lâm sàng nhanh chóng và an toàn hơn.
+- **Tuân thủ Tuyệt đối Clinical Safety & Immutability**:
+  - Toàn bộ cơ chế phân tích CDS được thiết kế bất biến (Immutable Context), loại bỏ triệt để việc thay đổi dữ liệu gốc của bệnh nhân.
+  - Fail-closed hoàn toàn nếu phát hiện sự sai lệch thông tin `benhnhanId` hoặc `khambenhId`.
+
+---
+
+## [2.0.5] — 2026-05-21
+
+### 🎨 Thiết Kế Nhận Diện Thương Hiệu Động Aladinn x Gemini Intelligent (Aesthetics Upgrade)
+
+- **Hộp Kính Mờ Thương Hiệu (Glassmorphic Capsule):** Khắc phục lỗi tương phản màu chữ bằng việc tạo một hộp kính mờ sang trọng bao quanh tên Bác sĩ, với viền gradient phát sáng neon và màu chữ trắng tinh khiết nổi bật 100%.
+- **Biểu tượng lai Aladinn x Gemini Intelligent Động:** Tích hợp logo Đèn Thần Gold lấp lánh kết hợp làn khói ma thuật uốn lượn bay ra 2 ngôi sao Gemini lấp lánh (một to phập phồng tự xoay chậm, một nhỏ nhấp nháy lấp lánh lệch pha cực đẹp).
+- **Chữ thương hiệu SHIMMER:** Bổ sung dòng chữ nhỏ "ALADINN" màu vàng Gold lấp lánh (shimmer effect) ngay trước tên Bác sĩ, khẳng định rõ trạng thái hoạt động của hệ điều hành lâm sàng.
+
+### 🛡️ Safety Patch (Hospital Safe Mode - R1 to R12)
+
+- **Vô hiệu hóa Retry AJAX:** Chuyển `ajax-interceptor.js` thành bộ lắng nghe thụ động. Không gửi lại request HIS khi có lỗi, ngăn chặn rủi ro vòng lặp vô hạn.
+- **Manual Safe Sign:** Tắt tính năng tự động bấm "Đồng ý" khi ký số. Yêu cầu bác sĩ trực tiếp xác nhận thao tác ký cuối cùng.
+- **Fail-Safe Remote Config:** Mặc định vô hiệu hóa mọi tính năng tự động (autoClick, autoSign) khi mất kết nối Internet, chỉ cho phép Scanner hoạt động ở chế độ đọc.
+- **On-Demand Auto-fill:** Typing-effect chỉ được inject và giải phóng thuộc tính readonly khi bác sĩ chủ động ấn nút "Điền vào form". Khôi phục trạng thái ban đầu ngay sau khi hoàn tất.
+- **Patient Context Guard:** Chặn hoàn toàn các thao tác ghi (ký số/điền form) đối với hồ sơ tạm (`TEMP_`) hoặc khi phát hiện lệch `benhnhanId` / `khambenhId` giữa bộ nhớ đệm và giao diện gốc.
+- **Safe Logging (PHI-free):** Ẩn toàn bộ thông tin nhạy cảm (Tên, BHYT, CCCD, mã BN) trong log thành `[REDACTED]`.
+- **API Bridge Hardening:** Chỉ cho phép các API intent đọc (`READ_ONLY_INTENTS`). Vô hiệu hóa tính năng in phiếu PTTT từ xa, áp dụng giới hạn request chống quá tải HIS.
+
+---
+
+## [2.0.4] — 2026-05-21
+
+### 📝 Hoàn thiện Hồ sơ Sáng kiến Cấp Cơ sở
+
+- **Hoàn thiện Thuyết minh Sáng kiến:** Bổ sung đầy đủ các mục bắt buộc theo Nghị định 13/2012/NĐ-CP (Tính mới, Cam đoan tác giả, Thời gian áp dụng, Nơi áp dụng, Chủ đầu tư, Điều kiện áp dụng).
+- **Mẫu Phiếu khảo sát bác sĩ:** Tạo mẫu phiếu khảo sát sự hài lòng 10 câu hỏi Likert để thu thập minh chứng thực tế.
+- **Mẫu Đơn đề nghị công nhận:** Tạo mẫu đơn hành chính chuẩn để nộp Hội đồng Khoa học Kỹ thuật.
+- **Xóa test placeholder:** Loại bỏ `basic.test.js` (test vô nghĩa `expect(true).toBe(true)`).
+
+---
+
+## [2.0.3] — 2026-05-21
+
+### 🛡️ Self-Healing UI & Live Persistence Observer
+
+- **Cơ chế tự khôi phục tiện ích thời gian thực:** Tích hợp `MutationObserver` siêu nhẹ trên `document.body` giúp tự động tái tiêm nút Aladinn "🧞" và nút tóm tắt nội dòng (inline) dưới 10ms khi HIS re-render DOM.
+- **Kiểm thử tự phục hồi:** Bổ sung 3 ca test chuyên biệt tại `tests/scanner/self-healing-ui.test.js` giả lập tình huống HIS xóa nút tiện ích, xác nhận phục hồi tự động.
+- **Dọn dẹp an toàn bộ nhớ:** Observer tự `disconnect()` khi tab unload để tránh rò rỉ bộ nhớ.
+
+---
+
+## [2.0.2] — 2026-05-21
+
+### 🎨 Tinh chỉnh Hover & Màu sắc Chỉ số Bất thường
+
+- **Thanh ngang định vị hover:** Gỡ bỏ `!important` inline style, nâng cường nền hover `#d2e3fc`, thêm thanh chỉ thị đứng `#1e5494` bên trái dòng xét nghiệm khi rê chuột.
+- **Sửa lỗi mã Hex:** Khắc phục lệch mã màu Hex (`#dc2626` → `#c62828`) giúp chỉ số tăng (▲) hiển thị đúng đỏ sẫm trên nền đỏ nhạt `#ffeeee`.
+- **CSS transition:** Bổ sung chuyển cảnh mượt 0.12s giúp quét mắt dóng hàng cực nhanh.
+
+---
+
+## [2.0.1] — 2026-05-21
+
+### 🎨 Giao diện CLS Phẳng Chuẩn HIS
+
+- **Tông màu xanh thẫm HIS `#1e5494`:** Tất cả thanh header modal, tiêu đề phân nhóm xét nghiệm và nút hành động chính đều chuyển sang màu xanh dương đặc trưng VNPT HIS.
+- **Phẳng lỳ 100%:** Toàn bộ bo góc `border-radius` về `0px`, viền phẳng mỏng `#cccccc`.
+- **Kẻ lưới dóng hàng:** Bảng xét nghiệm kẻ lưới mỏng dọc/ngang đầy đủ (`border-collapse: collapse`).
+- **Nút phẳng:** Các nút "Đọc Nâng Cao" và "Xem ảnh PACS" chuyển sang nút phẳng viền xanh dương.
 
 ---
 

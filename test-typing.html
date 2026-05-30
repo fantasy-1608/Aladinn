@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hiệu Ứng Gõ Chữ Aladinn</title>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input[type="text"], textarea { 
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; 
+            font-size: 14px; box-sizing: border-box; font-family: inherit;
+        }
+        textarea { height: 100px; resize: vertical; }
+        .btn { padding: 10px 20px; background: #004f9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .btn:hover { background: #003d7a; }
+        .note { padding: 10px; background: #fff3cd; color: #856404; border-left: 4px solid #ffeeba; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Bản Test Chức Năng Gõ Chữ (Aladinn V2)</h2>
+        <div class="note">
+            <strong>Mục đích:</strong> Trang này mô phỏng lại y hệt cấu trúc các ô nhập liệu của VNPT HIS (bao gồm cả ô ExtJS có đuôi -inputEl). Bác sĩ hãy bấm nút "Chạy Hiệu Ứng" để xem code của em đang chạy trên môi trường chuẩn sẽ trông như thế nào.
+        </div>
+        
+        <button class="btn" onclick="startTypingTest()">🚀 Chạy Hiệu Ứng Điền Bệnh Án</button>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+        <!-- Mô phỏng ExtJS: Thẻ thật là hidden, thẻ hiển thị có đuôi -inputEl -->
+        <div class="form-group">
+            <label>1. Chẩn đoán bệnh chính (Mô phỏng ExtJS)</label>
+            <input type="hidden" id="txtBENHCHINH">
+            <input type="text" id="txtBENHCHINH-inputEl" placeholder="Sẽ gõ vào đây...">
+        </div>
+
+        <div class="form-group">
+            <label>2. Quá trình bệnh lý (Textarea)</label>
+            <textarea id="txtQUATRINHBENHLY" placeholder="Sẽ gõ vào đây..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>3. Lời dặn của bác sĩ (Textarea)</label>
+            <textarea id="txtLOIDAN" placeholder="Sẽ gõ vào đây..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // Copy y hệt logic trong history-iframe-helper.js
+        var LABEL_HINTS = {};
+
+        function getFieldElements(fieldIdStr) {
+            if (!fieldIdStr) return [];
+            var ids = fieldIdStr.split('|');
+            var els = [];
+
+            for (var i = 0; i < ids.length; i++) {
+                var currId = ids[i];
+                var extJsVisible = document.getElementById(currId + '-inputEl');
+                if (extJsVisible && !els.includes(extJsVisible)) els.push(extJsVisible);
+
+                var byId = document.getElementById(currId);
+                if (byId && byId.tagName !== 'DIV' && !els.includes(byId)) els.push(byId);
+                
+                var byName = document.querySelectorAll('[name="' + currId + '"]');
+                for(var n = 0; n < byName.length; n++) {
+                    if (!els.includes(byName[n]) && byName[n].type !== 'hidden') els.push(byName[n]);
+                }
+                if (els.length > 0) return els;
+            }
+            return els;
+        }
+
+        function setValAnimated(fieldIdStr, val, useTyping) {
+            return new Promise(function(resolve) {
+                if (!val) return resolve();
+                var els = getFieldElements(fieldIdStr);
+                if (els.length === 0) return resolve();
+
+                var el = els[0];
+
+                var originalBg = el.style.backgroundColor || '';
+                var originalTransition = el.style.transition || '';
+                el.style.transition = 'background-color 0.3s ease';
+                el.style.backgroundColor = '#e8f0fe';
+
+                var doEvents = function(target) {
+                    target.dispatchEvent(new Event('input', { bubbles: true }));
+                    target.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+
+                var finish = function() {
+                    el.style.backgroundColor = originalBg;
+                    setTimeout(function() { el.style.transition = originalTransition; }, 300);
+                    resolve();
+                };
+
+                if (useTyping && typeof val === 'string' && val.length > 0) {
+                    for (var j = 0; j < els.length; j++) els[j].value = '';
+                    var i = 0;
+                    
+                    // Logic hiện tại: Tính toán để gõ xong trong ~1.5 giây
+                    // NẾU CHỮ QUÁ DÀI, charsPerFrame sẽ lớn hơn 1 (gõ cục 2-3 chữ / khung hình)
+                    function typeChar() {
+                        if (i < val.length) {
+                            var char = val.charAt(i);
+                            for (var k = 0; k < els.length; k++) els[k].value += char;
+                            i++;
+                            
+                            if (el.tagName === 'TEXTAREA') el.scrollTop = el.scrollHeight;
+                            doEvents(el);
+                            
+                            requestAnimationFrame(typeChar);
+                        } else {
+                            for (var k = 0; k < els.length; k++) els[k].value = val;
+                            doEvents(el);
+                            setTimeout(finish, 200);
+                        }
+                    }
+                    requestAnimationFrame(typeChar);
+                } else {
+                    for (var j = 0; j < els.length; j++) els[j].value = val;
+                    doEvents(el);
+                    setTimeout(finish, 200);
+                }
+            });
+        }
+
+        async function startTypingTest() {
+            var data = {
+                'txtBENHCHINH': 'Viêm dạ dày ruột cấp (A09) - Biến chứng mất nước mức độ vừa',
+                'txtQUATRINHBENHLY': 'Bệnh nhân nam 45 tuổi nhập viện vì đau bụng quanh rốn âm ỉ, sau đó lan xuống hố chậu phải. Kèm theo buồn nôn, nôn ra thức ăn cũ 3 lần, tiêu chảy phân lỏng nhiều nước 5-6 lần/ngày. Không sốt, không tiêu ra máu. Ở nhà chưa điều trị gì. Khám lâm sàng thấy sinh hiệu ổn định, mạch 85 l/p, HA 110/70 mmHg, nhiệt độ 37 độ C. Bụng mềm, ấn đau tức nhẹ vùng thượng vị và quanh rốn. Đã được truyền dịch bù nước và điện giải.',
+                'txtLOIDAN': '- Uống nhiều nước, ăn chín uống sôi.\n- Tái khám sau 3 ngày hoặc khi có dấu hiệu bất thường (đau bụng tăng, sốt cao).\n- Uống thuốc theo toa bác sĩ.'
+            };
+
+            // Mô phỏng Viewport Batching (gõ song song cả 3 ô cùng lúc)
+            var promises = [
+                setValAnimated('txtBENHCHINH', data['txtBENHCHINH'], true),
+                setValAnimated('txtQUATRINHBENHLY', data['txtQUATRINHBENHLY'], true),
+                setValAnimated('txtLOIDAN', data['txtLOIDAN'], true)
+            ];
+
+            await Promise.all(promises);
+            alert('Đã chạy xong hiệu ứng Test!');
+        }
+    </script>
+</body>
+</html>

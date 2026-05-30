@@ -22,10 +22,13 @@ let lastScanResultString = '';
 let isModalOpen = false;
 let currentScanMode = ''; // 'realtime' | 'oneshot' | ''
 let drugTableObserver = null; // Phase 3: MutationObserver on active drug table
+let startScanTimer = null; // Phase 4: delayed startup scan timer to prevent race conditions
+let activeIframeStatuses = new Map(); // event.source (WindowProxy) -> { enabled, mode }
 
 // Dữ liệu được gửi từ iframe helper
 let iframeDrugs = [];
 let iframeDiagnoses = [];
+let activeKeystrokeDrug = '';
 
 // Tích lũy chẩn đoán PER PATIENT (an toàn: chỉ nhận từ input fields, strict textarea, API cache)
 // Giải quyết: HIS unload tab Điều trị khỏi DOM khi chuyển tab → mất ICD
@@ -66,6 +69,31 @@ async function runScan() {
             }
             context.medications = merged;
         }
+
+        // Nếu có proactive keystroke drug → merge
+        if (activeKeystrokeDrug) {
+            const lowerKeystroke = activeKeystrokeDrug.toLowerCase();
+            const exists = context.medications.some(m => m.display_name.toLowerCase() === lowerKeystroke);
+            if (!exists) {
+                context.medications.push({
+                    display_name: activeKeystrokeDrug,
+                    generic_candidate: null,
+                    is_proactive: true
+                });
+            }
+        }
+
+        // Strict final deduplication of medications list by lowercase trimmed display_name with space normalization
+        const uniqueFinalMeds = [];
+        const seenFinalMeds = new Set();
+        for (const m of context.medications) {
+            const k = m.display_name.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+            if (!seenFinalMeds.has(k)) {
+                seenFinalMeds.add(k);
+                uniqueFinalMeds.push(m);
+            }
+        }
+        context.medications = uniqueFinalMeds;
 
         // Nếu có ICD từ iframe helper → merge
         if (iframeDiagnoses.length > 0) {
@@ -131,7 +159,7 @@ async function runScan() {
                         }
                     });
                 }
-            } catch (e) {}
+            } catch (_e) {}
         }
 
         CDSUI.update({
@@ -148,6 +176,8 @@ async function runScan() {
 
 // ===== MODAL LIFECYCLE =====
 function startScanning(mode = 'oneshot') {
+    if (!isCDSEnabled || !isKBLoaded) return;
+
     // Nếu đang quét rồi → dừng trước khi bắt đầu lại
     if (isModalOpen) {
         stopScanning();
@@ -156,16 +186,28 @@ function startScanning(mode = 'oneshot') {
     console.log('[Aladinn CDS] ▶️ Context detected — mode:', mode);
     isModalOpen = true;
     currentScanMode = mode;
+
+    // Hiển thị khiên xanh của CDS
+    const drawer = document.getElementById('aladinn-cds-drawer');
+    if (drawer) {
+        drawer.style.display = isShadowMode ? 'none' : '';
+    }
     
     // RESET thuốc cũ nhưng GIỮ LẠI chẩn đoán (từ tờ điều trị/API snooping)
     lastScanHash = '';
     lastScanResultString = '';
     iframeDrugs = [];
     iframeDiagnoses = [];
+    activeKeystrokeDrug = '';
     CDSCacheManager.resetMedications(); // Chỉ xóa thuốc, giữ ICD
     
+    // Chủ động pull dữ liệu và trạng thái ngữ cảnh từ các iframe visible ngay lập tức
+    sendRequestToVisibleIframes(document, 'CDS_REQUEST_DRUGS');
+    
     // Trì hoãn lần quét đầu 1.5s để chờ iframe helper gửi dữ liệu lên
-    setTimeout(() => {
+    clearTimeout(startScanTimer);
+    startScanTimer = setTimeout(() => {
+        startScanTimer = null;
         if (!isModalOpen) return;
         runScan();
         
@@ -188,7 +230,19 @@ function stopScanning() {
     currentScanMode = '';
     iframeDrugs = [];
     iframeDiagnoses = [];
+    activeKeystrokeDrug = '';
+
+    // Không ẩn khiên xanh khi ra ngoài ngữ cảnh kê đơn theo yêu cầu của bác sĩ
+    // Khiên luôn hiển thị để đảm bảo hoạt động liên tục và tránh mất khi F5
+    const drawer = document.getElementById('aladinn-cds-drawer');
+    if (drawer) {
+        drawer.style.display = isShadowMode ? 'none' : '';
+    }
     
+    if (startScanTimer) {
+        clearTimeout(startScanTimer);
+        startScanTimer = null;
+    }
     if (scanTimer) {
         clearInterval(scanTimer);
         scanTimer = null;
@@ -259,7 +313,7 @@ function sendRequestToVisibleIframes(doc, messageType) {
         const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
         if (!isVisible) return;
         try {
-            iframe.contentWindow?.postMessage({ type: messageType }, window.location.origin);
+            iframe.contentWindow?.postMessage({ type: messageType }, '*');
             if (iframe.contentDocument) {
                 sendRequestToVisibleIframes(iframe.contentDocument, messageType);
             }
@@ -267,50 +321,120 @@ function sendRequestToVisibleIframes(doc, messageType) {
     });
 }
 
-// Kiểm tra ngữ cảnh cần quét và trả về mode
-function detectScanContext() {
-    // 1. Tìm iframe "Tạo phiếu thuốc từ kho" (form nhập thuốc) → realtime
-    let hasInputForm = false;
-    const checkForInputForm = (doc) => {
-        const iframes = doc.querySelectorAll('iframe');
-        for (const iframe of iframes) {
-            const rect = iframe.getBoundingClientRect();
-            const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
-            
-            const id = (iframe.id || '').toLowerCase();
-            const src = (iframe.getAttribute('src') || '').toLowerCase();
-            
-            if (isVisible && (id.includes('phieuthuoc') || id.includes('capthuoc') || 
-                src.includes('capthuoc') || src.includes('02d010'))) {
-                hasInputForm = true;
-                return;
+// Phác thảo kiểm tra ngữ cảnh cục bộ trên một document cụ thể (không quét đệ quy tránh CORS)
+function detectLocalScanContext(doc = document, href = window.location.href) {
+    const lowerUrl = href.toLowerCase();
+    
+    // 1. Phân hệ nhập liệu / phiếu thuốc -> realtime
+    if (lowerUrl.includes('capthuoc') || lowerUrl.includes('phieuthuoc') || lowerUrl.includes('02d010')) {
+        return { enabled: true, mode: 'realtime' };
+    }
+    
+    // 2. Phân hệ phòng khám / buồng điều trị -> cần kiểm tra tab thuốc/điều trị đang hoạt động
+    if (lowerUrl.includes('buongdieutri') || lowerUrl.includes('02d021')) {
+        const isElementVisible = (el) => {
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && rect.left > -5000;
+        };
+
+        const drugGrids = doc.querySelectorAll('table[id*="Thuoc"], table[id*="thuoc"], [id*="grdChiTiet"], [id*="grd_DSThuoc"], #grdPhieuThuoc, #gridChiTietPhieu, #grdChiTietPhieuThuoc, [id*="PhieuThuoc"], #tcThuocgrdThuoc');
+        for (const grid of drugGrids) {
+            if (isElementVisible(grid)) {
+                return { enabled: true, mode: 'oneshot' };
             }
-            try {
-                if (isVisible && iframe.contentDocument) checkForInputForm(iframe.contentDocument);
-            } catch (_e) { /* CORS */ }
         }
-    };
-    checkForInputForm(document);
-    if (hasInputForm) return { enabled: true, mode: 'realtime' };
+        
+        const activeTabs = doc.querySelectorAll('.ui-tabs-active .ui-tabs-anchor, .ui-tabs-active a, li.active a, .ui-state-active a, [aria-selected="true"]');
+        for (const tab of activeTabs) {
+            const text = (tab.innerText || '').toLowerCase();
+            if (text.includes('thuốc') || text.includes('điều trị')) {
+                return { enabled: true, mode: 'oneshot' };
+            }
+        }
 
-    // 2. Tab Thuốc (grid phiếu thuốc đang hiển thị) → oneshot
-    const isVisible = (el) => {
-        const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0 && rect.left > -5000;
-    };
-
-    const drugGrids = document.querySelectorAll('#grdPhieuThuoc, #gridChiTietPhieu, #grdChiTietPhieuThuoc, [id*="PhieuThuoc"]');
-    for (const grid of drugGrids) {
-        if (isVisible(grid)) return { enabled: true, mode: 'oneshot' };
+        // Smart Fallback: Kiểm tra xem có bảng thuốc nào đang hiển thị hay không (dựa trên cột tiêu đề)
+        const tables = doc.querySelectorAll('table');
+        for (const table of tables) {
+            if (isElementVisible(table)) {
+                const headers = table.querySelectorAll('th, td.ui-th-column, .ui-jqgrid-labels th');
+                for (const header of headers) {
+                    const text = (header.innerText || header.textContent || '').toLowerCase();
+                    if (text.includes('tên thuốc') || text.includes('tên biệt dược') || text.includes('hoạt chất') || text.includes('mã thuốc') || text.includes('chi tiết phiếu thuốc') || text.includes('danh sách phiếu thuốc')) {
+                        return { enabled: true, mode: 'oneshot' };
+                    }
+                }
+            }
+        }
     }
-
-    const activeTabs = document.querySelectorAll('.ui-tabs-active .ui-tabs-anchor, li.active a');
-    for (const tab of activeTabs) {
-        const text = (tab.innerText || '').toLowerCase();
-        if (text.includes('thuốc') || text.includes('điều trị')) return { enabled: true, mode: 'oneshot' };
-    }
-
+    
     return { enabled: false, mode: '' };
+}
+
+// Helper: get all contentWindows of all iframes currently in the document DOM
+function getAllIframeWindows(doc) {
+    const windows = new Set();
+    function collect(currentDoc) {
+        if (!currentDoc) return;
+        try {
+            const iframes = currentDoc.querySelectorAll('iframe');
+            for (let i = 0; i < iframes.length; i++) {
+                const iframe = iframes[i];
+                if (iframe && iframe.contentWindow) {
+                    windows.add(iframe.contentWindow);
+                    try {
+                        if (iframe.contentDocument) {
+                            collect(iframe.contentDocument);
+                        }
+                    } catch (_e) {
+                        // CORS barrier, can't read contentDocument of cross-origin iframe
+                    }
+                }
+            }
+        } catch (_e) {
+            // In case querying the document itself throws
+        }
+    }
+    collect(doc);
+    return windows;
+}
+
+// Loại bỏ những window proxy của các iframe đã bị xóa khỏi DOM nhằm tránh rò rỉ bộ nhớ
+function cleanUpStaleIframes() {
+    const activeWindows = getAllIframeWindows(document);
+    for (const win of activeIframeStatuses.keys()) {
+        if (!activeWindows.has(win)) {
+            activeIframeStatuses.delete(win);
+        }
+    }
+}
+
+// Kiểm tra ngữ cảnh cần quét tích hợp đa iframe và tránh CORS
+function detectScanContext() {
+    // 1. Dọn dẹp các iframe đã bị gỡ khỏi DOM
+    cleanUpStaleIframes(document);
+    
+    // 2. Tổng hợp trạng thái ngữ cảnh từ tất cả iframe đã báo cáo
+    let anyEnabled = false;
+    let bestMode = 'oneshot';
+    for (const status of activeIframeStatuses.values()) {
+        if (status.enabled) {
+            anyEnabled = true;
+            if (status.mode === 'realtime') {
+                bestMode = 'realtime';
+            }
+        }
+    }
+    
+    // 3. Nếu không có iframe nào hoạt động, quét chính trang top-level hiện tại
+    if (!anyEnabled) {
+        const topCtx = detectLocalScanContext(document, window.location.href);
+        if (topCtx.enabled) {
+            anyEnabled = true;
+            bestMode = topCtx.mode;
+        }
+    }
+    
+    return { enabled: anyEnabled, mode: bestMode };
 }
 
 // ===== INIT =====
@@ -321,16 +445,31 @@ export async function initCDS(enabled = true, filter = true, shadow = false) {
 
     if (!isCDSEnabled) {
         stopScanning();
+        try {
+            CDSUI.hide();
+        } catch (_e) {}
         if (modalObserver) { modalObserver.disconnect(); modalObserver = null; }
+        if (window._cdsScanContextInterval) {
+            clearInterval(window._cdsScanContextInterval);
+            window._cdsScanContextInterval = null;
+        }
+        activeIframeStatuses.clear(); // Clear all registered iframe statuses cleanly
         const drawer = document.getElementById('aladinn-cds-drawer');
         if (drawer) drawer.style.display = 'none';
         console.log('[Aladinn CDS] 🔴 CDS disabled — UI hidden.');
         return;
     }
 
-    const drawer = document.getElementById('aladinn-cds-drawer');
-    if (drawer) {
-        drawer.style.display = isShadowMode ? 'none' : '';
+    // Đảm bảo giao diện đã được khởi tạo
+    try {
+        CDSUI.init();
+        CDSUI.hasUserDismissed = false; // Reset user dismiss state when enabling CDS
+        const drawer = document.getElementById('aladinn-cds-drawer');
+        if (drawer) {
+            drawer.style.display = isShadowMode ? 'none' : '';
+        }
+    } catch (err) {
+        console.error('[Aladinn CDS] 💥 Khởi tạo giao diện thất bại:', err);
     }
 
     // Load Knowledge Base (1 lần duy nhất)
@@ -346,16 +485,19 @@ export async function initCDS(enabled = true, filter = true, shadow = false) {
         }
         
         try {
-            CDSUI.init();
-            const newDrawer = document.getElementById('aladinn-cds-drawer');
-            if (newDrawer) {
-                newDrawer.style.display = isShadowMode ? 'none' : '';
-            }
             const meta = await getCrawlMetadata();
             CDSUI.showCrawlDate(meta);
         } catch (err) {
-            console.error('[Aladinn CDS] 💥 UI init failed:', err);
-            return;
+            console.error('[Aladinn CDS] 💥 UI meta show failed:', err);
+        }
+    }
+
+    // Tiêu thụ các ngữ cảnh active đã nhận được trong lúc tải KB
+    if (isKBLoaded && isCDSEnabled) {
+        const activeCtx = detectScanContext();
+        if (activeCtx.enabled && !isModalOpen) {
+            console.log('[Aladinn CDS] 🚀 Consuming active context after KB loaded:', activeCtx);
+            startScanning(activeCtx.mode);
         }
     }
 
@@ -378,7 +520,11 @@ export async function initCDS(enabled = true, filter = true, shadow = false) {
     // Tăng interval lên 3s + thêm guard tạm dừng khi tab ẩn
     if (!window._cdsScanContextInterval) {
         window._cdsScanContextInterval = setInterval(() => {
-            if (document.hidden) return;
+            if (document.hidden || !isCDSEnabled) return;
+            
+            // Chủ động ping các iframe visible để cập nhật trạng thái ngữ cảnh mới nhất
+            sendRequestToVisibleIframes(document, 'CDS_PING');
+            
             const ctx = detectScanContext();
             if (!ctx.enabled && isModalOpen) {
                 // Form đã đóng, không còn context nào → dừng hẳn
@@ -403,18 +549,68 @@ export async function initCDS(enabled = true, filter = true, shadow = false) {
     } else {
         console.log('[Aladinn CDS] 💤 Waiting for prescribing context...');
     }
+
+    // Chủ động pull dữ liệu và trạng thái ngữ cảnh từ các iframe visible để tránh race condition lúc F5
+    sendRequestToVisibleIframes(document, 'CDS_REQUEST_DRUGS');
 }
 
 // ===== EVENT LISTENERS =====
 
 // Nhận dữ liệu từ iframe helper (CDS_IFRAME_DATA: thuốc + ICD)
 window.addEventListener('message', async (event) => {
+    // SECURITY: Kiểm tra origin — chặn message từ nguồn khác origin
+    if (event.origin !== window.location.origin) return;
+    // SECURITY: Message cùng window phải có nonce hợp lệ (chống giả mạo từ page script)
+    if (event.source === window && (!event.data?.nonce || event.data.nonce !== window.__ALADINN_NONCE__)) return;
+
+    // Nhận trạng thái ngữ cảnh từ iframe helper (khắc phục lỗi F5 và MutationObserver iframe chéo nguồn)
+    if (event.data && event.data.type === 'CDS_IFRAME_CONTEXT_STATUS') {
+        const { enabled, mode } = event.data;
+        console.log(`[Aladinn CDS] 📩 Received iframe context status: enabled=${enabled}, mode=${mode}`);
+        
+        // Lưu lại trạng thái của iframe gửi message dựa trên event.source proxy duy nhất
+        if (event.source) {
+            activeIframeStatuses.set(event.source, { enabled, mode });
+        }
+
+        if (!isKBLoaded) {
+            // Đợi KB load xong sẽ quét toàn bộ activeIframeStatuses sau
+            return;
+        }
+        if (enabled && isCDSEnabled) {
+            if (!isModalOpen) {
+                startScanning(mode);
+            } else if (mode !== currentScanMode) {
+                startScanning(mode);
+            }
+        } else if (!enabled && isModalOpen) {
+            // Chống đóng nhầm: Kiểm tra chéo lại xem thực sự còn frame nào khác có ngữ cảnh active không
+            const ctx = detectScanContext();
+            if (!ctx.enabled) {
+                stopScanning();
+            }
+        }
+    }
+
     if (event.data && event.data.type === 'CDS_IFRAME_DATA') {
         iframeDrugs = event.data.medications || [];
         iframeDiagnoses = event.data.diagnoses || [];
         console.log('[Aladinn CDS] 📩 Iframe:', iframeDrugs.length, 'drugs,', iframeDiagnoses.length, 'ICD codes.');
         
         // Force rescan with new data
+        lastScanHash = '';
+        lastScanResultString = '';
+        if (isModalOpen) {
+            runScan();
+        }
+    }
+
+    // Nhận dữ liệu gõ phím trực tiếp từ key-hook
+    if (event.data && event.data.type === 'CDS_KEYSTROKE_INPUT') {
+        activeKeystrokeDrug = event.data.typedText || '';
+        console.log('[Aladinn CDS] ⌨️ Received proactive keystroke drug:', activeKeystrokeDrug);
+        
+        // Force rescan with the proactive drug
         lastScanHash = '';
         lastScanResultString = '';
         if (isModalOpen) {
@@ -531,17 +727,30 @@ window.addEventListener('ALADINN_BHYT_AUDIT', async () => {
     }
     try {
         const context = await CDSExtractor.extractContext();
-        // Merge iframe drugs
+        // Merge iframe drugs with space normalization
         if (iframeDrugs.length > 0) {
-            const iframeNames = new Set(iframeDrugs.map(d => d.display_name.toLowerCase()));
+            const iframeNames = new Set(iframeDrugs.map(d => d.display_name.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim()));
             const merged = [...iframeDrugs];
             for (const m of context.medications) {
-                if (!iframeNames.has(m.display_name.toLowerCase())) {
+                const k = m.display_name.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+                if (!iframeNames.has(k)) {
                     merged.push(m);
                 }
             }
             context.medications = merged;
         }
+        
+        // Strict final deduplication of medications list by lowercase trimmed display_name with normalized spaces
+        const uniqueFinalMeds = [];
+        const seenFinalMeds = new Set();
+        for (const m of context.medications) {
+            const k = m.display_name.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+            if (!seenFinalMeds.has(k)) {
+                seenFinalMeds.add(k);
+                uniqueFinalMeds.push(m);
+            }
+        }
+        context.medications = uniqueFinalMeds;
         const result = await runBhytAuditRules(context);
         result.alerts = filterSatisfiedInsuranceAlerts(result.alerts, context.encounter.diagnoses);
         console.log('[Aladinn CDS] 🛡️ BHYT Audit:', result.alerts.length, 'issues found');

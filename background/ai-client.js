@@ -151,14 +151,14 @@ async function _decryptWithKey(encryptedText, key) {
 }
 
 // ========================================
-// SECURITY: Auto-Lock PIN after 30 minutes of inactivity
+// SECURITY: Auto-Lock PIN after 15 minutes of inactivity
 // ========================================
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes — Hospital Safe Mode
 let _lastActivityTime = Date.now();
 
 function checkSessionTimeout() {
     if (_cachedDecryptKey && (Date.now() - _lastActivityTime > SESSION_TIMEOUT_MS)) {
-        console.log('[Aladinn Security] 🔒 Session timeout (30 min idle) — clearing cached decryption key.');
+        console.log('[Aladinn Security] 🔒 Session timeout (15 min idle) — clearing cached decryption key.');
         _cachedDecryptKey = null;
         _cachedEncryptKey = null; // [P1-SEC-001] Also clear encrypt key
         _cachedDecryptSalt = null;
@@ -418,7 +418,7 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
                     details: { context: 'callGeminiGenerateContent' }
                 });
             }
-        } catch (e) {}
+        } catch (_e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -465,18 +465,36 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
     }
 }
 
-export async function requestScannerAI({ prompt, model, requestId, generationConfig }) {
+export async function requestScannerAI({ prompt, model, requestId, generationConfig, systemInstruction }) {
+    const effectiveModel = model || 'gemini-2.0-flash';
+
+    // Tối ưu generationConfig mặc định cho clinical summary
+    const baseConfig = {
+        temperature: 0.1,
+        topP: 0.85,
+        topK: 40,
+        maxOutputTokens: 4096,
+        ...(generationConfig || {})
+    };
+
+    // Tự động bật Thinking Mode cho Gemini 2.5+ (suy luận lâm sàng sâu hơn)
+    const is25Plus = /gemini.*(2\.5|exp)/i.test(effectiveModel);
+    if (is25Plus && !baseConfig.thinkingConfig) {
+        baseConfig.thinkingConfig = { thinkingBudget: 2048 };
+    }
+
     const data = await callGeminiGenerateContent({
         prompt,
-        model,
+        model: effectiveModel,
         requestId,
-        generationConfig: generationConfig || { temperature: 0.1 }
+        generationConfig: baseConfig,
+        systemInstruction: systemInstruction || null
     });
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) {
         throw aiError(data.error?.message || 'Lỗi từ máy chủ AI', 'AI_EMPTY_RESPONSE');
     }
-    return { text, usageMetadata: data.usageMetadata || {}, model };
+    return { text, usageMetadata: data.usageMetadata || {}, model: effectiveModel };
 }
 
 export async function summarizeHistoryAI({ rawTreatments, model, targetField }) {
@@ -580,7 +598,7 @@ export async function requestAI({ text, model, requestId }) {
                     details: { context: 'requestAI' }
                 });
             }
-        } catch (e) {}
+        } catch (_e) {}
         throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
     }
 
@@ -625,7 +643,7 @@ export async function requestAI({ text, model, requestId }) {
                         details: { error: validation.error }
                     });
                 }
-            } catch (e) {}
+            } catch (_e) {}
             throw aiError(`Lỗi định dạng AI: ${validation.error}`, 'AI_SCHEMA_INVALID');
         }
 

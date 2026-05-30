@@ -10,7 +10,7 @@ async function loadAiClient() {
     return import('../background/ai-client.js');
 }
 
-// ---------- 1. Session Timeout (30 min) ----------
+// ---------- 1. Session Timeout (15 min — Hospital Safe Mode) ----------
 describe('Security: Session Timeout', () => {
     beforeEach(() => {
         globalThis.chrome = {
@@ -21,7 +21,7 @@ describe('Security: Session Timeout', () => {
         globalThis.fetch = vi.fn();
     });
 
-    it('clears cached key after 30 minutes of inactivity', async () => {
+    it('clears cached key after 15 minutes of inactivity', async () => {
         // Derive a key first
         const salt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
         globalThis.chrome.storage.local.get = vi.fn(async () => ({
@@ -36,11 +36,11 @@ describe('Security: Session Timeout', () => {
         // Key should be present
         expect(globalThis._bgCachedKey).not.toBeNull();
 
-        // Simulate 31 minutes passing by manipulating _lastActivityTime
+        // Simulate 16 minutes passing by manipulating _lastActivityTime
         // Since _lastActivityTime is module-private, we test via bgDecryptApiKey behavior
         // after forcing timeout. We'll mock Date.now to simulate passage of time.
         const realDateNow = Date.now;
-        const futureTime = realDateNow() + 31 * 60 * 1000;
+        const futureTime = realDateNow() + 16 * 60 * 1000;
         Date.now = vi.fn(() => futureTime);
 
         // Encrypted API key fixture
@@ -59,7 +59,7 @@ describe('Security: Session Timeout', () => {
         Date.now = realDateNow;
     });
 
-    it('does NOT timeout before 30 minutes', async () => {
+    it('does NOT timeout before 15 minutes', async () => {
         const salt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
         globalThis.chrome.storage.local.get = vi.fn(async () => ({
             pin_salt: salt
@@ -70,9 +70,9 @@ describe('Security: Session Timeout', () => {
 
         expect(globalThis._bgCachedKey).not.toBeNull();
 
-        // Simulate 29 minutes (under threshold)
+        // Simulate 14 minutes (under threshold)
         const realDateNow = Date.now;
-        Date.now = vi.fn(() => realDateNow() + 29 * 60 * 1000);
+        Date.now = vi.fn(() => realDateNow() + 14 * 60 * 1000);
 
         // Key should still be valid — bgEncryptData won't clear it
         // We can't test bgDecryptApiKey without real encrypted data, 

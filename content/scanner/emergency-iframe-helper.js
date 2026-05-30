@@ -15,10 +15,14 @@
         window.removeEventListener('message', window._vnptEmergencyHandler);
     }
 
-    window._vnptEmergencyHandler = function (event) {
+    window._vnptEmergencyHandler = async function (event) {
         if (event.source !== window.parent) return;
         
         if (!event.data || (event.data.type !== 'EMERGENCY_FILL_FORM' && event.data.type !== 'EMERGENCY_FILL_FORM_API')) return;
+
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
 
         try {
             if (event.data.contextToken) {
@@ -76,6 +80,7 @@
 
             var elements = document.querySelectorAll('td, span, div, label, th');
             var inputsFilled = 0;
+            var fillQueue = [];
             
             function fillInputNearText(labelTexts, val) {
                 if (!val) return false;
@@ -151,9 +156,9 @@
 
                         if (cb) {
                             cb.removeAttribute('disabled');
-                            setVal(cb, val);
+                            fillQueue.push({ el: cb, val: val });
                             inputsFilled++;
-                            console.log('[Emergency] Đã điền', labelTexts[0], '->', val);
+                            console.log('[Emergency] Đã queue điền', labelTexts[0], '->', val);
                             return true;
                         }
                     }
@@ -240,9 +245,9 @@
             // Các trường Text cơ bản - ưu tiên tìm bằng ID trước, fallback bằng label
             var phongInput = document.querySelector('input[rpt-param-name="PHONG"], input[name*="textfield_665"], #textfield_665');
             if (phongInput) {
-                setVal(phongInput, 'Cấp cứu');
+                fillQueue.push({ el: phongInput, val: 'Cấp cứu' });
                 inputsFilled++;
-                console.log('[Emergency] Đã điền Phòng (ID) -> Cấp cứu');
+                console.log('[Emergency] Đã queue Phòng (ID) -> Cấp cứu');
             } else {
                 fillInputNearText(['Phòng:', 'Phòng'], 'Cấp cứu');
             }
@@ -256,9 +261,9 @@
                 lydoInput = document.querySelector('[rpt-param-name="LYDOVAOVIEN"], [rpt-param-name="LY_DO_VAO_VIEN"]');
             }
             if (lydoInput && lydoVaoVien) {
-                setVal(lydoInput, lydoVaoVien);
+                fillQueue.push({ el: lydoInput, val: lydoVaoVien });
                 inputsFilled++;
-                console.log('[Emergency] Đã điền Lý do vào viện (ID) ->', lydoVaoVien.substring(0, 50));
+                console.log('[Emergency] Đã queue Lý do vào viện (ID) ->', lydoVaoVien.substring(0, 50));
             } else {
                 fillInputNearText(['Lý do vào viện', 'Lý do vào viện, vấn đề sức khỏe'], lydoVaoVien);
             }
@@ -284,6 +289,10 @@
             checkOptionNearText(['Loại 3']);               // Mức độ cấp cứu
             checkOptionNearText(['Giường cấp cứu']);      // Chuyển đến
             
+            if (window.VNPT_TypingEffect && fillQueue.length > 0) {
+                await window.VNPT_TypingEffect.fillFormSequential(fillQueue, true);
+            }
+
             if (inputsFilled > 0) {
                 window.parent.postMessage({ type: 'EMERGENCY_FILL_RESULT', success: true }, PARENT_ORIGIN);
             } else {
@@ -301,16 +310,5 @@
 
     if (window.parent !== window) {
         window.parent.postMessage({ type: 'EMERGENCY_HELPER_READY' }, PARENT_ORIGIN);
-    }
-
-    function setVal(el, val) {
-        if (!el) return;
-        el.value = val;
-        if ($) {
-            $(el).trigger('change').trigger('input');
-        } else {
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
     }
 })();

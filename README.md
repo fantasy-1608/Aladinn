@@ -2,10 +2,10 @@
 
 <div align="center">
 
-**v1.5.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
+**v2.0.0** · Chrome Extension · Manifest V3 · Dành riêng cho VNPT HIS
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
-[![Version](https://img.shields.io/badge/version-1.5.0-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
+[![Version](https://img.shields.io/badge/version-2.0.0-gold?style=flat-square)](https://github.com/fantasy-1608/Aladinn/releases)
 [![License](https://img.shields.io/badge/license-Private-lightgrey?style=flat-square)](https://github.com/fantasy-1608/Aladinn)
 
 > Tích hợp AI · Bảo mật y tế · Desert Mystic Design

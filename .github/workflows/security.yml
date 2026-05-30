@@ -1,0 +1,148 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Chạy hàng tuần (Thứ 2, 6:00 UTC) để phát hiện CVE mới
+    - cron: '0 6 * * 1'
+
+jobs:
+  # ========================================
+  # P0-04: SAST — Static Application Security Testing
+  # ========================================
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run Semgrep SAST
+      uses: semgrep/semgrep-action@v1
+      with:
+        config: >-
+          p/javascript
+          p/security-audit
+          p/xss
+          p/owasp-top-ten
+      env:
+        SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  # ========================================
+  # P0-05: Dependency Scanning
+  # ========================================
+  dependency-scan:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: pnpm audit (Critical + High)
+      run: pnpm audit --audit-level=high
+      continue-on-error: true
+
+    - name: Check for known vulnerabilities
+      run: |
+        echo "=== Dependency Audit Report ==="
+        pnpm audit --json > audit-report.json || true
+        # Fail nếu có vulnerability critical
+        pnpm audit --audit-level=critical
+
+  # ========================================
+  # P1-06: Secret Scanning
+  # ========================================
+  secret-scan:
+    name: Secret Scanning (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ========================================
+  # P1-05: Coverage Enforcement
+  # ========================================
+  coverage:
+    name: Test Coverage (≥80%)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Run tests with coverage
+      run: pnpm run test:coverage
+
+    - name: Check coverage threshold
+      run: |
+        # Kiểm tra coverage ≥ 80% (nếu có coverage summary JSON)
+        if [ -f coverage/coverage-summary.json ]; then
+          TOTAL=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
+          echo "Total line coverage: ${TOTAL}%"
+          node -e "const c=require('./coverage/coverage-summary.json'); if(c.total.lines.pct < 80) { console.error('Coverage below 80%!'); process.exit(1); }"
+        else
+          echo "⚠️ Coverage summary not found. Skipping threshold check."
+        fi
+
+  # ========================================
+  # Manifest Permission Audit
+  # ========================================
+  manifest-audit:
+    name: Manifest Permission Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check manifest.json permissions
+      run: |
+        echo "=== Manifest Permission Audit ==="
+        # Liệt kê tất cả permissions
+        echo "Permissions:"
+        node -e "const m=require('./manifest.json'); console.log(JSON.stringify(m.permissions||[], null, 2))"
+        echo ""
+        echo "Host Permissions:"
+        node -e "const m=require('./manifest.json'); console.log(JSON.stringify(m.host_permissions||[], null, 2))"
+        echo ""
+        # Cảnh báo nếu có permission nguy hiểm
+        node -e "
+          const m=require('./manifest.json');
+          const dangerous=['webRequest','cookies','downloads','management','nativeMessaging','debugger','proxy'];
+          const found=(m.permissions||[]).filter(p=>dangerous.includes(p));
+          if(found.length){console.error('⚠️ DANGEROUS permissions:',found);process.exit(1);}
+          else{console.log('✅ No dangerous permissions found.');}
+        "

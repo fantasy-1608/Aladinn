@@ -13,12 +13,12 @@
    CSS VARIABLES — Override trong từng extension
    ========================================== */
 :root {
-    --his-primary: #3b82f6;
-    --his-primary-hover: #2563eb;
+    --his-primary: #1f69c2;
+    --his-primary-hover: #1a5397;
     --his-success: #10b981;
     --his-error: #ef4444;
     --his-warning: #f59e0b;
-    --his-info: #3b82f6;
+    --his-info: #1f69c2;
     --his-text: #1e293b;
     --his-text-light: #64748b;
     --his-bg: #ffffff;

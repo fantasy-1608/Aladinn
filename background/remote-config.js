@@ -27,16 +27,19 @@ const REMOTE_CONFIG = {
     storageKey: 'aladinn_remote_config'
 };
 
-// Giá trị mặc định (fail-open: mọi thứ đều BẬT)
+// Giá trị mặc định (fail-safe: tắt module rủi ro)
 const DEFAULT_CONFIG = {
     version: 0,
     features: {
-        autoSign: true,
-        cdsEngine: true,
-        aiVoice: true,
-        scanner: true
+        autoSign: false,
+        autoClick: false,
+        signSearch: true,
+        cdsEngine: false,
+        aiVoice: false,
+        scanner: true,
+        enableSmartPath: false
     },
-    mode: 'full_mode',
+    mode: 'safe_mode',
     emergencyMessage: '',
     _fetchedAt: 0,
     _source: 'default'
@@ -70,6 +73,15 @@ async function fetchRemoteConfig() {
         if (!data || typeof data.features !== 'object') {
             console.log('[Aladinn SafeMode] ⚠️ Invalid config format, ignoring.');
             return null;
+        }
+
+        // SECURITY: Version phải tăng dần — không chấp nhận version cũ hơn
+        const cached = await getRemoteConfig();
+        if (cached._source !== 'default' && typeof data.version === 'number' && typeof cached.version === 'number') {
+            if (data.version < cached.version) {
+                console.log('[Aladinn SafeMode] ⚠️ Remote config version rollback detected, ignoring.');
+                return null;
+            }
         }
 
         // Merge với default để đảm bảo không thiếu key
@@ -130,6 +142,11 @@ async function getRemoteConfig() {
  */
 async function isFeatureEnabled(featureName) {
     const config = await getRemoteConfig();
+    // SECURITY: Fail-closed cho tính năng cao rủi ro — chỉ bật khi giá trị rõ ràng là true
+    const FAIL_CLOSED_FEATURES = ['autoSign', 'autoClick'];
+    if (FAIL_CLOSED_FEATURES.includes(featureName)) {
+        return config.features[featureName] === true;
+    }
     // Fail-open: nếu key không tồn tại → coi như bật
     return config.features[featureName] !== false;
 }

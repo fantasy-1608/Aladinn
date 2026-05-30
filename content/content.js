@@ -98,9 +98,25 @@
     /**
      * Hiển thị toast thông báo khẩn cấp (nếu admin đặt emergencyMessage)
      */
+    /**
+     * SECURITY: Escape HTML để chống XSS injection từ remote config
+     */
+    function _escapeHtml(str) {
+        if (typeof str !== 'string') return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function showEmergencyToast(message, isKill) {
         // Tránh hiển thị trùng
         if (document.getElementById('aladinn-emergency-toast')) return;
+
+        // SECURITY: Escape message từ remote config để chống XSS
+        const safeMessage = _escapeHtml(message);
 
         const toast = document.createElement('div');
         toast.id = 'aladinn-emergency-toast';
@@ -120,7 +136,7 @@
                 <span style="font-size:18px;">${isKill ? '🚨' : '📢'}</span>
                 <strong style="color:${isKill ? '#fca5a5' : '#d4a25a'};">Thông báo từ Aladinn</strong>
             </div>
-            <div>${message}</div>
+            <div>${safeMessage}</div>
             <button id="aladinn-toast-close" style="
                 position:absolute; top:8px; right:8px;
                 background:transparent; border:none; color:#e8dcc8;
@@ -421,25 +437,55 @@
                 }
                 
                 function injectAuraStyles(targetEl) {
-                    targetEl.style.display = 'inline-block';
-                    targetEl.style.padding = '2px 8px';
-                    targetEl.style.borderRadius = '8px';
-                    targetEl.style.color = '#fdf8ec';
-                    targetEl.style.fontWeight = '500';
+                    targetEl.style.display = 'inline-flex';
+                    targetEl.style.alignItems = 'center';
+                    targetEl.style.gap = '6px';
+                    targetEl.style.padding = '0';
+                    targetEl.style.borderRadius = '0px';
+                    targetEl.style.background = 'transparent';
+                    targetEl.style.border = 'none';
+                    targetEl.style.color = '#ffffff';
+                    targetEl.style.fontWeight = '600';
                     targetEl.style.position = 'relative';
                     targetEl.style.zIndex = '1';
+                    targetEl.style.boxShadow = 'none';
+                    targetEl.style.fontSize = '12px';
                     
-                    if (!targetEl.querySelector('.aladinn-genie-icon')) {
-                        const icon = document.createElement('span');
-                        icon.className = 'aladinn-genie-icon';
-                        icon.textContent = ' 🧞';
-                        icon.style.fontSize = '14px';
-                        icon.style.marginLeft = '4px';
-                        icon.style.filter = 'drop-shadow(0 0 3px rgba(212, 162, 90, 0.4))';
-                        icon.style.display = 'inline-block';
-                        // Using pulse animation for the icon to match the mystic feel
-                        icon.style.animation = 'his-icon-pulse 3s infinite alternate ease-in-out';
-                        targetEl.appendChild(icon);
+                    // Dọn dẹp badge VIP PRO cũ và icon cũ nếu có
+                    const oldBadge = targetEl.querySelector('.aladinn-pro-badge');
+                    if (oldBadge) oldBadge.remove();
+                    const oldIcon = targetEl.querySelector('.aladinn-genie-icon');
+                    if (oldIcon) oldIcon.remove();
+                    
+                    if (!targetEl.querySelector('.aladinn-active-dot')) {
+                        const dot = document.createElement('span');
+                        dot.className = 'aladinn-active-dot';
+                        dot.style.width = '7px';
+                        dot.style.height = '7px';
+                        dot.style.background = '#00e676';
+                        dot.style.borderRadius = '50%';
+                        dot.style.display = 'inline-block';
+                        dot.style.boxShadow = '0 0 6px #00e676';
+                        dot.style.marginRight = '2px';
+                        dot.style.flexShrink = '0';
+                        
+                        // Hiệu ứng nhịp thở nhấp nháy êm dịu (chu kỳ 3s)
+                        if (!document.getElementById('aladinn-active-dot-animation')) {
+                            const style = document.createElement('style');
+                            style.id = 'aladinn-active-dot-animation';
+                            style.textContent = `
+                                @keyframes aladinn-active-dot-breath {
+                                    0% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                                    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px rgba(0, 230, 118, 0.8); }
+                                    100% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                        dot.style.animation = 'aladinn-active-dot-breath 3s infinite ease-in-out';
+                        
+                        // Chèn chấm xanh vào PHÍA TRƯỚC tên người dùng
+                        targetEl.insertBefore(dot, targetEl.firstChild);
                     }
                 }
 
@@ -450,6 +496,84 @@
         }
 
         if (Logger) Logger.success('Main', '🧞 Aladinn đã sẵn sàng!');
+    }
+
+    /**
+     * Smart DOM Scanner — Trích xuất ngữ cảnh bệnh nhân từ các dialog/hộp thoại đang hoạt động
+     */
+    function scanActiveDialogPatientContext() {
+        const frames = [window];
+        try {
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(f => {
+                try {
+                    if (f.contentDocument && f.contentWindow) frames.push(f.contentWindow);
+                } catch (_e) {}
+            });
+        } catch (_e) {}
+
+        for (const win of frames) {
+            try {
+                // HIS UI dùng .ui-dialog-title, .panel-title hoặc .title cho tiêu đề
+                const titleEls = win.document.querySelectorAll('.ui-dialog-title, .panel-title, .title, [class*="title"]');
+                for (const el of titleEls) {
+                    const text = (el.textContent || '').trim();
+                    // Khớp định dạng: CLS + Thuốc (HUỲNH THỊ NGỌC MINH/ 2022/ Nữ)
+                    const m = text.match(/\(([^/]+)\/\s*(\d{4})\/\s*([^)]+)\)/);
+                    if (m) {
+                        const name = m[1].trim();
+                        const birthYear = m[2].trim();
+                        const gender = m[3].trim();
+
+                        // Tìm container bao quanh của el
+                        const dialogContainer = el.closest('.ui-dialog, .panel, .modal, body');
+                        let pid = '';
+                        let diagnosis = '';
+                        
+                        if (dialogContainer) {
+                            const allText = dialogContainer.textContent || '';
+                            // Tìm mã bệnh án, vd: "| TE1878724338549" hoặc "TE1878724338549" (Ưu tiên TE lên trước, và lọc bỏ mã BHYT)
+                            let finalCode = '';
+                            const teMatch = allText.match(/\b(TE\d{10,15})\b/i);
+                            if (teMatch) {
+                                finalCode = teMatch[1].trim();
+                            } else {
+                                const allMatches = allText.matchAll(/\|\s*([A-Z0-9-]{10,25})\b/gi);
+                                for (const match of allMatches) {
+                                    const code = match[1].trim();
+                                    if (!/^[A-Z]{2}\d{13}$/i.test(code)) {
+                                        finalCode = code;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (finalCode) {
+                                pid = finalCode;
+                            }
+
+                            // Tìm chẩn đoán
+                            const diagMatch = allText.match(/(?:CĐ|Chẩn đoán|Chan doan)\s*:\s*([^||\n]+)/i);
+                            if (diagMatch) {
+                                diagnosis = diagMatch[1].trim().replace(/\s*\|\s*[A-Z]{2}\d{13}\s*$/i, '').replace(/\s*\b[A-Z]{2}\d{13}\b\s*$/i, '').trim();
+                            }
+
+                            if (!pid) {
+                                pid = 'TEMP_' + name.replace(/\s+/g, '') + '_' + birthYear;
+                            }
+                        }
+
+                        return {
+                            name,
+                            pid,
+                            birthYear,
+                            gender,
+                            diagnosis
+                        };
+                    }
+                }
+            } catch (_e) {}
+        }
+        return null;
     }
 
     // ========================================
@@ -592,7 +716,7 @@
             // Popup debug toggle
             if (type === 'POPUP_SET_DEBUG') {
                 if (window.VNPTConfig) window.VNPTConfig.DEBUG = message.state;
-                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: message.state }, '*');
+                window.postMessage({ type: 'ALADINN_SET_DEBUG', state: message.state }, window.location.origin);
                 sendResponse({ success: true });
             }
 
@@ -600,32 +724,51 @@
             if (type === 'GET_PATIENT_CONTEXT') {
                 try {
                     const store = window.VNPTStore?.getState() || {};
-                    const name = store.selectedPatientName || '';
-                    const pid = store.selectedPatientId;
+                    let name = store.selectedPatientName || '';
+                    let pid = store.selectedPatientId;
+                    let birthYear = '';
+                    let bed = '';
+                    let dayCount = '';
+                    let diagnosis = '';
+
+                    if (!name && !pid) {
+                        // Fallback: Quét tìm hộp thoại chi tiết bệnh nhân đang hoạt động trên màn hình
+                        const activeCtx = scanActiveDialogPatientContext();
+                        if (activeCtx) {
+                            name = activeCtx.name;
+                            pid = activeCtx.pid;
+                            birthYear = activeCtx.birthYear || '';
+                            diagnosis = activeCtx.diagnosis || '';
+
+                            // Đồng bộ ngược dữ liệu bệnh nhân đã trích xuất vào Store
+                            if (window.VNPTStore) {
+                                if (pid) window.VNPTStore.actions.selectPatient(pid);
+                                if (name) window.VNPTStore.set('selectedPatientName', name);
+                            }
+                        }
+                    }
+
                     if (!name && !pid) {
                         sendResponse(null);
                     } else {
                         // Try to get more info from the grid
-                        let birthYear = '';
-                        let bed = '';
-                        let dayCount = '';
-                        let diagnosis = '';
-
                         // Attempt to read from the highlighted row in the patient grid
                         const selectedRow = document.querySelector('.datagrid-row-selected, tr.datagrid-row-selected, tr[class*="selected"]');
                         if (selectedRow) {
                             const cells = selectedRow.querySelectorAll('td');
                             // HIS grid columns: index, icons, MA_BA, MA_BN, Giờ vào, Vào khoa, Họ tên, Năm sinh, SNĐT, ...
                             if (cells.length >= 8) {
-                                birthYear = (cells[7]?.textContent || '').trim();
+                                if (!birthYear) birthYear = (cells[7]?.textContent || '').trim();
                                 dayCount = (cells[8]?.textContent || '').trim();
                             }
                             // Chẩn đoán thường ở cột cuối
-                            for (let i = cells.length - 1; i >= 9; i--) {
-                                const txt = (cells[i]?.textContent || '').trim();
-                                if (txt && txt.length > 5 && /[A-Z]\d/.test(txt)) {
-                                    diagnosis = txt;
-                                    break;
+                            if (!diagnosis) {
+                                for (let i = cells.length - 1; i >= 9; i--) {
+                                    const txt = (cells[i]?.textContent || '').trim();
+                                    if (txt && txt.length > 5 && /[A-Z]\d/.test(txt)) {
+                                        diagnosis = txt;
+                                        break;
+                                    }
                                 }
                             }
                         }

@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Aladinn - VNPT HIS AI Assistant",
-    "version": "1.5.1",
+    "version": "2.1.0",
     "description": "Tiện ích mở rộng hỗ trợ y bác sĩ trên hệ thống VNPT HIS: Nhập liệu giọng nói AI, Quét dữ liệu lâm sàng, Ký số tự động",
     "author": "Huỳnh Trung Anh",
     "permissions": [
@@ -14,8 +14,8 @@
     "host_permissions": [
         "https://*.vncare.vn/*",
         "https://generativelanguage.googleapis.com/*",
-        "https://raw.githubusercontent.com/*",
-        "https://api.github.com/*"
+        "https://raw.githubusercontent.com/fantasy-1608/Aladinn/*",
+        "https://api.github.com/repos/fantasy-1608/Aladinn/*"
     ],
     "action": {
         "default_popup": "popup/popup.html",
@@ -81,6 +81,7 @@
                 "*://*.vncare.vn/**/*.pdf"
             ],
             "js": [
+                "content/shared/self-healing.js",
                 "content/scanner/history-iframe-helper.js",
                 "content/scanner/nutrition-iframe-helper.js",
                 "content/scanner/emergency-iframe-helper.js",
@@ -89,20 +90,6 @@
                 "content/scanner/discharge-iframe-helper.js",
                 "content/scanner/nhapbenhnhan-iframe-helper.js",
                 "content/cds/cds-iframe-helper.js"
-            ],
-            "run_at": "document_end",
-            "all_frames": true
-        },
-        {
-            "matches": [
-                "https://*.vncare.vn/*"
-            ],
-            "exclude_matches": [
-                "*://*.vncare.vn/*/jasper/*",
-                "*://*.vncare.vn/**/*.pdf"
-            ],
-            "js": [
-                "content/sign/auto-click-helper.js"
             ],
             "run_at": "document_end",
             "all_frames": true
@@ -119,7 +106,12 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "injected/*.js",
+                "injected/token-capture.js",
+                "injected/ajax-interceptor.js",
+                "injected/grid-hook.js",
+                "injected/api-bridge.js",
+                "content/shared/self-healing.js",
+                "content/shared/typing-effect.js",
                 "content/scanner/*-iframe-helper.js",
                 "styles/aladinn-scanner.css",
                 "styles/aladinn-voice.css",

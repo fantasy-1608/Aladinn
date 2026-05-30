@@ -9,31 +9,44 @@
  * - Địa chỉ (Address) - best effort
  * - Số điện thoại (Phone)
  * - Email
+ * 
+ * [P0-SEC-002] Regex patterns đã được thu hẹp để giảm false positive:
+ * - CCCD: Yêu cầu đúng 12 số liên tục (không match 9 số vô điều kiện nữa)
+ *   Thêm heuristic: chỉ match 9 số nếu đứng sau label "CMND"/"CCCD"
+ * - PatientID: Bắt buộc prefix BN/HS/MA (trước đây prefix là optional)
+ * - containsPHI() dùng pattern khác (chặt hơn) để tránh block nhầm request hợp lệ
  */
 
 const PHI_PATTERNS = [
     // 1. Số điện thoại (Việt Nam)
     {
         name: 'Phone',
-        regex: /(?:\+84|0)[3|5|7|8|9][0-9]{8}/g,
+        regex: /(?:0|\+84)\s?[35789]\d{2}\s?\d{3}\s?\d{3}\b|(?:0|\+84)[35789]\d{8}\b/g,
         replacement: '[PHONE]'
     },
-    // 2. Căn cước công dân / CMND (9 hoặc 12 số)
+    // 2. Căn cước công dân 12 số (format chuẩn CCCD mới)
     {
-        name: 'CCCD/CMND',
-        regex: /\b\d{9}\b|\b\d{12}\b/g,
+        name: 'CCCD',
+        regex: /\b0\d{11}\b/g,
         replacement: '[ID_CARD]'
     },
-    // 3. Mã thẻ BHYT (Ví dụ: DN4010112345678, HC4..., 15 ký tự)
+    // 2b. CMND 9 số — chỉ match khi có label/prefix rõ ràng phía trước
+    {
+        name: 'CMND',
+        regex: /(?:CMND|CCCD|căn\s*cước|chứng\s*minh)\s*(?:số|:)?\s*(\d{9})\b/gi,
+        replacement: (match, digits) => match.replace(digits, '[ID_CARD]')
+    },
+    // 3. Mã thẻ BHYT (Ví dụ: DN4010112345678, HC4..., 15 ký tự và định dạng cách quãng)
     {
         name: 'BHYT',
-        regex: /\b[A-Z]{2}[1-9]\d{12}\b/g,
+        regex: /\b[A-Za-z]{2}\d{13}\b|\b[A-Za-z]{2}\s\d{1}\s\d{2}\s\d{2}\s\d{3}\s\d{5}\b/g,
         replacement: '[BHYT]'
     },
-    // 4. Mã bệnh nhân / Số hồ sơ VNPT HIS (Thường là chuỗi số dài đặc thù, vd: 24000000)
+    // 4. Mã bệnh nhân / Số hồ sơ VNPT HIS — BẮT BUỘC có prefix BN/HS/MA
+    // [P0-SEC-002] Prefix bắt buộc để tránh match nhầm timestamps, SĐT, mã thuốc
     {
         name: 'PatientID',
-        regex: /\b(BN|HS|MA)?\d{8,10}\b/ig,
+        regex: /\b(BN|HS|MA)\d{8,10}\b/ig,
         replacement: '[PATIENT_ID]'
     },
     // 5. Email
@@ -57,6 +70,13 @@ export class PHIRedactor {
         for (const pattern of PHI_PATTERNS) {
             redacted = redacted.replace(pattern.regex, pattern.replacement);
         }
+
+        // Bổ sung: Thay thế tên bác sĩ và bệnh nhân qua nhãn lâm sàng
+        redacted = redacted.replace(/(?:Bác\s*sĩ|Bs\.|BS|Bệnh\s*nhân|Bn\.|BN|bác\s*sĩ|bệnh\s*nhân)[\s:]+([A-ZÀ-Ỹ][A-ZÀ-Ỹa-zà-ỹ]*(?:\s+[A-ZÀ-Ỹ][A-ZÀ-Ỹa-zà-ỹ]*){1,4})/g, (match, _namePart) => {
+            const prefixMatch = match.match(/(?:Bác\s*sĩ|Bs\.|BS|Bệnh\s*nhân|Bn\.|BN|bác\s*sĩ|bệnh\s*nhân)[\s:]+/i);
+            const prefix = prefixMatch ? prefixMatch[0] : 'Bác sĩ: ';
+            return prefix + '[NAME]';
+        });
 
         // Best effort: Remove lines that look like "Họ tên: Nguyễn Văn A"
         // Regex looks for "Họ tên", "Tên", "Bệnh nhân" followed by colon and text
@@ -83,18 +103,21 @@ export class PHIRedactor {
 
     /**
      * Guard function: Check if text still contains obvious PHI
+     * Uses STRICTER patterns than redact() to avoid false positive blocking.
+     * [P0-SEC-002] Tách riêng containsPHI patterns — chặt hơn, chỉ match PHI thực sự.
      * @param {string} text - The text to check
      * @returns {boolean} True if it looks like PHI is present
      */
     static containsPHI(text) {
         if (!text) return false;
         
-        // If we find an unredacted BHYT, Phone, or Email, block it
+        // Strict patterns — chỉ match PHI rõ ràng, tránh false positive
         const strictPatterns = [
-            /(?:\+84|0)[3|5|7|8|9][0-9]{8}/, // Phone
-            /\b\d{9}\b|\b\d{12}\b/, // CCCD
-            /\b[A-Z]{2}[1-9]\d{12}\b/, // BHYT
-            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/ // Email
+            /(?:0|\+84)\s?[35789]\d{2}\s?\d{3}\s?\d{3}\b|(?:0|\+84)[35789]\d{8}\b/, // Phone VN
+            /\b0\d{11}\b/, // CCCD 12 số (bắt đầu bằng 0)
+            /\b[A-Za-z]{2}\d{13}\b/, // BHYT
+            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email
+            /\b(?:BN|HS|MA|MABA|MABN)\s*[:-]?\s*\d{6,15}\b/i  // PatientID — [M-08]
         ];
 
         for (const regex of strictPatterns) {

@@ -646,19 +646,7 @@ window.Aladinn.Sign.Signing = (function () {
     //   2. "OK/Đồng ý" button (sign success dialog) → auto-click + mark complete
 
     function enableAutoOkDetection() {
-        if (AUTO_SIGN.observer) return;
-
-        // Also notify background to enable PDF tab auto-close
-        chrome.runtime.sendMessage({ action: 'enableAutoSign', sessionId: window.__aladinnSessionId });
-
-        let _debounceTimer = null;
-        function debouncedCheck() {
-            if (_debounceTimer) clearTimeout(_debounceTimer);
-            _debounceTimer = setTimeout(() => checkForButtons(), 150);
-        }
-
-        AUTO_SIGN.observer = new MutationObserver(debouncedCheck);
-        AUTO_SIGN.observer.observe(document.body, { childList: true, subtree: true });
+        // Disabled in Manual Safe Mode
     }
 
     function disableAutoOkDetection() {
@@ -716,93 +704,7 @@ window.Aladinn.Sign.Signing = (function () {
         return null;
     }
 
-    // Polling loop — runs every 400ms, completely independent
-    setInterval(() => {
-        if (!AUTO_SIGN.isEnabled) return;
-        // Chỉ auto-click khi đang trong phiên ký số
-        if (!WORKFLOW.isActive) return;
-        const now = Date.now();
-        const UI = _ui();
-
-        // STEP 1: Auto-click "Xác nhận" (#btnConfirm)
-        // 🛡️ Patient Context Guard: Block auto-click if patient mismatched
-        if (window.VNPTPatientContextGuard && WORKFLOW.currentContextToken) {
-            const isValid = window.VNPTPatientContextGuard.validate(WORKFLOW.currentContextToken, { allowGridOnly: true });
-            if (!isValid) {
-                if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
-                    UI.showToast('🚨 LỖI CONTEXT: Bệnh nhân hiện tại không khớp với bệnh nhân đang ký. Đã chặn tự động ký!', 'error');
-                    AUTO_SIGN.lastConfirmTime = now;
-                }
-                return;
-            }
-        }
-
-        // 🛡️ SmartCA Guard: Block auto-click if signer name mismatch
-        if (window.__aladinnSmartCAMismatch) {
-            if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
-                UI.showToast('🚨 SmartCA KHÔNG KHỚP với BS HIS — Tự động ký bị chặn!', 'warning');
-                AUTO_SIGN.lastConfirmTime = now;
-            }
-            return;
-        }
-        if (!AUTO_SIGN.hasClickedConfirm && (now - AUTO_SIGN.lastConfirmTime > 800)) {
-            const btn = _findBtnById('#btnConfirm') || _findBtnByText(['Xác nhận', 'Chấp nhận']);
-            if (btn) {
-                // --- Kiểm tra bảng có nhiều lựa chọn (Nhiều mức ký) ---
-                const doc = btn.ownerDocument || document;
-                const selects = doc.querySelectorAll('select');
-                let visibleCount = 0;
-                let hasUnselected = false;
-                for (const el of selects) {
-                    if (el.offsetWidth > 0 && el.offsetHeight > 0 && !el.disabled) {
-                        visibleCount++;
-                        const text = el.options[el.selectedIndex]?.text || '';
-                        if (!el.value || el.value === '0' || text.toLowerCase().includes('lựa chọn') || text.includes('--')) {
-                            hasUnselected = true;
-                        }
-                    }
-                }
-                if (visibleCount > 1 || hasUnselected) {
-                    if (UI && (now - AUTO_SIGN.lastConfirmTime > 5000)) {
-                        UI.showToast('⚠️ Vui lòng CẤU HÌNH người ký và tự bấm Xác nhận', 'warning');
-                        AUTO_SIGN.lastConfirmTime = now; // Giãn tần suất hiện Toast
-                    }
-                    return; // Dừng auto-click
-                }
-                // --------------------------------------------------------
-
-                console.log('[Aladinn] 🖊️ Auto-click: Xác nhận');
-                if (UI) UI.createClickRipple(btn);
-                btn.click();
-                AUTO_SIGN.hasClickedConfirm = true;
-                AUTO_SIGN.lastConfirmTime = now;
-                if (UI) UI.showToast('🖊️ Đang ký...');
-                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab', sessionId: window.__aladinnSessionId }); } catch (_e) { /* */ } }, 800);
-                return;
-            }
-        }
-
-        // STEP 2: Auto-click "Đồng ý" (#alertify-ok)
-        if (AUTO_SIGN.hasClickedOk && (now - AUTO_SIGN.lastOkTime > 3000)) {
-            AUTO_SIGN.hasClickedOk = false;
-            AUTO_SIGN.hasClickedConfirm = false;
-        }
-        if (AUTO_SIGN.hasClickedOk) return;
-
-        if (now - AUTO_SIGN.lastOkTime > 1000) {
-            const btn = _findBtnById('#alertify-ok') || _findBtnByText(['Đồng ý', 'Hoàn tất']);
-            if (btn) {
-                console.log('[Aladinn] ✅ Auto-click: Đồng ý');
-                if (UI) UI.createClickRipple(btn);
-                btn.click();
-                AUTO_SIGN.hasClickedOk = true;
-                AUTO_SIGN.lastOkTime = now;
-                AUTO_SIGN.signCompleted = true;
-                if (UI) UI.showToast('✅ Ký thành công!');
-                setTimeout(() => { try { chrome.runtime.sendMessage({ action: 'closePdfTab', sessionId: window.__aladinnSessionId }); } catch (_e) { /* */ } }, 800);
-            }
-        }
-    }, 400);
+    // Polling loop removed in Manual Safe Mode
 
     function checkForButtons() { /* handled by setInterval */ }
 

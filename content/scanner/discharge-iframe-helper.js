@@ -19,9 +19,13 @@
         window.removeEventListener('message', window._vnptXuTriHandler);
     }
 
-    window._vnptXuTriHandler = function (event) {
+    window._vnptXuTriHandler = async function (event) {
         if (event.source !== window.parent && event.source !== window.top) return;
         if (!event.data || event.data.type !== 'XUTRI_FILL_FORM') return;
+
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
 
         try {
             // ==========================================
@@ -60,7 +64,11 @@
                 var mainText = data.mainDiag.text;
                 
                 // Điền mã vào Combogrid
-                setComboGrid('txtTKCHANDOANRAVIENID', mainCode);
+                if (window.VNPT_TypingEffect) {
+                    window.VNPT_TypingEffect.setComboGrid('txtTKCHANDOANRAVIENID', mainCode);
+                } else {
+                    console.error('VNPT_TypingEffect is missing');
+                }
                 
                 // Đảm bảo Option tương ứng có mặt trong Select dropdown của HIS
                 var selectEl = document.getElementById('cboCHANDOANRAVIENID');
@@ -76,7 +84,7 @@
                     if (!exists) {
                         var opt = document.createElement('option');
                         opt.value = mainCode;
-                        opt.text = mainCode + '-' + (mainText || '');
+                        opt.text = mainText || '';
                         selectEl.add(opt);
                         selectEl.value = mainCode;
                     }
@@ -99,8 +107,10 @@
                     subDiagText = data.subDiag.code + '-' + subDiagText;
                 }
                 
-                // Điền trực tiếp vào textarea Bệnh kèm theo (đã được tự động gỡ khóa disabled bằng setVal)
-                setVal('txtCHANDOANRAVIEN_KEMTHEO', subDiagText);
+                // Điền trực tiếp vào textarea Bệnh kèm theo
+                if (window.VNPT_TypingEffect) {
+                    await window.VNPT_TypingEffect.fillFormSequential([{ id: 'txtCHANDOANRAVIEN_KEMTHEO', val: subDiagText }], true);
+                }
                 inputsFilled += 2;
             }
 
@@ -108,12 +118,16 @@
             // 3. Điền Ra Khoa Lúc (Datepicker / Text)
             // ==========================================
             if (data.ngayRaKhoa) {
+                var cleanDate = data.ngayRaKhoa.replace(/\s*\(Đang\s+soạn\s+thảo\)/gi, '').trim();
                 var dpFilled = false;
                 
-                var dpEls = getFieldElements('txtTHOIGIANKETTHUC|datepicker_NGAYRAKHOA|txtNGAYRAKHOA');
+                var dpEls = [];
+                if (window.VNPT_TypingEffect) {
+                    dpEls = window.VNPT_TypingEffect.getFieldElements('txtTHOIGIANKETTHUC|datepicker_NGAYRAKHOA|txtNGAYRAKHOA');
+                }
                 if (dpEls.length > 0) {
                     for (var i = 0; i < dpEls.length; i++) {
-                        if (setDatepickerVal(dpEls[i], data.ngayRaKhoa)) {
+                        if (setDatepickerVal(dpEls[i], cleanDate)) {
                             dpFilled = true;
                         }
                     }
@@ -124,7 +138,7 @@
                     var fallbackEl = findDatepickerByLabel();
                     if (fallbackEl) {
                         console.log('[XuTri Iframe] Tìm thấy datepicker qua nhãn "Ra khoa lúc"');
-                        dpFilled = setDatepickerVal(fallbackEl, data.ngayRaKhoa);
+                        dpFilled = setDatepickerVal(fallbackEl, cleanDate);
                     }
                 }
 
@@ -173,66 +187,7 @@
     // UTILITY FUNCTIONS
     // ==========================================
 
-    function getFieldElements(fieldIdStr) {
-        if (!fieldIdStr) return [];
-        var ids = fieldIdStr.split('|');
-        var els = [];
-
-        for (var i = 0; i < ids.length; i++) {
-            var currId = ids[i];
-            var byId = document.getElementById(currId);
-            if (byId && !els.includes(byId)) els.push(byId);
-            
-            var byName = document.querySelectorAll('[name="' + currId + '"]');
-            for(var n = 0; n < byName.length; n++) {
-                if (!els.includes(byName[n])) els.push(byName[n]);
-            }
-            if (els.length > 0) return els;
-        }
-        return els;
-    }
-
-    function setVal(fieldIdStr, val) {
-        if (val === undefined || val === null) return;
-        var els = getFieldElements(fieldIdStr);
-
-        if (els.length === 0) {
-            console.log('[XuTri Iframe] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
-            return;
-        }
-
-        for (var i = 0; i < els.length; i++) {
-            var el = els[i];
-            el.removeAttribute('disabled');
-            el.removeAttribute('readonly');
-            el.value = val;
-            if (window.$) {
-                window.$(el).trigger('change').trigger('input');
-            } else {
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
-    }
-
-    function setComboGrid(id, code) {
-        if (!code) return;
-        try {
-            var els = getFieldElements(id);
-            for(var i = 0; i < els.length; i++) {
-                var el = els[i];
-                el.removeAttribute('disabled');
-                el.removeAttribute('readonly');
-                var jEl = window.$ ? window.$(el) : null;
-                if (jEl && jEl.data('combogrid')) {
-                    jEl.combogrid('setValue', code);
-                    jEl.val(code);
-                } else {
-                    el.value = code;
-                }
-            }
-        } catch(_e) {}
-    }
+    // Removed unused getFieldElements, setVal, setComboGrid
 
     function setDatepickerVal(el, val) {
         if (!el || !val) return false;

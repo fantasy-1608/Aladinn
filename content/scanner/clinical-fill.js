@@ -68,17 +68,26 @@ const VNPTClinicalFill = (function () {
     // INIT
     // ==========================================
     function init() {
+        let scanTimeout = null;
+        const throttledCheck = () => {
+            if (scanTimeout) return;
+            scanTimeout = setTimeout(() => {
+                checkForClinicalForm();
+                scanTimeout = null;
+            }, 500);
+        };
+
         const observer = new MutationObserver(() => {
-            if (!window.VNPTStore) return;
-            checkForClinicalForm();
+            if (typeof window === 'undefined' || !window.VNPTStore) return;
+            throttledCheck();
         });
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 
         // Bổ sung polling nhẹ để bypass giới hạn MutationObserver xuyên iframe
         // Thêm guard: tạm dừng khi tab ẩn (tiết kiệm CPU)
         setInterval(() => {
-            if (document.hidden) return;
-            checkForClinicalForm();
+            if (typeof window === 'undefined' || document.hidden) return;
+            throttledCheck();
         }, 2000);
         checkForClinicalForm();
 
@@ -146,6 +155,7 @@ const VNPTClinicalFill = (function () {
             return 0;
         }
 
+        // Hàm scan đệ quy để tìm iframe lồng nhau (VD: jBox modal bên trong iframe chính)
         function scanIframes(doc) {
             if (!doc) return;
             const iframes = doc.querySelectorAll('iframe');
@@ -201,8 +211,7 @@ const VNPTClinicalFill = (function () {
                     } else if (iframeSrc.includes('chuyenvien') || iframeSrc.includes('ngt02k009')) {
                         isChuyenVien = true;
                     } else if (
-                        iframeSrc.includes('xutri') || 
-                        iframeSrc.includes('ntu02d021_buongdieutri')
+                        iframeSrc.includes('xutri')
                     ) {
                         isXuTri = true;
                     }
@@ -435,52 +444,78 @@ const VNPTClinicalFill = (function () {
                 }
                 #vnpt-clinical-fab:hover::after { opacity: 1; }
                 /* Preview dialog */
+                @keyframes clinical-dialog-glow {
+                    0%, 100% {
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 15px rgba(31, 105, 194, 0.12);
+                        border-color: rgba(31, 105, 194, 0.2);
+                    }
+                    50% {
+                        box-shadow: 0 25px 70px rgba(0,0,0,0.7), 0 0 25px rgba(31, 105, 194, 0.3);
+                        border-color: rgba(31, 105, 194, 0.4);
+                    }
+                }
                 .clinical-preview-overlay {
                     position: fixed; inset: 0; z-index: 2147483646;
                     background: rgba(0,0,0,0.5); display: flex;
                     align-items: center; justify-content: center;
                 }
                 .clinical-preview-dialog {
-                    background: #1a1a2e; color: #e0d5c1; border-radius: 16px;
+                    background: #ffffff; color: #333333; border-radius: 0px;
                     padding: 24px; max-width: 700px; width: 90%;
                     max-height: 80vh; overflow-y: auto;
-                    border: 1px solid rgba(212,168,83,0.3);
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-                    font-family: 'Inter', system-ui, sans-serif;
+                    animation: clinical-dialog-glow 8s ease-in-out infinite;
                 }
                 .clinical-preview-dialog h3 {
-                    margin: 0 0 16px; color: #d4a853; font-size: 18px;
+                    margin: 0 0 16px; color: #004f9e; font-size: 18px;
+                    font-weight: bold; border-bottom: 1px solid #a6c9e2;
+                    padding-bottom: 8px; text-transform: uppercase;
                 }
                 .clinical-preview-dialog .field-row {
-                    margin-bottom: 12px; padding: 8px 12px;
-                    background: rgba(255,255,255,0.05); border-radius: 8px;
-                    border-left: 3px solid #d4a853;
+                    margin-bottom: 12px; padding: 0;
+                    background: transparent; border-radius: 0;
+                    border-left: none;
                 }
                 .clinical-preview-dialog .field-label {
-                    font-size: 11px; color: #a08c6a; text-transform: uppercase;
-                    letter-spacing: 0.5px; margin-bottom: 4px;
+                    font-size: 12px; color: #004f9e; font-weight: bold;
+                    margin-bottom: 4px; display: block;
                 }
-                .clinical-preview-dialog .field-value {
-                    font-size: 13px; color: #e0d5c1; white-space: pre-wrap;
-                    max-height: 80px; overflow-y: auto;
+                .field-value-input {
+                    background: #ffffff !important;
+                    border: 1px solid #a6c9e2 !important;
+                    color: #333333 !important;
+                    border-radius: 0px !important;
+                    padding: 6px 8px !important;
+                    font-family: Arial, Tahoma, sans-serif !important;
+                    font-size: 13px !important;
+                    width: 100% !important;
+                    box-sizing: border-box !important;
+                    display: block !important;
+                    transition: border-color 0.15s ease-in-out !important;
+                }
+                .field-value-input:focus {
+                    outline: none !important;
+                    border-color: #004f9e !important;
                 }
                 .clinical-preview-actions {
-                    display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end;
+                    display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end;
+                    border-top: 1px solid #a6c9e2; padding-top: 16px;
                 }
                 .clinical-preview-actions button {
-                    padding: 10px 20px; border: none; border-radius: 10px;
-                    cursor: pointer; font-size: 14px; font-weight: 600;
-                    transition: all 0.2s; font-family: 'Inter', system-ui, sans-serif;
+                    padding: 6px 16px; border: 1px solid transparent; border-radius: 0px;
+                    cursor: pointer; font-size: 13px; font-weight: bold;
+                    transition: background 0.15s ease-in-out; font-family: Arial, Tahoma, sans-serif;
                 }
                 .clinical-btn-cancel {
-                    background: rgba(255,255,255,0.1); color: #a08c6a;
+                    background: #f9f9f9; color: #333; border: 1px solid #ccc;
                 }
-                .clinical-btn-cancel:hover { background: rgba(255,255,255,0.15); }
+                .clinical-btn-cancel:hover { background: #e0e0e0; }
                 .clinical-btn-fill {
-                    background: linear-gradient(135deg, #d4a853, #f59e0b);
-                    color: #1a1a2e;
+                    background: #004f9e;
+                    color: #ffffff;
                 }
-                .clinical-btn-fill:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,168,83,0.4); }
+                .clinical-btn-fill:hover { 
+                    background: #003d7a;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -574,13 +609,13 @@ const VNPTClinicalFill = (function () {
             // Có tờ điều trị → lấy nguyên chẩn đoán
             chanDoanFull = raw.chanDoanMoiNhat;
             if (raw.chanDoanKemTheoTDT) {
-                chanDoanFull += '; ' + raw.chanDoanKemTheoTDT;
+                chanDoanFull += ';' + raw.chanDoanKemTheoTDT;
             }
         } else {
             // Không có tờ điều trị → lấy từ chẩn đoán chính + kèm theo
             chanDoanFull = raw.chanDoanBanDau || '';
             if (raw.chanDoanKemTheo) {
-                chanDoanFull += (chanDoanFull ? '; ' : '') + raw.chanDoanKemTheo;
+                chanDoanFull += (chanDoanFull ? ';' : '') + raw.chanDoanKemTheo;
             }
         }
 
@@ -652,10 +687,14 @@ const VNPTClinicalFill = (function () {
 
     function buildXuTriData(raw) {
         const parsed = parseICD(raw.chanDoanMoiNhat) || {};
+        let ngayRa = raw.ngayToDieuTriMoiNhat || '';
+        if (ngayRa) {
+            ngayRa = ngayRa.replace(/\s*\(Đang\s+soạn\s+thảo\)/gi, '').trim();
+        }
         return {
             mainDiag: parsed.mainDiag || { code: '', text: '' },
             subDiag: parsed.subDiag || { code: '', text: '' },
-            ngayRaKhoa: raw.ngayToDieuTriMoiNhat || ''
+            ngayRaKhoa: ngayRa
         };
     }
 
@@ -675,7 +714,7 @@ const VNPTClinicalFill = (function () {
         // Tách bệnh kèm theo (Ghép các mã còn lại)
         let subDiag = null;
         if (parts.length > 1) {
-            const subRaw = parts.slice(1).map(p => p.trim()).join('; ');
+            const subRaw = parts.slice(1).map(p => p.trim()).join(';');
             const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
             subDiag = subMatch
                 ? { code: subMatch[1].trim(), text: subMatch[2].trim() }
@@ -690,7 +729,7 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     function _buildBenhAnData(raw) {
         // Chỉ lấy chẩn đoán khi vào khoa (Chẩn đoán ban đầu lúc tiếp nhận)
-        const diagSource = (raw.chanDoanBanDau || '') + (raw.chanDoanKemTheo ? '; ' + raw.chanDoanKemTheo : '');
+        const diagSource = (raw.chanDoanBanDau || '') + (raw.chanDoanKemTheo ? ';' + raw.chanDoanKemTheo : '');
 
         const parsed = parseICD(diagSource) || {};
 
@@ -758,13 +797,13 @@ const VNPTClinicalFill = (function () {
             const patientName = store.selectedPatientName || 'Không rõ';
 
             let html = `
-                <button id="cfill-close-x" style="position:absolute; top:16px; right:16px; background:none; border:none; color:#a08c6a; font-size:24px; cursor:pointer; line-height:1; transition:color 0.2s;">&times;</button>
+                <button id="cfill-close-x" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#333; font-size:24px; cursor:pointer; line-height:1; transition:color 0.15s ease;">&times;</button>
                 <h3>${title}</h3>
-                <div style="background:rgba(16, 185, 129, 0.1);border-left:4px solid #10b981;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;">
-                    <div style="color:#10b981; font-weight:bold;">✅ ĐÃ XÁC MINH NGỮ CẢNH</div>
-                    <div style="margin-top:4px; color:#e2e8f0;">Dữ liệu form được trích xuất chính xác từ bệnh nhân: <b style="color:#fff">${patientName}</b></div>
+                <div style="background:#f9f9f9; border:1px solid #a6c9e2; padding:10px; margin-bottom:16px; border-radius:0px; font-size:12px;">
+                    <div style="color:#004f9e; font-weight:bold;">✓ ĐÃ XÁC MINH NGỮ CẢNH</div>
+                    <div style="margin-top:4px; color:#333;">Dữ liệu form được trích xuất chính xác từ bệnh nhân: <b style="color:#004f9e">${patientName}</b></div>
                 </div>`;
-
+ 
             for (const [key, label] of Object.entries(labels)) {
                 let val = '';
                 if (isXT) {
@@ -778,7 +817,7 @@ const VNPTClinicalFill = (function () {
                 }
                 html += `<div class="field-row">
                     <div class="field-label">${label}</div>
-                    <textarea id="cf-input-${key}" class="field-value-input" data-key="${key}" style="width:100%; min-height:40px; background:rgba(0,0,0,0.2); border:1px solid rgba(212,168,83,0.3); color:#e0d5c1; border-radius:6px; padding:8px; font-family:inherit; font-size:13px; resize:vertical;">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                    <textarea id="cf-input-${key}" class="field-value-input" data-key="${key}">${val.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                 </div>`;
             }
 
@@ -854,8 +893,8 @@ const VNPTClinicalFill = (function () {
                 overlay.remove();
                 resolve(false);
             });
-            overlay.querySelector('#cfill-close-x').addEventListener('mouseover', function() { this.style.color = '#ef4444'; });
-            overlay.querySelector('#cfill-close-x').addEventListener('mouseout', function() { this.style.color = '#a08c6a'; });
+            overlay.querySelector('#cfill-close-x').addEventListener('mouseover', function() { this.style.color = 'var(--al-error)'; });
+            overlay.querySelector('#cfill-close-x').addEventListener('mouseout', function() { this.style.color = 'var(--al-outline)'; });
             
             overlay.querySelector('#cfill-confirm').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -889,7 +928,7 @@ const VNPTClinicalFill = (function () {
                             formData[key] = ta.value;
                         }
                     });
-                    console.log('[ClinicalFill] Form preview confirmed. Selected data:', JSON.stringify(formData));
+                    if (window.__ALADINN_DEBUG__) console.log('[ClinicalFill] Form preview confirmed. Selected data:', JSON.stringify(formData));
                     overlay.remove();
                     resolve(true);
                 } catch (err) {
@@ -975,32 +1014,33 @@ const VNPTClinicalFill = (function () {
         window.VNPTRealtime?.showToast('⏳ Đang điền form...', 'info');
 
         // Inject helper
-        let helperFile = 'chuyenvien-iframe-helper.js';
+        let helperFile = 'content/scanner/chuyenvien-iframe-helper.js';
         let scriptId = 'vnpt-chuyenvien-helper';
         let messageType = 'CHUYENVIEN_FILL_FORM';
         let responseType = 'CHUYENVIEN_FILL_RESULT';
         let mapping = CHUYENVIEN_MAPPING;
 
         if (isHC) {
-            helperFile = 'hoichan-iframe-helper.js';
+            helperFile = 'content/scanner/hoichan-iframe-helper.js';
             scriptId = 'vnpt-hoichan-helper';
             messageType = 'HOICHAN_FILL_FORM';
             responseType = 'HOICHAN_FILL_RESULT';
             mapping = HOICHAN_MAPPING;
         } else if (isXT) {
-            helperFile = 'discharge-iframe-helper.js';
+            helperFile = 'content/scanner/discharge-iframe-helper.js';
             scriptId = 'vnpt-xutri-helper';
             messageType = 'XUTRI_FILL_FORM';
             responseType = 'XUTRI_FILL_RESULT';
             mapping = {};
         } else if (isNBN) {
-            helperFile = 'nhapbenhnhan-iframe-helper.js';
+            helperFile = 'content/scanner/nhapbenhnhan-iframe-helper.js';
             scriptId = 'vnpt-nhapbenhnhan-helper';
             messageType = 'NHAPBENHNHAN_FILL_FORM';
             responseType = 'NHAPBENHNHAN_FILL_RESULT';
             mapping = {};
         }
 
+        await injectHelper(target, 'content/shared/self-healing.js', 'vnpt-self-healing-helper');
         await injectHelper(target, helperFile, scriptId);
 
         if (window.VNPTPatientContextGuard && contextToken) {
@@ -1022,7 +1062,7 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     // INJECT & COMMUNICATE (pattern từ emergency.js)
     // ==========================================
-    async function injectHelper(iframe, fileName, scriptId) {
+    async function injectHelper(iframe, filePath, scriptId) {
         const doc = iframe.contentDocument;
         if (!doc) throw new Error('Không truy cập được iframe');
 
@@ -1030,17 +1070,25 @@ const VNPTClinicalFill = (function () {
         if (old) old.remove();
 
         return new Promise((resolve, reject) => {
-            const script = doc.createElement('script');
-            script.id = scriptId;
-            if (_chrome && _chrome.runtime) {
-                script.src = _chrome.runtime.getURL('content/scanner/' + fileName);
-            } else {
-                reject(new Error('Chrome runtime unavailable'));
-                return;
-            }
-            script.onload = () => resolve(undefined);
-            script.onerror = () => reject(new Error('Inject helper failed'));
-            (doc.head || doc.documentElement).appendChild(script);
+            const _chrome = (typeof window !== 'undefined' && window.chrome) ? window.chrome : null;
+            if (!_chrome || !_chrome.runtime) return reject(new Error('Chrome unavailable'));
+
+            const loadScript = (src, id) => new Promise((res, rej) => {
+                const existing = doc.getElementById(id);
+                if (existing) existing.remove();
+                
+                const script = doc.createElement('script');
+                script.id = id;
+                script.src = _chrome.runtime.getURL(src);
+                script.onload = res;
+                script.onerror = rej;
+                (doc.head || doc.documentElement).appendChild(script);
+            });
+
+            loadScript('content/shared/typing-effect.js', 'vnpt-typing-effect-lib')
+                .then(() => loadScript(filePath, scriptId))
+                .then(resolve)
+                .catch(() => reject(new Error('Inject failed')));
         });
     }
 

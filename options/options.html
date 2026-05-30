@@ -23,20 +23,20 @@
         }
 
         :root {
-            --bg-body: #0C1222;
-            --bg-card: #141B2D;
-            --bg-input: rgba(212, 168, 83, 0.03);
-            --border: rgba(212, 168, 83, 0.12);
-            --border-hover: rgba(212, 168, 83, 0.30);
-            --text-main: #E8E0D4;
-            --text-dim: #8B8579;
-            --primary: #D4A853;
-            --primary-hover: #E8BC6A;
-            --primary-light: rgba(212, 168, 83, 0.10);
-            --accent: #D4A853;
-            --success: #3ECDA0;
-            --error: #E85454;
-            --warning: #E8A838;
+            --bg-body: #111418;
+            --bg-card: #191C20;
+            --bg-input: rgba(158, 202, 255, 0.04);
+            --border: rgba(66, 70, 79, 0.8);
+            --border-hover: rgba(140, 144, 153, 0.6);
+            --text-main: #E1E2E8;
+            --text-dim: #8C9099;
+            --primary: #9ECAFF;
+            --primary-hover: #B8D8FF;
+            --primary-light: rgba(158, 202, 255, 0.10);
+            --accent: #9ECAFF;
+            --success: #4ADE80;
+            --error: #FFB4AB;
+            --warning: #FBBF24;
             --radius-md: 12px;
             --radius-lg: 16px;
             --font-main: 'Inter', sans-serif;
@@ -53,8 +53,8 @@
             justify-content: center;
             min-height: 100vh;
             background-image: 
-                radial-gradient(ellipse at 10% 0%, rgba(212, 168, 83, 0.06) 0%, transparent 45%),
-                radial-gradient(ellipse at 90% 100%, rgba(212, 168, 83, 0.03) 0%, transparent 40%);
+                radial-gradient(ellipse at 10% 0%, rgba(158, 202, 255, 0.04) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 100%, rgba(158, 202, 255, 0.02) 0%, transparent 40%);
         }
 
         .container {
@@ -73,9 +73,7 @@
 
         /* Sidebar Navigation */
         .sidebar {
-            background: rgba(20, 27, 45, 0.88);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: #272A2F;
             border-radius: var(--radius-lg);
             padding: 24px;
             height: fit-content;
@@ -100,7 +98,7 @@
             border-radius: 12px;
             object-fit: cover;
             background: var(--bg-body);
-            box-shadow: 0 4px 10px rgba(212, 168, 83, 0.15);
+            box-shadow: 0 4px 10px rgba(158, 202, 255, 0.15);
         }
 
         h1 {
@@ -108,7 +106,7 @@
             font-size: 22px;
             font-family: var(--font-title);
             font-weight: 700;
-            background: linear-gradient(135deg, #E8E0D4, #8B8579);
+            background: linear-gradient(135deg, #E1E2E8, #8C9099);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -121,9 +119,31 @@
             margin-top: 4px;
             display: inline-block;
             background: var(--primary-light);
-            border: 1px solid rgba(212, 168, 83, 0.20);
+            border: 1px solid rgba(158, 202, 255, 0.20);
             padding: 2px 10px;
             border-radius: 12px;
+        }
+
+        .badge-vip-pro {
+            font-size: 9px;
+            font-weight: 800;
+            color: #00e676;
+            background: rgba(0, 230, 118, 0.15);
+            border: 1px solid #00e676;
+            padding: 2px 6px;
+            border-radius: 0px;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+            animation: badge-glow-breath-opt 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes badge-glow-breath-opt {
+            0% { box-shadow: 0 0 2px rgba(0, 230, 118, 0.2); }
+            100% { box-shadow: 0 0 8px rgba(0, 230, 118, 0.5); }
         }
 
         .nav-menu {
@@ -162,9 +182,9 @@
         }
 
         .nav-item:hover {
-            background: rgba(212, 168, 83, 0.05);
+            background: rgba(158, 202, 255, 0.05);
             color: var(--text-main);
-            border-color: rgba(212, 168, 83, 0.1);
+            border-color: rgba(158, 202, 255, 0.1);
         }
 
         .nav-item:hover .nav-icon {
@@ -175,7 +195,7 @@
             color: var(--accent);
             background: var(--primary-light);
             font-weight: 600;
-            border-color: rgba(212, 168, 83, 0.3);
+            border-color: rgba(158, 202, 255, 0.3);
         }
 
         .nav-item.active .nav-icon {
@@ -203,9 +223,7 @@
         }
 
         .section {
-            background: rgba(20, 27, 45, 0.88);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: #1D2024;
             border-radius: var(--radius-lg);
             padding: 32px 40px;
             border: 1px solid var(--border);
@@ -278,8 +296,8 @@
 
         input:focus, select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
-            background: rgba(212, 168, 83, 0.05);
+            box-shadow: 0 0 0 3px rgba(158, 202, 255, 0.12);
+            background: rgba(158, 202, 255, 0.05);
         }
 
         .help-text {
@@ -296,7 +314,7 @@
         }
 
         .help-text a:hover {
-            color: #F0D68A;
+            color: #D1E4FF;
             text-decoration: underline;
         }
 
@@ -315,7 +333,7 @@
 
         .toggle-row:hover {
             border-color: var(--border-hover);
-            background: rgba(212, 168, 83, 0.06);
+            background: rgba(158, 202, 255, 0.06);
         }
 
         .toggle-info {
@@ -389,7 +407,7 @@
             color: var(--bg-body);
             border: none;
             padding: 12px 24px;
-            border-radius: 10px;
+            border-radius: 9999px;
             font-size: 14px;
             font-weight: 600;
             font-family: var(--font-main);
@@ -403,7 +421,7 @@
         .btn:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(212, 168, 83, 0.25);
+            box-shadow: 0 4px 12px rgba(158, 202, 255, 0.25);
         }
 
         .btn-secondary {
@@ -413,7 +431,7 @@
         }
 
         .btn-secondary:hover {
-            background: rgba(212, 168, 83, 0.08);
+            background: rgba(158, 202, 255, 0.08);
             border-color: var(--border-hover);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
@@ -450,13 +468,13 @@
 
         .pin-box:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
-            background: rgba(212, 168, 83, 0.05);
+            box-shadow: 0 0 0 3px rgba(158, 202, 255, 0.12);
+            background: rgba(158, 202, 255, 0.05);
         }
 
         .pin-box.error {
             border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(232, 84, 84, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 180, 171, 0.15);
             animation: shake 0.4s;
         }
 
@@ -475,7 +493,7 @@
         .magic-reveal {
             animation: magicAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
             border: 1px solid var(--primary) !important;
-            background: rgba(212, 168, 83, 0.05) !important;
+            background: rgba(158, 202, 255, 0.05) !important;
         }
 
         /* Status Toast */
@@ -527,8 +545,8 @@
         /* Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(212, 168, 83, 0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(212, 168, 83, 0.4); }
+        ::-webkit-scrollbar-thumb { background: rgba(158, 202, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(158, 202, 255, 0.4); }
 
         /* AI Lock Container */
         .ai-features-container {
@@ -546,8 +564,8 @@
             font-size: 14px;
             margin-bottom: 20px;
             padding: 12px;
-            background: rgba(232, 168, 56, 0.1);
-            border: 1px solid rgba(232, 168, 56, 0.3);
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
             border-radius: 8px;
             align-items: center;
             gap: 8px;
@@ -564,7 +582,7 @@
             display: flex; 
             align-items: center; 
             gap: 8px;
-            color: #D4A853;
+            color: var(--accent);
         }
 
     </style>
@@ -577,7 +595,8 @@
             <div class="app-brand">
                 <img src="../assets/icons/aladinn-vector.svg" alt="Aladinn Genie Icon" class="genie-img">
                 <div>
-                    <h1>Aladinn</h1>
+                    <h1 style="display: inline-block; vertical-align: middle;">Aladinn</h1>
+                    <span class="badge-vip-pro">VIP PRO</span>
                     <span class="version" id="aladinn-version-tag" title="Phiên bản hiện tại">Version ...</span>
                 </div>
             </div>
@@ -700,7 +719,7 @@
                     Nâng Cao
                 </h2>
                 
-                <div style="background: rgba(212, 168, 83, 0.05); border: 1px solid rgba(212, 168, 83, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 32px;">
+                <div style="background: rgba(158, 202, 255, 0.05); border: 1px solid rgba(158, 202, 255, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 32px;">
                     <p style="margin: 0 0 16px 0; line-height: 1.6; font-size: 14px;">
                         Khu vực này cho phép bạn cấu hình Trợ lý AI (Sử dụng Google Gemini). Các tính năng cần suy luận thông minh của AI sẽ được mở khóa sau khi bạn thiết lập thành công API Key bên dưới.
                     </p>
@@ -731,7 +750,7 @@
                         
                         <div id="pin-actions" style="margin-top: 20px; display: none; gap: 12px;">
                             <button id="btn-change-pin" class="btn btn-secondary">Đổi mã PIN</button>
-                            <button id="btn-reset-pin" class="btn btn-secondary" style="color: var(--error); border-color: rgba(232, 84, 84, 0.3);">Xóa mã PIN & Khôi phục</button>
+                            <button id="btn-reset-pin" class="btn btn-secondary" style="color: var(--error); border-color: rgba(255, 180, 171, 0.3);">Xóa mã PIN & Khôi phục</button>
                         </div>
                     </div>
                     <!-- Hidden input for generic save logic -->
@@ -769,7 +788,7 @@
                     Gõ <strong>//</strong> trong bất kỳ ô nhập liệu nào của VNPT HIS (Phiếu điều trị, Diễn biến, Lời dặn...) để hiển thị danh sách các mẫu dưới đây.
                 </p>
 
-                <div class="form-group" style="background: rgba(212, 168, 83, 0.05); border: 1px solid rgba(212, 168, 83, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div class="form-group" style="background: rgba(158, 202, 255, 0.05); border: 1px solid rgba(158, 202, 255, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
                     <h3 class="group-title" style="margin-bottom: 16px;">Thêm Mẫu Mới</h3>
                     <div style="display: flex; gap: 12px; margin-bottom: 12px;">
                         <input type="text" id="tpl-shortcut" placeholder="Phím tắt (vd: tim → gõ //tim)" style="width: 200px;">
@@ -894,12 +913,12 @@
                 <!-- Prompt tùy chỉnh CLS -->
                 <h3 class="group-title">📝 Prompt: Tóm tắt CLS + Thuốc</h3>
                 <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    Biến: <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>
-                    <code style="background:rgba(212,168,83,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{keylabs}}</code>.
+                    Biến: <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>
+                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>
+                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>
+                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>
+                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>
+                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{keylabs}}</code>.
                     Để trống = dùng prompt mặc định (hiển thị qua placeholder).
                 </p>
                 <div class="form-group">

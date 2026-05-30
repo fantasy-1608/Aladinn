@@ -21,7 +21,7 @@
         }
     });
 
-    window._vnptHistoryHandler = function (event) {
+    window._vnptHistoryHandler = async function (event) {
         if (event.source !== window.top) return;
         if (!event.data) return;
 
@@ -31,6 +31,10 @@
         }
 
         if (event.data.type !== 'HISTORY_FILL_FORM') return;
+
+        // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script
+        var isContentScript = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+        if (isContentScript) return;
 
         try {
             if (event.data.contextToken) {
@@ -45,55 +49,71 @@
                         return;
                     }
                 }
-
-
-                // Ghi chú: Record ID check đã loại bỏ vì contextToken.rowId
-                // là index hàng grid, không phải mã bệnh nhân trên form.
-                // Xác minh tên bệnh nhân ở trên đã đủ bảo vệ.
             }
 
             var data = event.data.history || {};
-
-            // Log ALL IDs for mapping help if needed
-            console.log('[VNPT-Helper] Mapping data to form...', data);
-
-            // Mapping strategy: 
-            // 1. Try to find by known HIS IDs (if we had them)
-            // 2. Try to find by common names or labels (harder in this UI)
-            // 3. Use the mapping provided in the message
-
             var mapping = event.data.mapping || {};
             var defaultMsg = event.data.defaultMsg || 'Chưa ghi nhận bất thường';
-
-            // Các trường chuyên khoa cần điền mặc định nếu trống (Lấy từ caller)
             var specializedFields = event.data.specializedFields || [];
+            
+            // ÉP BUỘC BẬT HIỆU ỨNG GÕ CHỮ BẤT CHẤP CẤU HÌNH ĐỂ TEST
+            var useTyping = true;
 
-            var _promises = [];
+            // Xây dựng hàng đợi điền tuần tự
+            var fillQueue = [];
             for (var key in mapping) {
                 var fieldId = mapping[key];
                 var val = data[key];
 
-                // Nếu là trường chuyên khoa và dữ liệu trống -> điền mặc định
                 if (specializedFields.indexOf(fieldId) !== -1 && (!val || val.trim() === '')) {
                     val = defaultMsg;
                 }
 
-                if (val !== undefined) {
-                    setVal(fieldId, val);
+                if (val !== undefined && val !== null && val !== '') {
+                    fillQueue.push({ type: 'val', id: fieldId, val: val });
                 }
             }
 
-            // --- ĐIỀN CHẨN ĐOÁN VÀO KHOA BẰNG COMBOGRID ---
             if (data.mainDiag) {
-                setComboGrid('txtMABENHCHINH', data.mainDiag.code);
-                setVal('txtBENHCHINH', data.mainDiag.text);
+                fillQueue.push({ type: 'combo', id: 'txtMABENHCHINH', val: data.mainDiag.code });
+                fillQueue.push({ type: 'val', id: 'txtBENHCHINH', val: data.mainDiag.text });
             }
             if (data.subDiag) {
-                setComboGrid('txtMABENHKEMTHEO', data.subDiag.code);
-                setVal('txtBENHKEMTHEO', data.subDiag.text);
+                fillQueue.push({ type: 'combo', id: 'txtMABENHKEMTHEO', val: data.subDiag.code });
+                fillQueue.push({ type: 'val', id: 'txtBENHKEMTHEO', val: data.subDiag.text });
             }
 
-            sendResponse(true);
+            // Lọc riêng các trường Combo (như Mã bệnh) để xử lý trước.
+            // Tránh tình trạng EasyUI tự động điền đè lên thẻ chữ trong lúc đang chạy hiệu ứng gõ.
+            var comboItems = [];
+            var textItems = [];
+            for (var i = 0; i < fillQueue.length; i++) {
+                if (fillQueue[i].type === 'combo') {
+                    comboItems.push(fillQueue[i]);
+                } else {
+                    textItems.push(fillQueue[i]);
+                }
+            }
+
+            // Chạy các trường Combo trước (ngầm, không có hiệu ứng)
+            if (window.VNPT_TypingEffect) {
+                for (i = 0; i < comboItems.length; i++) {
+                    window.VNPT_TypingEffect.setComboGrid(comboItems[i].id, comboItems[i].val);
+                }
+
+                // Đợi 400ms để hệ thống HIS load và đồng bộ xong các trường tự động (nếu có)
+                if (comboItems.length > 0) {
+                    await new Promise(function(res) { setTimeout(res, 400); });
+                }
+
+                // Chạy hiệu ứng gõ tuần tự cho các trường text
+                await window.VNPT_TypingEffect.fillFormSequential(textItems, useTyping);
+            } else {
+                console.error('[VNPT-Helper] VNPT_TypingEffect library is missing!');
+            }
+
+            // Hoàn thành
+            sendResponse(true, 'Fill history sequential completed');
         } catch (e) {
             sendResponse(false, e.message);
         }
@@ -101,98 +121,12 @@
 
     window.addEventListener('message', window._vnptHistoryHandler);
 
-    // Label keywords to search when field ID not found
-    var LABEL_HINTS = {
-        'txtTTNBRAVIEN': ['Tình trạng', 'ra viện'],
-        'txtBENHLYDBLS': ['Quá trình bệnh lý', 'diễn biến lâm sàng'],
-        'txtKQXNCLS': ['kết quả xét nghiệm', 'cận lâm sàng', 'giá trị chẩn đoán'],
-        'txtPPDIEUTRI': ['Phương pháp điều trị'],
-        'txtHDTVACDT': ['Hướng điều trị', 'chế độ tiếp theo']
-    };
-
-    function getFieldElements(fieldIdStr) {
-        if (!fieldIdStr) return [];
-        var ids = fieldIdStr.split('|');
-        var els = [];
-
-        for (var i = 0; i < ids.length; i++) {
-            var currId = ids[i];
-            var byId = document.getElementById(currId);
-            if (byId && !els.includes(byId)) els.push(byId);
-            
-            var byName = document.querySelectorAll('[name="' + currId + '"]');
-            for(var n = 0; n < byName.length; n++) {
-                if (!els.includes(byName[n])) els.push(byName[n]);
-            }
-            if (els.length > 0) return els;
-        }
-
-        if (els.length === 0 && LABEL_HINTS[ids[0]]) {
-            var hints = LABEL_HINTS[ids[0]];
-            var allTextareas = document.querySelectorAll('textarea');
-            for (var t = 0; t < allTextareas.length; t++) {
-                var ta = allTextareas[t];
-                var container = ta.closest('tr') || ta.closest('div') || ta.parentElement;
-                if (!container) continue;
-                var containerText = container.textContent || '';
-                var prevSibling = container.previousElementSibling;
-                var prevText = prevSibling ? (prevSibling.textContent || '') : '';
-                var searchText = containerText + ' ' + prevText;
-
-                var matched = hints.every(function (hint) { return searchText.includes(hint); });
-                if (matched) {
-                    els.push(ta);
-                    return els;
-                }
-            }
-        }
-        return els;
-    }
-
-    function setComboGrid(id, code) {
-        if (!code) return;
-        try {
-            var els = getFieldElements(id);
-            for(var i = 0; i < els.length; i++) {
-                var el = els[i];
-                var jEl = window.$ ? window.$(el) : null;
-                if (jEl && jEl.data('combogrid')) {
-                    jEl.combogrid('setValue', code);
-                    jEl.val(code);
-                } else {
-                    el.value = code;
-                }
-            }
-        } catch(_e) {}
-    }
-
-    function setVal(fieldIdStr, val) {
-        if (val === undefined || val === null) return;
-        var els = getFieldElements(fieldIdStr);
-
-        if (els.length === 0) {
-            console.log('[VNPT-Helper] Field NOT FOUND:', fieldIdStr, '| value:', String(val).substring(0, 50));
-            return;
-        }
-
-        for (var i = 0; i < els.length; i++) {
-            var el = els[i];
-            el.value = val;
-            if (window.$) {
-                window.$(el).trigger('change').trigger('input');
-            } else {
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }
-    }
-
-    function sendResponse(success, error) {
+    function sendResponse(success, msg) {
         if (window.top) {
             window.top.postMessage({
                 type: 'HISTORY_FILL_RESULT',
                 success: success,
-                error: error
+                error: msg
             }, PARENT_ORIGIN);
         }
     }
@@ -212,5 +146,67 @@
         console.table(fields);
         return fields;
     };
+
+    // =========================================================================
+    // SMART VALIDATION ENGINE: Lý do vào viện (Bảo vệ trước KHTH kiểm hồ sơ)
+    // =========================================================================
+    function initLydoVaoVienValidation() {
+        var intervalId = setInterval(function () {
+            // Định vị ô nhập lý do vào viện phổ biến trên form bệnh án của VNPT HIS
+            var lydoEl = document.querySelector('input[id*="LYDOVAOVIEN"], textarea[id*="LYDOVAOVIEN"], [name*="LYDOVAOVIEN"]');
+            if (!lydoEl) return;
+
+            // Dừng Interval quét tìm vì đã bắt được phần tử DOM
+            clearInterval(intervalId);
+
+            function validate() {
+                var val = (lydoEl.value || '').trim();
+                // Luật: Không được trống, không được chỉ chứa dấu chấm (., ..., ......), gạch ngang, hoặc ký tự vô nghĩa
+                var isInvalid = !val || val.length === 0 || /^[.-\s_?]+$/.test(val) || !!val.match(/^\.+\s*$/);
+
+                var warnEl = document.getElementById('aladinn-lydo-warn');
+
+                if (isInvalid) {
+                    // Cảnh báo trực quan viền đỏ cam vuông vắn theo phong cách VNPT HIS
+                    lydoEl.style.setProperty('border', '1.5px solid #d32f2f', 'important');
+                    lydoEl.style.setProperty('background-color', '#ffebee', 'important');
+
+                    if (!warnEl) {
+                        warnEl = document.createElement('div');
+                        warnEl.id = 'aladinn-lydo-warn';
+                        warnEl.style.cssText = 'color:#d32f2f; font-size:12.6px; font-weight:700; margin-top:5px; display:flex; align-items:center; gap:4px; font-family:inherit;';
+                        warnEl.innerHTML = '⚠️ Lý do vào viện đang trống hoặc có ký tự vô nghĩa (dấu chấm, dấu gạch...). Phòng KHTH sẽ từ chối duyệt hồ sơ bệnh án!';
+                        lydoEl.parentNode.appendChild(warnEl);
+                    }
+                } else {
+                    // Khôi phục viền và nền mặc định
+                    lydoEl.style.removeProperty('border');
+                    lydoEl.style.removeProperty('background-color');
+                    if (warnEl) warnEl.remove();
+                }
+            }
+
+            // Chạy kiểm duyệt lập tức ngay khi load form để bắt lỗi dấu chấm sẵn có
+            validate();
+
+            // Đăng ký các sự kiện thời gian thực để tự động ẩn/hiện cảnh báo khi bác sĩ chỉnh sửa
+            lydoEl.addEventListener('input', validate);
+            lydoEl.addEventListener('change', validate);
+            lydoEl.addEventListener('blur', validate);
+
+            // Cơ chế Self-Healing: Cứ sau 1.5 giây chạy kiểm duyệt lại một lần để tránh HIS tự vẽ lại DOM làm mất cảnh báo
+            setInterval(validate, 1500);
+
+        }, 1000);
+    }
+
+    // Tự động khởi chạy khi helper được tải vào iframe
+    try {
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            initLydoVaoVienValidation();
+        } else {
+            window.addEventListener('DOMContentLoaded', initLydoVaoVienValidation);
+        }
+    } catch (_err) {}
 
 })();

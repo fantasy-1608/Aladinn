@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Aladinn** (5709 symbols, 8800 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Aladinn** (6564 symbols, 9847 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -60,6 +60,25 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 8. Never use LLM output as the sole authority for writeback.
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
+
+### Quy tắc Thiết kế Giao diện Aladinn V2 (BẮT BUỘC)
+
+1. **Định hướng Thiết kế (HIS-ify):** Từ phiên bản V2 trở đi, toàn bộ giao diện của Aladinn phải bám sát 100% phong cách thiết kế của hệ thống **VNPT HIS**. Aladinn phải tựa như một phần tích hợp tự nhiên, sẵn có của HIS, tạo sự tin cậy lâm sàng cao nhất cho bác sĩ.
+2. **Màu sắc chủ đạo (Seed Color):** Bắt buộc sử dụng màu xanh dương VNPT HIS (`#004f9e` / `rgb(0, 79, 158)`), kết hợp với nền trắng, xám nhạt (`#f9f9f9` / `#ffffff`) và viền xanh nhạt đặc trưng (`#a6c9e2`). Cấm dùng tông màu Desert Gold (vàng sa mạc), tím hoặc các tông màu nổi bật sặc sỡ làm màu mặc định chính từ bản V2.
+3. **Phong cách hình khối (Shape):** Phong cách phẳng và vuông vức hoàn toàn (`border-radius: 0px` cho các thẻ, panel, modal, input và các nút bấm chính). Tuyệt đối không bo tròn góc quá mức (trừ các pill button micro đặc thù hoặc avatar).
+4. **Hiệu ứng chuyển động (Micro-animations):** Chỉ sử dụng các hiệu ứng chuyển động nhẹ nhàng, tinh tế và cực nhanh (thời gian chuyển động từ 150ms đến 250ms), ví dụ như hover sáng nhẹ viền, nâng khẽ nút bấm 1px hoặc slide chuyển tab rất dịu. Nghiêm cấm các hiệu ứng khói bụi, bay lượn gây mất tập trung cho y bác sĩ.
+5. **Tham chiếu lịch sử V1:** Phong cách Desert Mystic (vàng sa mạc, bo tròn cao, hiệu ứng ambient) chỉ dành riêng cho phiên bản V1 và được lưu giữ làm tham chiếu lịch sử hoặc chế độ thử nghiệm đặc biệt.
+
+### Quy tắc Giao tiếp & Báo cáo (BẮT BUỘC)
+
+1. **Ngôn ngữ:** Mọi báo cáo, tài liệu thiết kế, kế hoạch thực hiện (implementation plan, walkthrough...) hoặc giải thích trong cuộc trò chuyện PHẢI được viết bằng tiếng Việt.
+2. **Đối tượng:** Viết thật đơn giản, trực quan, dễ hiểu cho người không chuyên về lập trình/code (non-coder). Hạn chế tối đa các thuật ngữ kỹ thuật phức tạp. Tập trung vào tính năng thực tế, trải nghiệm sử dụng thực tế của người dùng và lợi ích lâm sàng thay vì cấu trúc code phức tạp.
+
+### Quy tắc Lấy Dữ liệu & Kết nối API (BẮT BUỘC)
+
+1. **Ưu tiên API tuyệt đối thay vì DOM:** Khi cần lấy thông tin bệnh nhân, tờ điều trị hoặc thực hiện ghi dữ liệu lên hệ thống VNPT HIS, bắt buộc phải ưu tiên sử dụng kết nối API trực tiếp thay vì cào dữ liệu từ cấu trúc giao diện (DOM). Điều này đảm bảo tính ổn định cực cao khi giao diện HIS cập nhật, tránh lỗi hiển thị và tăng tốc độ xử lý lâm sàng.
+2. **Tìm kiếm trong kho dùng chung (Shared / HunterAI):** Trước khi viết bất kỳ đoạn code kết nối hoặc lấy dữ liệu nào, bắt buộc phải kiểm tra kỹ các thư viện và hàm có sẵn trong thư mục dùng chung `shared/` (ví dụ: `vnpt-his-api-mini-library.js`, `his-core.js`) hoặc kho công cụ `HunterAI`. Không tự viết lại các hàm đã được định nghĩa để tránh trùng lặp code và duy trì tính nhất quán.
+3. **Đóng gói để tái sử dụng:** Khi phát triển thành công các hàm kết nối API mới, cần thiết kế theo dạng mô-đun hóa, đóng gói sạch sẽ và đưa vào thư mục dùng chung để phục vụ cho các tính năng khác hoặc các dự án kế thừa trong hệ sinh thái Aladinn.
 
 ### Extension Architecture & Coding Patterns (Sourced from ECC)
 

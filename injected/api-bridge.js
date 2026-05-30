@@ -12,7 +12,8 @@
     // SECURITY: Get token assigned by extension
     const SECURE_TOKEN = document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : null;
     // [P1-SEC-006] SECURITY: Get nonce assigned by extension for mandatory message validation
-    const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : (window.__ALADINN_NONCE__ || null);
+    // SECURITY: Không fallback sang window global — nếu không có currentScript thì dùng random nonce (sẽ không khớp, vô hiệu hóa bridge)
+    const ALADINN_NONCE = document.currentScript ? document.currentScript.dataset.aladinnNonce : crypto.getRandomValues(new Uint8Array(16)).join('');
 
     // Đề xuất 5: Diagnostic logging toggle — bật bằng window.__ALADINN_DEBUG__ = true
     function debugLog(...args) {
@@ -230,11 +231,33 @@
         return null;
     }
 
+    function _decodeHtmlEntities(str) {
+        if (!str) return '';
+        try {
+            var txt = document.createElement('textarea');
+            txt.innerHTML = str;
+            return txt.value.normalize('NFC');
+        } catch (_e) {
+            return str.normalize('NFC');
+        }
+    }
+
     function _cleanHisText(value) {
-        return String(value || '')
+        if (!value) return '';
+        var decoded = _decodeHtmlEntities(String(value));
+        return decoded
             .replace(/<[^>]+>/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
+    }
+
+    function _cleanLydoVaoVien(val) {
+        if (!val) return '';
+        var trimmed = String(val).trim();
+        if (/^[.\-\s_?]+$/.test(trimmed) || trimmed.match(/^\.+\s*$/)) {
+            return '';
+        }
+        return trimmed;
     }
 
     function _firstValue(row, keys) {
@@ -313,11 +336,16 @@
                     }
                 }
 
-                // Fallback: synchronous wrapper (will block main thread, but better than nothing)
-                const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
-                resolve(result);
+                // Fallback: Thực hiện cuộc gọi đồng bộ (sync) nguyên bản để khôi phục dữ liệu
+                try {
+                    const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
+                    resolve(result);
+                } catch (e2) {
+                    console.error('[API-Bridge] Sync fallback failed for', sp, ':', e2);
+                    resolve(null);
+                }
             } catch (e) {
-                console.error('[API-Bridge] Sync jabsorb fallback failed:', e);
+                console.error('[API-Bridge] Async jabsorb exception:', e);
                 resolve(null);
             }
         });
@@ -491,6 +519,23 @@
         return orders;
     }
 
+    const READ_ONLY_INTENTS = new Set([
+        'REQ_FETCH_HISTORY',
+        'REQ_FETCH_ROOM',
+        'REQ_FETCH_TREATMENT',
+        'REQ_FETCH_DRUGS',
+        'REQ_FETCH_PTTT',
+        'REQ_FETCH_LABS',
+        'REQ_FETCH_DIAGNOSES',
+        'REQ_FETCH_VITALS',
+        'REQ_FETCH_DRUGS_CLS',
+        'REQ_PACS_URL',
+        'REQ_FETCH_BHYT_TIMES',
+        'REQ_PREFETCH_DIAGNOSES',
+        'REQ_FETCH_CLINICAL_SUMMARY',
+        'REQ_FETCH_PATIENT_DEMOGRAPHICS'
+    ]);
+
     window.addEventListener('message', function (event) {
         // SECURITY: Allow local origin or any origin on the same domain if needed
         if (event.origin !== window.location.origin) return;
@@ -501,14 +546,28 @@
             return;
         }
 
+        // SECURITY: Block unknown or write intents
+        if (!READ_ONLY_INTENTS.has(event.data.type)) {
+            if (event.data.type === 'TRIGGER_PTTT_PRINT') {
+                console.warn('[Aladinn API-Bridge] TRIGGER_PTTT_PRINT is disabled in Safe Mode');
+            }
+            return;
+        }
+
         // SECURITY: Rate-limit all incoming requests
         if (event.data.type.startsWith('REQ_') && !checkRateLimit()) {
             console.warn('[Aladinn API-Bridge] Rate limit exceeded — request dropped');
+            // Try to notify the UI
+            if (window.VNPTRealtime && typeof window.VNPTRealtime.showToast === 'function') {
+                window.VNPTRealtime.showToast('Scanner tạm dừng để tránh tăng tải HIS', 'warning');
+            } else {
+                window.postMessage({ type: 'ALADINN_RATE_LIMIT_EXCEEDED' }, window.location.origin);
+            }
             return;
         }
 
         // SECURITY: Verify token and nonce for requests
-        if (event.data.type.startsWith('REQ_') || event.data.type === 'TRIGGER_PTTT_PRINT') {
+        if (event.data.type.startsWith('REQ_')) {
             if (!SECURE_TOKEN || event.data.token !== SECURE_TOKEN) {
                 console.warn('[Aladinn API-Bridge] Unauthorized request blocked (Invalid token)');
                 return;
@@ -541,9 +600,6 @@
             case 'REQ_FETCH_DIAGNOSES':
                 fetchDiagnosesForCDS(event.data.rowId, event.data.benhnhanId, event.data.khambenhId, event.data.requestId);
                 break;
-            case 'TRIGGER_PTTT_PRINT':
-                triggerPtttPrint(event.data.rowId);
-                break;
             case 'REQ_FETCH_VITALS':
                 fetchVitals(event.data.rowId, event.data.requestId);
                 break;
@@ -566,6 +622,7 @@
                 fetchPatientDemographics(event.data.rowId, event.data.requestId);
                 break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
+
         }
     });
 
@@ -577,27 +634,26 @@
             }
             const { rowData } = resolveActiveGrid(rowId, { strict: true });
             const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID;
+            const kbIdHienTai = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
 
-            if (!hsbaId) {
+            if (!hsbaId && !kbIdHienTai) {
                 sendResult('FETCH_HISTORY_RESULT', rowId, { history: {}, _context: null }, requestId);
                 return;
             }
 
-            const params = JSON.stringify({ HOSOBENHANID: hsbaId });
-            const result = await _asyncCallSpO('NT.006.HSBA.HIS', params, 0);
-            const data = (typeof result === 'string' && result.trim() !== '') ? JSON.parse(result) : result;
-            const records = Array.isArray(data) ? data : [data];
-
             let historyData = {};
-            for (let i = records.length - 1; i >= 0; i--) {
-                const rec = records[i];
-                if (!rec) continue;
-                if (rec.LYDOVAOVIEN && !historyData.LYDOVAOVIEN) historyData.LYDOVAOVIEN = rec.LYDOVAOVIEN;
-                if (rec.QUATRINHBENHLY && !historyData.QUATRINHBENHLY) historyData.QUATRINHBENHLY = rec.QUATRINHBENHLY;
-                if (rec.TIENSUBENH_BANTHAN && !historyData.TIENSUBENH_BANTHAN) historyData.TIENSUBENH_BANTHAN = rec.TIENSUBENH_BANTHAN;
-                if (rec.KHAMBENH_TOANTHAN && !historyData.KHAMBENH_TOANTHAN) historyData.KHAMBENH_TOANTHAN = rec.KHAMBENH_TOANTHAN;
-                if (rec.KHAMBENH_BOPHAN && !historyData.KHAMBENH_BOPHAN) historyData.KHAMBENH_BOPHAN = rec.KHAMBENH_BOPHAN;
-                if (rec.TOMTATKQCANLAMSANG && !historyData.TOMTATKQCANLAMSANG) historyData.TOMTATKQCANLAMSANG = rec.TOMTATKQCANLAMSANG;
+
+            const accumulate = (rec) => {
+                if (!rec) return;
+                
+                if (!historyData.LYDOVAOVIEN) historyData.LYDOVAOVIEN = rec.LYDOVAOVIEN || rec.LY_DO_VAO_VIEN || '';
+                if (!historyData.QUATRINHBENHLY) historyData.QUATRINHBENHLY = rec.QUATRINHBENHLY || rec.QUA_TRINH_BENH_LY || rec.BENHSU || rec.BENH_SU || '';
+                if (!historyData.TIENSUBENH_BANTHAN) historyData.TIENSUBENH_BANTHAN = rec.TIENSUBENH_BANTHAN || rec.TIEN_SU_BAN_THAN || rec.TIENSU_BANTHAN || rec.TIENSU || rec.TIEN_SU || '';
+                if (!historyData.TIENSUBENH_GIADINH) historyData.TIENSUBENH_GIADINH = rec.TIENSUBENH_GIADINH || rec.TIENSUGIADINH || rec.TIEN_SU_GIA_DINH || '';
+                if (!historyData.KHAMBENH_TOANTHAN) historyData.KHAMBENH_TOANTHAN = rec.KHAMBENH_TOANTHAN || rec.KHAM_TOAN_THAN || rec.TOANTHAN || '';
+                if (!historyData.KHAMBENH_BOPHAN) historyData.KHAMBENH_BOPHAN = rec.KHAMBENH_BOPHAN || rec.KHAM_BO_PHAN || rec.BOPHAN || '';
+                if (!historyData.TOMTATKQCANLAMSANG) historyData.TOMTATKQCANLAMSANG = rec.TOMTATKQCANLAMSANG || rec.TOMTAT_CLS || rec.TOM_TAT_CLS || rec.TOM_TAT_KQ_CAN_LAM_SANG || '';
+
                 // Universal scan: Extract CHANDOAN and MABENHCHINH
                 if (!historyData.CHANDOAN) {
                     let tempChanDoan = '';
@@ -617,7 +673,7 @@
                                 tempChanDoan = val;
                             }
                         }
-                        if (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH') {
+                        if (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD') {
                             tempMa = val;
                         }
                         if (uk === 'MABENHKEMTHEO' || uk === 'MA_BENHKEMTHEO' || uk === 'MACDCKEMTHEO') {
@@ -627,12 +683,28 @@
 
                     if (tempChanDoan) {
                         historyData.CHANDOAN = (tempMa && !tempChanDoan.includes(tempMa)) ? `${tempMa}-${tempChanDoan}` : tempChanDoan;
+                        historyData.CHANDOAN = historyData.CHANDOAN.replace(/\s*\|\s*[A-Z]{2}\d{13}/i, '').replace(/\b[A-Z]{2}\d{13}\b/i, '').trim();
                     }
                     if (tempChanDoanPhu && !historyData.CHANDOAN_KEMTHEO) {
                         historyData.CHANDOAN_KEMTHEO = (tempMaPhu && !tempChanDoanPhu.includes(tempMaPhu)) ? `${tempMaPhu}-${tempChanDoanPhu}` : tempChanDoanPhu;
+                        historyData.CHANDOAN_KEMTHEO = historyData.CHANDOAN_KEMTHEO.replace(/\s*\|\s*[A-Z]{2}\d{13}/i, '').replace(/\b[A-Z]{2}\d{13}\b/i, '').trim();
                     }
                 }
-            }
+            };
+
+            const trySP = async (sp, p) => {
+                try {
+                    const params = (typeof p === 'object') ? JSON.stringify(p) : p;
+                    const res = await _asyncCallSpO(sp, params, 0);
+                    if (!res) return;
+                    const data = (typeof res === 'string' && res.trim() !== '') ? JSON.parse(res) : res;
+                    const recs = Array.isArray(data) ? data : [data];
+                    for (let i = recs.length - 1; i >= 0; i--) accumulate(recs[i]);
+                } catch (_e) { }
+            };
+
+            if (kbIdHienTai) await trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+            if (hsbaId) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hsbaId });
 
             sendResult('FETCH_HISTORY_RESULT', rowId, { 
                 history: historyData,
@@ -692,7 +764,7 @@
                     diagnosis = sv;
                 }
                 // Mã bệnh chính (ICD)
-                if (!maBenhChinh && (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MABENH' || uk === 'MACHANDOANVAOKHOA')) {
+                if (!maBenhChinh && (uk === 'MABENHCHINH' || uk === 'MA_BENHCHINH' || uk === 'MACDC' || uk === 'MAICD' || uk === 'MACHANDOANVAOKHOA')) {
                     maBenhChinh = sv;
                 }
                 // Chẩn đoán kèm theo
@@ -723,6 +795,12 @@
                 if (!patientName && (uk === 'TENBENHNHAN' || uk === 'HOTEN' || uk === 'TEN_BN' || uk === 'TEN_BENHNHAN')) {
                     patientName = sv;
                 }
+            }
+
+            // Loại bỏ mã BHYT rác (ví dụ: | GD4828723165180) dính vào cuối chuỗi chẩn đoán
+            if (diagnosis) {
+                diagnosis = diagnosis.replace(/\s*\|\s*[A-Z]{2}\d{13}\s*$/i, '').trim();
+                diagnosis = diagnosis.replace(/\s*\b[A-Z]{2}\d{13}\b\s*$/i, '').trim();
             }
 
             // Gộp mã bệnh chính và tên bệnh chính vào diagnosis nếu có mã nhưng chưa gộp
@@ -986,9 +1064,20 @@
                             GHICHU: r.GHICHUPDT || r.GHICHU || r.CHITIETGHICHU || '',
                             NGUOITAO: r.NGUOITAO || '',
                             NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || r.NGAY_Y_LENH || '',
-                            MAUBENHPHAMID: r.MAUBENHPHAMID || '',
+                            MAUBENHPHAMID: r.MAUBENHPHAMID || r.PHIEUDIEUTRIID || r.MADIEUTRI || r.ID_PHIEU_DIEU_TRI || '',
                             CHANDOAN: '',
-                            CHANDOANKEMTHEO: ''
+                            CHANDOANKEMTHEO: '',
+                            YLENH: _cleanHisText(r.YLENH || ''),
+                            XULY: _cleanHisText(r.XULY || r.HUONGXUTRI || r.HUONGXULY || r.HUONG_XU_TRI || r.XUTRI || r.XU_TRI || ''),
+                            TOANTHAN: _cleanHisText(r.KHAMTOANTHAN || r.TOANTHAN || r.KHAMBENH_TOANTHAN || r.KHAMBENHTOANTHAN || r.KHAM_TOAN_THAN || ''),
+                            KHAMBOPHAN: _cleanHisText(r.KHAMBOPHAN || r.BOPHAN || r.KHAMBENH_BOPHAN || ''),
+                            MACH: r.MACH || r.KHAMBENH_MACH || '',
+                            NHIETDO: r.NHIETDO || r.KHAMBENH_NHIETDO || '',
+                            HUYETAP: (r.HUYETAP_HI && r.HUYETAP_LOW) ? (r.HUYETAP_HI + '/' + r.HUYETAP_LOW) : (r.HUYETAP || r.KHAMBENH_HUYETAP || ''),
+                            NHIPTHO: r.NHIPTHO || r.KHAMBENH_NHIPTHO || '',
+                            CANNANG: r.CANNANG || '',
+                            CHIEUCAO: r.CHIEUCAO || '',
+                            SPO2: r.SPO2 || ''
                         };
                         // Universal scan for diagnosis fields in sheet list
                         for (const k in r) {
@@ -1025,9 +1114,39 @@
                                 }
                             }
                         }
+                        // Trích xuất Y lệnh khác từ dòng tờ điều trị đại diện r
+                        let sheetYLenh = '';
+                        for (const k in r) {
+                            const uk = k.toUpperCase();
+                            if (uk.includes('YLENH') || uk.includes('Y_LENH')) {
+                                const val = String(r[k] || '').trim();
+                                if (val && val.length > 2 && val !== t.DIENBIEN && val !== t.GHICHU) {
+                                    sheetYLenh = val;
+                                    break;
+                                }
+                            }
+                        }
+                        if (sheetYLenh) {
+                            const cleanText = _cleanHisText(sheetYLenh);
+                            if (cleanText) {
+                                const key = `${t.NGAYMAUBENHPHAM}|Phiếu điều trị|${cleanText}|`;
+                                if (!seenDetailOrders.has(key)) {
+                                    seenDetailOrders.add(key);
+                                    detailOrders.push({
+                                        NGAYMAUBENHPHAM: t.NGAYMAUBENHPHAM || '',
+                                        YLENH: cleanText,
+                                        NHOMYLENH: 'Y lệnh khác',
+                                        GHICHU: '',
+                                        NGUOITAO: t.NGUOITAO || '',
+                                        SOURCE_API: 'NT.024.2.DETAIL'
+                                    });
+                                }
+                            }
+                        }
+
                         return t;
                     });
-                    console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
+                    if (window.__ALADINN_DEBUG__) console.log('[ALADINN-DIAG] Pre-scrape:', treatments.length, 'sheets, CĐ found:', treatments.filter(t => t.CHANDOAN).length);
 
                     // Step 2: Fetch detail for diagnosis and y lệnh text from each sheet via background APIs.
                     const sheetsNeedDetail = treatments.filter(t => t.MAUBENHPHAMID);
@@ -1035,7 +1154,70 @@
                     const toFetch = sheetsNeedDetail.slice(0, 20);
                     await Promise.all(toFetch.map(async (sheet) => {
                         try {
-                            const detailRes = await _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0);
+                            // Gọi song song cả chỉ định con và chi tiết tờ điều trị gốc (chứa YLENH CKEditor, XULY, TOANTHAN, KHAMBOPHAN)
+                            const [detailRes, laydlRes] = await Promise.all([
+                                _asyncCallSpO('NT.024.2.DETAIL', String(sheet.MAUBENHPHAMID), 0),
+                                _asyncCallSpO('NGT02K015.LAYDL', String(sheet.MAUBENHPHAMID), 0)
+                            ]);
+
+                            // Phân tích kết quả chi tiết tờ điều trị gốc (LAYDL)
+                            let laydlObj = null;
+                            try {
+                                if (laydlRes) {
+                                    let parsed = null;
+                                    if (typeof laydlRes === 'string' && laydlRes.trim() !== '') {
+                                        parsed = JSON.parse(laydlRes);
+                                    } else {
+                                        parsed = laydlRes;
+                                    }
+
+                                    if (parsed) {
+                                        if (Array.isArray(parsed)) {
+                                            laydlObj = parsed[0];
+                                        } else if (parsed.rows && Array.isArray(parsed.rows)) {
+                                            laydlObj = parsed.rows[0];
+                                        } else {
+                                            laydlObj = parsed;
+                                        }
+                                    }
+                                }
+                            } catch (_parseErr) {
+                                console.warn('[API-Bridge] Failed to parse LAYDL result for sheet.');
+                            }
+
+                            if (laydlObj) {
+                                sheet.YLENH = _cleanHisText(laydlObj.YLENH || laydlObj.Y_LENH || sheet.YLENH || '');
+                                sheet.XULY = _cleanHisText(laydlObj.XULY || laydlObj.HUONGXUTRI || laydlObj.HUONGXULY || laydlObj.HUONG_XU_TRI || sheet.XULY || '');
+                                sheet.TOANTHAN = _cleanHisText(laydlObj.KHAMTOANTHAN || laydlObj.TOANTHAN || laydlObj.KHAMBENH_TOANTHAN || laydlObj.KHAM_TOAN_THAN || sheet.TOANTHAN || '');
+                                sheet.KHAMBOPHAN = _cleanHisText(laydlObj.KHAMBOPHAN || laydlObj.BOPHAN || laydlObj.KHAMBENH_BOPHAN || sheet.KHAMBOPHAN || '');
+                                if (laydlObj.DIENBIENBENH || laydlObj.DIENBIEN) {
+                                    sheet.DIENBIEN = _cleanHisText(laydlObj.DIENBIENBENH || laydlObj.DIENBIEN || sheet.DIENBIEN || '');
+                                }
+                                sheet.MACH = laydlObj.MACH || laydlObj.KHAMBENH_MACH || sheet.MACH || '';
+                                sheet.NHIETDO = laydlObj.NHIETDO || laydlObj.KHAMBENH_NHIETDO || sheet.NHIETDO || '';
+                                sheet.HUYETAP = (laydlObj.HUYETAP_HI && laydlObj.HUYETAP_LOW) ? (laydlObj.HUYETAP_HI + '/' + laydlObj.HUYETAP_LOW) : (laydlObj.HUYETAP || laydlObj.KHAMBENH_HUYETAP || sheet.HUYETAP || '');
+                                sheet.NHIPTHO = laydlObj.NHIPTHO || laydlObj.KHAMBENH_NHIPTHO || sheet.NHIPTHO || '';
+                                sheet.CANNANG = laydlObj.CANNANG || sheet.CANNANG || '';
+                                sheet.CHIEUCAO = laydlObj.CHIEUCAO || sheet.CHIEUCAO || '';
+                                sheet.SPO2 = laydlObj.SPO2 || sheet.SPO2 || '';
+
+                                // Trích xuất y lệnh tự do từ CKEditor đưa vào cột Y lệnh của timeline
+                                if (sheet.YLENH) {
+                                    const key = `${sheet.NGAYMAUBENHPHAM}|Phiếu điều trị|${sheet.YLENH}|`;
+                                    if (!seenDetailOrders.has(key)) {
+                                        seenDetailOrders.add(key);
+                                        detailOrders.push({
+                                            NGAYMAUBENHPHAM: sheet.NGAYMAUBENHPHAM || '',
+                                            YLENH: sheet.YLENH,
+                                            NHOMYLENH: 'Y lệnh khác',
+                                            GHICHU: '',
+                                            NGUOITAO: sheet.NGUOITAO || '',
+                                            SOURCE_API: 'NGT02K015.LAYDL'
+                                        });
+                                    }
+                                }
+                            }
+
                             let records = [];
                             if (typeof detailRes === 'string' && detailRes.trim() !== '') records = JSON.parse(detailRes);
                             else if (typeof detailRes === 'object' && detailRes !== null) records = detailRes;
@@ -1152,7 +1334,7 @@
                                 if (allDiagStrings.length > 0) {
                                     sheet.CHANDOAN = cleanDiag(allDiagStrings[0]);
                                     if (allDiagStrings.length > 1) {
-                                        sheet.CHANDOANKEMTHEO = allDiagStrings.slice(1).map(cleanDiag).join('; ');
+                                        sheet.CHANDOANKEMTHEO = allDiagStrings.slice(1).map(cleanDiag).join(';');
                                     }
                                 }
                             }
@@ -1166,11 +1348,96 @@
                             if (sheet.CHANDOANKEMTHEO) sheet.CHANDOANKEMTHEO = finalClean(sheet.CHANDOANKEMTHEO);
 
                         } catch (_detailErr) {
-                            console.warn('[API-Bridge] Detail fetch failed for sheet', sheet.MAUBENHPHAMID);
+                            console.warn('[API-Bridge] Detail fetch failed for sheet.');
                         }
                     }));
 
-                    const allYLenh = yLenhList.length > 0 ? yLenhList : detailOrders;
+                    // Gộp và loại bỏ trùng lặp giữa yLenhList và detailOrders
+                    const mergedYLenh = [...yLenhList];
+                    const seenKeys = new Set(yLenhList.map(o => `${o.NGAYMAUBENHPHAM}|${o.NHOMYLENH}|${o.YLENH}|${o.GHICHU}`));
+                    for (const detail of detailOrders) {
+                        const key = `${detail.NGAYMAUBENHPHAM}|${detail.NHOMYLENH}|${detail.YLENH}|${detail.GHICHU}`;
+                        if (!seenKeys.has(key)) {
+                            seenKeys.add(key);
+                            mergedYLenh.push(detail);
+                        }
+                    }
+                    let allYLenh = mergedYLenh;
+
+                    // Tích hợp dữ liệu thời gian thực từ DOM Tờ điều trị đang soạn thảo
+                    try {
+                        const domSheet = scrapeTreatmentSheetFromDOM();
+                        if (domSheet) {
+                            const now = new Date();
+                            const timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                          ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                          now.getFullYear() + ' ' +
+                                          ('0' + now.getHours()).slice(-2) + ':' +
+                                          ('0' + now.getMinutes()).slice(-2) + ':' +
+                                          ('0' + now.getSeconds()).slice(-2);
+
+                            const virtualSheet = {
+                                DIENBIEN: domSheet.dienBienBenh || '',
+                                GHICHU: domSheet.huongXuLy || '',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
+                                CHANDOAN: domSheet.chanDoanChinh || '',
+                                CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                                YLENH: domSheet.yLenh || '',
+                                XULY: domSheet.huongXuLy || '',
+                                TOANTHAN: domSheet.khamToanThanTDT || '',
+                                KHAMBOPHAN: domSheet.khamBoPhan || '',
+                                MACH: domSheet.sinhHieu?.pulse || '',
+                                NHIETDO: domSheet.sinhHieu?.temperature || '',
+                                HUYETAP: domSheet.sinhHieu?.bloodPressure || '',
+                                NHIPTHO: domSheet.sinhHieu?.respiratoryRate || '',
+                                CANNANG: domSheet.sinhHieu?.weight || '',
+                                CHIEUCAO: domSheet.sinhHieu?.height || '',
+                                SPO2: domSheet.sinhHieu?.spo2 || '',
+                                IS_REALTIME: true
+                            };
+
+                            const virtualDetails = [];
+                            if (domSheet.yLenh) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.yLenh,
+                                    NHOMYLENH: 'Y lệnh khác',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+                            if (domSheet.diet) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.diet,
+                                    NHOMYLENH: 'Chế độ ăn',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+                            if (domSheet.care) {
+                                virtualDetails.push({
+                                    NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                    YLENH: domSheet.care,
+                                    NHOMYLENH: 'Chế độ chăm sóc',
+                                    GHICHU: '',
+                                    NGUOITAO: 'Bản nháp — chưa lưu',
+                                    SOURCE_API: 'REALTIME_DOM'
+                                });
+                            }
+
+                            // Đưa tờ điều trị và y lệnh ảo lên đầu
+                            treatments.unshift(virtualSheet);
+                            allYLenh = virtualDetails.concat(allYLenh);
+                        }
+                    } catch (domErr) {
+                        console.warn('[API-Bridge] fetchTreatment realtime error:', domErr);
+                    }
+
                     const combinedTreatments = treatments.concat(allYLenh);
                     sendResult('FETCH_TREATMENT_RESULT', rowId, {
                         treatmentList: combinedTreatments,
@@ -1183,9 +1450,85 @@
             }
 
             if (!foundRows) {
+                let finalYLenhList = yLenhList;
+                let finalTreatmentList = yLenhList;
+
+                // Tích hợp dữ liệu thời gian thực nếu đang soạn thảo nhưng API chưa lưu dữ liệu
+                try {
+                    const domSheet = scrapeTreatmentSheetFromDOM();
+                    if (domSheet) {
+                        const now = new Date();
+                        const timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                      ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                      now.getFullYear() + ' ' +
+                                      ('0' + now.getHours()).slice(-2) + ':' +
+                                      ('0' + now.getMinutes()).slice(-2) + ':' +
+                                      ('0' + now.getSeconds()).slice(-2);
+
+                        const virtualSheet = {
+                            DIENBIEN: domSheet.dienBienBenh || '',
+                            GHICHU: domSheet.huongXuLy || '',
+                            NGUOITAO: 'Bản nháp — chưa lưu',
+                            NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                            MAUBENHPHAMID: 'REALTIME_DOM_SHEET',
+                            CHANDOAN: domSheet.chanDoanChinh || '',
+                            CHANDOANKEMTHEO: domSheet.chanDoanKemTheo || '',
+                            YLENH: domSheet.yLenh || '',
+                            XULY: domSheet.huongXuLy || '',
+                            TOANTHAN: domSheet.khamToanThanTDT || '',
+                            KHAMBOPHAN: domSheet.khamBoPhan || '',
+                            MACH: domSheet.sinhHieu?.pulse || '',
+                            NHIETDO: domSheet.sinhHieu?.temperature || '',
+                            HUYETAP: domSheet.sinhHieu?.bloodPressure || '',
+                            NHIPTHO: domSheet.sinhHieu?.respiratoryRate || '',
+                            CANNANG: domSheet.sinhHieu?.weight || '',
+                            CHIEUCAO: domSheet.sinhHieu?.height || '',
+                            SPO2: domSheet.sinhHieu?.spo2 || '',
+                            IS_REALTIME: true
+                        };
+
+                        const virtualDetails = [];
+                        if (domSheet.yLenh) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.yLenh,
+                                NHOMYLENH: 'Y lệnh khác',
+                                GHICHU: '',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+                        if (domSheet.diet) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.diet,
+                                NHOMYLENH: 'Chế độ ăn',
+                                GHICHU: '',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+                        if (domSheet.care) {
+                            virtualDetails.push({
+                                NGAYMAUBENHPHAM: timeStr + ' (Đang soạn thảo)',
+                                YLENH: domSheet.care,
+                                NHOMYLENH: 'Chế độ chăm sóc',
+                                GHICHU: '',
+                                NGUOITAO: 'Bản nháp — chưa lưu',
+                                SOURCE_API: 'REALTIME_DOM'
+                            });
+                        }
+
+                        finalYLenhList = virtualDetails.concat(yLenhList);
+                        finalTreatmentList = [virtualSheet].concat(finalYLenhList);
+                    }
+                } catch (domErr) {
+                    console.warn('[API-Bridge] fetchTreatment realtime (no rows) error:', domErr);
+                }
+
                 sendResult('FETCH_TREATMENT_RESULT', rowId, {
-                    treatmentList: yLenhList,
-                    yLenhList,
+                    treatmentList: finalTreatmentList,
+                    yLenhList: finalYLenhList,
                     treatmentContext: contextInfo
                 }, requestId);
             }
@@ -1327,7 +1670,7 @@
 
                         const diagnosisText = item.CHANDOAN || item.CHUANDOAN || item.BENHCHINH || '';
                         const subDiagnosisText = item.BENHKEMTHEO || item.CHANDOANKEMTHEO || item.PHU || '';
-                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join('; ');
+                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join(';');
 
                         const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
                         if (matches) {
@@ -1438,7 +1781,7 @@
                                     }
                                 }
                             } catch (err) {
-                                console.warn('[API-Bridge] Mode 2 parsing error for ID', dId, err);
+                                console.warn('[API-Bridge] Mode 2 parsing error:', err.message || 'Unknown error');
                             }
                         }
 
@@ -1538,7 +1881,7 @@
                 sendResult('FETCH_DRUGS_CLS_RESULT', rowId, { drugList: [], _context: null }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
             const _context = {
                 rowId,
                 KHAMBENHID: rowData.KHAMBENHID || rowData.MADIEUTRI || '',
@@ -1827,6 +2170,140 @@
     }
 
     /**
+     * Trích xuất dữ liệu lâm sàng thời gian thực từ DOM Tờ điều trị Nội trú đang mở (NTU02D021_BuongDieuTri)
+     * Ưu tiên dữ liệu trực quan bác sĩ đang nhập chưa bấm Lưu.
+     */
+    function scrapeTreatmentSheetFromDOM() {
+        var marker = _findDomElement('tcDieuTritxtDIENBIENBENH');
+        if (!marker) return null;
+
+        var _val = function(id) {
+            var el = _findDomElement(id);
+            return el ? (el.value || el.textContent || '').trim() : '';
+        };
+
+        // Lấy Y lệnh thô từ CKEditor một cách an toàn thông qua tìm kiếm đệ quy
+        var yLenhRaw = '';
+        try {
+            function findCKEditor() {
+                function searchWin(w) {
+                    try {
+                        if (w.CKEDITOR && w.CKEDITOR.instances && w.CKEDITOR.instances.tcDieuTritxtYLENH) {
+                            return w.CKEDITOR.instances.tcDieuTritxtYLENH;
+                        }
+                        var frames = w.frames;
+                        for (var i = 0; i < frames.length; i++) {
+                            var found = searchWin(frames[i]);
+                            if (found) return found;
+                        }
+                    } catch (_e) {}
+                    return null;
+                }
+                return searchWin(window);
+            }
+
+            var ck = findCKEditor();
+            if (ck) {
+                yLenhRaw = ck.getData() || '';
+            } else {
+                var el = _findDomElement('tcDieuTritxtYLENH');
+                yLenhRaw = el ? (el.value || el.textContent || el.innerHTML || '') : '';
+            }
+        } catch (e) {
+            console.warn('[API-Bridge] Error reading CKEditor tcDieuTritxtYLENH:', e);
+        }
+
+        // Làm sạch mã HTML sang dạng văn bản thô để phân tích Regex
+        var decodedYLenh = _decodeHtmlEntities(yLenhRaw);
+        var textYLenh = decodedYLenh.replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ').trim();
+        var diet = '';
+        var care = '';
+
+        // Tách Chế độ ăn: "Chế độ ăn: BT02..." hoặc "Chế độ ăn : BT02"
+        var dietMatch = textYLenh.match(/Chế độ ăn\s*[:\-–]\s*([^\n]+)/i);
+        if (dietMatch) diet = dietMatch[1].trim();
+
+        // Tách Chế độ chăm sóc: "Chế độ chăm sóc: cấp III"
+        var careMatch = textYLenh.match(/Chế độ chăm sóc\s*[:\-–]\s*([^\n]+)/i);
+        if (careMatch) care = careMatch[1].trim();
+
+        // Lọc sạch Y lệnh khác thực sự, bỏ đi dòng Chế độ ăn và Chế độ chăm sóc
+        var lines = textYLenh.split('\n');
+        var filteredLines = [];
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            if (line.match(/^(?:Chế độ ăn|Chế độ chăm sóc)\s*[:\-–]/i)) continue;
+            if (line.match(/^\*?Y lệnh khác\s*[:\-–]?$/i)) continue;
+            filteredLines.push(lines[i]);
+        }
+        var cleanYLenh = filteredLines.join('\n').trim();
+
+        // Chẩn đoán chính và kèm theo từ DOM
+        var chanDoanChinh = _val('tcDieuTritxtCHUANDOAN');
+        var chanDoanKemTheo = _val('tcDieuTritxtBENHKEMTHEO');
+
+        var chanDoanMoiNhat = chanDoanChinh;
+        if (chanDoanKemTheo) {
+            if (chanDoanMoiNhat) {
+                chanDoanMoiNhat += ';' + chanDoanKemTheo;
+            } else {
+                chanDoanMoiNhat = chanDoanKemTheo;
+            }
+        }
+
+        // Lấy huyết áp từ 2 ô nhập liệu của HIS
+        var ha1 = _val('tcDieuTritxtHUYETAP1');
+        var ha2 = _val('tcDieuTritxtHUYETAP2');
+        var huyetAp = '';
+        if (ha1 || ha2) {
+            huyetAp = (ha1 || '?') + '/' + (ha2 || '?');
+        }
+
+        var scraped = {
+            dienBienBenh: _val('tcDieuTritxtDIENBIENBENH'),
+            khamToanThanTDT: _val('tcDieuTritxtTOANTHAN'),
+            khamBoPhan: _val('tcDieuTritxtKHAMBOPHAN'),
+            ketQuaCLS: _val('tcDieuTritxtKETQUACLS'),
+            huongXuLy: _val('tcDieuTritxtXULY'),
+            chanDoanMoiNhat: chanDoanMoiNhat,
+            chanDoanChinh: chanDoanChinh,
+            chanDoanKemTheo: chanDoanKemTheo,
+            yLenh: cleanYLenh || textYLenh,
+            diet: diet,
+            care: care,
+            sinhHieu: {
+                pulse: _val('tcDieuTritxtMACH'),
+                temperature: _val('tcDieuTritxtNHIETDO'),
+                bloodPressure: huyetAp,
+                respiratoryRate: _val('tcDieuTritxtNHIPTHO'),
+                weight: _val('tcDieuTritxtCANNANG'),
+                height: _val('tcDieuTritxtCHIEUCAO'),
+                spo2: _val('tcDieuTritxtSPO2')
+            }
+        };
+
+        // PA3: Kiểm tra nội dung thực tế — nếu form hoàn toàn trống thì bỏ qua
+        // Tránh tạo tờ ảo "đang soạn thảo" khi bác sĩ chỉ đang xem hồ sơ
+        var hasContent = !!(
+            scraped.dienBienBenh ||
+            scraped.khamToanThanTDT ||
+            scraped.khamBoPhan ||
+            scraped.huongXuLy ||
+            scraped.yLenh ||
+            scraped.chanDoanChinh ||
+            scraped.chanDoanKemTheo ||
+            scraped.sinhHieu.pulse ||
+            scraped.sinhHieu.temperature ||
+            scraped.sinhHieu.bloodPressure ||
+            scraped.sinhHieu.respiratoryRate
+        );
+        if (!hasContent) return null;
+
+        return scraped;
+    }
+
+    /**
      * Fetch gộp bệnh sử (HSBA) + diễn tiến (tờ điều trị mới nhất) + sinh hiệu.
      * Dùng cho module ClinicalFill (Hội chẩn / Chuyển viện).
      * 
@@ -1886,7 +2363,9 @@
                     for (let i = records.length - 1; i >= 0; i--) {
                         const rec = records[i];
                         if (!rec) continue;
-                        if (rec.LYDOVAOVIEN && !result.lyDoVaoVien) result.lyDoVaoVien = rec.LYDOVAOVIEN;
+                        if (rec.LYDOVAOVIEN && !result.lyDoVaoVien) {
+                            result.lyDoVaoVien = _cleanLydoVaoVien(rec.LYDOVAOVIEN);
+                        }
                         if (rec.QUATRINHBENHLY && !result.quaTrinhBenhLy) result.quaTrinhBenhLy = rec.QUATRINHBENHLY;
                         if (rec.TIENSUBENH_BANTHAN && !result.tienSuBanThan) result.tienSuBanThan = rec.TIENSUBENH_BANTHAN;
                         if (rec.KHAMBENH_TOANTHAN && !result.khamToanThan) result.khamToanThan = rec.KHAMBENH_TOANTHAN;
@@ -1922,7 +2401,9 @@
                         return (el.value || el.textContent || '').trim();
                     };
                     // Đọc từ các field tabBenhAntxt* trong tab "Bệnh án"
-                    if (!result.lyDoVaoVien) result.lyDoVaoVien = _domVal('tabBenhAntxtLYDOVAOVIEN');
+                    if (!result.lyDoVaoVien) {
+                        result.lyDoVaoVien = _cleanLydoVaoVien(_domVal('tabBenhAntxtLYDOVAOVIEN'));
+                    }
                     if (!result.quaTrinhBenhLy) result.quaTrinhBenhLy = _domVal('tabBenhAntxtQUATRINHBENHLY');
                     if (!result.tienSuBanThan) result.tienSuBanThan = _domVal('tabBenhAntxtTIENSUBENH_BANTHAN');
                     if (!result.tienSuGiaDinh) result.tienSuGiaDinh = _domVal('tabBenhAntxtTIENSUBENH_GIADINH');
@@ -2158,7 +2639,7 @@
                                             if (allDiagStrings.length > 0) {
                                                 result.chanDoanMoiNhat = allDiagStrings[0];
                                                 if (allDiagStrings.length > 1) {
-                                                    result.chanDoanKemTheoTDT = allDiagStrings.slice(1).join('; ');
+                                                    result.chanDoanKemTheoTDT = allDiagStrings.slice(1).join(';');
                                                 }
                                             }
                                             debugLog('[API-Bridge] TĐT DETAIL universal scan:', allDiagStrings);
@@ -2175,7 +2656,7 @@
 
                                         var combined = cChinh;
                                         if (cPhu && !combined.includes(cPhu)) {
-                                            combined += (combined ? '; ' : '') + cPhu;
+                                            combined += (combined ? ';' : '') + cPhu;
                                         }
 
                                         result.chanDoanMoiNhat = combined;
@@ -2238,6 +2719,46 @@
                 console.warn('[API-Bridge] fetchClinicalSummary Vitals error:', e);
             }
 
+            // === PHẦN 4: Ưu tiên ghi đè bằng DOM thời gian thực từ tờ điều trị đang mở (nếu có) ===
+            try {
+                var domSheet = scrapeTreatmentSheetFromDOM();
+                if (domSheet) {
+                    debugLog('[API-Bridge] fetchClinicalSummary: Ghi đè bằng dữ liệu DOM thời gian thực từ tờ điều trị đang mở');
+                    if (domSheet.dienBienBenh) result.dienBienBenh = domSheet.dienBienBenh;
+                    if (domSheet.khamToanThanTDT) result.khamToanThanTDT = domSheet.khamToanThanTDT;
+                    if (domSheet.khamBoPhan) result.khamBoPhan = domSheet.khamBoPhan;
+                    if (domSheet.ketQuaCLS) result.tomTatCLS = domSheet.ketQuaCLS;
+                    if (domSheet.huongXuLy) result.huongXuLy = domSheet.huongXuLy;
+                    if (domSheet.chanDoanMoiNhat) result.chanDoanMoiNhat = domSheet.chanDoanMoiNhat;
+
+                    // Ghi đè sinh hiệu từ DOM
+                    if (domSheet.sinhHieu) {
+                        for (var vk in domSheet.sinhHieu) {
+                            if (domSheet.sinhHieu[vk]) {
+                                result.sinhHieu[vk] = domSheet.sinhHieu[vk];
+                            }
+                        }
+                    }
+                    
+                    // Ghi nhận thêm các thông tin bóc tách đặc biệt từ tờ điều trị
+                    result.diet = domSheet.diet || '';
+                    result.care = domSheet.care || '';
+                    result.yLenhRealtime = domSheet.yLenh || '';
+
+                    // Tạo mốc thời gian ảo "Đang soạn thảo"
+                    var now = new Date();
+                    var timeStr = ('0' + now.getDate()).slice(-2) + '/' +
+                                  ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+                                  now.getFullYear() + ' ' +
+                                  ('0' + now.getHours()).slice(-2) + ':' +
+                                  ('0' + now.getMinutes()).slice(-2) + ':' +
+                                  ('0' + now.getSeconds()).slice(-2);
+                    result.ngayToDieuTriMoiNhat = timeStr + ' (Đang soạn thảo)';
+                }
+            } catch (domErr) {
+                console.warn('[API-Bridge] fetchClinicalSummary: Lỗi ghi đè DOM thời gian thực:', domErr);
+            }
+
             sendResult('FETCH_CLINICAL_SUMMARY_RESULT', effectiveRowId, result, requestId);
         } catch (e) {
             console.error('[API-Bridge] fetchClinicalSummary error:', e);
@@ -2293,6 +2814,19 @@
                             return; // Fail-closed!
                         }
                     }
+                }
+            }
+
+            // Fallback guard: nếu data không có _context nhưng có rowId, so sánh rowId với grid đang chọn
+            const _fbCtx = data._context || data.treatmentContext || data;
+            const _fbBnId = String((_fbCtx && (_fbCtx.BENHNHANID || _fbCtx.benhnhanId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            const _fbKbId = String((_fbCtx && (_fbCtx.KHAMBENHID || _fbCtx.khambenhId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            const _fbHsbaId = String((_fbCtx && (_fbCtx.HOSOBENHANID || _fbCtx.hosobenhanid || _fbCtx.HSBAID || _fbCtx.hsbaId)) || '').replace(/&nbsp;|undefined|null/g, '').trim();
+            if (!_fbBnId && !_fbKbId && !_fbHsbaId && rowId) {
+                const { effectiveRowId } = resolveActiveGrid(null, { strict: false });
+                if (effectiveRowId && String(effectiveRowId).trim() !== String(rowId).trim()) {
+                    console.warn(`[Aladinn API-Bridge] Row ID mismatch fallback guard: requested=${rowId}, active=${effectiveRowId}. Suppressing: ${type}`);
+                    return;
                 }
             }
         }
@@ -2532,15 +3066,37 @@
 
                 const rows = await _fetchHisPagingRows('NT.024.DSPHIEUCLS', options, 100, 'sidx=NGAYMAUBENHPHAM&sord=desc');
                 if (rows && rows.length > 0) {
+                    // Map thêm tên dịch vụ từ raw row data
                     const pttts = rows.map(r => ({
                         SOPHIEU: r.SOPHIEU || '',
                         NGAYMAUBENHPHAM: r.NGAYMAUBENHPHAM || '',
                         MAUBENHPHAMID: r.MAUBENHPHAMID || '',
                         KHOACHIDINH: r.KHOACHIDINH || '',
-                        PHONGCHIDINH: r.PHONGCHIDINH || ''
+                        PHONGCHIDINH: r.PHONGCHIDINH || '',
+                        TENDICHVU: r.TENDICHVU || r.TEN_DICHVU_KYTHUAT || r.TENLOAI || r.TENLOAICHIDINH || r.TENXETNGHIEM || '',
+                        TENDICHVU_CHA: r.TENDICHVU_CHA || '',
+                        KETQUA: r.KETQUA || r.GIATRI_KETQUA || r.KETQUACLS || '',
+                        KETLUAN: r.KETLUAN || ''
                     }));
+
+                    // Fetch chi tiết qua NT.024.2 để lấy tên cụ thể nếu TENDICHVU trống
+                    for (const pttt of pttts) {
+                        if (!pttt.TENDICHVU && pttt.MAUBENHPHAMID) {
+                            try {
+                                const detailRows = await _fetchHisPagingRows('NT.024.2', [
+                                    { name: '[0]', value: String(pttt.MAUBENHPHAMID) }
+                                ], 50);
+                                if (detailRows && detailRows.length > 0) {
+                                    const d = detailRows[0];
+                                    pttt.TENDICHVU = d.TEN || d.TENDICHVU || d.TEN_DICHVU_KYTHUAT || d.TENCHIDINH || '';
+                                    if (!pttt.KETQUA) pttt.KETQUA = d.KETQUA || d.GIATRI_KETQUA || '';
+                                    if (!pttt.KETLUAN) pttt.KETLUAN = d.KETLUAN || '';
+                                }
+                            } catch (_detailErr) { /* silent */ }
+                        }
+                    }
+
                     allPttt = allPttt.concat(pttts);
-                    // Found PTTT, send result
                     sendResult('FETCH_PTTT_RESULT', rowId, { ptttList: allPttt }, requestId);
                     return;
                 }
@@ -2559,7 +3115,7 @@
                 sendResult('FETCH_LABS_RESULT', rowId, { labsData: [] }, requestId);
                 return;
             }
-            const { rowData } = resolveActiveGrid(rowId);
+            const { rowData } = resolveActiveGrid(rowId, { strict: true });
 
             const khambenhId = rowData.KHAMBENHID || rowData.MADIEUTRI || rowId;
             const benhnhanId = rowData.BENHNHANID || '';
@@ -2613,198 +3169,6 @@
                 return [];
             };
 
-            const strategies = [];
-
-            // --- XÉT NGHIỆM (type=1) ---
-            if (hsbaId) {
-                strategies.push(_fetchSheets('NT.024.DSPHIEU', [
-                    { name: '[0]', value: '' },
-                    { name: '[1]', value: String(benhnhanId) },
-                    { name: '[2]', value: '1' },
-                    { name: '[3]', value: String(hsbaId) }
-                ]));
-            }
-            if (khambenhId) {
-                strategies.push(_fetchSheets('NT.024.DSPHIEU', [
-                    { name: '[0]', value: '' },
-                    { name: '[1]', value: String(benhnhanId) },
-                    { name: '[2]', value: '1' },
-                    { name: '[3]', value: String(khambenhId) }
-                ]));
-            }
-
-            // --- CĐHA (type=2) ---
-            const cdhaStrategies = [];
-            if (hsbaId) {
-                cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
-                    { name: '[0]', value: '' },
-                    { name: '[1]', value: String(benhnhanId) },
-                    { name: '[2]', value: '2' },
-                    { name: '[3]', value: String(hsbaId) }
-                ]));
-            }
-            if (khambenhId) {
-                cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
-                    { name: '[0]', value: '' },
-                    { name: '[1]', value: String(benhnhanId) },
-                    { name: '[2]', value: '2' },
-                    { name: '[3]', value: String(khambenhId) }
-                ]));
-            }
-
-            const [xnResults, cdhaResults] = await Promise.all([
-                Promise.all(strategies).then(r => r.flat()),
-                Promise.all(cdhaStrategies).then(r => r.flat())
-            ]);
-
-            // Deduplicate XN sheets
-            const uniqueSheets = [];
-            const seenSheetIds = new Set();
-            for (const s of xnResults) {
-                const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
-                if (sid && !seenSheetIds.has(String(sid))) {
-                    seenSheetIds.add(String(sid));
-                    uniqueSheets.push(s);
-                }
-            }
-
-            // Deduplicate CĐHA sheets
-            const uniqueCdha = [];
-            for (const s of cdhaResults) {
-                const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
-                if (sid && !seenSheetIds.has(String(sid))) {
-                    seenSheetIds.add(String(sid));
-                    uniqueCdha.push(s);
-                }
-            }
-
-            debugLog(`[API-Bridge] Found ${uniqueSheets.length} XN sheets, ${uniqueCdha.length} CĐHA sheets`);
-
-            if (uniqueSheets.length === 0 && uniqueCdha.length === 0) {
-                sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [] }, requestId);
-                return;
-            }
-
-            // Step 3: Fetch XN details for each sheet (NT.024.2)
-            const allLabs = [];
-            const detailPromises = uniqueSheets.map(async (sheet) => {
-                const sheetId = sheet.MAUBENHPHAMID;
-                if (!sheetId) return;
-
-                const detailParams = {
-                    func: 'ajaxExecuteQueryPaging',
-                    uuid: uuid,
-                    params: ['NT.024.2'],
-                    options: [{ name: '[0]', value: String(sheetId) }]
-                };
-                const detailUrl = new URL(baseUrl, window.location.origin);
-                detailUrl.searchParams.set('_search', 'false');
-                detailUrl.searchParams.set('rows', '500');
-                detailUrl.searchParams.set('page', '1');
-                detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
-
-                try {
-                    const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
-                    if (detailRes.ok) {
-                        const detailData = await detailRes.json();
-                        (detailData.rows || []).forEach(item => {
-                            const getVal = (obj, keys) => {
-                                if (!obj) return '';
-                                for (const k of Object.keys(obj)) {
-                                    if (keys.includes(k.toUpperCase())) return obj[k];
-                                }
-                                return '';
-                            };
-
-                            const parsedTestName = getVal(item, ['TENXETNGHIEM', 'TENDICHVU_CHA', 'LOAIXETNGHIEM']) || getVal(sheet, ['TENXETNGHIEM', 'TENDICHVU', 'TEN_DICHVU_KYTHUAT', 'TENLOAICHIDINH']) || '';
-                            const parsedCode = getVal(item, ['TEN', 'TENCHISO', 'TENDICHVU', 'TENCHIDINH', 'TENTONGHOP']) || '';
-                            const parsedValue = getVal(item, ['GIATRI_KETQUA', 'KETQUA', 'KETQUACLS']) || '';
-                            const parsedUnit = getVal(item, ['DONVITINH', 'DONVI']) || '';
-                            const refMin = item.GIATRINHONHAT || item.GIATRI_MIN || '';
-                            const refMax = item.GIATRILONNHAT || item.GIATRI_MAX || '';
-                            const refDisplay = item.TRISOBINHTHUONG || '';
-
-                            let status = '';
-                            const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
-                            if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
-                                status = 'Cao';
-                            } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
-                                status = 'Thấp';
-                            }
-                            if (!status && parsedValue) {
-                                const numVal = parseFloat(String(parsedValue).replace(',', '.'));
-                                const numMin = parseFloat(String(refMin).replace(',', '.'));
-                                const numMax = parseFloat(String(refMax).replace(',', '.'));
-                                if (!isNaN(numVal)) {
-                                    if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
-                                    else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
-                                }
-                            }
-
-                            if (parsedValue) {
-                                allLabs.push({
-                                    sheetId: sheetId,
-                                    sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
-                                    testName: parsedTestName,
-                                    code: parsedCode,
-                                    value: parsedValue,
-                                    unit: parsedUnit,
-                                    refMin: refMin,
-                                    refMax: refMax,
-                                    refDisplay: refDisplay,
-                                    status: status
-                                });
-                            }
-                        });
-                    }
-                } catch (_e) {
-                    console.error('[API-Bridge] Error fetching details for sheet', sheetId, _e);
-                }
-            });
-
-            await Promise.all(detailPromises);
-
-            // Build CĐHA data — fetch detail for each sheet via NT.024.2
-            const imagingData = [];
-            const cdhaDetailPromises = uniqueCdha.map(async (sheet) => {
-                const sheetId = sheet.MAUBENHPHAMID;
-                const pacsId = sheet.SOPHIEU || sheet.IDPHIEU || sheet.MAUBENHPHAMID;
-                if (!sheetId) return;
-                try {
-                    const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
-                    if (rows.length > 0) {
-                        for (const item of rows) {
-                            const pacsItemId = item.GHICHU2 || item.MACACHUP || pacsId;
-                            imagingData.push({
-                                sheetId: pacsItemId,
-                                maubenhphamid: sheetId,
-                                sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
-                                madichvu: item.MADICHVU || item.MA || '',
-                                linkDicom: item.LINK_DICOM || sheet.LINK_DICOM || '',
-                                sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
-                                name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
-                                code: item.MADICHVU || item.MA || '',
-                                conclusion: item.KETLUAN || item.KETQUA || item.GIATRI_KETQUA || item.KETQUACLS || '',
-                                status: item.TRANGTHAI || item.TRANGTHAIKETQUA || sheet.TRANGTHAI || '',
-                                department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
-                            });
-                        }
-                    } else {
-                        imagingData.push({
-                            sheetId: pacsId,
-                            maubenhphamid: sheetId,
-                            sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
-                            madichvu: '',
-                            linkDicom: sheet.LINK_DICOM || '',
-                            sheetDate: sheet.NGAYMAUBENHPHAM || '',
-                            name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
-                            code: '', conclusion: '', status: sheet.TRANGTHAI || '', department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
-                        });
-                    }
-                } catch (_e) { /* silent */ }
-            });
-            await Promise.all(cdhaDetailPromises);
-
             const _context = {
                 rowId,
                 KHAMBENHID: khambenhId,
@@ -2813,10 +3177,397 @@
                 patientName: patientName
             };
 
+            // ══════════════════════════════════════════════════════
+            // THUẬT TOÁN DỰ PHÒNG TUẦN TỰ TÁCH BIỆT (SPLIT SEQUENTIAL FALLBACK)
+            // Bước 1: Thử API mới siêu tốc qua jabsorb dbCALL_SP_R để lấy danh sách phiếu
+            // ══════════════════════════════════════════════════════
+            let newApiSheets = [];
+            let newApiCdha = [];
+
+            try {
+                const jsonrpc = _jsonrpc || window.jsonrpc || window.parent?.jsonrpc || window.top?.jsonrpc;
+                if (jsonrpc && jsonrpc.AjaxJson && jsonrpc.AjaxJson.dbCALL_SP_R) {
+                    const paramJson = JSON.stringify({
+                        HOSOBENHANID: String(hsbaId || ''),
+                        KHAMBENHID: String(khambenhId || '')
+                    });
+
+                    const rawRows = jsonrpc.AjaxJson.dbCALL_SP_R('', 'GET_DV_KQ_CLS_HDG', paramJson, 0);
+                    if (Array.isArray(rawRows) && rawRows.length > 0) {
+                        rawRows.forEach(item => {
+                            if (Array.isArray(item) && item.length >= 2) {
+                                const sheetId = String(item[0]);
+                                const testName = String(item[1]);
+                                const mappedSheet = {
+                                    MAUBENHPHAMID: sheetId,
+                                    SOPHIEUID: sheetId,
+                                    TENXETNGHIEM: testName,
+                                    TENDICHVU: testName
+                                };
+
+                                const isCDHA = String(testName).toUpperCase().includes('CHỤP') || 
+                                               String(testName).toUpperCase().includes('SIÊU ÂM') || 
+                                               String(testName).toUpperCase().includes('X-QUANG') ||
+                                               String(testName).toUpperCase().includes('NỘI SOI');
+
+                                if (isCDHA) {
+                                    newApiCdha.push(mappedSheet);
+                                } else {
+                                    newApiSheets.push(mappedSheet);
+                                }
+                            }
+                        });
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A (New API): Fetched ${newApiSheets.length} XN, ${newApiCdha.length} CDHA sheets`);
+                    }
+                }
+            } catch (newApiErr) {
+                console.warn('[API-Bridge] Strategy A (New API) failed:', newApiErr.message || 'Unknown error');
+            }
+
+            // ══════════════════════════════════════════════════════
+            // LUỒNG XÈT NGHIỆM (XN) ĐỘC LẬP
+            // ══════════════════════════════════════════════════════
+            let allLabs = [];
+            let loadedXnFromNewApi = false;
+
+            if (newApiSheets.length > 0) {
+                try {
+                    const detailPromises = newApiSheets.map(async (sheet) => {
+                        const sheetId = sheet.MAUBENHPHAMID;
+                        if (!sheetId) return;
+
+                        const detailParams = {
+                            func: 'ajaxExecuteQueryPaging',
+                            uuid: uuid,
+                            params: ['NT.024.2'],
+                            options: [{ name: '[0]', value: String(sheetId) }]
+                        };
+                        const detailUrl = new URL(baseUrl, window.location.origin);
+                        detailUrl.searchParams.set('_search', 'false');
+                        detailUrl.searchParams.set('rows', '500');
+                        detailUrl.searchParams.set('page', '1');
+                        detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
+
+                        try {
+                            const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
+                            if (detailRes.ok) {
+                                const detailData = await detailRes.json();
+                                (detailData.rows || []).forEach(item => {
+                                    const getVal = (obj, keys) => {
+                                        if (!obj) return '';
+                                        for (const k of Object.keys(obj)) {
+                                            if (keys.includes(k.toUpperCase())) return obj[k];
+                                        }
+                                        return '';
+                                    };
+
+                                    const parsedTestName = getVal(item, ['TENXETNGHIEM', 'TENDICHVU_CHA', 'LOAIXETNGHIEM']) || getVal(sheet, ['TENXETNGHIEM', 'TENDICHVU', 'TEN_DICHVU_KYTHUAT', 'TENLOAICHIDINH']) || '';
+                                    const parsedCode = getVal(item, ['TEN', 'TENCHISO', 'TENDICHVU', 'TENCHIDINH', 'TENTONGHOP']) || '';
+                                    const parsedValue = getVal(item, ['GIATRI_KETQUA', 'KETQUA', 'KETQUACLS']) || '';
+                                    const parsedUnit = getVal(item, ['DONVITINH', 'DONVI']) || '';
+                                    const refMin = item.GIATRINHONHAT || item.GIATRI_MIN || '';
+                                    const refMax = item.GIATRILONNHAT || item.GIATRI_MAX || '';
+                                    const refDisplay = item.TRISOBINHTHUONG || '';
+
+                                    let status = '';
+                                    const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
+                                    if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                                        status = 'Cao';
+                                    } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                                        status = 'Thấp';
+                                    }
+                                    if (!status && parsedValue) {
+                                        const numVal = parseFloat(String(parsedValue).replace(',', '.'));
+                                        const numMin = parseFloat(String(refMin).replace(',', '.'));
+                                        const numMax = parseFloat(String(refMax).replace(',', '.'));
+                                        if (!isNaN(numVal)) {
+                                            if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
+                                            else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
+                                        }
+                                    }
+
+                                    if (parsedValue) {
+                                        allLabs.push({
+                                            sheetId: sheetId,
+                                            sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                            testName: parsedTestName,
+                                            code: parsedCode,
+                                            value: parsedValue,
+                                            unit: parsedUnit,
+                                            refMin: refMin,
+                                            refMax: refMax,
+                                            refDisplay: refDisplay,
+                                            status: status
+                                        });
+                                    }
+                                });
+                            }
+                        } catch (errDetail) {
+                            console.error('[API-Bridge] Error fetching detail for sheet:', errDetail.message || 'Unknown error');
+                        }
+                    });
+
+                    await Promise.all(detailPromises);
+
+                    if (allLabs.length > 0) {
+                        loadedXnFromNewApi = true;
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A XN Success: Loaded ${allLabs.length} details`);
+                    }
+                } catch (errXnDetails) {
+                    console.warn('[API-Bridge] Strategy A XN detail fetch failed:', errXnDetails.message || 'Unknown error');
+                }
+            }
+
+            // Fallback XN sang Cách cũ nếu XN cách mới trống/lỗi
+            if (!loadedXnFromNewApi) {
+                if (window.__ALADINN_DEBUG__) console.log('[API-Bridge] New API returned no XN detail. Triggering fallback for XN to Strategy B...');
+                allLabs = []; // Reset mảng xét nghiệm
+
+                const strategies = [];
+                if (hsbaId) {
+                    strategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                        { name: '[0]', value: '' },
+                        { name: '[1]', value: String(benhnhanId) },
+                        { name: '[2]', value: '1' },
+                        { name: '[3]', value: String(hsbaId) }
+                    ]));
+                }
+                if (khambenhId) {
+                    strategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                        { name: '[0]', value: '' },
+                        { name: '[1]', value: String(benhnhanId) },
+                        { name: '[2]', value: '1' },
+                        { name: '[3]', value: String(khambenhId) }
+                    ]));
+                }
+
+                try {
+                    const xnResults = await Promise.all(strategies).then(r => r.flat());
+                    const uniqueSheets = [];
+                    const seenSheetIds = new Set();
+                    for (const s of xnResults) {
+                        const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
+                        if (sid && !seenSheetIds.has(String(sid))) {
+                            seenSheetIds.add(String(sid));
+                            uniqueSheets.push(s);
+                        }
+                    }
+
+                    debugLog(`[API-Bridge] Fallback Old API XN sheets: ${uniqueSheets.length}`);
+
+                    if (uniqueSheets.length > 0) {
+                        const detailPromises = uniqueSheets.map(async (sheet) => {
+                            const sheetId = sheet.MAUBENHPHAMID;
+                            if (!sheetId) return;
+
+                            const detailParams = {
+                                func: 'ajaxExecuteQueryPaging',
+                                uuid: uuid,
+                                params: ['NT.024.2'],
+                                options: [{ name: '[0]', value: String(sheetId) }]
+                            };
+                            const detailUrl = new URL(baseUrl, window.location.origin);
+                            detailUrl.searchParams.set('_search', 'false');
+                            detailUrl.searchParams.set('rows', '500');
+                            detailUrl.searchParams.set('page', '1');
+                            detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
+
+                            try {
+                                const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
+                                if (detailRes.ok) {
+                                    const detailData = await detailRes.json();
+                                    (detailData.rows || []).forEach(item => {
+                                        const getVal = (obj, keys) => {
+                                            if (!obj) return '';
+                                            for (const k of Object.keys(obj)) {
+                                                if (keys.includes(k.toUpperCase())) return obj[k];
+                                            }
+                                            return '';
+                                        };
+
+                                        const parsedTestName = getVal(item, ['TENXETNGHIEM', 'TENDICHVU_CHA', 'LOAIXETNGHIEM']) || getVal(sheet, ['TENXETNGHIEM', 'TENDICHVU', 'TEN_DICHVU_KYTHUAT', 'TENLOAICHIDINH']) || '';
+                                        const parsedCode = getVal(item, ['TEN', 'TENCHISO', 'TENDICHVU', 'TENCHIDINH', 'TENTONGHOP']) || '';
+                                        const parsedValue = getVal(item, ['GIATRI_KETQUA', 'KETQUA', 'KETQUACLS']) || '';
+                                        const parsedUnit = getVal(item, ['DONVITINH', 'DONVI']) || '';
+                                        const refMin = item.GIATRINHONHAT || item.GIATRI_MIN || '';
+                                        const refMax = item.GIATRILONNHAT || item.GIATRI_MAX || '';
+                                        const refDisplay = item.TRISOBINHTHUONG || '';
+
+                                        let status = '';
+                                        const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
+                                        if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                                            status = 'Cao';
+                                        } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                                            status = 'Thấp';
+                                        }
+                                        if (!status && parsedValue) {
+                                            const numVal = parseFloat(String(parsedValue).replace(',', '.'));
+                                            const numMin = parseFloat(String(refMin).replace(',', '.'));
+                                            const numMax = parseFloat(String(refMax).replace(',', '.'));
+                                            if (!isNaN(numVal)) {
+                                                if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
+                                                else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
+                                            }
+                                        }
+
+                                        if (parsedValue) {
+                                            allLabs.push({
+                                                sheetId: sheetId,
+                                                sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                                testName: parsedTestName,
+                                                code: parsedCode,
+                                                value: parsedValue,
+                                                unit: parsedUnit,
+                                                refMin: refMin,
+                                                refMax: refMax,
+                                                refDisplay: refDisplay,
+                                                status: status
+                                            });
+                                        }
+                                    });
+                                }
+                            } catch (errDetail) {
+                                console.error('[API-Bridge] Fallback Error fetching XN detail for sheet:', errDetail.message || 'Unknown error');
+                            }
+                        });
+                        await Promise.all(detailPromises);
+                    }
+                } catch (errFallbackXn) {
+                    console.error('[API-Bridge] Fallback Strategy B XN failed:', errFallbackXn.message || 'Unknown error');
+                }
+            }
+
+            // ══════════════════════════════════════════════════════
+            // LUỒNG CHẨN ĐOÁN HÌNH ẢNH (CDHA) ĐỘC LẬP
+            // ══════════════════════════════════════════════════════
+            let imagingData = [];
+            let loadedCdhaFromNewApi = false;
+
+            if (newApiCdha.length > 0) {
+                try {
+                    const cdhaDetailPromises = newApiCdha.map(async (sheet) => {
+                        const sheetId = sheet.MAUBENHPHAMID;
+                        const pacsId = sheet.SOPHIEU || sheet.IDPHIEU || sheet.MAUBENHPHAMID;
+                        if (!sheetId) return;
+                        try {
+                            const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
+                            if (rows.length > 0) {
+                                for (const item of rows) {
+                                    const pacsItemId = item.GHICHU2 || item.MACACHUP || pacsId;
+                                    imagingData.push({
+                                        sheetId: pacsItemId,
+                                        maubenhphamid: sheetId,
+                                        sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
+                                        madichvu: item.MADICHVU || item.MA || '',
+                                        linkDicom: item.LINK_DICOM || sheet.LINK_DICOM || '',
+                                        sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                        name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
+                                        code: item.MADICHVU || item.MA || '',
+                                        conclusion: item.KETLUAN || item.KETQUA || item.GIATRI_KETQUA || item.KETQUACLS || '',
+                                        status: item.TRANGTHAI || item.TRANGTHAIKETQUA || sheet.TRANGTHAI || '',
+                                        department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
+                                    });
+                                }
+                            }
+                        } catch (_e) { /* silent */ }
+                    });
+                    await Promise.all(cdhaDetailPromises);
+
+                    if (imagingData.length > 0) {
+                        loadedCdhaFromNewApi = true;
+                        if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A CDHA Success: Loaded ${imagingData.length} details`);
+                    }
+                } catch (errCdhaDetails) {
+                    console.warn('[API-Bridge] Strategy A CDHA detail fetch failed:', errCdhaDetails.message || 'Unknown error');
+                }
+            }
+
+            // Fallback CDHA sang Cách cũ nếu CDHA cách mới trống/lỗi
+            if (!loadedCdhaFromNewApi) {
+                if (window.__ALADINN_DEBUG__) console.log('[API-Bridge] New API returned no CDHA detail. Triggering fallback for CDHA to Strategy B...');
+                imagingData = []; // Reset mảng chẩn đoán hình ảnh
+
+                const cdhaStrategies = [];
+                if (hsbaId) {
+                    cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                        { name: '[0]', value: '' },
+                        { name: '[1]', value: String(benhnhanId) },
+                        { name: '[2]', value: '2' },
+                        { name: '[3]', value: String(hsbaId) }
+                    ]));
+                }
+                if (khambenhId) {
+                    cdhaStrategies.push(_fetchSheets('NT.024.DSPHIEU', [
+                        { name: '[0]', value: '' },
+                        { name: '[1]', value: String(benhnhanId) },
+                        { name: '[2]', value: '2' },
+                        { name: '[3]', value: String(khambenhId) }
+                    ]));
+                }
+
+                try {
+                    const cdhaResults = await Promise.all(cdhaStrategies).then(r => r.flat());
+                    const uniqueCdha = [];
+                    const seenSheetIds = new Set();
+                    for (const s of cdhaResults) {
+                        const sid = s.MAUBENHPHAMID || s.SOPHIEUID;
+                        if (sid && !seenSheetIds.has(String(sid))) {
+                            seenSheetIds.add(String(sid));
+                            uniqueCdha.push(s);
+                        }
+                    }
+
+                    debugLog(`[API-Bridge] Fallback Old API CDHA sheets: ${uniqueCdha.length}`);
+
+                    if (uniqueCdha.length > 0) {
+                        const cdhaDetailPromises = uniqueCdha.map(async (sheet) => {
+                            const sheetId = sheet.MAUBENHPHAMID;
+                            const pacsId = sheet.SOPHIEU || sheet.IDPHIEU || sheet.MAUBENHPHAMID;
+                            if (!sheetId) return;
+                            try {
+                                const rows = await _fetchSheets('NT.024.2', [{ name: '[0]', value: String(sheetId) }]);
+                                if (rows.length > 0) {
+                                    for (const item of rows) {
+                                        const pacsItemId = item.GHICHU2 || item.MACACHUP || pacsId;
+                                        imagingData.push({
+                                            sheetId: pacsItemId,
+                                            maubenhphamid: sheetId,
+                                            sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
+                                            madichvu: item.MADICHVU || item.MA || '',
+                                            linkDicom: item.LINK_DICOM || sheet.LINK_DICOM || '',
+                                            sheetDate: sheet.NGAYMAUBENHPHAM || sheet.NGAYCHIDINH || '',
+                                            name: item.TEN || item.TENDICHVU || item.TEN_DICHVU_KYTHUAT || item.TENCHIDINH || sheet.TEN_DICHVU_KYTHUAT || '',
+                                            code: item.MADICHVU || item.MA || '',
+                                            conclusion: item.KETLUAN || item.KETQUA || item.GIATRI_KETQUA || item.KETQUACLS || '',
+                                            status: item.TRANGTHAI || item.TRANGTHAIKETQUA || sheet.TRANGTHAI || '',
+                                            department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
+                                        });
+                                    }
+                                } else {
+                                    imagingData.push({
+                                        sheetId: pacsId,
+                                        maubenhphamid: sheetId,
+                                        sophieu: sheet.SOPHIEU || sheet.IDPHIEU || '',
+                                        madichvu: '',
+                                        linkDicom: sheet.LINK_DICOM || '',
+                                        sheetDate: sheet.NGAYMAUBENHPHAM || '',
+                                        name: sheet.TEN_DICHVU_KYTHUAT || 'CĐHA',
+                                        code: '', conclusion: '', status: sheet.TRANGTHAI || '', department: sheet.KHOADIEUTRI || sheet.TENPHONG || ''
+                                    });
+                                }
+                            } catch (_e) { /* silent */ }
+                        });
+                        await Promise.all(cdhaDetailPromises);
+                    }
+                } catch (errFallbackCdha) {
+                    console.error('[API-Bridge] Fallback Strategy B CDHA failed:', errFallbackCdha.message || 'Unknown error');
+                }
+            }
+
             sendResult('FETCH_LABS_RESULT', rowId, { labsData: allLabs, imagingData, patientName, _context }, requestId);
 
         } catch (err) {
-            console.error('[API-Bridge] fetchLabs error:', err);
+            console.error('[API-Bridge] fetchLabs error:', err.message || 'Unknown error');
             sendResult('FETCH_LABS_RESULT', rowId, { labsData: [], imagingData: [], patientName: '', _context: null }, requestId);
         }
     }
