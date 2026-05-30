@@ -609,13 +609,13 @@ const VNPTClinicalFill = (function () {
             // Có tờ điều trị → lấy nguyên chẩn đoán
             chanDoanFull = raw.chanDoanMoiNhat;
             if (raw.chanDoanKemTheoTDT) {
-                chanDoanFull += '; ' + raw.chanDoanKemTheoTDT;
+                chanDoanFull += ';' + raw.chanDoanKemTheoTDT;
             }
         } else {
             // Không có tờ điều trị → lấy từ chẩn đoán chính + kèm theo
             chanDoanFull = raw.chanDoanBanDau || '';
             if (raw.chanDoanKemTheo) {
-                chanDoanFull += (chanDoanFull ? '; ' : '') + raw.chanDoanKemTheo;
+                chanDoanFull += (chanDoanFull ? ';' : '') + raw.chanDoanKemTheo;
             }
         }
 
@@ -729,7 +729,7 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     function _buildBenhAnData(raw) {
         // Chỉ lấy chẩn đoán khi vào khoa (Chẩn đoán ban đầu lúc tiếp nhận)
-        const diagSource = (raw.chanDoanBanDau || '') + (raw.chanDoanKemTheo ? '; ' + raw.chanDoanKemTheo : '');
+        const diagSource = (raw.chanDoanBanDau || '') + (raw.chanDoanKemTheo ? ';' + raw.chanDoanKemTheo : '');
 
         const parsed = parseICD(diagSource) || {};
 

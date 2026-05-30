@@ -1333,7 +1333,7 @@
                                 if (allDiagStrings.length > 0) {
                                     sheet.CHANDOAN = cleanDiag(allDiagStrings[0]);
                                     if (allDiagStrings.length > 1) {
-                                        sheet.CHANDOANKEMTHEO = allDiagStrings.slice(1).map(cleanDiag).join('; ');
+                                        sheet.CHANDOANKEMTHEO = allDiagStrings.slice(1).map(cleanDiag).join(';');
                                     }
                                 }
                             }
@@ -1669,7 +1669,7 @@
 
                         const diagnosisText = item.CHANDOAN || item.CHUANDOAN || item.BENHCHINH || '';
                         const subDiagnosisText = item.BENHKEMTHEO || item.CHANDOANKEMTHEO || item.PHU || '';
-                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join('; ');
+                        const combinedText = [diagnosisText, subDiagnosisText].filter(Boolean).join(';');
 
                         const matches = combinedIcd.match(/\b[A-Z]\d{2,3}(?:\.\d{1,2})?\b/g);
                         if (matches) {
@@ -2245,7 +2245,7 @@
         var chanDoanMoiNhat = chanDoanChinh;
         if (chanDoanKemTheo) {
             if (chanDoanMoiNhat) {
-                chanDoanMoiNhat += '; ' + chanDoanKemTheo;
+                chanDoanMoiNhat += ';' + chanDoanKemTheo;
             } else {
                 chanDoanMoiNhat = chanDoanKemTheo;
             }
