@@ -50,7 +50,7 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 ### 🛠️ Bản vá tích hợp API CLS (Hospital Safe Mode - API Bridge Update)
 
 - **Vá lỗi truy vấn TraCuuKetQuaHDG**: Chuyển đổi cuộc gọi API từ màn hình `TraCuuKetQuaHDG` cũ (bị lỗi cú pháp và thiếu tham số) sang Store Procedure chính thức **`GET_DV_KQ_CLS_HDG`** chạy qua cỗ máy jabsorb gốc của HIS (**`dbCALL_SP_R`**).
-- **Mô hình Dự phòng Tuần tự Tách biệt (Split Sequential Fallback Strategy)**: 
+- **Mô hình Dự phòng Tuần tự Tách biệt (Split Sequential Fallback Strategy)**:
   - Khắc phục lỗi hiển thị **XN (0)** khi bệnh nhân có cả Xét nghiệm (XN) và Chẩn đoán hình ảnh (CĐHA) nhưng XN bị lệch ID từ API mới còn CĐHA chạy thành công.
   - Tách biệt hoàn toàn luồng xử lý XN và CĐHA độc lập nhau. Luồng nào trống dữ liệu chi tiết khi lấy từ API mới sẽ tự động kích hoạt fallback tuần tự sang cách cũ (`NT.024.DSPHIEU` + `NT.024.2`) mà không gây ảnh hưởng tới luồng còn lại.
   - Đảm bảo tối ưu hóa tài nguyên máy chủ 100% bằng cách chỉ fallback khi thực sự cần thiết đối với từng loại dịch vụ cụ thể.
@@ -59,7 +59,7 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 ### 🛡️ Bản vá Bảo mật & Context Guard (Safety & Context Guard Patch)
 
 - **Sửa lỗi chặn điền bệnh án ngoại khoa (ContextGuard)**: Loại bỏ kiểm tra định dạng ID chứa dấu gạch dưới (`_`) trong `patient-context-guard.js`. VNPT HIS nội trú sử dụng số thứ tự dòng dạng chuỗi đơn thuần (ví dụ: `'3'`, `'16'`) làm `rowId` thay vì composite key, do đó việc bắt buộc chứa `_` đã vô tình chặn đứng các thao tác điền form. Cơ chế bảo vệ vẫn hoạt động an toàn tuyệt đối nhờ so khớp `initialSelectedPatientId` và chặn hồ sơ tạm `TEMP_`.
-- **Sửa lỗi định dạng thời gian "Ra khoa lúc" khi điền Xử trí**: Loại bỏ đuôi nhãn ảo ` (Đang soạn thảo)` khỏi chuỗi thời gian khi tự động điền vào datepicker của HIS. Aladinn tạo nhãn `(Đang soạn thảo)` cho các tờ điều trị thời gian thực chưa lưu để bác sĩ nhận biết, nhưng việc đưa nhãn text này vào ô ngày giờ của HIS gây lỗi hiển thị và xử lý ngày tháng. Chuỗi hiện được làm sạch thành định dạng chuẩn 100% trước khi điền vào datepicker, trong khi nhãn hiển thị trên Aladinn Clinical Overview vẫn được giữ nguyên để bác sĩ tham chiếu.
+- **Sửa lỗi định dạng thời gian "Ra khoa lúc" khi điền Xử trí**: Loại bỏ đuôi nhãn ảo `(Đang soạn thảo)` khỏi chuỗi thời gian khi tự động điền vào datepicker của HIS. Aladinn tạo nhãn `(Đang soạn thảo)` cho các tờ điều trị thời gian thực chưa lưu để bác sĩ nhận biết, nhưng việc đưa nhãn text này vào ô ngày giờ của HIS gây lỗi hiển thị và xử lý ngày tháng. Chuỗi hiện được làm sạch thành định dạng chuẩn 100% trước khi điền vào datepicker, trong khi nhãn hiển thị trên Aladinn Clinical Overview vẫn được giữ nguyên để bác sĩ tham chiếu.
 
 ### ✨ Tính năng mới & Cải tiến Lâm sàng Vượt trội (Aladinn Clinical OS Upgrade)
 
