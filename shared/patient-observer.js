@@ -25,8 +25,25 @@ HIS.PatientObserver = (function () {
     let _isRunning = false;
     let _retryTimer = null;
 
-    const GRID_SELECTOR = '#grdBenhNhan';
     const SELECTED_ROW = 'tr.ui-state-highlight';
+
+    /**
+     * Lấy ID bệnh nhân (KHAMBENHID hoặc tr.id) tương ứng với loại grid
+     */
+    function _getRowId(tr) {
+        if (!tr) return null;
+        if (tr.closest('#grdBenhNhan')) {
+            return tr.id && tr.id.length > 0 ? tr.id : null;
+        }
+        if (tr.closest('#grdDSBenhNhan')) {
+            const cell = tr.querySelector(
+                "td[aria-describedby$='_KHAMBENHID'], td[aria-describedby*='KHAMBENHID']"
+            );
+            const id = cell ? cell.textContent.trim() : '';
+            return id.length > 2 ? id : null;
+        }
+        return null;
+    }
 
     /**
      * Lấy tên bệnh nhân từ row
@@ -47,20 +64,21 @@ HIS.PatientObserver = (function () {
      * Phát sự kiện khi phát hiện row mới được chọn
      */
     function _handleSelection(rowElement) {
-        if (!rowElement || !rowElement.id) return;
-        if (rowElement.id === _lastSelectedId) return;
+        if (!rowElement) return;
+        const rowId = _getRowId(rowElement);
+        if (!rowId || rowId === _lastSelectedId) return;
 
-        _lastSelectedId = rowElement.id;
+        _lastSelectedId = rowId;
         const patientName = _extractPatientName(rowElement);
 
         HIS.EventBus.emit('patient:selected', {
-            rowId: rowElement.id,
+            rowId: rowId,
             rowElement: rowElement,
             patientName: patientName
         });
 
         if (HIS.Logger) {
-            HIS.Logger.info('Observer', `👤 Đã chọn: ${patientName || rowElement.id}`);
+            HIS.Logger.info('Observer', `👤 Đã chọn: ${patientName || rowId}`);
         }
     }
 
@@ -68,7 +86,7 @@ HIS.PatientObserver = (function () {
      * MutationObserver callback — xử lý thay đổi grid
      */
     function _onMutation(mutations) {
-        const grid = document.querySelector(GRID_SELECTOR);
+        const grid = document.querySelector('#grdBenhNhan') || document.querySelector('#grdDSBenhNhan');
         if (!grid) return;
 
         for (const mutation of mutations) {
@@ -105,7 +123,7 @@ HIS.PatientObserver = (function () {
         if (_isRunning) return;
 
         function _tryAttach() {
-            const grid = document.querySelector(GRID_SELECTOR);
+            const grid = document.querySelector('#grdBenhNhan') || document.querySelector('#grdDSBenhNhan');
             if (!grid) {
                 _retryTimer = setTimeout(_tryAttach, 2000);
                 return;
@@ -126,7 +144,7 @@ HIS.PatientObserver = (function () {
             HIS.EventBus.emit('grid:ready', { gridElement: grid });
 
             if (HIS.Logger) {
-                HIS.Logger.info('Observer', '🔭 Patient Observer đã khởi động');
+                HIS.Logger.info('Observer', `🔭 Patient Observer đã khởi động (${grid.id})`);
             }
 
             // Kiểm tra xem đã có row nào được chọn sẵn chưa
@@ -142,8 +160,8 @@ HIS.PatientObserver = (function () {
             if (!target) return;
 
             const tr = target.closest('tr.ui-widget-content');
-            if (tr && tr.id && tr.id.length > 5) {
-                const grid = tr.closest(GRID_SELECTOR);
+            if (tr) {
+                const grid = tr.closest('#grdBenhNhan') || tr.closest('#grdDSBenhNhan');
                 if (grid) {
                     _handleSelection(tr);
                 }
@@ -175,5 +193,32 @@ HIS.PatientObserver = (function () {
         return _lastSelectedId;
     }
 
-    return { start, stop, getCurrentSelection };
+    /**
+     * Re-emit patient:selected cho row đang chọn (bỏ qua _lastSelectedId check).
+     * Dùng khi Scanner.init() register listener SAU PatientObserver.start() đã fire event.
+     */
+    function forceReselect() {
+        const grid = document.querySelector('#grdBenhNhan') || document.querySelector('#grdDSBenhNhan');
+        if (!grid) return;
+        const activeRow = grid.querySelector(SELECTED_ROW);
+        if (!activeRow) return;
+        const rowId = _getRowId(activeRow);
+        if (!rowId) return;
+
+        // Force re-emit bất kể _lastSelectedId
+        _lastSelectedId = rowId;
+        const patientName = _extractPatientName(activeRow);
+
+        HIS.EventBus.emit('patient:selected', {
+            rowId: rowId,
+            rowElement: activeRow,
+            patientName: patientName
+        });
+
+        if (HIS.Logger) {
+            HIS.Logger.debug('Observer', `🔄 Force re-select: ${patientName || rowId}`);
+        }
+    }
+
+    return { start, stop, getCurrentSelection, forceReselect };
 })();

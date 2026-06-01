@@ -1,13 +1,28 @@
-# Project Plan: Tra cứu kết quả Cận lâm sàng API Integration
+# Project: Aladinn UI/UX Redesign
 
 ## Architecture
-- Module: `injected/api-bridge.js` (specifically `fetchLabs` function)
-- Goal: Fetch lab results efficiently in a single call using the new API, while keeping the old logic as a fallback.
+- `styles/aladinn-core.css`: Single source of truth for design tokens (CSS variables: `--al-*`) based on M3 Medical Blue theme. 0px flat border-radius.
+- `styles/aladinn-components.css`: Shared component styles using the design tokens.
+- `popup/popup.html` & `popup.css`: Extension popup UI.
+- `options/options.html` & `options/options.css`: Options page UI.
+- `content/*/`: Content scripts generating injected UI elements.
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| 1 | Explore & Impact Analysis | Run `gitnexus_impact` on `fetchLabs` and `api-bridge.js`. Analyze `TraCuuKetQuaHDG` API logic and old `fetchLabs` logic. Draft fix strategy. | none | PLANNED |
-| 2 | Implementation | Implement the new `fetchLabs` logic with try/catch and fallback in `injected/api-bridge.js`. Add/update unit tests if applicable. Run build & lint. | M1 | PLANNED |
-| 3 | Review & Challenge | Verify correctness, PHI safety, error handling, fallback logic, and tests. | M2 | PLANNED |
-| 4 | Final Audit | Forensic auditor checks integrity of implementation and tests. | M3 | PLANNED |
+| 1 | M1: Design System | `styles/aladinn-core.css`, `styles/aladinn-components.css` | none | IN_PROGRESS |
+| 2 | M2: Popup & Options | `popup/*`, `options/*` | M1 | PLANNED |
+| 3 | M3: Content Script UI | `content/*/*`, `styles/aladinn-*.css` | M1 | PLANNED |
+
+## Interface Contracts
+### Design System ↔ UI Components
+- All colors must use `--al-*` CSS variables instead of hardcoded hex values.
+- Shared components must use classes defined in `aladinn-components.css`.
+- 0px border-radius must be applied universally.
+
+## Code Layout
+- Design tokens: `styles/aladinn-core.css`
+- Component styles: `styles/aladinn-components.css`
+- Feature styles: `styles/aladinn-scanner.css`, `styles/aladinn-sign.css`, `styles/aladinn-voice.css`
+- Extension pages: `popup/`, `options/`
+- Content script logic: `content/scanner/`, `content/sign/`, `content/voice/`, etc.

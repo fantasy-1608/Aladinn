@@ -30,7 +30,9 @@ jobs:
         cache: 'pnpm'
 
     - name: Install Dependencies
-      run: pnpm install
+      run: |
+        pnpm install
+        pnpm rebuild
 
     - name: Run GitNexus Analyze
       run: npx gitnexus analyze

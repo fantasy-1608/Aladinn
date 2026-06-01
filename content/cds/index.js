@@ -677,16 +677,26 @@ window.addEventListener('ALADINN_FORCE_RESET_CACHE', () => {
 // Lắng nghe chọn bệnh nhân trên grid để prefetch
 document.addEventListener('click', (e) => {
     if (!isCDSEnabled) return; // Nếu CDS tắt thì không prefetch
-    const tr = e.target.closest('#grdBenhNhan tr.ui-widget-content');
-    if (tr && tr.id) {
-        const reqId = Date.now() + Math.random();
-        window.postMessage({
-            type: 'REQ_PREFETCH_DIAGNOSES',
-            requestId: reqId,
-            rowId: tr.id,
-            token: document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || ''),
-            nonce: window.__ALADINN_NONCE__
-        }, window.location.origin);
+    const tr = e.target.closest('#grdBenhNhan tr.ui-widget-content, #grdDSBenhNhan tr.ui-widget-content');
+    if (tr) {
+        let rowId = null;
+        if (tr.closest('#grdBenhNhan')) {
+            rowId = tr.id;
+        } else if (tr.closest('#grdDSBenhNhan')) {
+            const cell = tr.querySelector("td[aria-describedby$='_KHAMBENHID'], td[aria-describedby*='KHAMBENHID']");
+            if (cell) rowId = cell.textContent.trim();
+        }
+
+        if (rowId && rowId.length > 2) {
+            const reqId = Date.now() + Math.random();
+            window.postMessage({
+                type: 'REQ_PREFETCH_DIAGNOSES',
+                requestId: reqId,
+                rowId: rowId,
+                token: document.currentScript ? document.currentScript.getAttribute('data-aladinn-token') : (window.__ALADINN_BRIDGE_TOKEN__ || ''),
+                nonce: window.__ALADINN_NONCE__
+            }, window.location.origin);
+        }
     }
 });
 

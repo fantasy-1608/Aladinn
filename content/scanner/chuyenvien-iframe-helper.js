@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = '*';
+    var PARENT_ORIGIN = window.location.origin;
     var $ = window.jQuery || window.$;
 
     if (window._vnptChuyenVienHandler) {

@@ -247,6 +247,12 @@
                 if (window.Aladinn?.Scanner?.init) {
                     window.Aladinn.Scanner.init();
                     if (Logger) Logger.success('Main', '📊 Scanner module ✅');
+
+                    // Fix race condition: PatientObserver đã fire patient:selected
+                    // TRƯỚC khi Scanner register listener → re-trigger để Scanner nhận diện BN
+                    if (HIS.PatientObserver?.forceReselect) {
+                        HIS.PatientObserver.forceReselect();
+                    }
                 }
             } catch (err) {
                 if (Logger) Logger.error('Main', '📊 Scanner module lỗi:', err);
@@ -371,40 +377,93 @@
         // AMBIENT UI EFFECTS (Aesthetics)
         // ========================================
         if (window === window.top) {
-            let uiRetries = 0;
-            const applyAesthetics = setInterval(() => {
-                uiRetries++;
-                let found = false;
+            function injectAuraStyles(targetEl) {
+                targetEl.style.display = 'inline-flex';
+                targetEl.style.alignItems = 'center';
+                targetEl.style.gap = '6px';
+                targetEl.style.padding = '0';
+                targetEl.style.borderRadius = '0px';
+                targetEl.style.background = 'transparent';
+                targetEl.style.border = 'none';
+                targetEl.style.color = '#ffffff';
+                targetEl.style.fontWeight = '600';
+                targetEl.style.position = 'relative';
+                targetEl.style.zIndex = '1';
+                targetEl.style.boxShadow = 'none';
+                targetEl.style.fontSize = '12px';
                 
-                // Tìm element "Người dùng:" ở footer/status bar của HIS
-                // Dùng selector cụ thể thay vì querySelectorAll('*') — giảm từ ~5000 xuống ~200 elements
-                const elements = document.querySelectorAll('span, div, td, label, a, li, p, strong, em, b');
-                for (const el of elements) {
+                // Dọn dẹp badge VIP PRO cũ và icon cũ nếu có
+                const oldBadge = targetEl.querySelector('.aladinn-pro-badge');
+                if (oldBadge) oldBadge.remove();
+                const oldIcon = targetEl.querySelector('.aladinn-genie-icon');
+                if (oldIcon) oldIcon.remove();
+                
+                if (!targetEl.querySelector('.aladinn-active-dot')) {
+                    const dot = document.createElement('span');
+                    dot.className = 'aladinn-active-dot';
+                    dot.style.width = '7px';
+                    dot.style.height = '7px';
+                    dot.style.background = '#00e676';
+                    dot.style.borderRadius = '50%';
+                    dot.style.display = 'inline-block';
+                    dot.style.boxShadow = '0 0 6px #00e676';
+                    dot.style.marginRight = '2px';
+                    dot.style.flexShrink = '0';
                     
-                    if (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
-                        const text = el.textContent.trim();
+                    // Hiệu ứng nhịp thở nhấp nháy êm dịu (chu kỳ 3s)
+                    if (!document.getElementById('aladinn-active-dot-animation')) {
+                        const style = document.createElement('style');
+                        style.id = 'aladinn-active-dot-animation';
+                        style.textContent = `
+                            @keyframes aladinn-active-dot-breath {
+                                0% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                                50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px rgba(0, 230, 118, 0.8); }
+                                100% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    dot.style.animation = 'aladinn-active-dot-breath 3s infinite ease-in-out';
+                    
+                    // Chèn chấm xanh vào PHÍA TRƯỚC tên người dùng
+                    targetEl.insertBefore(dot, targetEl.firstChild);
+                }
+            }
+
+            function tryApplyAesthetics() {
+                let found = false;
+                // Tìm kiếm tập trung vào các footer hoặc thanh trạng thái thường dùng của HIS
+                const containers = document.querySelectorAll('#footer, .footer, #statusBar, .status-bar, [id*="user" i], [id*="nguoidung" i], body');
+                
+                for (const container of containers) {
+                    if (found) break;
+                    
+                    // Dùng xpath để tìm nhanh text có chứa "Người dùng" thay vì querySelectorAll toàn bộ trang
+                    const xPathResult = document.evaluate(
+                        ".//text()[contains(., 'Người dùng')]",
+                        container, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null
+                    );
+                    
+                    for (let i = 0; i < xPathResult.snapshotLength; i++) {
+                        const textNode = xPathResult.snapshotItem(i);
+                        const el = textNode.parentElement;
+                        if (!el || el.classList.contains('his-mystic-username-aura') || el.classList.contains('his-mystic-username-aura-applied')) continue;
                         
-                        // Trường hợp 1: "Người dùng:" và tên nằm ở 2 element khác nhau (thường gặp do khác màu)
+                        const text = textNode.textContent.trim();
                         if (text === 'Người dùng:' || text === 'Người dùng') {
-                            let nameNode = el.nextSibling;
-                            
-                            // Bỏ qua khoảng trắng
+                            let nameNode = textNode.nextSibling;
                             while (nameNode && nameNode.nodeType === Node.TEXT_NODE && nameNode.textContent.trim() === '') {
                                 nameNode = nameNode.nextSibling;
                             }
-                            
                             if (nameNode) {
                                 let targetEl;
-                                if (nameNode.nodeType === Node.TEXT_NODE) {
-                                    if (nameNode.textContent.trim().length > 0) {
-                                        targetEl = document.createElement('span');
-                                        targetEl.textContent = nameNode.textContent;
-                                        nameNode.parentNode.replaceChild(targetEl, nameNode);
-                                    }
+                                if (nameNode.nodeType === Node.TEXT_NODE && nameNode.textContent.trim().length > 0) {
+                                    targetEl = document.createElement('span');
+                                    targetEl.textContent = nameNode.textContent;
+                                    nameNode.parentNode.replaceChild(targetEl, nameNode);
                                 } else if (nameNode.nodeType === Node.ELEMENT_NODE) {
                                     targetEl = nameNode;
                                 }
-                                
                                 if (targetEl && !targetEl.classList.contains('his-mystic-username-aura')) {
                                     targetEl.classList.add('his-mystic-username-aura');
                                     injectAuraStyles(targetEl);
@@ -412,87 +471,38 @@
                                     break;
                                 }
                             }
-                        } 
-                        // Trường hợp 2: "Người dùng:" và tên nằm trong cùng 1 element
-                        else if (text.startsWith('Người dùng:') && text.includes('-')) {
-                            if (!el.classList.contains('his-mystic-username-aura-applied')) {
-                                const match = text.match(/(Người dùng:\s*)(.*?(?=\s+Khoa:|$))/);
-                                if (match) {
-                                    const username = match[2];
-                                    el.classList.add('his-mystic-username-aura-applied');
-                                    el.innerHTML = el.innerHTML.replace(
-                                        username, 
-                                        `<span class="his-mystic-username-aura">${username}</span>`
-                                    );
-                                    
-                                    const newTarget = el.querySelector('.his-mystic-username-aura');
-                                    if (newTarget) injectAuraStyles(newTarget);
-                                    
-                                    found = true;
-                                    break;
-                                }
+                        } else if (text.startsWith('Người dùng:') && text.includes('-')) {
+                            const match = text.match(/(Người dùng:\s*)(.*?(?=\s+Khoa:|$))/);
+                            if (match) {
+                                const username = match[2];
+                                el.classList.add('his-mystic-username-aura-applied');
+                                el.innerHTML = el.innerHTML.replace(
+                                    username, 
+                                    `<span class="his-mystic-username-aura">${username}</span>`
+                                );
+                                const newTarget = el.querySelector('.his-mystic-username-aura');
+                                if (newTarget) injectAuraStyles(newTarget);
+                                found = true;
+                                break;
                             }
                         }
                     }
                 }
-                
-                function injectAuraStyles(targetEl) {
-                    targetEl.style.display = 'inline-flex';
-                    targetEl.style.alignItems = 'center';
-                    targetEl.style.gap = '6px';
-                    targetEl.style.padding = '0';
-                    targetEl.style.borderRadius = '0px';
-                    targetEl.style.background = 'transparent';
-                    targetEl.style.border = 'none';
-                    targetEl.style.color = '#ffffff';
-                    targetEl.style.fontWeight = '600';
-                    targetEl.style.position = 'relative';
-                    targetEl.style.zIndex = '1';
-                    targetEl.style.boxShadow = 'none';
-                    targetEl.style.fontSize = '12px';
-                    
-                    // Dọn dẹp badge VIP PRO cũ và icon cũ nếu có
-                    const oldBadge = targetEl.querySelector('.aladinn-pro-badge');
-                    if (oldBadge) oldBadge.remove();
-                    const oldIcon = targetEl.querySelector('.aladinn-genie-icon');
-                    if (oldIcon) oldIcon.remove();
-                    
-                    if (!targetEl.querySelector('.aladinn-active-dot')) {
-                        const dot = document.createElement('span');
-                        dot.className = 'aladinn-active-dot';
-                        dot.style.width = '7px';
-                        dot.style.height = '7px';
-                        dot.style.background = '#00e676';
-                        dot.style.borderRadius = '50%';
-                        dot.style.display = 'inline-block';
-                        dot.style.boxShadow = '0 0 6px #00e676';
-                        dot.style.marginRight = '2px';
-                        dot.style.flexShrink = '0';
-                        
-                        // Hiệu ứng nhịp thở nhấp nháy êm dịu (chu kỳ 3s)
-                        if (!document.getElementById('aladinn-active-dot-animation')) {
-                            const style = document.createElement('style');
-                            style.id = 'aladinn-active-dot-animation';
-                            style.textContent = `
-                                @keyframes aladinn-active-dot-breath {
-                                    0% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
-                                    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px rgba(0, 230, 118, 0.8); }
-                                    100% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
-                                }
-                            `;
-                            document.head.appendChild(style);
-                        }
-                        dot.style.animation = 'aladinn-active-dot-breath 3s infinite ease-in-out';
-                        
-                        // Chèn chấm xanh vào PHÍA TRƯỚC tên người dùng
-                        targetEl.insertBefore(dot, targetEl.firstChild);
-                    }
-                }
+                return found;
+            }
 
-                if (found || uiRetries > 30) {
-                    clearInterval(applyAesthetics);
-                }
-            }, 1000);
+            if (!tryApplyAesthetics()) {
+                // Nếu chưa thấy, dùng MutationObserver thay vì setInterval
+                const observer = new MutationObserver((mutations, obs) => {
+                    if (tryApplyAesthetics()) {
+                        obs.disconnect(); // Tìm thấy thì dừng ngay
+                    }
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+                
+                // Fallback ngắt sau 30s nếu vẫn không thấy để tránh treo observer vĩnh viễn
+                setTimeout(() => observer.disconnect(), 30000);
+            }
         }
 
         if (Logger) Logger.success('Main', '🧞 Aladinn đã sẵn sàng!');

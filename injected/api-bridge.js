@@ -231,6 +231,34 @@
         return null;
     }
 
+    function _findDomElementBySelectors(selectors) {
+        if (!Array.isArray(selectors)) selectors = [selectors];
+        for (var s = 0; s < selectors.length; s++) {
+            var selector = selectors[s];
+            try {
+                var el = document.querySelector(selector);
+                if (el) return el;
+            } catch (_err) {}
+            var iframes = document.querySelectorAll('iframe');
+            for (var i = 0; i < iframes.length; i++) {
+                try {
+                    var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                    if (doc) {
+                        var innerEl = doc.querySelector(selector);
+                        if (innerEl) return innerEl;
+                    }
+                } catch (_e) {}
+            }
+        }
+        return null;
+    }
+
+    function _findDomValBySelectors(selectors) {
+        var el = _findDomElementBySelectors(selectors);
+        if (!el) return '';
+        return (el.value || el.textContent || '').trim();
+    }
+
     function _decodeHtmlEntities(str) {
         if (!str) return '';
         try {
@@ -296,6 +324,14 @@
                 const xhr = new XMLHttpRequest();
                 const url = `/vnpthis/RestService?_search=false&rows=${rows}&page=1&${sortPart}&postData=${encodeURIComponent(JSON.stringify(params))}`;
                 xhr.open('GET', url, true); // Chuyển sang async
+                
+                // Add 5-second timeout
+                xhr.timeout = 5000;
+                xhr.ontimeout = function () {
+                    console.warn('[API-Bridge] _fetchHisPagingRows timeout for query:', queryCode);
+                    resolve([]);
+                };
+                
                 xhr.onreadystatechange = function () {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
@@ -304,6 +340,9 @@
                             resolve([]);
                         }
                     }
+                };
+                xhr.onerror = function () {
+                    resolve([]);
                 };
                 xhr.send();
             } catch (_e) {
@@ -2393,7 +2432,7 @@
             // === PHẦN 1B: Fallback DOM — Đọc từ tab "Bệnh án" (Ngoại trú) ===
             // Nếu API trả rỗng hoặc đây là module ngoại trú, lấy từ các field trên trang
             var hasApiData = !!(result.lyDoVaoVien || result.quaTrinhBenhLy || result.khamToanThan);
-            if (!hasApiData) {
+            if (!hasApiData || isOutpatient) {
                 try {
                     var _domVal = function (id) {
                         var el = _findDomElement(id);
@@ -2413,27 +2452,35 @@
                     if (!result.huongXuLy) result.huongXuLy = _domVal('tabBenhAntxtHUONGXULY');
 
                     // Chẩn đoán từ DOM
-                    if (!result.chanDoanBanDau) {
-                        result.chanDoanBanDau = _domVal('tabBenhAntxtCHANDOANBANDAU');
+                    if (!result.chanDoanBanDau || isOutpatient) {
+                        result.chanDoanBanDau = _domVal('tabBenhAntxtCHANDOANBANDAU') || _findDomValBySelectors(['[id$="CHANDOANBANDAU" i]', '[id$="CHANDOANCHINH" i]']);
                     }
-                    if (!result.chanDoanBanDau) {
+                    if (!result.chanDoanBanDau || isOutpatient) {
                         // Fallback: bệnh chính
-                        var maBenhChinh = _domVal('tabBenhAntxtMABENHCHINH');
-                        var tenBenhChinh = _domVal('tabBenhAntxtBENHCHINH');
+                        var maBenhChinh = _domVal('tabBenhAntxtMABENHCHINH') || _findDomValBySelectors(['[id$="MABENHCHINH" i]']);
+                        var tenBenhChinh = _domVal('tabBenhAntxtBENHCHINH') || _findDomValBySelectors(['[id$="BENHCHINH" i]:not([id$="MABENHCHINH" i])']);
                         if (tenBenhChinh) {
-                            result.chanDoanBanDau = maBenhChinh ? maBenhChinh + '-' + tenBenhChinh : tenBenhChinh;
+                            if (tenBenhChinh.includes('-')) {
+                                result.chanDoanBanDau = tenBenhChinh;
+                            } else {
+                                result.chanDoanBanDau = maBenhChinh ? maBenhChinh + '-' + tenBenhChinh : tenBenhChinh;
+                            }
                         }
                     }
-                    if (!result.chanDoanKemTheo) {
-                        var maKemTheo = _domVal('tabBenhAntxtMABENHKEMTHEO');
-                        var tenKemTheo = _domVal('tabBenhAntxtBENHKEMTHEO');
+                    if (!result.chanDoanKemTheo || isOutpatient) {
+                        var maKemTheo = _domVal('tabBenhAntxtMABENHKEMTHEO') || _findDomValBySelectors(['[id$="MABENHKEMTHEO" i]']);
+                        var tenKemTheo = _domVal('tabBenhAntxtBENHKEMTHEO') || _findDomValBySelectors(['[id$="BENHKEMTHEO" i]:not([id$="MABENHKEMTHEO" i])', '[id$="CHANDOANKEMTHEO" i]']);
                         if (tenKemTheo) {
-                            result.chanDoanKemTheo = maKemTheo ? maKemTheo + '-' + tenKemTheo : tenKemTheo;
+                            if (tenKemTheo.includes('-') || tenKemTheo.includes(';')) {
+                                result.chanDoanKemTheo = tenKemTheo;
+                            } else {
+                                result.chanDoanKemTheo = maKemTheo ? maKemTheo + '-' + tenKemTheo : tenKemTheo;
+                            }
                         }
                     }
 
                     // Fallback chẩn đoán từ #divMsg area (lblMSG_BOSUNG chứa ICD code)
-                    if (!result.chanDoanMoiNhat) {
+                    if (!result.chanDoanMoiNhat || isOutpatient) {
                         var bosung = _domVal('lblMSG_BOSUNG');
                         if (bosung) {
                             // Format: "| 24/04/2026 08:34:57 | K65.0-Viêm phúc mạc cấp"

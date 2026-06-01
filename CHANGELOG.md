@@ -7,6 +7,17 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.1.1] — 2026-06-01
+
+### 🚀 Tối ưu hóa Hiệu năng (Performance Tuning)
+
+- **Hợp nhất Observers**: Xóa bỏ các `MutationObserver` trùng lặp trong scanner, chuyển sang dùng EventBus trung tâm (`HIS.PatientObserver`), giúp giảm tiêu thụ CPU.
+- **Loại bỏ Sync XHR**: Ngăn chặn tình trạng treo trình duyệt khi gọi API phân trang (`_fetchHisPagingRows`) bằng cách áp dụng Promise và timeout 5 giây.
+- **Nâng cấp Ambient UI**: Sử dụng XPath kết hợp MutationObserver 1 lần duy nhất thay vì vòng lặp `setInterval` quét toàn bộ DOM mỗi giây.
+- **Ngoại trú Prefetch**: Mở rộng module CDS Prefetch hỗ trợ click chọn bệnh nhân trên Grid Ngoại trú.
+
+---
+
 ## [2.1.0] — 2026-05-30
 
 ### ✨ AI Lâm sàng V3.0 (Clinical Intelligence Upgrade)

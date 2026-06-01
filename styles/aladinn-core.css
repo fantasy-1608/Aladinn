@@ -1,34 +1,30 @@
 /* ============================================================
    🧞 ALADINN DESIGN SYSTEM v2 — Material Design 3
    Source of Truth — All CSS Custom Properties & Shared Utilities
-   Seed Color: #1565C0 (Medical Blue — tương đồng HIS)
+   Seed Color: VNPT HIS Blue (#004F9E)
    ============================================================ */
-
-/* ── Fonts: Injected via JS using chrome.runtime.getURL() ──
-   (See content/main.js — @font-face removed from CSS to prevent
-    relative-path resolution errors in content scripts) */
 
 /* ── Design Tokens ── */
 :root {
-    /* ===== ALADINN HIS-IFY SYSTEM (Light Theme — VNPT HIS Blue) ===== */
+    /* ===== ALADINN M3 VNPT HIS BLUE THEME ===== */
 
-    /* Primary (Xanh chủ đạo HIS - rgb(0, 79, 158)) */
-    --al-primary:                #004f9e;
+    /* Primary */
+    --al-primary:                #004F9E;
     --al-on-primary:             #FFFFFF;
     --al-primary-container:      #e0f0ff;
-    --al-on-primary-container:   #004f9e;
+    --al-on-primary-container:   #004F9E;
 
-    /* Secondary (Màu nền phụ/Xám nút bấm HIS - rgb(238, 238, 238)) */
-    --al-secondary:              #eeeeee;
-    --al-on-secondary:           #333333;
-    --al-secondary-container:    #e5e5e5;
-    --al-on-secondary-container: #333333;
+    /* Secondary */
+    --al-secondary:              #1565C0;
+    --al-on-secondary:           #FFFFFF;
+    --al-secondary-container:    #D1E4FF;
+    --al-on-secondary-container: #0D47A1;
 
-    /* Tertiary (Xanh nhạt viền/trạng thái của HIS) */
-    --al-tertiary:               #a6c9e2;
-    --al-on-tertiary:            #333333;
-    --al-tertiary-container:     #eef6ff;
-    --al-on-tertiary-container:  #004f9e;
+    /* Tertiary */
+    --al-tertiary:               #0288D1;
+    --al-on-tertiary:            #FFFFFF;
+    --al-tertiary-container:     #B3E5FC;
+    --al-on-tertiary-container:  #01579B;
 
     /* Error */
     --al-error:                  #dc3545;
@@ -36,28 +32,28 @@
     --al-error-container:        #f8d7da;
     --al-on-error-container:     #721c24;
 
-    /* Surface (Nền sáng đục) */
+    /* Surface */
     --al-surface:                #FFFFFF;
-    --al-surface-dim:            #fcfcfc;
+    --al-surface-dim:            #f5f5f5;
     --al-surface-bright:         #FFFFFF;
-    --al-on-surface:             #333333;
-    --al-on-surface-variant:     #555555;
+    --al-on-surface:             #1C1B1F;
+    --al-on-surface-variant:     #49454F;
 
     /* Surface Containers (Tonal Elevation) */
     --al-surface-container-lowest:  #FFFFFF;
     --al-surface-container-low:     #f9f9f9;
     --al-surface-container:         #f5f5f5;
     --al-surface-container-high:    #eeeeee;
-    --al-surface-container-highest: #e5e5e5;
+    --al-surface-container-highest: #e0e0e0;
 
-    /* Outline (Viền xanh nhạt đặc trưng của HIS - rgb(166, 201, 226)) */
+    /* Outline */
     --al-outline:                #a6c9e2;
     --al-outline-variant:        #d3d3d3;
 
     /* Inverse */
-    --al-inverse-surface:        #333333;
-    --al-inverse-on-surface:     #FFFFFF;
-    --al-inverse-primary:        #004f9e;
+    --al-inverse-surface:        #313033;
+    --al-inverse-on-surface:     #F4EFF4;
+    --al-inverse-primary:        #9ECAFF;
 
     /* Scrim */
     --al-scrim:                  rgba(0, 0, 0, 0.2);
@@ -65,16 +61,15 @@
     /* ===== CUSTOM FUNCTIONAL COLORS ===== */
     --al-success:      #28a745;
     --al-warning:      #ffc107;
-    --al-info:         #17a2b8;
+    --al-info:         #004F9E;
 
     /* Nền nhạt cho trạng thái */
     --al-success-bg:   rgba(40, 167, 69, 0.08);
     --al-warning-bg:   rgba(255, 193, 7, 0.08);
     --al-error-bg:     rgba(220, 53, 69, 0.08);
-    --al-info-bg:      rgba(23, 162, 184, 0.08);
+    --al-info-bg:      rgba(0, 79, 158, 0.08);
 
     /* ===== BACKWARD COMPATIBILITY ALIASES ===== */
-    /* Đồng bộ các bí danh cũ sang giá trị HIS mới */
     --al-bg-deep:      var(--al-surface);
     --al-bg-surface:   var(--al-surface-container-low);
     --al-bg-elevated:  var(--al-surface-container);
@@ -94,33 +89,20 @@
     --al-border:       var(--al-outline);
     --al-border-hover: var(--al-primary);
 
-    /* HIS backward compat */
-    --his-primary:     var(--al-primary);
-    --his-success:     var(--al-success);
-    --his-danger:      var(--al-error);
-    --his-warning:     var(--al-warning);
-    --his-bg-primary:  var(--al-surface);
-    --his-bg-secondary: var(--al-surface-container-low);
-    --his-bg-tertiary: var(--al-surface-container);
-    --his-text-primary: var(--al-on-surface);
-    --his-text-secondary: var(--al-on-surface-variant);
-    --his-border:      var(--al-outline);
-    --his-glass-bg:    #FFFFFF;
-    --his-shadow:      var(--al-shadow-sm);
-    --his-glass-shadow: none;
-
     /* ===== TYPOGRAPHY ===== */
     --al-font:         "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
     --al-font-title:   "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
 
-    /* ===== SHAPE (HIS Square Style — 100% Phẳng vuông vức) ===== */
+    /* ===== SHAPE ===== */
+    /* V2 HIS-ify: Vuông vức cho cards/panels/modals/inputs */
     --al-radius-none:  0px;
     --al-radius-xs:    0px;
     --al-radius-sm:    0px;
     --al-radius-md:    0px;
     --al-radius-lg:    0px;
     --al-radius-xl:    0px;
-    --al-radius-pill:  9999px; /* Giữ lại chỉ cho nút tròn micro hoặc avatar */
+    /* Pill shape: Chỉ dùng cho chips toggle, tabs, avatar, badges */
+    --al-radius-pill:  9999px;
 
     /* ===== SPACING (8dp Base Grid) ===== */
     --al-space-050:    4px;
@@ -143,14 +125,13 @@
     --al-duration-medium:       300ms;
     --al-duration-long:         500ms;
 
-    /* ===== ELEVATION (HIS Flat Elevation) ===== */
+    /* ===== ELEVATION (Flat Elevation) ===== */
     --al-shadow-none:  none;
     --al-shadow-sm:    1px 1px 2px rgba(0,0,0,0.05);
     --al-shadow-md:    1px 1px 3px rgba(0,0,0,0.08);
     --al-shadow-lg:    2px 2px 5px rgba(0,0,0,0.1);
     --al-shadow-xl:    2px 2px 8px rgba(0,0,0,0.12);
     --al-shadow-gold:  0 4px 12px rgba(0, 79, 158, 0.15);
-
 
     /* Blur */
     --al-blur:         none;
@@ -161,7 +142,7 @@
     --al-state-pressed:  0.08;
     --al-state-dragged:  0.12;
 
-    /* ===== Z-INDEX SCALE (Content Scripts) ===== */
+    /* ===== Z-INDEX SCALE ===== */
     --al-z-base:       9000;
     --al-z-tooltip:    9100;
     --al-z-dashboard:  9200;
@@ -173,7 +154,6 @@
     --al-z-top:        9999;
 }
 
-
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
     *,
@@ -182,165 +162,4 @@
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
     }
-}
-
-/* ── Lucide Icon Base ── */
-.al-icon {
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    fill: none;
-    flex-shrink: 0;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.al-icon-sm {
-    width: 16px;
-    height: 16px;
-}
-
-.al-icon-lg {
-    width: 24px;
-    height: 24px;
-}
-
-/* ── Toast Container (shared across modules) ── */
-.al-toast-container {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: var(--al-z-toast);
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 8px;
-    pointer-events: none;
-}
-
-.al-toast {
-    padding: 12px 20px;
-    border-radius: var(--al-radius-sm);
-    font-family: var(--al-font);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--al-on-surface);
-    pointer-events: auto;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all var(--al-duration-medium) var(--al-ease-emphasized);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: 380px;
-    box-shadow: var(--al-shadow-md);
-    background: var(--al-surface-container-high);
-    border: 1px solid var(--al-outline-variant);
-}
-
-.al-toast.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.al-toast.success {
-    border-left: 3px solid var(--al-success);
-}
-
-.al-toast.warning {
-    border-left: 3px solid var(--al-warning);
-}
-
-.al-toast.error {
-    border-left: 3px solid var(--al-error);
-}
-
-.al-toast.info {
-    border-left: 3px solid var(--al-primary);
-}
-
-/* ── Surface Container Utility ── */
-.al-glass {
-    background: var(--al-surface-container-high);
-    border: 1px solid var(--al-outline-variant);
-    border-radius: var(--al-radius-xl);
-    box-shadow: var(--al-shadow-lg);
-}
-
-/* Content-script variant — needs transparency to show HIS beneath */
-.al-glass-overlay {
-    background: var(--al-bg-glass);
-    backdrop-filter: var(--al-blur);
-    -webkit-backdrop-filter: var(--al-blur);
-    border: 1px solid var(--al-outline-variant);
-    border-radius: var(--al-radius-xl);
-    box-shadow: var(--al-shadow-lg);
-}
-
-/* ── Utility: Scrollbar ── */
-.al-scrollbar::-webkit-scrollbar {
-    width: 4px;
-}
-
-.al-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.al-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(158, 202, 255, 0.15);
-    border-radius: 4px;
-}
-
-.al-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(158, 202, 255, 0.30);
-}
-
-/* ── Keyframes (shared, lightweight) ── */
-@keyframes al-fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes al-slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes al-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes al-pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* ── Spinner (shared) ── */
-.al-spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--al-outline-variant);
-    border-top-color: var(--al-primary);
-    border-radius: 50%;
-    animation: al-spin 0.8s linear infinite;
 }

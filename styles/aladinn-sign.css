@@ -6,9 +6,9 @@
     gap: 6px;
     padding: 6px 12px;
     margin-left: 8px;
-    background: #004f9e; /* Flat HIS Blue */
+    background: var(--al-primary); /* Flat HIS Blue */
     color: white;
-    border: 1px solid #003d7a;
+    border: 1px solid var(--al-primary);
     border-radius: 0px; /* 100% phẳng vuông vức */
     font-size: 12px;
     font-weight: 600;
@@ -37,113 +37,22 @@
 }
 
 /* Toast container - positioned ABOVE the panel */
-.his-toast-container {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    right: 0;
-    z-index: 2147483647;
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 8px;
-    width: 100%;
-    pointer-events: none;
-}
 
 /* Override voice CSS .his-toast which sets position:fixed bottom:90px */
-.his-toast-container .his-toast {
-    position: relative !important;
-    bottom: auto !important;
-    right: auto !important;
-    left: auto !important;
-    top: auto !important;
-}
 
-.his-toast {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    background: #ffffff;
-    border: 1px solid #a6c9e2; /* HIS border xanh nhạt */
-    border-radius: 0px; /* Vuông vức */
-    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-    color: #333333;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: "Segoe UI", Arial, sans-serif;
-    pointer-events: auto;
-    animation: toastFadeIn 0.3s cubic-bezier(0.2, 0.0, 0.0, 1.0);
-    transform-origin: bottom center;
-}
 
-.his-toast.toast-exit {
-    animation: toastFadeOut 0.25s cubic-bezier(0.2, 0.0, 0.0, 1.0) forwards;
-}
 
 /* Toast Icon */
-.his-toast-icon {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0px; /* Vuông vức */
-    font-size: 12px;
-}
 
-.his-toast-icon.success {
-    background: #eafaf1;
-    color: #28a745;
-    border: 1px solid #28a745;
-}
 
-.his-toast-icon.warning {
-    background: #fef9e7;
-    color: #ffc107;
-    border: 1px solid #ffc107;
-}
 
-.his-toast-icon.info {
-    background: #e8f4fd;
-    color: #004f9e;
-    border: 1px solid #a6c9e2;
-}
 
-.his-toast-icon.error {
-    background: #fdedec;
-    color: #dc3545;
-    border: 1px solid #dc3545;
-}
 
 /* Toast Content */
-.his-toast-content {
-    flex: 1;
-    min-width: 0;
-}
 
-.his-toast-message {
-    line-height: 1.4;
-    word-wrap: break-word;
-}
 
 /* Progress bar for toast auto-dismiss */
-.his-toast-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: rgba(128, 128, 128, 0.1);
-    border-radius: 0px;
-    overflow: hidden;
-}
 
-.his-toast-progress-bar {
-    height: 100%;
-    background: #004f9e; /* Xanh HIS */
-    animation: progressShrink var(--toast-duration, 3s) linear forwards;
-}
 
 /* M3 fade-in entrance */
 @keyframes toastFadeIn {
@@ -181,22 +90,22 @@
 /* Highlight hồ sơ chưa ký số */
 .his-unsigned-row,
 .his-unsigned-row td {
-    background-color: #fff3cd !important;
-    background: #fff3cd !important;
+    background-color: var(--al-warning-bg) !important;
+    background: var(--al-warning-bg) !important;
 }
 
 .his-unsigned-row {
-    border-left: 4px solid #ffc107 !important;
+    border-left: 4px solid var(--al-warning) !important;
     animation: pulseHighlight 2s ease-out;
 }
 
 @keyframes pulseHighlight {
     0% {
-        background-color: #ffeb3b !important;
+        background-color: var(--al-warning) !important;
     }
 
     100% {
-        background-color: #fff3cd !important;
+        background-color: var(--al-warning-bg) !important;
     }
 }
 
@@ -209,7 +118,7 @@
     cursor: pointer;
     vertical-align: middle;
     margin-right: 5px;
-    accent-color: #9ECAFF;
+    accent-color: var(--al-primary);
 }
 
 .his-checkbox:hover {
@@ -253,9 +162,9 @@
     width: 280px !important;
     min-width: 280px !important;
     max-width: 320px !important;
-    background: #ffffff !important;
-    border-radius: 0px !important; /* Vuông vức 100% */
-    border: 1px solid #a6c9e2 !important; /* Viền xanh nhạt HIS */
+    background: var(--al-surface) !important;
+    border-radius: 0px; /* Vuông vức 100% */
+    border: 1px solid var(--al-outline) !important; /* Viền xanh nhạt HIS */
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1) !important;
     z-index: 2147483600 !important;
     font-family: "Segoe UI", Arial, sans-serif !important;
@@ -266,7 +175,7 @@
 
 /* Hover elevation effect - removed for flat HIS style */
 .his-workflow-panel:hover {
-    border-color: #a6c9e2 !important;
+    border-color: var(--al-outline) !important;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -307,23 +216,8 @@
 }
 
 /* Header with HIS Blue */
-.his-panel-header {
-    background: #004f9e !important; /* Flat HIS Blue */
-    padding: 12px 14px;
-    color: #ffffff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: grab;
-    position: relative;
-    overflow: hidden;
-    border-radius: 0px !important;
-}
 
 /* Header shine removed — M3 clean look */
-.his-panel-header::before {
-    content: none;
-}
 
 .his-header-left {
     display: flex;
@@ -333,31 +227,20 @@
     z-index: 1;
 }
 
-.his-panel-title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-}
 
 .his-queue-badge {
-    background: #ffffff;
-    color: #004f9e;
+    background: var(--al-surface);
+    color: var(--al-primary);
     padding: 2px 8px;
     border-radius: 0px; /* Vuông vức */
     font-size: 11px;
     font-weight: 700;
     position: relative;
     z-index: 1;
-    border: 1px solid #003d7a;
+    border: 1px solid var(--al-primary);
 }
 
 /* Panel Body - Light Theme */
-.his-panel-body {
-    padding: 14px;
-    color: #333333;
-    border-radius: 0px;
-    overflow: hidden;
-}
 
 /* Animations for icons */
 .his-icon-spin {
@@ -383,111 +266,36 @@
 }
 
 /* Input groups - Light Theme */
-.his-input-group {
-    margin-bottom: 12px;
-}
 
 .his-label {
     display: block;
     font-size: 10px;
-    color: #666666;
+    color: var(--al-text-muted);
     font-weight: 600;
     text-transform: uppercase;
     margin-bottom: 4px;
     letter-spacing: 0.5px;
 }
 
-.his-input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
 
-.his-input-icon {
-    position: absolute;
-    left: 12px;
-    color: #666666;
-}
 
-.his-input {
-    width: 100%;
-    padding: 8px 12px 8px 36px;
-    background: #ffffff;
-    border: 1px solid #a6c9e2; /* Viền xanh nhạt HIS */
-    border-radius: 0px; /* Vuông vức */
-    font-size: 12px;
-    color: #333333;
-    transition: border-color 0.1s;
-    box-sizing: border-box;
-}
 
-.his-input::placeholder {
-    color: #999999;
-}
 
-.his-input:focus {
-    background: #ffffff;
-    border-color: #004f9e; /* Focus xanh đậm */
-    box-shadow: none;
-    outline: none;
-}
 
 .his-hint-text {
     font-size: 11px;
-    color: #666666;
+    color: var(--al-text-muted);
     line-height: 1.5;
     margin-bottom: 14px;
 }
 
 /* Updated Buttons - Light Theme phẳng đục */
-.his-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid transparent;
-    border-radius: 0px; /* Vuông vức 100% */
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.1s, border-color 0.1s;
-    position: relative;
-    overflow: hidden;
-}
 
-.his-btn::before {
-    content: none;
-}
 
-.his-btn:hover {
-    filter: brightness(0.9);
-}
 
-.his-btn-primary {
-    background: #004f9e; /* Flat HIS Blue */
-    color: #ffffff;
-    border-color: #003d7a;
-}
 
-.his-btn-primary:hover:not(:disabled) {
-    transform: none;
-    box-shadow: none;
-}
 
-.his-btn-primary:active:not(:disabled) {
-    transform: none;
-}
 
-.his-btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #eeeeee;
-    color: #999999;
-    border-color: #dddddd;
-    box-shadow: none;
-}
 
 .his-footer-actions {
     margin-top: 12px;
@@ -497,7 +305,7 @@
 
 .his-refresh-link {
     font-size: 12px;
-    color: #C2C6D2;
+    color: var(--al-text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -507,18 +315,18 @@
 }
 
 .his-refresh-link:hover {
-    color: #9ECAFF;
+    color: var(--al-primary);
 }
 
 /* Patient Card - HIS Flat Card */
 .his-patient-card {
     position: relative;
-    background: #eeeeee !important; /* Flat Gray HIS bg */
-    border: 1px solid #a6c9e2 !important; /* Viền xanh nhạt HIS */
-    border-radius: 0px !important; /* Vuông vức */
+    background: var(--al-surface-container-high) !important; /* Flat Gray HIS bg */
+    border: 1px solid var(--al-outline) !important; /* Viền xanh nhạt HIS */
+    border-radius: 0px; /* Vuông vức */
     padding: 12px 14px;
     margin-bottom: 12px;
-    color: #333333 !important;
+    color: var(--al-text) !important;
     overflow: hidden;
     box-shadow: none !important;
 }
@@ -540,7 +348,7 @@
     font-weight: 600;
     display: block;
     margin-bottom: 4px;
-    color: #666666;
+    color: var(--al-text-muted);
     letter-spacing: 0.5px;
 }
 
@@ -548,7 +356,7 @@
     font-size: 15px;
     font-weight: 700;
     letter-spacing: -0.3px;
-    color: #004f9e; /* Xanh HIS */
+    color: var(--al-primary); /* Xanh HIS */
 }
 
 /* Progress Section - Light Theme */
@@ -564,25 +372,25 @@
 }
 
 .his-percent-badge {
-    background: #e8f4fd;
+    background: var(--al-primary-container);
     font-size: 10px;
-    color: #004f9e;
+    color: var(--al-primary);
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 0px; /* Vuông vức */
-    border: 1px solid #a6c9e2;
+    border: 1px solid var(--al-outline);
 }
 
 .his-progress-container {
     height: 6px;
-    background: #dddddd;
+    background: var(--al-outline-variant);
     border-radius: 0px; /* Vuông vức */
     overflow: hidden;
 }
 
 .his-progress-bar {
     height: 100%;
-    background: #004f9e; /* Flat HIS Blue */
+    background: var(--al-primary); /* Flat HIS Blue */
     width: 0%;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 0px;
@@ -614,10 +422,10 @@
 }
 
 .his-stat-item {
-    background: #ffffff;
+    background: var(--al-surface);
     padding: 8px 6px;
     border-radius: 0px; /* Vuông vức */
-    border: 1px solid #a6c9e2; /* Viền xanh HIS */
+    border: 1px solid var(--al-outline); /* Viền xanh HIS */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -626,7 +434,7 @@
 }
 
 .his-stat-item:hover {
-    background: #f9f9f9;
+    background: var(--al-surface-container);
 }
 
 .his-stat-icon {
@@ -641,21 +449,21 @@
 }
 
 .his-stat-icon.success {
-    background: #eafaf1;
-    color: #28a745;
-    border-color: #28a745;
+    background: var(--al-success-bg);
+    color: var(--al-success);
+    border-color: var(--al-success);
 }
 
 .his-stat-icon.skip {
-    background: #f5f5f5;
-    color: #666666;
-    border-color: #cccccc;
+    background: var(--al-surface-container);
+    color: var(--al-text-muted);
+    border-color: var(--al-outline-variant);
 }
 
 .his-stat-icon.remain {
-    background: #fef9e7;
-    color: #d97706;
-    border-color: #ffc107;
+    background: var(--al-warning-bg);
+    color: var(--al-warning);
+    border-color: var(--al-warning);
 }
 
 .his-stat-info {
@@ -665,14 +473,14 @@
 .his-stat-label {
     display: block;
     font-size: 10px;
-    color: #666666;
+    color: var(--al-text-muted);
     font-weight: 500;
 }
 
 .his-stat-count {
     font-size: 14px;
     font-weight: 700;
-    color: #333333;
+    color: var(--al-text);
 }
 
 /* Action Groups - Light Theme */
@@ -682,47 +490,16 @@
     margin-bottom: 8px;
 }
 
-.his-btn-success {
-    background: #28a745; /* Flat Success Green */
-    color: white;
-    flex: 1.2;
-    border-color: #218838;
-}
 
-.his-btn-success:hover:not(:disabled) {
-    transform: none;
-    box-shadow: none;
-}
 
-.his-btn-secondary {
-    background: #eeeeee;
-    border: 1px solid #a6c9e2;
-    color: #333333;
-    flex: 1;
-}
 
-.his-btn-secondary:hover {
-    background: #e0e0e0;
-    border-color: #004f9e;
-}
 
-.his-btn-danger-outline {
-    background: transparent;
-    border: 1px solid #dc3545;
-    color: #dc3545;
-    margin-top: 6px;
-    padding: 8px;
-}
 
-.his-btn-danger-outline:hover {
-    background: #fdedec;
-    border-color: #bd2130;
-}
 
 /* Stat Pop Animation - Enhanced */
 .updated {
     animation: statPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    color: #9ECAFF !important;
+    color: var(--al-primary) !important;
     text-shadow: 0 0 10px rgba(158, 202, 255, 0.5);
 }
 
@@ -749,7 +526,7 @@
 }
 
 .his-processing-row {
-    box-shadow: inset 5px 0 0 #9ECAFF;
+    box-shadow: inset 5px 0 0 var(--al-primary);
 }
 
 /* Network Status Indicator Overlay */
@@ -759,7 +536,7 @@
     left: 50%;
     transform: translateX(-50%);
     padding: 8px 20px;
-    border-radius: 30px;
+    border-radius: 0px;
     font-size: 13px;
     font-weight: 700;
     z-index: 2147483647;
@@ -792,7 +569,7 @@
     gap: 6px;
     font-size: 11px;
     font-weight: 600;
-    color: #666;
+    color: var(--al-text-muted);
     margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -809,8 +586,8 @@
     max-height: 120px;
     overflow-y: auto;
     border-radius: 0px;
-    background: #f8f9fa;
-    border: 1px solid #d3d3d3;
+    background: var(--al-surface-container-low);
+    border: 1px solid var(--al-outline-variant);
 }
 
 .his-history-list::-webkit-scrollbar {
@@ -826,7 +603,7 @@
     padding: 12px;
     text-align: center;
     font-size: 11px;
-    color: #666;
+    color: var(--al-text-muted);
     font-style: italic;
 }
 
@@ -835,7 +612,7 @@
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid var(--al-surface-container-high);
     font-size: 12px;
     animation: slideIn 0.3s ease;
 }
@@ -857,19 +634,19 @@
 }
 
 .his-history-signed .his-history-icon {
-    background: #e6fcf5;
-    color: #099268;
+    background: var(--al-success-bg);
+    color: var(--al-success);
 }
 
 .his-history-skipped .his-history-icon {
-    background: #f1f3f5;
-    color: #495057;
+    background: var(--al-surface-container);
+    color: var(--al-text);
 }
 
 .his-history-name {
     flex: 1;
     font-weight: 500;
-    color: #333;
+    color: var(--al-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -890,16 +667,16 @@
 }
 
 .his-history-signed .his-history-status {
-    color: #099268;
+    color: var(--al-success);
 }
 
 .his-history-skipped .his-history-status {
-    color: #868e96;
+    color: var(--al-text-muted);
 }
 
 .his-history-time {
     font-size: 9px;
-    color: #adb5bd;
+    color: var(--al-text-muted);
 }
 
 @keyframes slideIn {
@@ -922,8 +699,8 @@
     width: 60px;
     height: 60px;
     background: rgba(158, 202, 255, 0.4);
-    border: 2px solid #9ECAFF;
-    border-radius: 50%;
+    border: 2px solid var(--al-primary);
+    border-radius: 0px;
     pointer-events: none;
     z-index: 2147483647;
     transform: translate(-50%, -50%) scale(0);
@@ -967,10 +744,10 @@
 /* Main HUD Label - VNPT HIS Flat Design */
 .his-hud-label {
     position: relative;
-    background: #ffffff;
+    background: var(--al-surface);
     padding: 10px 20px 10px 15px;
     border-radius: 0px;
-    color: #333333;
+    color: var(--al-text);
     font-family: "Segoe UI", Arial, sans-serif;
     font-size: 12px;
     font-weight: 600;
@@ -978,7 +755,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #004f9e;
+    border: 1px solid var(--al-primary);
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
@@ -1003,7 +780,7 @@
 .his-hud-dot {
     width: 8px;
     height: 8px;
-    background: #004f9e;
+    background: var(--al-primary);
     border-radius: 0px;
     box-shadow: none;
     animation: dotPulseBlue 1.5s ease-in-out infinite;
@@ -1020,7 +797,7 @@
 
 /* Text — clean static HIS color */
 .his-hud-label span {
-    color: #004f9e;
+    color: var(--al-primary);
 }
 
 /* Sparkle particles removed */
@@ -1050,7 +827,7 @@
 }
 
 .his-creator-match {
-    box-shadow: inset 4px 0 0 #10b981 !important;
+    box-shadow: inset 4px 0 0 var(--al-success) !important;
 }
 
 /* Mismatched row - red indicator */
@@ -1060,7 +837,7 @@
 }
 
 .his-creator-mismatch {
-    box-shadow: inset 4px 0 0 #ef4444 !important;
+    box-shadow: inset 4px 0 0 var(--al-error) !important;
     animation: mismatchPulse 1.5s ease-in-out 2;
 }
 
@@ -1085,12 +862,12 @@
     gap: 16px;
     padding: 16px 20px;
     max-width: 420px;
-    background: #fff5f5;
-    border: 1px solid #ffc9c9;
+    background: var(--al-error-container);
+    border: 1px solid var(--al-error-container);
     border-radius: 0px;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
     font-family: "Segoe UI", Arial, sans-serif;
-    color: #c92a2a;
+    color: var(--al-error);
     opacity: 0;
     pointer-events: auto;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1109,11 +886,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fa5252;
+    background: var(--al-error);
     border-radius: 0px;
     font-size: 20px;
     font-weight: 900;
-    color: #ffffff;
+    color: var(--al-surface);
     text-shadow: none;
     animation: none;
     box-shadow: none;
@@ -1128,7 +905,7 @@
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.5px;
-    color: #c92a2a;
+    color: var(--al-error);
     margin-bottom: 4px;
     text-transform: uppercase;
 }
@@ -1136,7 +913,7 @@
 .his-warning-detail {
     font-size: 12px;
     font-weight: 500;
-    color: #495057;
+    color: var(--al-text);
     line-height: 1.4;
     margin-bottom: 4px;
 }
@@ -1144,13 +921,13 @@
 .his-warning-expected {
     font-size: 11px;
     font-weight: 600;
-    color: #868e96;
+    color: var(--al-text-muted);
     margin-bottom: 8px;
 }
 
 .his-warning-hint {
     font-size: 11px;
-    color: #adb5bd;
+    color: var(--al-text-muted);
     font-style: italic;
 }
 
@@ -1158,19 +935,7 @@
 /* ADVANCED SIGN MODAL       */
 /* ========================= */
 
-.his-btn-advanced {
-    background: #eeeeee !important;
-    color: #333333 !important;
-    border: 1px solid #a6c9e2 !important;
-    border-radius: 0px !important;
-    box-shadow: none !important;
-    margin-top: 6px;
-}
 
-.his-btn-advanced:hover:not(:disabled) {
-    background: #e0e0e0 !important;
-    border-color: #a6c9e2 !important;
-}
 
 .his-advsign-overlay {
     position: fixed;
@@ -1194,8 +959,8 @@
 }
 
 .his-advsign-modal {
-    background: #ffffff;
-    border: 1px solid #004f9e;
+    background: var(--al-surface);
+    border: 1px solid var(--al-primary);
     border-radius: 0px;
     width: 520px;
     max-height: 85vh;
@@ -1203,7 +968,7 @@
     flex-direction: column;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     font-family: "Segoe UI", Arial, sans-serif;
-    color: #333333;
+    color: var(--al-text);
     transform: scale(0.98) translateY(5px);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1218,7 +983,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid var(--al-surface-container-high);
 }
 
 .his-advsign-header-left {
@@ -1228,7 +993,7 @@
 }
 
 .his-advsign-bolt {
-    color: #004f9e;
+    color: var(--al-primary);
     filter: none;
 }
 
@@ -1244,19 +1009,19 @@
 .his-advsign-title {
     font-size: 14px;
     font-weight: 700;
-    color: #004f9e;
+    color: var(--al-primary);
 }
 
 .his-advsign-subtitle {
     font-size: 11px;
-    color: #666666;
+    color: var(--al-text-muted);
     margin-top: 2px;
 }
 
 .his-advsign-close {
     background: none;
     border: none;
-    color: #666666;
+    color: var(--al-text-muted);
     font-size: 16px;
     cursor: pointer;
     padding: 4px 8px;
@@ -1265,8 +1030,8 @@
 }
 
 .his-advsign-close:hover {
-    background: #ffc9c9;
-    color: #c92a2a;
+    background: var(--al-error-container);
+    color: var(--al-error);
 }
 
 /* Stats */
@@ -1275,26 +1040,26 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     padding: 10px 16px;
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid var(--al-surface-container-high);
 }
 
 .his-advsign-stat {
     text-align: center;
     padding: 8px 4px;
     border-radius: 0px;
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    background: var(--al-surface-container-low);
+    border: 1px solid var(--al-surface-container-high);
 }
 
 .his-advsign-stat-num {
     font-size: 20px;
     font-weight: 800;
-    color: #333333;
+    color: var(--al-text);
 }
 
 .his-advsign-stat-label {
     font-size: 9px;
-    color: #666666;
+    color: var(--al-text-muted);
     font-weight: 500;
     margin-top: 2px;
     text-transform: uppercase;
@@ -1302,11 +1067,11 @@
 }
 
 .his-advsign-stat-done .his-advsign-stat-num {
-    color: #099268;
+    color: var(--al-success);
 }
 
 .his-advsign-stat-pending .his-advsign-stat-num {
-    color: #004f9e;
+    color: var(--al-primary);
 }
 
 /* Toolbar */
@@ -1315,7 +1080,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 16px;
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid var(--al-surface-container-high);
 }
 
 .his-advsign-selectall {
@@ -1323,22 +1088,22 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
-    color: #333333;
+    color: var(--al-text);
     cursor: pointer;
 }
 
 .his-advsign-selectall input[type="checkbox"] {
-    accent-color: #004f9e;
+    accent-color: var(--al-primary);
     width: 14px;
     height: 14px;
 }
 
 .his-advsign-selected-count {
     font-size: 11px;
-    color: #004f9e;
+    color: var(--al-primary);
     font-weight: 600;
-    background: #e6f2ff;
-    border: 1px solid #a6c9e2;
+    background: var(--al-primary-container);
+    border: 1px solid var(--al-outline);
     padding: 2px 8px;
     border-radius: 0px;
 }
@@ -1372,7 +1137,7 @@
     padding: 6px 8px;
     font-size: 11px;
     font-weight: 700;
-    color: #666666;
+    color: var(--al-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -1386,9 +1151,9 @@
 }
 
 .his-advsign-group-count {
-    background: #e6f2ff;
-    color: #004f9e;
-    border: 1px solid #a6c9e2;
+    background: var(--al-primary-container);
+    color: var(--al-primary);
+    border: 1px solid var(--al-outline);
     font-size: 10px;
     padding: 1px 7px;
     border-radius: 0px;
@@ -1407,8 +1172,8 @@
 }
 
 .his-advsign-item:hover {
-    background: #f1f3f5;
-    border-color: #e0e0e0;
+    background: var(--al-surface-container);
+    border-color: var(--al-surface-container-high);
 }
 
 .his-advsign-item-done {
@@ -1416,7 +1181,7 @@
 }
 
 .his-advsign-check {
-    accent-color: #004f9e;
+    accent-color: var(--al-primary);
     width: 15px;
     height: 15px;
     flex-shrink: 0;
@@ -1431,7 +1196,7 @@
     display: block;
     font-size: 12px;
     font-weight: 600;
-    color: #333333;
+    color: var(--al-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1440,7 +1205,7 @@
 .his-advsign-item-meta {
     display: block;
     font-size: 10px;
-    color: #666666;
+    color: var(--al-text-muted);
     margin-top: 2px;
 }
 
@@ -1455,28 +1220,28 @@
 }
 
 .his-advsign-unsigned {
-    background: #fff4e6;
-    color: #d9480f;
-    border: 1px solid #ffd8a8;
+    background: var(--al-warning-bg);
+    color: var(--al-warning);
+    border: 1px solid var(--al-warning-bg);
 }
 
 .his-advsign-signed {
-    background: #ebfbee;
-    color: #099268;
-    border: 1px solid #c3fae8;
+    background: var(--al-success-bg);
+    color: var(--al-success);
+    border: 1px solid var(--al-success-bg);
 }
 
 .his-advsign-signing {
-    background: #e6f2ff;
-    color: #004f9e;
-    border: 1px solid #a6c9e2;
+    background: var(--al-primary-container);
+    color: var(--al-primary);
+    border: 1px solid var(--al-outline);
     animation: signingPulse 1.5s ease-in-out infinite;
 }
 
 .his-advsign-failed {
-    background: #fff5f5;
-    color: #c92a2a;
-    border: 1px solid #ffc9c9;
+    background: var(--al-error-container);
+    color: var(--al-error);
+    border: 1px solid var(--al-error-container);
 }
 
 @keyframes signingPulse {
@@ -1498,12 +1263,12 @@
 .his-advsign-empty-text {
     font-size: 15px;
     font-weight: 700;
-    color: #099268;
+    color: var(--al-success);
 }
 
 .his-advsign-empty-sub {
     font-size: 11px;
-    color: #666666;
+    color: var(--al-text-muted);
     margin-top: 6px;
 }
 
@@ -1512,38 +1277,16 @@
     display: flex;
     gap: 10px;
     padding: 10px 16px;
-    border-top: 1px solid #eeeeee;
+    border-top: 1px solid var(--al-surface-container-high);
 }
 
-.his-btn-advanced-confirm {
-    flex: 2;
-    background: #004f9e !important;
-    color: white !important;
-    border: 1px solid #004f9e !important;
-    border-radius: 0px !important;
-    box-shadow: none !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-family: "Segoe UI", Arial, sans-serif;
-}
 
-.his-btn-advanced-confirm:hover:not(:disabled) {
-    background: #003d7a !important;
-    border-color: #003d7a !important;
-    box-shadow: none !important;
-}
 
-.his-btn-advanced-confirm:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 
 /* Progress Bar */
 .his-advsign-progress {
     padding: 10px 16px;
-    border-top: 1px solid #eeeeee;
+    border-top: 1px solid var(--al-surface-container-high);
 }
 
 .his-advsign-progress-header {
@@ -1556,14 +1299,14 @@
 
 .his-advsign-progress-bar-container {
     height: 6px;
-    background: #eeeeee;
+    background: var(--al-surface-container-high);
     border-radius: 0px;
     overflow: hidden;
 }
 
 .his-advsign-progress-bar {
     height: 100%;
-    background: #004f9e;
+    background: var(--al-primary);
     width: 0%;
     transition: width 0.5s ease;
     border-radius: 0px;
@@ -1582,8 +1325,8 @@
     width: 40px;
     height: 40px;
     border: 3px solid rgba(0, 79, 158, 0.15);
-    border-top-color: #004f9e;
-    border-radius: 50%;
+    border-top-color: var(--al-primary);
+    border-radius: 0px;
     animation: spin 0.8s linear infinite;
 }
 
@@ -1593,7 +1336,7 @@
 
 .his-advsign-loading-text {
     font-size: 13px;
-    color: #666666;
+    color: var(--al-text-muted);
 }
 
 /* ── Username aura — Aladinn Glassmorphic Capsule Highlight ── */
@@ -1602,7 +1345,7 @@
     display: inline-flex !important;
     align-items: center !important;
     z-index: 1 !important;
-    color: #ffffff !important;
+    color: var(--al-surface) !important;
 }
 
 /* icon-pulse kept functional but with HIS blue */

@@ -6,52 +6,21 @@
 /* ========================================
    Design Tokens & Variables
 ======================================== */
-:root {
-    /* Core Palette: VNPT HIS Blue */
-    --vnpt-primary: #004f9e; 
-    --vnpt-primary-hover: #003d7a;
-    --vnpt-secondary: #004f9e;
-
-    /* Functional Colors */
-    --vnpt-success: #28a745;
-    --vnpt-warning: #ffc107;
-    --vnpt-danger: #dc3545;
-    --vnpt-info: #17a2b8;
-
-    /* Glass Effect - M3 Dark Surface */
-    --vnpt-glass-bg: #ffffff;
-    --vnpt-glass-border: #a6c9e2;
-    --vnpt-glass-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-    --vnpt-glass-blur: none;
-
-    /* Text */
-    --vnpt-text-main: #333333;
-    --vnpt-text-muted: #666666;
-    --vnpt-text-light: #ffffff;
-
-    /* Layout */
-    --vnpt-radius: 0px; /* 100% Phẳng vuông vức */
-    --vnpt-spacing: 12px;
-    --vnpt-font: "Segoe UI", Arial, sans-serif;
-
-    /* Transitions */
-    --vnpt-ease: cubic-bezier(0.2, 0, 0, 1);
-}
 
 /* Dark Mode — Đồng bộ luôn sang giao diện sáng vì HIS không có Dark Mode */
 body.vnpt-dark-mode {
-    --vnpt-glass-bg: #ffffff;
-    --vnpt-glass-border: #a6c9e2;
-    --vnpt-glass-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-    --vnpt-text-main: #333333;
-    --vnpt-text-muted: #666666;
+    --al-surface: var(--al-surface);
+    --al-outline: var(--al-outline);
+    --al-shadow-md: 1px 1px 3px rgba(0, 0, 0, 0.1);
+    --al-text: var(--al-text);
+    --al-text-muted: var(--al-text-muted);
 }
 
 /* ========================================
    Main Panel Container
  ======================================== */
 #vnpt-scanner-ui {
-    font-family: var(--vnpt-font);
+    font-family: var(--al-font);
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -59,24 +28,24 @@ body.vnpt-dark-mode {
     width: 260px;
 
     /* Flat Light Panel */
-    background: var(--vnpt-glass-bg);
-    border: 1px solid var(--vnpt-glass-border);
-    border-radius: var(--vnpt-radius);
-    box-shadow: var(--vnpt-glass-shadow);
+    background: var(--al-surface);
+    border: 1px solid var(--al-outline);
+    border-radius: 0px;
+    box-shadow: var(--al-shadow-md);
 
-    padding: var(--vnpt-spacing);
+    padding: var(--al-space-150);
     display: flex;
     flex-direction: column;
-    gap: var(--vnpt-spacing);
+    gap: var(--al-space-150);
 
     /* Animation & Interaction */
-    transition: all 0.2s var(--vnpt-ease);
-    color: var(--vnpt-text-main);
+    transition: all 0.2s var(--al-ease);
+    color: var(--al-text);
     user-select: none;
     cursor: grab;
 
     /* Smooth entrance */
-    animation: vnpt-float-in 0.3s var(--vnpt-ease);
+    animation: vnpt-float-in 0.3s var(--al-ease);
 }
 
 #vnpt-scanner-ui:active {
@@ -104,8 +73,8 @@ body.vnpt-dark-mode {
     border-radius: 0px; /* Vuông vức */
     overflow: hidden;
     cursor: pointer;
-    background: var(--vnpt-primary);
-    box-shadow: var(--vnpt-glass-shadow);
+    background: var(--al-primary);
+    box-shadow: var(--al-shadow-md);
 }
 
 #vnpt-scanner-ui.minimized:hover {
@@ -143,13 +112,13 @@ body.vnpt-dark-mode {
     justify-content: space-between;
     align-items: center;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--vnpt-glass-border);
+    border-bottom: 1px solid var(--al-outline);
 }
 
 .vnpt-ui-title {
     font-size: 14px;
     font-weight: bold;
-    color: var(--vnpt-primary);
+    color: var(--al-primary);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -158,9 +127,9 @@ body.vnpt-dark-mode {
 .vnpt-ui-version {
     font-size: 9px;
     padding: 2px 6px;
-    background: var(--vnpt-glass-border);
+    background: var(--al-outline);
     border-radius: 0px;
-    color: var(--vnpt-primary);
+    color: var(--al-primary);
     font-weight: bold;
 }
 
@@ -172,7 +141,7 @@ body.vnpt-dark-mode {
     width: 28px;
     height: 28px;
     border-radius: 0px;
-    color: var(--vnpt-text-muted);
+    color: var(--al-text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -184,67 +153,40 @@ body.vnpt-dark-mode {
 .btn-minimize:hover,
 .btn-dark-toggle:hover {
     background: rgba(128, 128, 128, 0.1);
-    color: var(--vnpt-text-main);
+    color: var(--al-text);
 }
 
 /* ========================================
    Action Buttons
 ======================================== */
-.vnpt-btn {
-    position: relative;
-    border: 1px solid transparent;
-    padding: 10px 14px;
-    border-radius: var(--vnpt-radius); /* 0px */
-    font-weight: 600;
-    font-size: 12px;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: background 0.1s, border-color 0.1s;
-    overflow: hidden;
-}
 
 /* Bỏ hiệu ứng Glow hiện đại để giống HIS 100% */
-.vnpt-btn::after {
-    content: none;
-}
 
-.vnpt-btn:hover {
-    transform: none;
-    box-shadow: none;
-    filter: brightness(0.9);
-}
 
-.vnpt-btn:active {
-    transform: none;
-}
 
 /* Variant: Scan Room (Green phẳng giống HIS) */
 .btn-room {
-    background: var(--vnpt-success); /* #28a745 */
-    border-color: #218838;
+    background: var(--al-success); /* var(--al-success) */
+    border-color: var(--al-success);
 }
 
 /* Variant: Scan Drug (Xanh đậm phẳng của HIS) */
 .btn-drug {
-    background: var(--vnpt-primary); /* #004f9e */
-    border-color: #003d7a;
+    background: var(--al-primary); /* var(--al-primary) */
+    border-color: var(--al-primary);
 }
 
 /* Variant: Stop (Đỏ phẳng dừng quét) */
 .btn-stop {
-    background: var(--vnpt-danger); /* #dc3545 */
-    border-color: #bd2130;
+    background: var(--al-error); /* var(--al-error) */
+    border-color: var(--al-error);
 }
 
 /* Variant: Clear (Xám phẳng đục giống nút HIS) */
 .btn-clear {
-    background: #eeeeee;
-    border-color: var(--vnpt-glass-border); /* #a6c9e2 */
-    color: var(--vnpt-text-main); /* #333333 */
+    background: var(--al-surface-container-high);
+    border-color: var(--al-outline); /* var(--al-outline) */
+    color: var(--al-text); /* var(--al-text) */
 }
 
 /* ========================================
@@ -258,7 +200,7 @@ body.vnpt-dark-mode {
 
 .vnpt-shortcuts-help {
     font-size: 10px;
-    color: var(--vnpt-text-muted);
+    color: var(--al-text-muted);
     text-align: center;
     background: rgba(128, 128, 128, 0.05);
     padding: 8px;
@@ -267,8 +209,8 @@ body.vnpt-dark-mode {
 }
 
 kbd {
-    background: var(--vnpt-text-main);
-    color: var(--vnpt-text-light);
+    background: var(--al-text);
+    color: var(--al-on-primary);
     padding: 2px 5px;
     border-radius: 0px;
     font-family: inherit;
@@ -285,7 +227,7 @@ kbd {
     font-size: 11px;
     background: rgba(16, 185, 129, 0.1);
     /* Emerald tint */
-    color: var(--vnpt-success);
+    color: var(--al-success);
     padding: 8px;
     border-radius: 0px;
     border: 1px solid rgba(16, 185, 129, 0.2);
@@ -299,7 +241,7 @@ kbd {
     top: 0;
     left: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--vnpt-info), var(--vnpt-secondary), var(--vnpt-primary));
+    background: linear-gradient(90deg, var(--al-info), var(--al-secondary), var(--al-primary));
     background-size: 200% 100%;
     z-index: 100000;
     transform-origin: 0 50%;
@@ -327,12 +269,12 @@ tr.scanning-active-row td {
 }
 
 tr.scanning-active-row td:first-child {
-    border-left: 3px solid var(--vnpt-primary) !important;
+    border-left: 3px solid var(--al-primary) !important;
 }
 
 /* Unsent Warning Cell */
 .vnpt-unsent-cell {
-    background: #fef2f2 !important;
+    background: var(--al-error-container) !important;
     /* Soft red base */
     position: relative;
     overflow: hidden;
@@ -342,7 +284,7 @@ tr.scanning-active-row td:first-child {
     content: '';
     position: absolute;
     inset: 0;
-    border: 2px solid var(--vnpt-danger);
+    border: 2px solid var(--al-error);
     animation: vnpt-pulse-border 2s infinite;
     pointer-events: none;
 }
@@ -353,7 +295,7 @@ tr.scanning-active-row td:first-child {
     bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--vnpt-danger);
+    background: var(--al-error);
     color: white;
     font-size: 9px;
     font-weight: 700;
@@ -406,8 +348,8 @@ tr.scanning-active-row td:first-child {
     width: 48px;
     height: 48px;
     border: 4px solid rgba(255, 255, 255, 0.1);
-    border-left-color: var(--vnpt-primary);
-    border-radius: 50%;
+    border-left-color: var(--al-primary);
+    border-radius: 0px;
     animation: vnpt-spin 1s cubic-bezier(0.55, 0.055, 0.675, 0.19) infinite;
 }
 
@@ -419,7 +361,7 @@ tr.scanning-active-row td:first-child {
 
 /* Checkbox/Modern inputs in panel */
 input[type="checkbox"] {
-    accent-color: var(--vnpt-primary);
+    accent-color: var(--al-primary);
 }
 
 /* Scrollbar within panel if needed */
@@ -429,7 +371,7 @@ input[type="checkbox"] {
 
 .vnpt-ui-content::-webkit-scrollbar-thumb {
     background: rgba(128, 128, 128, 0.3);
-    border-radius: 4px;
+    border-radius: 0px;
 }
 
 /* ========================================
@@ -484,10 +426,10 @@ input[type="checkbox"] {
     top: 100%;
     left: 0;
     min-width: 220px;
-    background: #ffffff;
+    background: var(--al-surface);
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--vnpt-glass-border); /* #a6c9e2 */
-    border-radius: var(--vnpt-radius); /* 0px */
+    border: 1px solid var(--al-outline); /* var(--al-outline) */
+    border-radius: 0px; /* 0px */
     display: none;
     flex-direction: column;
     z-index: 999999;
@@ -514,7 +456,7 @@ input[type="checkbox"] {
 
 .vnpt-native-action {
     padding: 8px 16px;
-    color: #333 !important;
+    color: var(--al-text) !important;
     font-size: 13px;
     display: flex;
     align-items: center;
@@ -526,8 +468,8 @@ input[type="checkbox"] {
 }
 
 .vnpt-native-action:hover {
-    background-color: #f5f5f5;
-    color: #007bff !important;
+    background-color: var(--al-surface-container);
+    color: var(--al-primary) !important;
     /* VNPT Blue */
     text-decoration: none;
 }
@@ -540,15 +482,15 @@ input[type="checkbox"] {
 
 /* Icon colors */
 #native-scan-drug i {
-    color: #e74c3c;
+    color: var(--al-error);
 }
 
 #native-scan-room i {
-    color: #2ecc71;
+    color: var(--al-success);
 }
 
 #native-toggle-ui i {
-    color: #95a5a6;
+    color: var(--al-text-muted);
 }
 
 /* Separator */
@@ -556,7 +498,7 @@ input[type="checkbox"] {
     height: 1px;
     margin: 5px 0;
     overflow: hidden;
-    background-color: #e5e5e5;
+    background-color: var(--al-surface-container-highest);
 }
 
 /* Hide floating UI if native menu is active */
@@ -572,10 +514,10 @@ body.vnpt-native-active #vnpt-scanner-ui {
 ======================================== */
 .vnpt-chart-tooltip {
     position: fixed;
-    background: var(--vnpt-glass-bg);
-    border: 1px solid var(--vnpt-glass-border);
-    border-radius: var(--vnpt-radius); /* 0px */
-    box-shadow: var(--vnpt-glass-shadow);
+    background: var(--al-surface);
+    border: 1px solid var(--al-outline);
+    border-radius: 0px; /* 0px */
+    box-shadow: var(--al-shadow-md);
     padding: 16px;
     z-index: 1000000;
     width: 320px;
@@ -591,22 +533,22 @@ body.vnpt-native-active #vnpt-scanner-ui {
     justify-content: space-between;
     align-items: center;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--vnpt-glass-border);
+    border-bottom: 1px solid var(--al-outline);
     margin-bottom: 12px;
 }
 
 .vnpt-chart-header span:first-child {
     font-weight: 700;
-    color: var(--vnpt-text-main);
+    color: var(--al-text);
     font-size: 14px;
     /* Larger font */
 }
 
 .vnpt-chart-total {
     background: rgba(16, 185, 129, 0.1);
-    color: var(--vnpt-success);
+    color: var(--al-success);
     padding: 4px 8px;
-    border-radius: var(--vnpt-radius); /* 0px */
+    border-radius: 0px; /* 0px */
     font-size: 11px;
     font-weight: 700;
     border: 1px solid rgba(16, 185, 129, 0.2);
@@ -634,7 +576,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
 .vnpt-chart-label {
     width: 50px;
     text-align: right;
-    color: var(--vnpt-text-muted);
+    color: var(--al-text-muted);
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -646,14 +588,14 @@ body.vnpt-native-active #vnpt-scanner-ui {
     background: rgba(128, 128, 128, 0.1);
     height: 8px;
     /* Thicker bar */
-    border-radius: var(--vnpt-radius); /* 0px */
+    border-radius: 0px; /* 0px */
     overflow: hidden;
 }
 
 .vnpt-chart-bar {
     height: 100%;
-    background: var(--vnpt-primary);
-    border-radius: var(--vnpt-radius); /* 0px */
+    background: var(--al-primary);
+    border-radius: 0px; /* 0px */
     transition: width 0.3s ease-out;
     /* Smooth growth */
 }
@@ -662,7 +604,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
     width: 30px;
     text-align: right;
     font-weight: 700;
-    color: var(--vnpt-text-main);
+    color: var(--al-text);
 }
 
 /* ========================================
@@ -671,7 +613,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
 ======================================== */
 .aladinn-scan-room-info-display {
     font-size: 10px;
-    color: #1a56db;
+    color: var(--al-primary);
     margin-top: 1px;
     font-weight: bold;
     text-align: center;
@@ -679,13 +621,13 @@ body.vnpt-native-active #vnpt-scanner-ui {
 
 .aladinn-scan-vitals-info-display {
     font-size: 10px;
-    color: #d97706;
+    color: var(--al-warning);
     margin-top: 2px;
     font-weight: bold;
-    background: #fffbeb;
+    background: var(--al-warning-bg);
     padding: 1px 2px;
     border-radius: 0px;
-    border: 1px solid #fde68a;
+    border: 1px solid var(--al-warning-bg);
 }
 
 /* ========================================
@@ -702,12 +644,12 @@ body.vnpt-native-active #vnpt-scanner-ui {
 
 /* Hover: sáng nền xanh dương rõ nét chuẩn HIS, giúp bác sĩ dóng hàng chính xác tức thì */
 .aladinn-lab-table tbody tr:hover td {
-    background: #d2e3fc !important; /* Xanh dương nhẹ rõ ràng, tương phản chữ cực tốt */
+    background: var(--al-primary-container) !important; /* Xanh dương nhẹ rõ ràng, tương phản chữ cực tốt */
 }
 
 /* Thêm thanh chỉ thị đứng màu xanh thẫm HIS ở cell đầu tiên để dóng dòng dễ hơn, không gây lệch hàng */
 .aladinn-lab-table tbody tr:hover td:first-child {
-    border-left-color: #1e5494 !important;
+    border-left-color: var(--al-primary) !important;
 }
 
 /* ========================================
@@ -723,42 +665,9 @@ body.vnpt-native-active #vnpt-scanner-ui {
    Toast Notifications — Bottom-Right, Fly-Up
    Max 3, fly up + fade to dismiss
 ======================================== */
-.vnpt-toast-container {
-    position: fixed;
-    bottom: 16px;
-    right: 16px;
-    z-index: 2147483647 !important;
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: flex-end;
-    gap: 6px;
-    pointer-events: none;
-    max-width: 380px;
-}
 
-.vnpt-toast {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 32px 8px 12px;
-    border-radius: var(--vnpt-radius); /* 0px */
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.4;
-    pointer-events: auto;
-    cursor: default;
-    overflow: hidden;
-    box-shadow: var(--vnpt-glass-shadow);
-    border: 1px solid var(--vnpt-glass-border);
-    font-family: var(--vnpt-font);
-    white-space: nowrap;
-}
 
 /* --- Enter: slide up from bottom --- */
-.vnpt-toast-enter {
-    animation: vnpt-toast-slide-in 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-}
 
 @keyframes vnpt-toast-slide-in {
     from {
@@ -772,10 +681,6 @@ body.vnpt-native-active #vnpt-scanner-ui {
 }
 
 /* --- Exit: FLY UP + fade away --- */
-.vnpt-toast-exit {
-    animation: vnpt-toast-fly-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    pointer-events: none;
-}
 
 @keyframes vnpt-toast-fly-up {
     0% {
@@ -793,99 +698,22 @@ body.vnpt-native-active #vnpt-scanner-ui {
 }
 
 /* --- Type: Info --- */
-.vnpt-toast-info {
-    background: #ffffff;
-    border-color: var(--vnpt-glass-border); /* #a6c9e2 */
-    color: var(--vnpt-text-main); /* #333333 */
-}
-.vnpt-toast-info .vnpt-toast-icon { color: var(--vnpt-primary); /* #004f9e */ }
 
 /* --- Type: Success --- */
-.vnpt-toast-success {
-    background: #eafaf1; /* Soft green */
-    border-color: var(--vnpt-success); /* #28a745 */
-    color: var(--vnpt-text-main);
-}
-.vnpt-toast-success .vnpt-toast-icon { color: var(--vnpt-success); }
 
 /* --- Type: Warning --- */
-.vnpt-toast-warning {
-    background: #fef9e7; /* Soft yellow */
-    border-color: var(--vnpt-warning); /* #ffc107 */
-    color: var(--vnpt-text-main);
-}
-.vnpt-toast-warning .vnpt-toast-icon { color: #d97706; }
 
 /* --- Type: Error --- */
-.vnpt-toast-error {
-    background: #fdedec; /* Soft red */
-    border-color: var(--vnpt-danger); /* #dc3545 */
-    color: var(--vnpt-text-main);
-}
-.vnpt-toast-error .vnpt-toast-icon { color: var(--vnpt-danger); }
 
 /* --- Icon --- */
-.vnpt-toast-icon {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-}
 
 /* --- Content --- */
-.vnpt-toast-content {
-    flex: 1;
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    min-width: 0;
-}
 
-.vnpt-toast-message {
-    word-break: break-word;
-}
 
 /* --- Duplicate badge --- */
-.vnpt-toast-badge {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--vnpt-glass-border);
-    border-radius: var(--vnpt-radius); /* 0px */
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--vnpt-primary);
-}
 
 /* --- Close button (X) --- */
-.vnpt-toast-close {
-    position: absolute;
-    top: 50%;
-    right: 6px;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    border-radius: var(--vnpt-radius); /* 0px */
-    cursor: pointer;
-    color: inherit;
-    opacity: 0.4;
-    transition: all 0.1s;
-}
 
-.vnpt-toast-close:hover {
-    opacity: 1;
-    background: rgba(128, 128, 128, 0.1);
-}
 
 /* ========================================
    Filter UI
@@ -900,26 +728,11 @@ body.vnpt-native-active #vnpt-scanner-ui {
     flex: 1;
     padding: 5px;
     border-radius: 0px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--al-outline-variant);
     font-size: 11px;
 }
 
 /* Overlay for Lab Timeline Modal */
-.vnpt-glass-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background: rgba(17, 20, 24, 0.6) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-    z-index: 2147480000 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    animation: vnpt-fade-in 0.2s ease-out;
-}
 
 /* ========================================
    Inline Patient Summary Button
@@ -931,10 +744,10 @@ body.vnpt-native-active #vnpt-scanner-ui {
     width: 22px;
     height: 22px;
     padding: 0;
-    color: #fff;
-    background: #1e5494;
+    color: var(--al-surface);
+    background: var(--al-primary);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 0px;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
@@ -954,14 +767,14 @@ body.vnpt-native-active #vnpt-scanner-ui {
     width: 100%;
     height: 100%;
     border: 1.5px solid rgba(30, 84, 148, 0.6);
-    border-radius: 50%;
+    border-radius: 0px;
     transform: translate(-50%, -50%) scale(1);
     opacity: 0;
     pointer-events: none;
 }
 
 .his-inline-summary-btn:hover {
-    background: #2563a8;
+    background: var(--al-primary);
     box-shadow: 0 2px 6px rgba(30, 84, 148, 0.3);
     transform: scale(1.05);
 }
@@ -985,7 +798,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
 }
 
 .his-inline-summary-btn.loading {
-    background: #475569;
+    background: var(--al-text-muted);
     cursor: wait;
     box-shadow: none;
     border-color: rgba(255, 255, 255, 0.1);
@@ -1035,8 +848,8 @@ body.vnpt-native-active #vnpt-scanner-ui {
     width: 10px;
     height: 10px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
-    border-radius: 50%; /* Giữ dạng tròn cho spinner quay */
+    border-top-color: var(--al-surface);
+    border-radius: 0px; /* Giữ dạng tròn cho spinner quay */
     animation: vnpt-spin 0.8s linear infinite;
     display: inline-block;
 }
@@ -1058,8 +871,8 @@ body.vnpt-native-active #vnpt-scanner-ui {
 .aladinn-wave-loader span {
     display: block;
     width: 4px;
-    border-radius: 4px;
-    background: var(--vnpt-primary);
+    border-radius: 0px;
+    background: var(--al-primary);
     animation: aladinn-waveBar 1.2s ease-in-out infinite;
 }
 
@@ -1089,8 +902,8 @@ body.vnpt-native-active #vnpt-scanner-ui {
     content: '';
     position: absolute;
     inset: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--vnpt-primary);
+    border-radius: 0px;
+    border: 2px solid var(--al-primary);
     opacity: 0;
     animation: aladinn-pulseRing 2s ease-out infinite;
     pointer-events: none;
@@ -1108,7 +921,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
 /* --- Golden Ripple (button click) --- */
 .aladinn-ripple {
     position: absolute;
-    border-radius: 50%;
+    border-radius: 0px;
     background: rgba(255, 255, 255, 0.4);
     transform: scale(0);
     animation: aladinn-rippleOut .6s ease-out forwards;
@@ -1166,13 +979,13 @@ body.vnpt-native-active #vnpt-scanner-ui {
 
 /* --- Glow Alert Borders --- */
 .aladinn-glow-high {
-    border-radius: var(--vnpt-radius); /* 0px */
-    border: 1px solid var(--vnpt-danger); /* #dc3545 */
+    border-radius: 0px; /* 0px */
+    border: 1px solid var(--al-error); /* var(--al-error) */
 }
 
 .aladinn-glow-medium {
-    border-radius: var(--vnpt-radius); /* 0px */
-    border: 1px solid var(--vnpt-primary); /* #004f9e */
+    border-radius: 0px; /* 0px */
+    border: 1px solid var(--al-primary); /* var(--al-primary) */
 }
 
 /* --- Scan Line Effect --- */
@@ -1187,7 +1000,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--vnpt-primary), transparent);
+    background: linear-gradient(90deg, transparent, var(--al-primary), transparent);
     animation: aladinn-scanDown 2s ease-in-out infinite;
     pointer-events: none;
     z-index: 1;
@@ -1203,15 +1016,15 @@ body.vnpt-native-active #vnpt-scanner-ui {
 /* --- Progress Shimmer Bar --- */
 .aladinn-progress-bar {
     height: 4px;
-    border-radius: var(--vnpt-radius); /* 0px */
+    border-radius: 0px; /* 0px */
     background: rgba(128, 128, 128, 0.1);
     overflow: hidden;
 }
 
 .aladinn-progress-fill {
     height: 100%;
-    border-radius: var(--vnpt-radius); /* 0px */
-    background: var(--vnpt-primary); /* Flat HIS Blue */
+    border-radius: 0px; /* 0px */
+    background: var(--al-primary); /* Flat HIS Blue */
     transition: width .4s ease;
 }
 
@@ -1231,7 +1044,7 @@ body.vnpt-native-active #vnpt-scanner-ui {
 .cds-icd-pill {
     transition: background 0.1s;
     cursor: pointer;
-    border-radius: var(--vnpt-radius) !important; /* 0px */
+    border-radius: 0px; /* 0px */
 }
 
 .cds-icd-pill:hover {
@@ -1247,7 +1060,7 @@ details.aladinn-details summary {
 }
 
 details.aladinn-details summary:hover {
-    color: var(--vnpt-primary);
+    color: var(--al-primary);
 }
 
 details.aladinn-details[open] summary ~ * {
@@ -1255,10 +1068,6 @@ details.aladinn-details[open] summary ~ * {
 }
 
 /* --- Enhanced Button Hover (all scanner buttons) --- */
-.vnpt-btn {
-    position: relative;
-    overflow: hidden;
-}
 
 /* --- Slow Pulse for minimized icon --- */
 @keyframes vnpt-pulse-slow {
@@ -1290,7 +1099,7 @@ details.aladinn-details[open] summary ~ * {
     top: 12px; 
     bottom: -25px; 
     width: 2px; 
-    background: #e5e7eb;
+    background: var(--al-surface-container);
 }
 .aladinn-dept-group:last-child::before { 
     bottom: 0; 
@@ -1299,9 +1108,9 @@ details.aladinn-details[open] summary ~ * {
     position: relative; 
     display: inline-flex; 
     align-items: center; 
-    background: #e3f2fd; 
-    border: 1px solid #90caf9; 
-    color: #004f9e;
+    background: var(--al-primary-container); 
+    border: 1px solid var(--al-outline); 
+    color: var(--al-primary);
     padding: 2px 8px; 
     font-size: 11px; 
     font-weight: 700; 
@@ -1317,19 +1126,19 @@ details.aladinn-details[open] summary ~ * {
     transform: translateY(-50%); 
     width: 8px; 
     height: 8px;
-    background: #004f9e; 
-    border: 2px solid #fff; 
-    border-radius: 50%; 
-    box-shadow: 0 0 0 1px #90caf9;
+    background: var(--al-primary); 
+    border: 2px solid var(--al-surface); 
+    border-radius: 0px; 
+    box-shadow: 0 0 0 1px var(--al-outline);
 }
-.aladinn-dept-badge.badge-cc { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
-.aladinn-dept-badge.badge-cc::before { background: #c62828; box-shadow: 0 0 0 1px #ef9a9a; }
+.aladinn-dept-badge.badge-cc { background: var(--al-error-container); border-color: var(--al-error-container); color: var(--al-error); }
+.aladinn-dept-badge.badge-cc::before { background: var(--al-error); box-shadow: 0 0 0 1px var(--al-error-container); }
 
-.aladinn-dept-badge.badge-pm { background: #f3e5f5; border-color: #ce93d8; color: #6a1b9a; }
-.aladinn-dept-badge.badge-pm::before { background: #6a1b9a; box-shadow: 0 0 0 1px #ce93d8; }
+.aladinn-dept-badge.badge-pm { background: var(--al-tertiary-container); border-color: var(--al-tertiary-container); color: var(--al-tertiary); }
+.aladinn-dept-badge.badge-pm::before { background: var(--al-tertiary); box-shadow: 0 0 0 1px var(--al-tertiary-container); }
 
-.aladinn-dept-badge.badge-hs { background: #fff8e1; border-color: #ffe082; color: #ff8f00; }
-.aladinn-dept-badge.badge-hs::before { background: #ff8f00; box-shadow: 0 0 0 1px #ffe082; }
+.aladinn-dept-badge.badge-hs { background: var(--al-warning-bg); border-color: var(--al-warning-bg); color: var(--al-warning); }
+.aladinn-dept-badge.badge-hs::before { background: var(--al-warning); box-shadow: 0 0 0 1px var(--al-warning-bg); }
 
 .aladinn-time-block {
     display: flex; 
@@ -1341,7 +1150,7 @@ details.aladinn-details[open] summary ~ * {
     flex-shrink: 0; 
     font-size: 13px; 
     font-weight: 700; 
-    color: #555; 
+    color: var(--al-text-muted); 
     text-align: right; 
     padding-right: 12px; 
     margin-top: 4px;

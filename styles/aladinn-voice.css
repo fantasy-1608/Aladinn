@@ -3,21 +3,6 @@
  * M3 Dark Theme – Blue Seed #1565C0
  */
 
-:root {
-  --his-primary: #004f9e; /* Xanh HIS */
-  --his-primary-hover: #003d7a;
-  --his-success: #28a745;
-  --his-danger: #dc3545;
-  --his-bg-glass: #ffffff; /* Nền đục */
-  --his-bg-secondary: #f5f5f5;
-  --his-bg-tertiary: #eef6ff;
-  --his-text-primary: #333333; /* Chữ tối */
-  --his-text-secondary: #666666;
-  --his-border: #a6c9e2; /* Viền xanh nhạt HIS */
-  --his-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-  --his-glass-shadow: none;
-  --his-lit-edge: none;
-}
 
 /* ========================================
    Global Utility
@@ -34,10 +19,10 @@
   top: 80px;
   right: 20px;
   width: 320px;
-  background: var(--his-bg-glass);
-  border: 1px solid var(--his-border);
+  background: var(--al-surface);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* 100% Phẳng vuông vức */
-  box-shadow: var(--his-shadow);
+  box-shadow: var(--al-shadow-md);
   z-index: 999998;
   font-family: 'Segoe UI', Arial, sans-serif;
   overflow: hidden;
@@ -79,24 +64,7 @@
 /* ========================================
    Panel Header
    ======================================== */
-.his-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid var(--his-border);
-  cursor: move;
-}
 
-.his-panel-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--his-text-primary);
-  font-weight: 600;
-  font-size: 14px;
-}
 
 .his-logo {
   width: 24px;
@@ -106,85 +74,23 @@
   box-shadow: none;
 }
 
-.his-panel-controls {
-  display: flex;
-  gap: 6px;
-}
 
-.his-panel-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 0px;
-  border: 1px solid var(--his-border);
-  background: var(--his-bg-secondary);
-  color: var(--his-text-primary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: all 0.15s ease;
-}
 
-.his-panel-btn:hover {
-  background: var(--his-primary);
-  color: white;
-}
 
-.his-panel-btn.danger:hover {
-  background: var(--his-danger);
-}
 
 /* ========================================
    Panel Body Wrapper
    ======================================== */
-.his-panel-body-wrapper {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
-}
 
-.his-panel-body {
-  padding: 12px;
-  overflow-y: auto !important;
-  height: 100%;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: var(--his-border) transparent;
-}
 
 /* Styled scrollbar */
-.his-panel-body::-webkit-scrollbar {
-  width: 6px;
-}
 
-.his-panel-body::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 0px;
-  margin: 4px 0;
-}
 
-.his-panel-body::-webkit-scrollbar-thumb {
-  background: var(--his-border);
-  border-radius: 0px;
-  min-height: 30px;
-}
 
-.his-panel-body::-webkit-scrollbar-thumb:hover {
-  background: var(--his-primary);
-}
 
 /* ========================================
    Panel Footer (Sticky Input)
    ======================================== */
-.his-panel-footer {
-  padding: 12px;
-  background: var(--his-bg-glass);
-  border-top: 1px solid var(--his-border);
-  flex-shrink: 0;
-}
 
 /* ========================================
    Quick Actions Bar
@@ -196,9 +102,9 @@
   padding: 10px 12px;
   position: sticky;
   top: -12px;
-  background: var(--his-bg-glass);
+  background: var(--al-surface);
   z-index: 100;
-  border-bottom: 1px solid var(--his-border);
+  border-bottom: 1px solid var(--al-outline);
 }
 
 .his-quick-btn {
@@ -208,45 +114,45 @@
   gap: 6px;
   padding: 8px 12px;
   border-radius: 0px; /* Vuông vức */
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
   font-size: 11px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: var(--his-text-primary);
-  background: var(--his-bg-secondary);
+  color: var(--al-text);
+  background: var(--al-surface-container-low);
   box-shadow: none;
 }
 
 .his-quick-btn:hover {
-  background: var(--his-primary);
+  background: var(--al-primary);
   color: white;
-  border-color: var(--his-primary);
+  border-color: var(--al-primary);
 }
 
 .his-quick-primary {
-  background: var(--his-primary);
+  background: var(--al-primary);
   color: white;
-  border-color: var(--his-primary);
+  border-color: var(--al-primary);
   flex: 1.5;
 }
 
 .his-quick-primary:hover {
-  background: var(--his-primary-hover);
-  border-color: var(--his-primary-hover);
+  background: var(--al-primary-hover);
+  border-color: var(--al-primary-hover);
 }
 
 .his-quick-hoichan {
-  background: var(--his-bg-secondary);
-  border: 1px solid var(--his-border);
-  color: var(--his-text-primary);
+  background: var(--al-surface-container-low);
+  border: 1px solid var(--al-outline);
+  color: var(--al-text);
   flex: 1.2;
 }
 
 .his-quick-chuyenvien {
-  background: var(--his-bg-secondary);
-  border: 1px solid var(--his-border);
-  color: var(--his-text-primary);
+  background: var(--al-surface-container-low);
+  border: 1px solid var(--al-outline);
+  color: var(--al-text);
   flex: 1.2;
 }
 
@@ -267,12 +173,12 @@
 .his-quick-demo {
   flex: 0 0 auto;
   width: 38px;
-  background: var(--his-bg-tertiary);
-  color: var(--his-text-secondary);
+  background: var(--al-surface-container);
+  color: var(--al-text-muted);
 }
 
 .his-quick-demo:hover {
-  background: var(--his-primary);
+  background: var(--al-primary);
   color: white;
 }
 
@@ -304,13 +210,7 @@
   }
 }
 
-.his-btn-ai:not(:disabled) svg {
-  animation: spin-slow 4s linear infinite;
-}
 
-.his-btn-primary.recording svg {
-  animation: pulse-soft 1s ease-in-out infinite;
-}
 
 
 /* Scrollbar đẹp hơn */
@@ -320,7 +220,7 @@
 
 .his-results-compact::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 0px;
 }
 
 /* ========================================
@@ -332,9 +232,9 @@
   background: rgba(17, 20, 24, 0.95);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  color: #f8fafc;
+  color: var(--al-surface);
   padding: 14px 18px;
-  border-radius: 16px;
+  border-radius: 0px;
   font-size: 13px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -378,7 +278,7 @@
   gap: 4px;
   padding: 6px;
   background: rgba(16, 185, 129, 0.08);
-  border-radius: 8px;
+  border-radius: 0px;
   margin-top: 6px;
 }
 
@@ -387,25 +287,25 @@
   align-items: center;
   gap: 4px;
   padding: 4px 6px;
-  background: var(--his-bg-tertiary);
-  border-radius: 6px;
+  background: var(--al-surface-container);
+  border-radius: 0px;
   font-size: 9px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .his-vital-pill:hover {
-  background: var(--his-success);
+  background: var(--al-success);
   color: white;
 }
 
 .his-vital-pill .label {
-  color: var(--his-text-secondary);
+  color: var(--al-text-muted);
   font-size: 8px;
 }
 
 .his-vital-pill .val {
-  color: var(--his-success);
+  color: var(--al-success);
   font-weight: 600;
   font-size: 10px;
 }
@@ -431,7 +331,7 @@
 .his-section-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--his-text-secondary);
+  color: var(--al-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -446,18 +346,18 @@
   justify-content: center;
   gap: 10px;
   padding: 8px;
-  background: var(--his-bg-secondary);
-  border: 1px solid var(--his-border);
+  background: var(--al-surface-container-low);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* Vuông vức */
 }
 
 .his-record-btn {
   width: 38px;
   height: 38px;
-  border-radius: 50%; /* Nút micro giữ tròn */
-  border: 1px solid var(--his-border);
+  border-radius: 0px; /* Nút micro giữ tròn */
+  border: 1px solid var(--al-outline);
   background: white;
-  color: var(--his-primary);
+  color: var(--al-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -473,22 +373,22 @@
 }
 
 .his-record-btn:hover {
-  background: var(--his-bg-tertiary);
+  background: var(--al-surface-container);
 }
 
 .his-record-btn.recording {
-  background: var(--his-danger);
-  border-color: var(--his-danger);
+  background: var(--al-error);
+  border-color: var(--al-error);
   color: white;
 }
 
 .his-record-status {
   font-size: 11px;
-  color: var(--his-text-primary);
+  color: var(--al-text);
 }
 
 .his-record-status.recording {
-  color: var(--his-danger);
+  color: var(--al-error);
   font-weight: bold;
 }
 
@@ -500,9 +400,9 @@
   min-height: 60px;
   padding: 8px 10px;
   background: white;
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* Vuông vức */
-  color: var(--his-text-primary);
+  color: var(--al-text);
   font-size: 12px;
   line-height: 1.5;
   resize: none;
@@ -512,71 +412,19 @@
 
 .his-textarea:focus {
   outline: none;
-  border-color: var(--his-primary);
+  border-color: var(--al-primary);
 }
 
 /* ========================================
    Buttons
    ======================================== */
-.his-btn-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  align-items: center;
-}
 
-.his-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: none;
-}
 
-.his-btn-ai {
-  flex: 1;
-  background: var(--his-primary);
-  color: white;
-  font-weight: bold;
-  font-size: 12px;
-  border: 1px solid var(--his-primary);
-  border-radius: 0px; /* Vuông vức */
-  padding: 10px;
-  box-shadow: none;
-}
 
-.his-btn-ai:hover:not(:disabled) {
-  background: var(--his-primary-hover);
-  border-color: var(--his-primary-hover);
-}
 
-.his-btn-ai:disabled {
-  background: var(--his-bg-secondary);
-  color: var(--his-text-secondary);
-  border-color: var(--his-border);
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
 
-.his-btn-primary {
-  background: var(--his-bg-secondary);
-  color: var(--his-text-primary);
-  border: 1px solid var(--his-border);
-  border-radius: 0px; /* Vuông vức */
-  padding: 10px;
-}
 
-.his-btn-primary:hover {
-  background: var(--his-bg-tertiary);
-}
 
-.his-btn-primary.recording {
-  background: var(--his-danger);
-  border-color: var(--his-danger);
-  color: white;
-}
 
 /* ========================================
    Results
@@ -594,7 +442,7 @@
   gap: 8px;
   padding: 6px 10px;
   background: white;
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* Vuông vức */
   transition: all 0.15s ease;
   position: relative;
@@ -603,8 +451,8 @@
 }
 
 .his-result-item:hover {
-  background: var(--his-bg-tertiary);
-  border-color: var(--his-primary);
+  background: var(--al-surface-container);
+  border-color: var(--al-primary);
 }
 
 .his-result-icon {
@@ -613,10 +461,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--his-bg-secondary);
-  color: var(--his-primary);
+  background: var(--al-surface-container-low);
+  color: var(--al-primary);
   border-radius: 0px; /* Vuông vức */
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
   flex-shrink: 0;
 }
 
@@ -633,7 +481,7 @@
 .his-result-label {
   font-size: 9px;
   font-weight: bold;
-  color: var(--his-text-secondary);
+  color: var(--al-text-muted);
   margin-bottom: 1px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -641,7 +489,7 @@
 
 .his-result-value {
   font-size: 12px;
-  color: var(--his-text-primary);
+  color: var(--al-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -658,9 +506,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--his-bg-secondary);
-  color: var(--his-text-secondary);
-  border: 1px solid var(--his-border);
+  background: var(--al-surface-container-low);
+  color: var(--al-text-muted);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* Vuông vức */
   cursor: pointer;
   transition: all 0.15s ease;
@@ -678,31 +526,31 @@
 }
 
 .his-copy-btn:hover {
-  background: var(--his-primary) !important;
+  background: var(--al-primary) !important;
   color: white !important;
-  border-color: var(--his-primary);
+  border-color: var(--al-primary);
 }
 
 .his-copy-btn.copied {
-  background: var(--his-success) !important;
+  background: var(--al-success) !important;
   color: white !important;
-  border-color: var(--his-success);
+  border-color: var(--al-success);
 }
 
 /* ========================================
    Auto Fill Button
    ======================================== */
 .his-autofill-btn {
-  background: var(--his-success) !important;
-  border-color: var(--his-success) !important;
+  background: var(--al-success) !important;
+  border-color: var(--al-success) !important;
   color: white !important;
   font-weight: bold;
-  border-radius: 0px !important; /* Vuông vức */
+  border-radius: 0px; /* Vuông vức */
 }
 
 .his-autofill-btn:hover {
-  background: #218838 !important;
-  border-color: #1e7e34 !important;
+  background: var(--al-success) !important;
+  border-color: var(--al-success) !important;
 }
 
 .his-field-highlight {
@@ -732,9 +580,9 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   padding: 6px;
-  background: var(--his-bg-tertiary);
+  background: var(--al-surface-container);
   border-radius: 0px; /* Vuông vức */
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
 }
 
 .his-vital-pill {
@@ -743,21 +591,21 @@
   align-items: center;
   padding: 4px 2px;
   background: white;
-  border: 1px solid var(--his-border);
+  border: 1px solid var(--al-outline);
   border-radius: 0px; /* Vuông vức */
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .his-vital-pill:hover {
-  background: var(--his-success);
+  background: var(--al-success);
   color: white !important;
 }
 
 .his-vital-pill .label {
   font-size: 8px;
   font-weight: bold;
-  color: var(--his-text-secondary);
+  color: var(--al-text-muted);
   text-transform: uppercase;
   margin-bottom: 0;
   letter-spacing: 0.2px;
@@ -770,7 +618,7 @@
 .his-vital-pill .value {
   font-size: 12px;
   font-weight: bold;
-  color: var(--his-success);
+  color: var(--al-success);
   line-height: 1.2;
 }
 
@@ -780,7 +628,7 @@
 
 .his-vital-pill .unit {
   font-size: 6px;
-  color: var(--his-text-secondary);
+  color: var(--al-text-muted);
   margin-top: -1px;
 }
 
@@ -794,9 +642,9 @@
   right: -2px;
   width: 10px;
   height: 10px;
-  background: var(--his-success);
+  background: var(--al-success);
   border: 2px solid var(--his-bg-primary);
-  border-radius: 50%;
+  border-radius: 0px;
 }
 
 /* ========================================
@@ -806,10 +654,10 @@
   position: fixed;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, #9ECAFF, #60A5FA);
-  color: #003258;
+  background: linear-gradient(135deg, var(--al-primary), var(--al-primary));
+  color: var(--al-on-primary-container);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -821,14 +669,14 @@
 
 #his-mini-btn:hover {
   transform: scale(1.1);
-  background: linear-gradient(135deg, #60A5FA, #9ECAFF);
+  background: linear-gradient(135deg, var(--al-primary), var(--al-primary));
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 8px 25px rgba(158, 202, 255, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 #his-mini-btn.recording {
-  background: linear-gradient(135deg, var(--his-danger), #dc2626);
-  border-color: var(--his-danger);
+  background: linear-gradient(135deg, var(--al-error), var(--al-error));
+  border-color: var(--al-error);
   color: white;
   animation: pulse-record 1.5s infinite;
 }
@@ -837,7 +685,7 @@
   position: fixed;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(17, 20, 24, 0.8);
   backdrop-filter: blur(10px);
@@ -863,31 +711,8 @@
 /* ========================================
    Toast
    ======================================== */
-.his-toast {
-  position: fixed;
-  bottom: 90px;
-  right: 20px;
-  padding: 10px 16px;
-  background: var(--his-success);
-  color: white;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 999999;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s ease;
-}
 
-.his-toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
 
-.his-toast.error {
-  background: var(--his-danger);
-}
 
 /* ========================================
    Loading
@@ -903,9 +728,9 @@
 .his-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--his-border);
-  border-top-color: var(--his-primary);
-  border-radius: 50%;
+  border: 3px solid var(--al-outline);
+  border-top-color: var(--al-primary);
+  border-radius: 0px;
   animation: spin 1s linear infinite;
 }
 
@@ -921,29 +746,12 @@
 .his-settings {
   padding: 12px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: 0px;
   margin-bottom: 12px;
 }
 
-.his-input-group {
-  display: flex;
-  gap: 8px;
-}
 
-.his-input {
-  flex: 1;
-  padding: 8px 12px;
-  background: var(--his-bg-tertiary);
-  border: 1px solid var(--his-border);
-  border-radius: 6px;
-  color: var(--his-text-primary);
-  font-size: 12px;
-}
 
-.his-input:focus {
-  outline: none;
-  border-color: var(--his-primary);
-}
 
 /* ========================================
    Security & Lock Screen
@@ -952,16 +760,16 @@
   position: fixed;
   width: 380px;
   height: 380px;
-  background: var(--his-bg-secondary);
+  background: var(--al-surface-container-low);
   backdrop-filter: blur(8px) saturate(180%);
   z-index: 999998;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 20px;
-  border: 1px solid var(--his-border);
-  box-shadow: var(--his-shadow), var(--his-glass-shadow);
+  border-radius: 0px;
+  border: 1px solid var(--al-outline);
+  box-shadow: var(--al-shadow-md), var(--al-shadow-none);
   padding: 30px;
 }
 
@@ -972,7 +780,7 @@
   right: 15px;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 0px;
   border: none;
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -1028,7 +836,7 @@
   width: 42px;
   height: 54px;
   border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border-radius: 0px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1041,11 +849,11 @@
 }
 
 .his-pin-digit.filled {
-  border-color: var(--his-primary);
-  background: var(--his-bg-tertiary);
-  box-shadow: 0 0 15px var(--his-border), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border-color: var(--al-primary);
+  background: var(--al-surface-container);
+  box-shadow: 0 0 15px var(--al-outline), inset 0 1px 1px rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
-  color: var(--his-primary);
+  color: var(--al-primary);
 }
 
 .his-hidden-pin-input {
@@ -1064,11 +872,6 @@
   outline: none;
 }
 
-.his-btn-full {
-  width: 80%;
-  padding: 12px !important;
-  font-size: 14px !important;
-}
 
 .his-shake {
   animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
@@ -1106,7 +909,7 @@
   padding: 10px;
   background: linear-gradient(135deg, rgba(158, 202, 255, 0.1), rgba(29, 32, 36, 0.4));
   border: 1px solid rgba(158, 202, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 0px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
@@ -1120,13 +923,13 @@
 .his-icd10-header .icon svg {
   width: 14px;
   height: 14px;
-  color: #a78bfa;
+  color: var(--al-tertiary);
 }
 
 .his-icd10-header .title {
   font-size: 10px;
   font-weight: 700;
-  color: #9ECAFF;
+  color: var(--al-primary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -1141,7 +944,7 @@
   display: flex;
   align-items: stretch;
   background: rgba(29, 32, 36, 0.4);
-  border-radius: 8px;
+  border-radius: 0px;
   overflow: hidden;
   border: 1px solid rgba(158, 202, 255, 0.15);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1156,8 +959,8 @@
 }
 
 .his-icd10-chip .code {
-  background: linear-gradient(135deg, #9ECAFF, #60A5FA);
-  color: #003258;
+  background: linear-gradient(135deg, var(--al-primary), var(--al-primary));
+  color: var(--al-on-primary-container);
   padding: 6px 12px;
   font-size: 10.5px;
   font-weight: 800;
@@ -1176,13 +979,13 @@
 }
 
 .his-icd10-chip .code.copied {
-  background: var(--his-success);
+  background: var(--al-success);
 }
 
 .his-icd10-chip .name {
   padding: 6px 12px;
   font-size: 11.5px;
-  color: #E1E2E8;
+  color: var(--al-text-muted);
   cursor: pointer;
   flex: 1;
   display: flex;
@@ -1198,6 +1001,6 @@
 }
 
 .his-icd10-chip .name.copied {
-  color: #4ADE80;
+  color: var(--al-success);
   background: rgba(74, 222, 128, 0.1);
 }

@@ -35,6 +35,7 @@ import './cds/index.js';
 import './content.js';
 import '../shared/styles/his-base.css';
 import '../styles/aladinn-core.css';
+import '../styles/aladinn-components.css';
 import '../styles/aladinn-scanner.css';
 import '../styles/aladinn-voice.css';
 import '../styles/aladinn-sign.css';

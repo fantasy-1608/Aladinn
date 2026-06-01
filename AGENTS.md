@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Aladinn** (5910 symbols, 9328 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Aladinn** (7184 symbols, 10814 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -60,6 +60,20 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 8. Never use LLM output as the sole authority for writeback.
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
+
+### Legal Compliance (Pháp Luật Bảo Mật Y Tế Việt Nam)
+
+> **BẮT BUỘC:** Đọc skill `vnpt-his-safety` (SKILL.md v2.0) trước khi làm việc với dữ liệu y tế.
+> **Tham chiếu chi tiết:** `references/vietnam-healthcare-legal-reference.md`
+
+Mọi code trong dự án này PHẢI tuân thủ:
+- **Luật BVDLCN 2025** (91/2025/QH15) — Dữ liệu y tế = dữ liệu nhạy cảm, yêu cầu đồng ý rõ ràng
+- **Luật KB-CB 2023** (15/2023/QH15) — Bảo mật HSBA, quyền bệnh nhân
+- **NĐ 102/2025** — CSDL quốc gia y tế, HL7 FHIR bắt buộc
+- **TT 13/2025/TT-BYT** — HSBA điện tử, chữ ký số, FHIR
+- **Luật ANM 2018** — Data localization khi có yêu cầu
+
+Vi phạm: Phạt đến **5% doanh thu** hoặc **VND 3 tỷ**, có thể truy tố hình sự.
 
 ### Extension Architecture & Coding Patterns (Sourced from ECC)
 
