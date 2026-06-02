@@ -9,8 +9,12 @@
         "alarms",
         "scripting",
         "storage",
-        "tabs"
+        "tabs",
+        "sidePanel"
     ],
+    "side_panel": {
+        "default_path": "sidepanel/index.html"
+    },
     "host_permissions": [
         "https://*.vncare.vn/*",
         "https://generativelanguage.googleapis.com/*",
@@ -18,7 +22,6 @@
         "https://api.github.com/repos/fantasy-1608/Aladinn/*"
     ],
     "action": {
-        "default_popup": "popup/popup.html",
         "default_icon": {
             "16": "assets/icons/icon16.png",
             "32": "assets/icons/icon32.png",

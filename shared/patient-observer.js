@@ -32,17 +32,27 @@ HIS.PatientObserver = (function () {
      */
     function _getRowId(tr) {
         if (!tr) return null;
-        if (tr.closest('#grdBenhNhan')) {
-            return tr.id && tr.id.length > 0 ? tr.id : null;
+        return tr.id && tr.id.length > 0 ? tr.id : null;
+    }
+
+    function _extractMaBA(tr) {
+        if (!tr) return '';
+        // 1. Thử lấy từ td chứa HOSOBENHANID hoặc MABENHAN
+        const maBA = tr.querySelector("td[aria-describedby$='_MABENHAN'], td[aria-describedby$='_HOSOBENHANID']");
+        if (maBA && maBA.textContent.trim()) {
+            return maBA.textContent.trim();
         }
-        if (tr.closest('#grdDSBenhNhan')) {
-            const cell = tr.querySelector(
-                "td[aria-describedby$='_KHAMBENHID'], td[aria-describedby*='KHAMBENHID']"
-            );
-            const id = cell ? cell.textContent.trim() : '';
-            return id.length > 2 ? id : null;
+        // 2. Fallback: Lấy cột số chứa 8-12 chữ số
+        const cells = tr.querySelectorAll('td');
+        if (cells && cells.length > 2) {
+            for (let i = 1; i < Math.min(5, cells.length); i++) {
+                const txt = cells[i].textContent.trim();
+                if (txt.length >= 8 && /^\d+$/.test(txt)) {
+                    return txt;
+                }
+            }
         }
-        return null;
+        return '';
     }
 
     /**
@@ -66,6 +76,7 @@ HIS.PatientObserver = (function () {
     function _handleSelection(rowElement) {
         if (!rowElement) return;
         const rowId = _getRowId(rowElement);
+        const maBA = _extractMaBA(rowElement) || rowId;
         if (!rowId || rowId === _lastSelectedId) return;
 
         _lastSelectedId = rowId;
@@ -73,9 +84,24 @@ HIS.PatientObserver = (function () {
 
         HIS.EventBus.emit('patient:selected', {
             rowId: rowId,
+            maBA: maBA,
             rowElement: rowElement,
             patientName: patientName
         });
+
+        // Broadcast to Side Panel
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ 
+                type: 'CONTEXT_CHANGED', 
+                context: 'PATIENT_LIST' 
+            }).catch(() => {});
+            
+            chrome.runtime.sendMessage({ 
+                type: 'PATIENT_SELECTED', 
+                patientId: maBA,
+                patientName: patientName
+            }).catch(() => {});
+        }
 
         if (HIS.Logger) {
             HIS.Logger.info('Observer', `👤 Đã chọn: ${patientName || rowId}`);

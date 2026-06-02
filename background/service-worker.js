@@ -28,6 +28,64 @@ import { AuditEvents } from '../shared/audit-telemetry.js';
 import './audit-logger.js';
 
 // ========================================
+// CONTEXT BROKER (Side Panel State)
+// ========================================
+const tabContexts = new Map();
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'CONTEXT_CHANGED') {
+        const tabId = sender.tab ? sender.tab.id : (message.tabId || null);
+        if (tabId) {
+            const state = tabContexts.get(tabId) || {};
+            state.context = message.context;
+            tabContexts.set(tabId, state);
+            
+            chrome.runtime.sendMessage({
+                type: 'CONTEXT_CHANGED',
+                context: message.context,
+                tabId: tabId
+            }).catch(() => {});
+        }
+    } else if (message.type === 'PATIENT_SELECTED') {
+        const tabId = sender.tab ? sender.tab.id : (message.tabId || null);
+        if (tabId) {
+            const state = tabContexts.get(tabId) || {};
+            state.patientId = message.patientId;
+            state.patientName = message.patientName;
+            tabContexts.set(tabId, state);
+            
+            // Forward to side panel
+            chrome.runtime.sendMessage(message).catch(() => {});
+        }
+    } else if (message.type === 'REQUEST_CURRENT_CONTEXT') {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs.length > 0) {
+                const tabId = tabs[0].id;
+                const state = tabContexts.get(tabId) || { context: 'UNKNOWN' };
+                sendResponse({ context: state.context, patientId: state.patientId, patientName: state.patientName, tabId: tabId });
+            } else {
+                sendResponse({ context: 'UNKNOWN' });
+            }
+        });
+        return true; 
+    } else if (message.type === 'SIDE_PANEL_COMMAND') {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs.length > 0) {
+                chrome.tabs.sendMessage(tabs[0].id, message).catch(() => {});
+            }
+        });
+    }
+});
+
+// Clean up state when tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+    tabContexts.delete(tabId);
+});
+
+// ========================================
+// CONTEXT MENU (Optional)
+// ========================================
+// ========================================
 // INSTALLATION & STARTUP
 // ========================================
 chrome.runtime.onInstalled.addListener((details) => {
@@ -43,6 +101,11 @@ chrome.runtime.onInstalled.addListener((details) => {
     scheduleUpdateCheck();
     // Lên lịch tải remote config (Safe Mode)
     scheduleRemoteConfigRefresh();
+
+    // Cấu hình Side Panel mở khi click vào Action icon
+    if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+        chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => console.error(error));
+    }
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -78,10 +141,15 @@ chrome.storage.local.get(['geminiApiKey', 'geminiApiKey_encrypted'], (result) =>
 
 
 // ========================================
-// BADGE HELPER
+// BADGE & SIDE PANEL HELPER
 // ========================================
 function updateBadge(_isEnabled) {
     chrome.action.setBadgeText({ text: '' });
+}
+
+// Cấu hình Side Panel mở khi click vào Action icon (Global)
+if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => console.error(error));
 }
 
 // ========================================

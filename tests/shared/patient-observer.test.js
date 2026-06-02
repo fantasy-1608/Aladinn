@@ -87,7 +87,8 @@ describe('PatientObserver', () => {
 
         // Check if EventBus.emit was called with outpatient patient:selected details
         expect(window.HIS.EventBus.emit).toHaveBeenCalledWith('patient:selected', expect.objectContaining({
-            rowId: '100200300',
+            rowId: '1',
+            maBA: '100200300',
             patientName: 'NGUYỄN THỊ B'
         }));
     });

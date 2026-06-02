@@ -85,4 +85,23 @@
             }, PARENT_ORIGIN);
         }
     }
+    
+    var broadcastContext = function() {
+        const el1 = document.getElementById('txtLydochuyentuyen') || document.getElementById('txtDAUHIEULAMSANG') || document.getElementById('txtTINHTRANGNGUOIBENH');
+        const el2 = document.getElementById('txtTENTUYENDUOI');
+        const el3 = document.getElementById('cboTuyenDuoi');
+        const isVisible = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
+        
+        if (!isVisible(el1) && !isVisible(el2) && !isVisible(el3)) return;
+        
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: 'TRANSFER' }).catch(function(){});
+        }
+    };
+    
+    window.addEventListener('focus', broadcastContext);
+    document.addEventListener('click', broadcastContext);
+    
+    // Self-healing context broadcast every 1.5s
+    setInterval(broadcastContext, 1500);
 })();

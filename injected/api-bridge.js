@@ -609,10 +609,12 @@
         if (event.data.type.startsWith('REQ_')) {
             if (!SECURE_TOKEN || event.data.token !== SECURE_TOKEN) {
                 console.warn('[Aladinn API-Bridge] Unauthorized request blocked (Invalid token)');
+                if (window.VNPTRealtime) window.VNPTRealtime.showToast('⚠️ Giao tiếp HIS bị từ chối (Lỗi Token). Thử tải lại trang HIS.', 'error');
                 return;
             }
             if (!ALADINN_NONCE || event.data.nonce !== ALADINN_NONCE) {
                 console.warn('[Aladinn API-Bridge] Unauthorized request blocked (Invalid nonce)');
+                if (window.VNPTRealtime) window.VNPTRealtime.showToast('⚠️ Giao tiếp HIS bị từ chối (Lỗi Nonce). Thử tải lại trang HIS.', 'error');
                 return;
             }
         }

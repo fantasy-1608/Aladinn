@@ -311,4 +311,24 @@
     if (window.parent !== window) {
         window.parent.postMessage({ type: 'EMERGENCY_HELPER_READY' }, PARENT_ORIGIN);
     }
+    
+    // Broadcast context to Side Panel ONLY when the iframe becomes active/interacted with
+    var broadcastContext = function() {
+        const el1 = document.getElementById('txtMACH');
+        const el2 = document.getElementById('txtHUYETAP1');
+        const el3 = document.getElementById('txtNHIETDO');
+        const isVisible = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
+        
+        if (!isVisible(el1) && !isVisible(el2) && !isVisible(el3)) return;
+        
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: 'EMERGENCY' }).catch(function(){});
+        }
+    };
+    
+    window.addEventListener('focus', broadcastContext);
+    document.addEventListener('click', broadcastContext);
+    
+    // Self-healing context broadcast every 1.5s
+    setInterval(broadcastContext, 1500);
 })();

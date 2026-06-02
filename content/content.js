@@ -710,6 +710,12 @@
                 sendResponse({ success: result });
             }
 
+            if (type === 'SIDE_PANEL_COMMAND') {
+                window.postMessage({ type: 'ALADINN_SIDE_PANEL_COMMAND', payload: message }, window.location.origin);
+                sendResponse({ success: true });
+            }
+
+
             // Popup dashboard command
             if (type === 'POPUP_SHOW_DASHBOARD') {
                 let result = false;

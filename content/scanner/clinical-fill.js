@@ -25,6 +25,8 @@ const VNPTClinicalFill = (function () {
     let _currentFormType = ''; // 'hoichan' | 'chuyenvien' | 'xutri' | 'nhapbenhnhan'
     /** @type {string | null} */
     let lastPatientId = null;
+    /** @type {string | null} */
+    let lastBroadcastedContext = null;
 
     // ==========================================
     // FIELD MAPPINGS (từ autofill.js)
@@ -294,6 +296,32 @@ const VNPTClinicalFill = (function () {
             hideFillButton();
             currentFormIframe = null;
             _currentFormType = '';
+        }
+
+        // Broadcast context to Side Panel from top frame as a 100% reliable backup
+        let newContext = 'PATIENT_LIST';
+        if (_currentFormType === 'hoichan') {
+            newContext = 'CONCILIUM';
+        } else if (_currentFormType === 'chuyenvien') {
+            newContext = 'TRANSFER';
+        } else if (_currentFormType === 'xutri') {
+            newContext = 'DISCHARGE';
+        } else if (_currentFormType === 'nhapbenhnhan') {
+            newContext = 'ADMISSION';
+        }
+
+        if (newContext !== 'PATIENT_LIST') {
+            // If there's an active form, always broadcast to keep side panel in sync
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: newContext }).catch(() => {});
+            }
+            lastBroadcastedContext = newContext;
+        } else if (lastBroadcastedContext !== 'PATIENT_LIST') {
+            // Revert back to PATIENT_LIST only once when the form is closed
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: 'PATIENT_LIST' }).catch(() => {});
+            }
+            lastBroadcastedContext = 'PATIENT_LIST';
         }
     }
 
@@ -703,21 +731,32 @@ const VNPTClinicalFill = (function () {
     // ==========================================
     function parseICD(diagString) {
         if (!diagString) return null;
-        const parts = diagString.split(';');
         
+        // Chuẩn hoá toàn bộ mảng mã bệnh: loại bỏ khoảng trắng thừa xung quanh '-'
+        const parts = diagString.split(';').map(p => {
+            p = p.trim();
+            const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+            if (match) {
+                return match[1].toUpperCase() + '-' + match[2].trim();
+            }
+            return p;
+        }).filter(p => p);
+
+        if (parts.length === 0) return null;
+
         // Tách bệnh chính (Mã đầu tiên)
-        const mainMatch = parts[0].match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+        const mainMatch = parts[0].match(/^([A-Z]\d{2}(?:\.\d+)?)-(.*)$/i);
         const mainDiag = mainMatch 
-            ? { code: mainMatch[1].trim(), text: mainMatch[2].trim() }
-            : { code: '', text: parts[0].trim() };
+            ? { code: mainMatch[1], text: mainMatch[2] }
+            : { code: '', text: parts[0] };
             
         // Tách bệnh kèm theo (Ghép các mã còn lại)
         let subDiag = null;
         if (parts.length > 1) {
-            const subRaw = parts.slice(1).map(p => p.trim()).join(';');
-            const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+            const subRaw = parts.slice(1).join(';');
+            const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)-(.*)$/i);
             subDiag = subMatch
-                ? { code: subMatch[1].trim(), text: subMatch[2].trim() }
+                ? { code: subMatch[1], text: subMatch[2] }
                 : { code: '', text: subRaw };
         }
 
@@ -1127,6 +1166,26 @@ const VNPTClinicalFill = (function () {
             }
         });
     }
+
+    // Listen to Side Panel commands
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'ALADINN_SIDE_PANEL_COMMAND') {
+            const payload = e.data.payload;
+            if (payload && payload.action === 'TRIGGER_FILL') {
+                const ctxMap = {
+                    'CONCILIUM': 'hoichan',
+                    'DISCHARGE': 'xutri',
+                    'TRANSFER': 'chuyenvien',
+                    'ADMISSION': 'nhapbenhnhan'
+                };
+                const expectedCtx = ctxMap[payload.context];
+                if (currentFormIframe && _currentFormType === expectedCtx) {
+                    const btn = document.getElementById('vnpt-clinical-fab');
+                    if (btn) btn.click();
+                }
+            }
+        }
+    });
 
     return { init };
 })();

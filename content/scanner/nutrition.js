@@ -503,6 +503,17 @@ const VNPTNutrition = (function () {
         });
     }
 
+    // Listen to Side Panel commands
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'ALADINN_SIDE_PANEL_COMMAND') {
+            const payload = e.data.payload;
+            if (payload && payload.action === 'TRIGGER_FILL' && payload.context === 'NUTRITION') {
+                const btn = document.getElementById('vnpt-nutrition-fab');
+                if (btn) btn.click();
+            }
+        }
+    });
+
     return { init, doFillForm };
 })();
 

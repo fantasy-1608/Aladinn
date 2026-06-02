@@ -84,6 +84,26 @@
     if (window.parent !== window) {
         window.parent.postMessage({ type: 'HOICHAN_HELPER_READY' }, PARENT_ORIGIN);
     }
+    
+    // Broadcast context to Side Panel ONLY when the iframe becomes active/interacted with
+    // because VNPT HIS loads all iframes hidden in the background.
+    var broadcastContext = function() {
+        const el1 = document.getElementById('txtYEUCAUHOICHAN') || document.getElementById('txtYeuCauHoiChan');
+        const el2 = document.getElementById('txtTOMTAT_TIEUSUBENH') || document.getElementById('txtTINHTRANG_NGUOIBENH');
+        const isVisible = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
+        
+        if (!isVisible(el1) && !isVisible(el2)) return;
+        
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: 'CONCILIUM' }).catch(() => {});
+        }
+    };
+    
+    window.addEventListener('focus', broadcastContext);
+    document.addEventListener('click', broadcastContext);
+    
+    // Self-healing context broadcast every 1.5s
+    setInterval(broadcastContext, 1500);
 
     function sendResponse(success, filledCount, error) {
         var target = window.parent || window.top;

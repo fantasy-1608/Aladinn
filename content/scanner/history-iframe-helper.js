@@ -209,4 +209,23 @@
         }
     } catch (_err) {}
 
+    // Broadcast context to Side Panel ONLY when the iframe becomes active/interacted with
+    var broadcastContext = function() {
+        const el1 = document.getElementById('txtLYDOVAOVIEN');
+        const el2 = document.getElementById('txtQTBENHLY');
+        const isVisible = (el) => el && el.offsetWidth > 0 && el.offsetHeight > 0;
+        
+        if (!isVisible(el1) && !isVisible(el2)) return;
+        
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+            chrome.runtime.sendMessage({ type: 'CONTEXT_CHANGED', context: 'MEDICAL_RECORD' }).catch(function(){});
+        }
+    };
+    
+    window.addEventListener('focus', broadcastContext);
+    document.addEventListener('click', broadcastContext);
+    
+    // Self-healing context broadcast every 1.5s
+    setInterval(broadcastContext, 1500);
+
 })();

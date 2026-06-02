@@ -265,6 +265,14 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
                 transcriptTextarea.scrollTop = transcriptTextarea.scrollHeight;
                 window.transcript = transcriptTextarea.value;
             }
+            
+            // Broadcast to Side Panel
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage({
+                    type: 'VOICE_TRANSCRIPT_UPDATE',
+                    text: finalTranscript + interimTranscript
+                }).catch(() => {});
+            }
             updateProcessBtnState();
         };
     }

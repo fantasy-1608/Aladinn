@@ -533,20 +533,30 @@ const VNPTHistory = (function () {
                 }
                 
                 if (diagSource) {
-                    const parts = diagSource.split(';');
-                    const mainMatch = parts[0].match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
-                    history.mainDiag = mainMatch 
-                        ? { code: mainMatch[1].trim(), text: mainMatch[2].trim() }
-                        : { code: '', text: parts[0].trim() };
-                        
-                    if (parts.length > 1) {
-                        const subRaw = parts.slice(1).map(p => p.trim()).join(';');
-                        const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
-                        history.subDiag = subMatch
-                            ? { code: subMatch[1].trim(), text: subMatch[2].trim() }
-                            : { code: '', text: subRaw };
+                    const parts = diagSource.split(';').map(p => {
+                        p = p.trim();
+                        const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+                        if (match) {
+                            return match[1].toUpperCase() + '-' + match[2].trim();
+                        }
+                        return p;
+                    }).filter(p => p);
+
+                    if (parts.length > 0) {
+                        const mainMatch = parts[0].match(/^([A-Z]\d{2}(?:\.\d+)?)-(.*)$/i);
+                        history.mainDiag = mainMatch 
+                            ? { code: mainMatch[1], text: mainMatch[2] }
+                            : { code: '', text: parts[0] };
+                            
+                        if (parts.length > 1) {
+                            const subRaw = parts.slice(1).join(';');
+                            const subMatch = subRaw.match(/^([A-Z]\d{2}(?:\.\d+)?)-(.*)$/i);
+                            history.subDiag = subMatch
+                                ? { code: subMatch[1], text: subMatch[2] }
+                                : { code: '', text: subRaw };
+                        }
+                        console.log('[History] Đã đồng bộ Chẩn đoán vào Bệnh án:', history.mainDiag, history.subDiag);
                     }
-                    console.log('[History] Đã đồng bộ Chẩn đoán vào Bệnh án:', history.mainDiag, history.subDiag);
                 } else {
                     console.warn('[History] Không lấy được dữ liệu chẩn đoán từ API hay Cache.');
                 }
@@ -1223,6 +1233,17 @@ const VNPTHistory = (function () {
             }
         })();
     }
+
+    // Listen to Side Panel commands
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'ALADINN_SIDE_PANEL_COMMAND') {
+            const payload = e.data.payload;
+            if (payload && payload.action === 'TRIGGER_FILL' && payload.context === 'MEDICAL_RECORD') {
+                const btn = document.getElementById('vnpt-history-fab');
+                if (btn) btn.click();
+            }
+        }
+    });
 
     return { init, fetchHistoryForPatient, doFillForm };
 })();
