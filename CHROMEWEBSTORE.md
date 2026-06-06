@@ -116,8 +116,7 @@ Vietnamese
 ## Privacy Policy
 
 **Privacy Policy URL** [REQUIRED]
-<!-- TODO: Replace with actual hosted URL after deploying to GitHub Pages -->
-https://fantasy-1608.github.io/Aladinn/privacy-policy
+https://fantasy-1608.github.io/Aladinn/privacy-policy.html
 
 <!-- See docs/privacy-policy.md for the full policy text -->
 
