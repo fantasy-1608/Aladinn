@@ -240,15 +240,15 @@ class CDSCacheManager {
         panel.style.cssText = `
             position: fixed; top: 20px; right: 20px; z-index: 2147483647;
             width: 450px; max-height: 80vh; overflow-y: auto;
-            background: linear-gradient(145deg, #1a1510, #0f0d0a);
+            background: linear-gradient(145deg, #ffffff, #f9f9f9);
             border: 1px solid rgba(212,162,90,0.4); border-radius: 12px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.8);
-            color: #e8dcc8; font-family: 'Courier New', monospace; font-size: 12px; padding: 15px;
+            color: #333333; font-family: 'Courier New', monospace; font-size: 12px; padding: 15px;
         `;
         
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '❌';
-        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: transparent; border: none; cursor: pointer; color: #d4a25a; font-size: 16px;';
+        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: transparent; border: none; cursor: pointer; color: #004f9e; font-size: 16px;';
         closeBtn.onclick = () => panel.remove();
         
         const ttlRemaining = this.cache._medsTimestamp ? Math.max(0, 300000 - (Date.now() - this.cache._medsTimestamp)) : 0;
@@ -257,24 +257,24 @@ class CDSCacheManager {
         const _escHtml = (str) => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         
         panel.innerHTML = `
-            <h3 style="margin-top: 0; color: #d4a25a; border-bottom: 1px solid rgba(212,162,90,0.3); padding-bottom: 8px;">🧞 AI Cache Debug Panel</h3>
+            <h3 style="margin-top: 0; color: #004f9e; border-bottom: 1px solid rgba(0,79,158,0.3); padding-bottom: 8px;">🧞 AI Cache Debug Panel</h3>
             <div><strong>Patient Key:</strong> ${_escHtml(this._patientKey || 'N/A')}</div>
             <div><strong>BenhNhan ID:</strong> ${_escHtml(this.cache.benhnhanId || 'N/A')}</div>
             <div><strong>KhamBenh ID:</strong> ${_escHtml(this.cache.khambenhId || 'N/A')}</div>
             <div><strong>Patient IDs:</strong> ${_escHtml(Array.from(this.cache.patientIds).join(', ') || 'None')}</div>
             <div><strong>Medications TTL:</strong> ${ttlRemaining > 0 ? Math.round(ttlRemaining/1000) + 's' : 'Expired/None'}</div>
             
-            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Diagnoses (${this.cache.diagnoses.length})</h4>
+            <h4 style="color: #004f9e; margin: 10px 0 5px;">Diagnoses (${this.cache.diagnoses.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
                 ${this.cache.diagnoses.map(d => `[${_escHtml(d.code)}] ${_escHtml(d.name || '')}`).join('<br>') || 'None'}
             </div>
             
-            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Medications (${this.cache.medications.length})</h4>
+            <h4 style="color: #004f9e; margin: 10px 0 5px;">Medications (${this.cache.medications.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 150px; overflow-y: auto;">
                 ${this.cache.medications.map(m => _escHtml(m.display_name)).join('<br>') || 'None'}
             </div>
             
-            <h4 style="color: #d4a25a; margin: 10px 0 5px;">Labs (${this.cache.labs.length})</h4>
+            <h4 style="color: #004f9e; margin: 10px 0 5px;">Labs (${this.cache.labs.length})</h4>
             <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
                 ${this.cache.labs.map(l => `[${_escHtml(l.code)}] ${_escHtml(l.value)}`).join('<br>') || 'None'}
             </div>

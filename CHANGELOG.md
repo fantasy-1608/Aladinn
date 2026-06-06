@@ -7,6 +7,33 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.1.2] — 2026-06-06
+
+### ✨ Side Panel & Tính năng Lâm sàng Mới
+
+- **Side Panel Chrome**: Tích hợp Side Panel (`sidepanel/`) cho phép bác sĩ mở bảng điều khiển Aladinn ngay bên cạnh HIS mà không cần popup — tối ưu luồng làm việc trên màn hình rộng.
+- **Lab Trend Analyzer**: Module phân tích xu hướng xét nghiệm (`lab-trend-analyzer.js`) — tự động nhận diện xu hướng tăng/giảm các chỉ số xét nghiệm qua nhiều lần xét nghiệm liên tiếp.
+- **Trend Chart**: Module biểu đồ xu hướng trực quan (`trend-chart.js`) — hiển thị đồ thị biến thiên chỉ số xét nghiệm theo thời gian, giúp bác sĩ nhận diện bất thường nhanh chóng.
+- **Discharge Summary**: Module tóm tắt xuất viện (`discharge-summary.js`) — tự động tổng hợp thông tin chẩn đoán, thuốc, diễn tiến để hỗ trợ hoàn tất hồ sơ xuất viện.
+- **Protocol Suggestion**: Module gợi ý phác đồ (`protocol-suggestion.js`) — đề xuất phác đồ điều trị dựa trên chẩn đoán và dữ liệu lâm sàng hiện tại.
+
+### 🚀 Tối ưu hóa Hiệu năng (Lazy Loading)
+
+- **Tách pha tải dữ liệu CLS Modal**: Chuyển từ `Promise.all()` tải đồng loạt 8 API sang chiến lược 2 pha — Phase A tải dữ liệu header/tab đầu tiên, Phase B tải song song các tab còn lại khi người dùng chuyển tab. Giảm thời gian hiển thị modal đầu tiên lên đến 40%.
+- **Song song hóa Drug Sheet Fetch**: Chuyển vòng lặp tuần tự `for...of` sang `Promise.all(candidates.map(...))` khi fetch phiếu thuốc, loại bỏ waterfall latency.
+- **CDS Cache TTL**: Tinh chỉnh thời gian sống cache CDS để cân bằng giữa hiệu năng và độ tươi dữ liệu.
+
+### 🎨 Đồng bộ Bảng Màu VNPT HIS
+
+- **Xóa bỏ Desert Mystic**: Chuyển toàn bộ inline styles còn sót từ bảng màu Desert Mystic (`#d4a25a`, `#7a6e5e`, `#e8dcc8`) sang bảng màu VNPT HIS chính thức (`#004f9e`, `#666666`, `#333333`) ở Quick Time Edit, Sign Module checkboxes.
+
+### 🛠️ Sửa lỗi & Cải tiến
+
+- **Kích hoạt PTTT Print**: Mở lại chức năng in phiếu PTTT từ API Bridge (trước đó bị vô hiệu hóa trong Safe Mode).
+- **Fix lint warnings**: Xử lý biến unused (`badgeSz`, `indPx`) bằng prefix `_` convention.
+
+---
+
 ## [2.1.1] — 2026-06-01
 
 ### 🚀 Tối ưu hóa Hiệu năng (Performance Tuning)

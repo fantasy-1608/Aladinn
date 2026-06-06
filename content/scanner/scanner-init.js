@@ -279,7 +279,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             .replace(/'/g, '&#39;');
     }
 
-    function renderSafeAiMarkdown(rawText, { basePx, smPx, badgeSz, indPx }) {
+    function renderSafeAiMarkdown(rawText, { basePx, smPx, badgeSz: _badgeSz, indPx: _indPx }) {
         let text = escapeHtml(rawText);
         
         // Helper to format content inside cards
@@ -300,9 +300,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             txt = txt.replace(/^[-*]\s+(.+)$/gm, `<li style="margin-bottom:8px; line-height:1.65; font-size:${basePx}px; color:#333; margin-left:20px;">$1</li>`);
 
             // Trends
-            txt = txt.replace(/✅\s*Cải thiện/gi, `<span style="background:#2e7d32; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">✅ CẢI THIỆN</span>`);
-            txt = txt.replace(/⚠️\s*Xấu đi/gi, `<span style="background:#d32f2f; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">⚠️ XẤU ĐI</span>`);
-            txt = txt.replace(/➡️\s*Không đổi/gi, `<span style="background:#757575; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">➡️ KHÔNG ĐỔI</span>`);
+            txt = txt.replace(/✅\s*Cải thiện/gi, '<span style="background:#2e7d32; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">✅ CẢI THIỆN</span>');
+            txt = txt.replace(/⚠️\s*Xấu đi/gi, '<span style="background:#d32f2f; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">⚠️ XẤU ĐI</span>');
+            txt = txt.replace(/➡️\s*Không đổi/gi, '<span style="background:#757575; color:#fff; padding:2px 6px; font-size:0.85em; font-weight:bold; margin-right:4px;">➡️ KHÔNG ĐỔI</span>');
 
             return txt.replace(/\n/g, '<br>');
         };
@@ -474,9 +474,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     if (Logger) Logger.error('Scanner.Init', 'Failed to clear cache on force reset:', e);
                 }
             });
-
             // Standalone Ai Lab Summary function for Popup to call
-            async function showAiLabSummary() {
+            async function showAiLabSummary(defaultActiveTab = 1) {
+                let activeTabIdx = defaultActiveTab;
+                if (activeTabIdx === null || activeTabIdx === undefined) {
+                    activeTabIdx = 1;
+                }
                 // [SAFETY] AbortController + unsubscribe — cleanup khi chuyển BN hoặc kết thúc
                 let _clsAbortController = null;
                 let _clsUnsubPatient = null;
@@ -581,15 +584,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         10000, 'pttt'
                     );
 
-                    const [result, drugsResult, historyData, treatmentResult, clinicalSummary, demographics, vitalsFromApi, ptttResult] = await Promise.all([
-                        fetchLabsFromBridge(pid),
-                        fetchDrugsFromBridge(pid),
+                    // ── Phase A: Essential data (header + tab Khám vào viện) ──
+                    // Chỉ fetch data tối thiểu để hiện modal nhanh
+                    const [historyData, treatmentResult, clinicalSummary, demographics, vitalsFromApi] = await Promise.all([
                         fetchHistoryFromBridge(pid),
                         fetchTreatmentFromBridge(pid),
                         fetchClinicalSummaryFromBridge(pid),
                         fetchDemographicsFromBridge(pid),
-                        fetchVitalsFromBridge(pid),
-                        fetchPtttFromBridge(pid)
+                        fetchVitalsFromBridge(pid)
                     ]);
 
                     // ═══════════════════════════════════════════════════════════
@@ -607,14 +609,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                     }
 
-                    const labs = result?.labs || [];
-                    const imaging = result?.imaging || [];
-                    const drugs = drugsResult?.drugList || [];
                     const treatmentList = treatmentResult?.treatmentList || [];
                     const yLenhList = treatmentResult?.yLenhList || [];
-                    
-                    // [SAFETY] Chỉ lấy tên BN từ API response — KHÔNG lấy từ Store để tránh mix tên khi chuyển BN
-                    const patientName = result?.patientName || 'Bệnh Nhân';
                     
                     // Phase 1: API-first for age & diagnosis, DOM fallback
                     let age = demographics?.age || demographics?.dob || '';
@@ -676,6 +672,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     }
 
                     const patientInfo = { 
+                        id: pid,
                         age, 
                         diagnosis,
                         diagHistory,
@@ -688,7 +685,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             yLenhList,
                             admissionTimes: clinicalSummary?.admissionTimes || {},
                             treatmentContext: treatmentResult?.treatmentContext || clinicalSummary?.treatmentContext || {},
-                            pttt: ptttResult?.ptttList || []
+                            pttt: [] // Lazy-loaded: will be populated when Lâm sàng tab is opened
                         },
                         vitalsData: vitalsFromApi || null
                     };
@@ -697,11 +694,6 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     if (demographics && window.VNPTPatientContextGuard && window.VNPTStore?.actions?.updatePatientDemographics) {
                         const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
                         window.VNPTStore.actions.updatePatientDemographics(patientKey, demographics);
-                    }
-
-                    if (labs.length === 0 && imaging.length === 0 && drugs.length === 0 && (!historyData || Object.keys(historyData).length === 0)) {
-                        window.VNPTRealtime?.showToast('⚠️ Không tìm thấy dữ liệu CLS / Thuốc / Bệnh án của bệnh nhân này.', 'warning');
-                        return false;
                     }
 
                     // ═══════════════════════════════════════════════════════════
@@ -713,9 +705,28 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         });
                     }
 
-                    // Hiển thị trực tiếp thay vì chờ người dùng click widget
+                    // ── Phase B: Fetch labs EAGERLY (XN + CĐHA are lightweight) ──
+                    // Người dùng cần thấy số liệu XN/CĐHA ngay khi mở bảng
+                    let labsData = [], imagingData = [];
+                    try {
+                        const labResult = await fetchLabsFromBridge(pid);
+                        if (labResult) {
+                            labsData = labResult.labs || [];
+                            imagingData = labResult.imaging || [];
+                        }
+                    } catch (e) { console.error('[AI Lab] Error fetching labs:', e); }
+
+                    // ── Phase C: Deferred fetches — chỉ lazy-load Thuốc & PTTT (tốn thời gian) ──
+                    const deferredFetches = {
+                        fetchDrugs: () => fetchDrugsFromBridge(pid),     // Tab Lâm sàng
+                        fetchPttt: () => fetchPtttFromBridge(pid),       // Tab Lâm sàng
+                        _abortSignal: _clsAbortSignal,
+                        _contextToken: contextToken,
+                    };
+
+                    // Hiển thị trực tiếp — modal mở ngay với dữ liệu XN/CĐHA thật, skeleton cho Lâm sàng
                     if (typeof showLabTimelineModal === 'function') {
-                        showLabTimelineModal(labs, imaging, drugs, patientName, patientInfo, pid);
+                        showLabTimelineModal(labsData, imagingData, [], patientInfo.demographics?.patientName || 'Bệnh Nhân', patientInfo, pid, activeTabIdx, deferredFetches);
                     }
                     
                     // Reset trạng thái nút trên lưới
@@ -1452,9 +1463,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 4px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8)); cursor: pointer; transform-origin: bottom center; transition: transform 0.2s;';
             
             // Add click listener
-            badge.addEventListener('click', (_e) => {
-                // Let the click propagate to select the row
-                // Then trigger the PTTT print action via messaging
+            badge.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
                 window.postMessage({
                     type: 'TRIGGER_PTTT_PRINT',
                     rowId: tr.id,
@@ -1465,6 +1477,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // Add a small animation 
                 badge.style.transform = 'scale(1.2) rotate(15deg)';
                 setTimeout(() => badge.style.transform = '', 200);
+            });
+
+            // Prevent jqGrid from redrawing/interacting with the row during click/mouse events
+            ['mousedown', 'mouseup', 'dblclick'].forEach(evt => {
+                badge.addEventListener(evt, e => e.stopPropagation());
             });
             
             nameTd.appendChild(badge);
@@ -1627,18 +1644,20 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // ║  ~1400 lines — largest section, candidate for future split.    ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
-    function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}, originalPid = null) {
+    function showLabTimelineModal(labs, imaging, drugs, patientName = 'Bệnh Nhân', patientInfo = {}, originalPid = null, defaultActiveTab = 1, deferredFetches = null, isBackgroundRender = false) {
         let targetDoc = document;
         try { if (window.top && window.top.document) targetDoc = window.top.document; } catch(_e) {}
         
-        // [SAFETY] Cleanup subscriber cũ nếu có
-        if (window._clsModalUnsubPatient) {
-            window._clsModalUnsubPatient();
-            window._clsModalUnsubPatient = null;
-        }
+        if (!isBackgroundRender) {
+            // [SAFETY] Cleanup subscriber cũ nếu có
+            if (window._clsModalUnsubPatient) {
+                window._clsModalUnsubPatient();
+                window._clsModalUnsubPatient = null;
+            }
 
-        const existing = targetDoc.getElementById('vnpt-lab-timeline-modal');
-        if (existing) existing.remove();
+            const existing = targetDoc.getElementById('vnpt-lab-timeline-modal');
+            if (existing) existing.remove();
+        }
         
         const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const imgList = imaging || [];
@@ -1899,6 +1918,39 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                     }
                     
+                    // ═══ RE-EVALUATE: Parse refText → derive min/max → fix missing status ═══
+                    // api-bridge có thể thiếu cờ nếu HIS không cung cấp TRISOBINHTHUONG.
+                    // Nhưng scanner-init có fallback chuẩn → parse lại để so sánh giá trị.
+                    let derivedMin = NaN, derivedMax = NaN;
+                    if (refText) {
+                        const dashM = refText.match(/([\d.,]+)\s*(?:-|–|→)\s*([\d.,]+)/);
+                        if (dashM) {
+                            derivedMin = parseFloat(dashM[1].replace(',', '.'));
+                            derivedMax = parseFloat(dashM[2].replace(',', '.'));
+                        } else {
+                            const ltM = refText.match(/[<≤]\s*([\d.,]+)/);
+                            if (ltM) derivedMax = parseFloat(ltM[1].replace(',', '.'));
+                            const gtM = refText.match(/[>≥]\s*([\d.,]+)/);
+                            if (gtM) derivedMin = parseFloat(gtM[1].replace(',', '.'));
+                        }
+                    }
+
+                    // Re-check each cell's status using derived reference
+                    for (const d of sortedDates) {
+                        const cell = data.values[d];
+                        if (cell && !cell.status) {
+                            const numVal = parseFloat(String(cell.value).replace(',', '.'));
+                            if (!isNaN(numVal)) {
+                                if (!isNaN(derivedMax) && numVal > derivedMax) cell.status = 'Cao';
+                                else if (!isNaN(derivedMin) && numVal < derivedMin) cell.status = 'Thấp';
+                            }
+                        }
+                    }
+
+                    // Re-compute rowHasAbn after re-evaluation
+                    const rowHasAbnFinal = Object.values(data.values).some(v => _isAbnormal(v.status));
+                    const leftBorderFinal = rowHasAbnFinal ? 'border-left:3px solid #c62828;' : 'border-left:1px solid #dddddd;';
+
                     // Rút gọn tên xét nghiệm quá dài
                     let displayName = cName;
                     const cNameUpper = cName.toUpperCase();
@@ -1921,7 +1973,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     }).filter(pt => pt.rawValue !== null && pt.rawValue !== undefined && pt.rawValue !== '·');
 
                     mRowsHtml += `<tr class="aladinn-lab-row" style="background:${rowBg}; cursor:pointer;" data-trend-values="${escapeHtml(JSON.stringify(trendPoints))}" data-indicator-name="${escapeHtml(cName)}" data-indicator-unit="${escapeHtml(data.unit || '')}" data-ref-min="${data.refMin || ''}" data-ref-max="${data.refMax || ''}">`;
-                    mRowsHtml += `<td style="padding:6px 10px; color:#333333; font-weight:${rowHasAbn ? '700' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc; ${leftBorder}">${displayName}</td>`;
+                    mRowsHtml += `<td style="padding:6px 10px; color:#333333; font-weight:${rowHasAbnFinal ? '700' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc; ${leftBorderFinal}">${displayName}</td>`;
                     mRowsHtml += `<td style="padding:6px 8px; color:#666666; font-size:12.6px; white-space:nowrap; background:${stickyBg}; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${refText}</td>`;
 
                     for (const d of sortedDates) {
@@ -1996,6 +2048,74 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 tablesHtml += '</tbody></table></div></div>';
             }
         }
+
+        // ═══ POST-PROCESSING: Rebuild abnormals after fallback re-evaluation ═══
+        // The initial abnormals array was built from raw api-bridge data.
+        // After fallback reference matching and re-evaluation, some cells now have
+        // status 'Cao'/'Thấp' that were previously empty. Rebuild everything.
+        const reEvalAbnormals = [];
+        for (const cat of Object.keys(grouped)) {
+            for (const [cName, data] of Object.entries(grouped[cat])) {
+                for (const [date, cell] of Object.entries(data.values)) {
+                    if (_isAbnormal(cell.status)) {
+                        reEvalAbnormals.push({
+                            code: cName,
+                            testName: cName,
+                            value: cell.value,
+                            unit: data.unit || '',
+                            status: cell.status,
+                            sheetDate: date
+                        });
+                    }
+                }
+            }
+        }
+
+        // Rebuild summary cards with corrected count
+        const summaryCardsFixed = `<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
+          <div style="background:#ffffff; border:1px solid #cccccc; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:#555555; text-transform:uppercase; letter-spacing:1px; font-weight:700;">🧪 Tổng chỉ số</div>
+            <div style="font-size:26.4px; font-weight:800; color:#1e5494; margin-top:4px;">${totalIndicators}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${sortedMCats.length} nhóm XN</div>
+          </div>
+          <div style="background:${reEvalAbnormals.length > 0 ? '#fff5f5' : '#ffffff'}; border:1px solid ${reEvalAbnormals.length > 0 ? '#ffcccc' : '#cccccc'}; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:${reEvalAbnormals.length > 0 ? '#c62828' : '#2e7d32'}; text-transform:uppercase; letter-spacing:1px; font-weight:700;">⚠️ Bất thường</div>
+            <div style="font-size:26.4px; font-weight:800; color:${reEvalAbnormals.length > 0 ? '#c62828' : '#2e7d32'}; margin-top:4px;">${reEvalAbnormals.length}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${reEvalAbnormals.length > 0 ? 'Cần lưu ý' : 'Tất cả bình thường'}</div>
+          </div>
+          <div style="background:#ffffff; border:1px solid #cccccc; border-radius:0px; padding:12px;">
+            <div style="font-size:12px; color:#555555; text-transform:uppercase; letter-spacing:1px; font-weight:700;">📅 Ngày XN</div>
+            <div style="font-size:26.4px; font-weight:800; color:#1e5494; margin-top:4px;">${sortedDates.length}</div>
+            <div style="font-size:12px; color:#666666; margin-top:2px;">${firstDate} → ${latestDate}</div>
+          </div>
+        </div>`;
+
+        // Rebuild alerts with corrected abnormals (latest value per indicator)
+        let alertsHtmlFixed = '';
+        if (reEvalAbnormals.length > 0) {
+            const uniqueAbnFixed = {};
+            for (const a of reEvalAbnormals) {
+                const key = a.code || a.testName;
+                if (!uniqueAbnFixed[key] || _parseLabDate(a.sheetDate) > _parseLabDate(uniqueAbnFixed[key].sheetDate)) uniqueAbnFixed[key] = a;
+            }
+            const abnItemsFixed = Object.values(uniqueAbnFixed);
+            alertsHtmlFixed = `<div style="background:#fff5f5; border:1px solid #ffcccc; border-radius:0px; padding:12px 14px; margin-bottom:16px;">
+              <div style="font-size:13.2px; font-weight:700; color:#c62828; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">🔴 Chỉ số bất thường mới nhất</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                ${abnItemsFixed.map(a => {
+                    const sc = _statusColor(a.status);
+                    const bg = sc ? sc.bg : '#fff5f5';
+                    const text = sc ? sc.text : '#c62828';
+                    const border = sc ? (sc.text === '#c62828' ? '#ffcccc' : '#b3d4fc') : '#ffcccc';
+                    return `<span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:0px; font-size:14.4px; font-weight:700; background:${bg}; color:${text}; border:1px solid ${border};">${a.code || a.testName}: ${a.value} ${a.unit || ''} ${sc ? sc.icon : ''}</span>`;
+                }).join('')}
+              </div>
+            </div>`;
+        }
+
+        // Use the fixed versions
+        const finalSummaryCards = summaryCardsFixed;
+        const finalAlertsHtml = alertsHtmlFixed;
 
         // --- CĐHA Section ---
         let cdhaHtml = '';
@@ -2184,8 +2304,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 for (let pi = di + 1; pi < allDates.length; pi++) {
                     if (drugsByDate[allDates[pi]]) { prevDrugs = drugsByDate[allDates[pi]]; break; }
                 }
-                const prevDrugNames = new Set(prevDrugs.map(d => d.TENTHUOC));
-                const currDrugNames = new Set(dayDrugs.map(d => d.TENTHUOC));
+                const _prevDrugNames = new Set(prevDrugs.map(d => d.TENTHUOC));
+                const _currDrugNames = new Set(dayDrugs.map(d => d.TENTHUOC));
 
                 // Diagnosis comparison
                 const currDiags = diagByDate[dt] || new Set();
@@ -2608,13 +2728,46 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- Lâm sàng & Thuốc: diễn tiến + thuốc (combined timeline) ---
         const lamsangHtml = clinicalGuideHtml + (combinedTimelineHtml || '<div style="text-align:center; padding:30px; color:#6B6F78; font-style:italic;">Chưa có dữ liệu diễn tiến.</div>');
 
+        if (isBackgroundRender) {
+            // Background render mode: directly update the innerHTML of existing tabs
+            const existingModal = targetDoc.getElementById('vnpt-lab-timeline-modal');
+            if (existingModal) {
+                const contentXn = existingModal.querySelector('#aladinn-content-xn');
+                if (contentXn) {
+                    contentXn.innerHTML = `${finalSummaryCards}${finalAlertsHtml}<div id="aladinn-lab-trend-container" style="display:none; background:#ffffff; border:1px solid #cccccc; border-bottom:2px solid #1e5494; padding:12px; margin-bottom:14px; border-radius:0px !important; position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:14.4px; font-weight:700; color:#1e5494; display:flex; align-items:center; gap:6px;">
+                                📈 Biểu đồ diễn tiến chỉ số: <span id="aladinn-lab-trend-title" style="color:#333333;">—</span>
+                            </span>
+                            <button id="aladinn-lab-trend-close" style="background:none; border:none; color:#777777; font-size:18px; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.color='#c62828'" onmouseout="this.style.color='#777777'" title="Đóng biểu đồ">&times;</button>
+                        </div>
+                        <div style="width:100%; height:180px; position:relative; background:#fcfdfe;">
+                            <canvas id="aladinn-lab-trend-canvas" style="width:100%; height:180px; display:block;"></canvas>
+                        </div>
+                    </div>${tablesHtml}`;
+                }
+                
+                const contentCdha = existingModal.querySelector('#aladinn-content-cdha');
+                if (contentCdha) contentCdha.innerHTML = cdhaHtml || '<div style="text-align:center; padding:20px; color:#8C9099; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>';
+
+                const contentLamsang = existingModal.querySelector('#aladinn-content-lamsang');
+                if (contentLamsang) contentLamsang.innerHTML = lamsangHtml;
+                
+                // Update Tab Button Labels to reflect newly loaded counts
+                const btnXn = existingModal.querySelector('#aladinn-tab-xn');
+                if (btnXn) btnXn.innerHTML = `🧪 XN (${totalIndicators})`;
+
+                const btnCdha = existingModal.querySelector('#aladinn-tab-cdha');
+                if (btnCdha) btnCdha.innerHTML = `🩻 CĐHA (${imgList.length})`;
+            }
+            return;
+        }
+
         // --- Modal ---
         const modal = document.createElement('div');
         modal.id = 'vnpt-lab-timeline-modal';
         modal.className = 'vnpt-glass-overlay';
         modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:2147480000;';
-
-        const defaultActiveTab = 1;
 
         // Giới tính: API-first (demographics) → patientInfo → DOM fallback
         let headerGender = '';
@@ -2813,10 +2966,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
             </style>
             <div style="display:flex; border-bottom:1px solid #cccccc; margin-bottom:14px; gap:3px;">
-                <button id="aladinn-tab-khamvaovien" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
-                <button id="aladinn-tab-lamsang" style="flex:1.2; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
+                <button id="aladinn-tab-khamvaovien" style="flex:1.1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🏥 Khám vào viện</button>
+                <button id="aladinn-tab-lamsang" style="flex:1.1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">📋 Lâm sàng &amp; Thuốc</button>
                 <button id="aladinn-tab-xn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🧪 XN (${totalIndicators})</button>
                 <button id="aladinn-tab-cdha" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">🩻 CĐHA (${imgList.length})</button>
+
                 <button id="aladinn-tab-ai" style="flex:1; display:flex; align-items:center; justify-content:center; gap:5px; background:#eeeeee; border:1px solid #dddddd; border-bottom:none; color:#555555; padding:9px 4px; font-weight:600; border-radius:0px !important; cursor:pointer; font-size:14.4px; transition:all 0.2s; line-height:normal;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     AI
@@ -2846,27 +3000,15 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                             ${khamVaoVienHtml}
                         </div>
                         <div id="aladinn-content-lamsang" style="display:none;">
-                            ${lamsangHtml}
+                            ${deferredFetches ? '<div id="aladinn-lamsang-skeleton" style="padding:16px;"><div style="height:14px;background:#e0e7f1;width:200px;margin-bottom:12px;animation:aisSkel 1.5s ease-in-out infinite;"></div><div style="height:40px;background:#f0f4fa;width:100%;margin-bottom:8px;animation:aisSkel 1.5s ease-in-out 0.15s infinite;"></div><div style="height:40px;background:#f0f4fa;width:100%;margin-bottom:8px;animation:aisSkel 1.5s ease-in-out 0.25s infinite;"></div><div style="height:40px;background:#f0f4fa;width:100%;margin-bottom:8px;animation:aisSkel 1.5s ease-in-out 0.35s infinite;"></div><div style="text-align:center;color:#1e5494;font-size:13px;margin-top:16px;font-style:italic;">⏳ Đang tải Lâm sàng & Thuốc...</div></div>' : lamsangHtml}
                         </div>
                         <div id="aladinn-content-xn" style="display:none;">
-                            ${summaryCards}
-                            ${alertsHtml}
-                            <div id="aladinn-lab-trend-container" style="display:none; background:#ffffff; border:1px solid #cccccc; border-bottom:2px solid #1e5494; padding:12px; margin-bottom:14px; border-radius:0px !important; position:relative;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                    <span style="font-size:14.4px; font-weight:700; color:#1e5494; display:flex; align-items:center; gap:6px;">
-                                        📈 Biểu đồ diễn tiến chỉ số: <span id="aladinn-lab-trend-title" style="color:#333333;">—</span>
-                                    </span>
-                                    <button id="aladinn-lab-trend-close" style="background:none; border:none; color:#777777; font-size:18px; cursor:pointer; font-weight:bold; transition:0.2s;" onmouseover="this.style.color='#c62828'" onmouseout="this.style.color='#777777'" title="Đóng biểu đồ">&times;</button>
-                                </div>
-                                <div style="width:100%; height:180px; position:relative; background:#fcfdfe;">
-                                    <canvas id="aladinn-lab-trend-canvas" style="width:100%; height:180px; display:block;"></canvas>
-                                </div>
-                            </div>
-                            ${tablesHtml}
+                            ${finalSummaryCards}${finalAlertsHtml}${tablesHtml}
                         </div>
                         <div id="aladinn-content-cdha" style="display:none;">
                             ${cdhaHtml || '<div style="text-align:center; padding:20px; color:#8C9099; font-style:italic;">Không có dữ liệu Chẩn đoán hình ảnh.</div>'}
                         </div>
+
                         <div id="aladinn-content-ai" style="display:none; padding:4px 2px;">
                             <div id="ai-tab-placeholder" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:14px; text-align:center;">
                                 <div style="width:52px;height:52px;border-radius:0px !important;background:#e6f2ff;border:1px solid #cccccc;display:flex;align-items:center;justify-content:center;">
@@ -2885,6 +3027,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                                         Phân tích ngay
                                     </button>
+
+                                     <button id="btn-protocol-suggestion" style="display:flex;align-items:center;gap:7px;background:#fff3e0;border:1px solid #ffe0b2;color:#e65100;border-radius:0px !important;padding:9px 18px;font-size:15.6px;font-weight:700;cursor:pointer;font-family:'Segoe UI',sans-serif;letter-spacing:0.3px;transition:all 0.2s;" title="Gợi ý phác đồ điều trị theo Hướng dẫn BYT (chỉ tham khảo)">
+                                         💊 Gợi ý Phác đồ
+                                     </button>
                                 </div>
                             </div>
                             <div id="ai-tab-loading" style="display:none; padding:20px 10px;">
@@ -2926,6 +3072,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 </div>
                             </div>
                             <div id="ai-tab-error" style="display:none;padding:16px;background:#ffebee;border:1px solid #ffcdd2;border-radius:0px !important;color:#c62828;font-size:15.6px;"></div>
+
+
                         </div>
                     </div>
                     <div style="margin:16px -16px -16px -16px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; background:#f5f5f5; border-top:1px solid #cccccc; padding:10px 16px; border-radius:0px !important;">
@@ -3170,7 +3318,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (trendContainer) trendContainer.style.display = 'none';
         });
 
-        // ── Tab logic (4 tabs: Lâm sàng, XN, CĐHA, AI) ─────────────────────
+        // ── Tab logic (5 tabs: Khám vào viện, Lâm sàng, XN, CĐHA, AI) ───
         const tabKhamVaoVien = modal.querySelector('#aladinn-tab-khamvaovien');
         const tabLamsang     = modal.querySelector('#aladinn-tab-lamsang');
         const tabXn          = modal.querySelector('#aladinn-tab-xn');
@@ -3186,7 +3334,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         const allTabs     = [tabKhamVaoVien, tabLamsang, tabXn, tabCdha, tabAI];
         const allContents = [contentKhamVaoVien, contentLamsang, contentXn, contentCdha, contentAI];
 
-        function activateTab(idx) {
+        let loadingTabs = { 1: false, 2: false, 3: false };
+
+        async function activateTab(idx) {
             allTabs.forEach((t, i) => {
                 if (!t) return;
                 if (i === idx) {
@@ -3207,6 +3357,30 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (!c) return;
                 c.style.display = i === idx ? 'block' : 'none';
             });
+
+            if (deferredFetches) {
+                const needsDrugs = (idx === 1);
+                let shouldReRender = false;
+
+                if (needsDrugs && !loadingTabs[1]) {
+                    loadingTabs[1] = true;
+                    try {
+                        const dRes = await (deferredFetches.drugs || (deferredFetches.drugs = deferredFetches.fetchDrugs()));
+                        if (dRes) drugs = dRes.drugList || [];
+                        const pRes = await (deferredFetches.pttt || (deferredFetches.pttt = deferredFetches.fetchPttt()));
+                        if (pRes) {
+                            if (!patientInfo.clinicalData) patientInfo.clinicalData = {};
+                            patientInfo.clinicalData.pttt = pRes.ptttList || [];
+                        }
+                        shouldReRender = true;
+                    } catch (e) { console.error('Error lazy loading drugs', e); }
+                }
+
+                if (shouldReRender) {
+                    // Cập nhật DOM của modal (background render)
+                    showLabTimelineModal(labs, imaging, drugs, patientName, patientInfo, originalPid, idx, null, true);
+                }
+            }
         }
 
         tabKhamVaoVien?.addEventListener('click', () => activateTab(0));
@@ -3216,6 +3390,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         tabAI?.addEventListener('click', () => { activateTab(4); handleAITabOpen(); });
 
         activateTab(defaultActiveTab);
+        // If default tab is AI (4), trigger lazy load
+        if (defaultActiveTab === 4) handleAITabOpen();
 
         // ── PACS Button click handler (delegated) ────────────────────────────
         modal.addEventListener('click', async (e) => {
@@ -3891,6 +4067,103 @@ Trình bày theo cấu trúc (NGẮN GỌN, y khoa chuyên nghiệp):
         btnStart?.addEventListener('click', () => runAIAnalysis(false));
         btnRerun?.addEventListener('click', () => { aiResultLoaded = false; runAIAnalysis(true); });
         btnCopyPrompt?.addEventListener('click', () => runAIAnalysis(false, true));
+
+
+        // ── Protocol Suggestion Button (Phase 4) ────────────────────────────
+        const btnProtocol = modal.querySelector('#btn-protocol-suggestion');
+        const protocolContainer = modal.querySelector('#ai-tab-result') || contentAI;
+        btnProtocol?.addEventListener('click', () => {
+            if (!protocolContainer) return;
+
+            // [SAFETY] Guard: patient context must be valid
+            if (!patientInfo.id) {
+                window.VNPTRealtime?.showToast?.('⚠️ Chưa chọn bệnh nhân. Vui lòng chọn bệnh nhân trước.', 'warning');
+                return;
+            }
+
+            // Anonymize
+            const patientRef = patientInfo.id
+                ? `BN-${String(patientInfo.id).slice(-4).padStart(4,'0')}`
+                : 'BN-XXXX';
+            const birthYear = patientInfo.age
+                ? (String(patientInfo.age).match(/\d{4}/) || [''])[0] || patientInfo.age
+                : 'không rõ';
+
+            let gender = 'không rõ';
+            try {
+                const demoGender = patientInfo.demographicsGender || '';
+                if (demoGender) {
+                    const g = String(demoGender).trim().toLowerCase();
+                    if (g === '1' || g === 'nam' || g === 'male') gender = 'Nam';
+                    else if (g === '2' || g === 'nữ' || g === 'nu' || g === 'female') gender = 'Nữ';
+                    else gender = demoGender.trim() || 'không rõ';
+                }
+            } catch (_) { /* ignore */ }
+
+            // Diagnosis
+            let diagnosis;
+            if (patientInfo.diagHistory && patientInfo.diagHistory.length > 0) {
+                const icdMap = new Map();
+                for (const dh of patientInfo.diagHistory) {
+                    const segments = dh.split(/[;()]/g).map(s => s.trim()).filter(Boolean);
+                    for (const seg of segments) {
+                        const m = seg.match(/^([A-Z]\d{2}(?:\.\d{1,2})?)\s*[-–]?\s*(.*)/i);
+                        if (m) {
+                            const code = m[1]; const desc = m[2].trim();
+                            if (!icdMap.has(code) || desc.length > (icdMap.get(code) || '').length) icdMap.set(code, desc);
+                        }
+                    }
+                }
+                diagnosis = icdMap.size > 0
+                    ? [...icdMap.entries()].map(([c, d]) => d ? `${c} - ${d}` : c).join('; ')
+                    : patientInfo.diagHistory[patientInfo.diagHistory.length - 1];
+            } else {
+                diagnosis = patientInfo.diagnosis || 'Chưa rõ chẩn đoán';
+            }
+
+            // Current drugs (latest date)
+            let currentDrugs = '';
+            try {
+                const latestDate = Object.keys(drugsByDate).sort((a, b) => b.split('/').reverse().join('').localeCompare(a.split('/').reverse().join('')))[0] || null;
+                const latestDrugs = latestDate ? (drugsByDate[latestDate] || []) : drugs;
+                const uniqueDrugs = [...new Map(latestDrugs.map(d => [d.TENTHUOC, d])).values()];
+                currentDrugs = uniqueDrugs.slice(0, 12).map(d => {
+                    let entry = d.TENTHUOC || '';
+                    if (!entry) return '';
+                    if (d.HAMLUONG?.trim()) entry += ` ${d.HAMLUONG.trim()}`;
+                    if (d.SOLUONG) entry += ` (${d.SOLUONG} ${d.DONVITINH || ''}/ngày)`.trim();
+                    return entry;
+                }).filter(Boolean).join('; ');
+            } catch (_) { /* ignore */ }
+
+            // Critical labs (abnormals only)
+            let criticalLabs = '';
+            try {
+                criticalLabs = abnormals.slice(0, 10).map(a => {
+                    const ref = a.refDisplay ? ` [BT: ${a.refDisplay}]` : '';
+                    return `${a.testName || a.code}: ${a.value}${a.unit ? ' ' + a.unit : ''}${ref} (!)`;
+                }).join('; ') || '';
+            } catch (_) { /* ignore */ }
+
+            const selectedModel = modal.querySelector?.('#ai-model-select')?.value || 'gemini-2.5-flash-preview-05-20';
+
+            const protocolCtx = {
+                patientRef, birthYear, gender, diagnosis,
+                currentDrugs, criticalLabs,
+                model: selectedModel,
+            };
+
+            if (window.Aladinn?.ProtocolSuggestion?.injectUI) {
+                window.Aladinn.ProtocolSuggestion.injectUI(protocolContainer, protocolCtx);
+                setTimeout(() => protocolContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+            } else {
+                window.VNPTRealtime?.showToast?.('❌ Tính năng Gợi ý Phác đồ chưa sẵn sàng. Thử tải lại trang.', 'warning');
+            }
+        });
+
+
+
     }
 
 })();
+

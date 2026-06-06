@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Aladinn — Trợ lý VNPT HIS (Side Panel)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Lớp phủ Glassmorphism -->
+        <div class="glass-content">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="logo">
+                    <img src="../assets/icons/aladinn-vector.svg" class="genie-img" alt="Aladinn" id="genie-logo">
+                    <span class="app-title">Aladinn</span>
+                    <span class="badge-vip-pro">VIP PRO</span>
+                </div>
+            </header>
+
+            <!-- Tabs Navigation -->
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-target="tab-clinical">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m9.1 14.9-2.3 2.3a2.4 2.4 0 0 1-3.4 0l-1.6-1.6a2.4 2.4 0 0 1 0-3.4l2.3-2.3"/><path d="m14 10 1.5 1.5"/><path d="m20 20-3.5-3.5"/></svg>
+                    Lâm sàng
+                </button>
+                <button class="tab-btn" data-target="tab-system">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Hệ thống
+                </button>
+            </div>
+
+            <div class="tab-content-container">
+                <!-- Tab Lâm sàng -->
+                <div class="tab-pane active" id="tab-clinical">
+                    <!-- Context Info -->
+                    <div class="context-card glass-card" id="context-card">
+                        <div class="context-header">
+                            <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            <span id="current-context">Đang tải ngữ cảnh...</span>
+                        </div>
+                    </div>
+
+                    <!-- Patient Card -->
+                    <div class="patient-card glass-card empty" id="patient-card">
+                        <div class="patient-avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                        </div>
+                        <span class="patient-empty-text">Chọn bệnh nhân trên danh sách</span>
+                    </div>
+
+                    <!-- Dynamic Action Zone (Scanner/Voice) -->
+                    <div id="dynamic-action-zone">
+                        <p class="helper-text">Các công cụ AI sẽ tự động xuất hiện tại đây tuỳ theo màn hình bạn đang mở trên HIS.</p>
+                    </div>
+                    
+                    <!-- Voice Transcript Zone -->
+                    <div id="voice-transcript-zone" class="glass-card hidden mt-4">
+                        <div class="voice-header">
+                            <div class="pulse-container">
+                                <span class="pulse-dot"></span>
+                                <span class="pulse-ring"></span>
+                            </div>
+                            <span class="voice-status-text">AI đang nghe...</span>
+                        </div>
+                        <div class="voice-content" id="voice-content"></div>
+                    </div>
+
+
+
+                </div>
+
+                <!-- Tab Hệ thống -->
+                <div class="tab-pane" id="tab-system">
+                    <div class="feature-toggles">
+                        <label class="toggle-chip glass-card active" id="chip-scanner">
+                            <div class="chip-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m4.93 19.07 14.14-14.14"/></svg>
+                                <span>Scanner</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="toggle-scanner" checked>
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                        <label class="toggle-chip glass-card active" id="chip-voice">
+                            <div class="chip-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                                <span>AI Voice</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="toggle-voice" checked>
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                        <label class="toggle-chip glass-card active" id="chip-sign">
+                            <div class="chip-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                                <span>Ký số</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="toggle-sign" checked>
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                        <label class="toggle-chip glass-card active" id="chip-cds">
+                            <div class="chip-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+                                <span>CDS</span>
+                            </div>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="toggle-cds" checked>
+                                <span class="slider"></span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="system-actions">
+                        <button id="open-options-btn" class="sys-btn glass-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Cài đặt mở rộng
+                        </button>
+                        <button id="clear-cache-btn" class="sys-btn danger-btn glass-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Xóa cache bộ nhớ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>

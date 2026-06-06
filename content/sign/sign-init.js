@@ -537,7 +537,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
                 allCb.type = 'checkbox';
                 allCb.className = 'aladinn-ward-cb-all';
                 allCb.title = 'Chọn/bỏ chọn tất cả bệnh nhân';
-                allCb.style.cssText = 'cursor:pointer; width:15px; height:15px; accent-color:#d4a25a; margin-right:4px; vertical-align:middle;';
+                allCb.style.cssText = 'cursor:pointer; width:15px; height:15px; accent-color:#004f9e; margin-right:4px; vertical-align:middle;';
                 allCb.addEventListener('click', (e) => e.stopPropagation());
                 allCb.addEventListener('change', () => {
                     const isChecked = allCb.checked;
@@ -559,7 +559,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'aladinn-ward-cb';
-            cb.style.cssText = 'margin-right:4px; cursor:pointer; vertical-align:middle; width:15px; height:15px; accent-color:#d4a25a;';
+            cb.style.cssText = 'margin-right:4px; cursor:pointer; vertical-align:middle; width:15px; height:15px; accent-color:#004f9e;';
             cb.dataset.rowId = row.id;
             cb.addEventListener('click', (e) => e.stopPropagation());
             cb.addEventListener('change', updateWardBtnState);

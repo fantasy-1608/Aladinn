@@ -123,7 +123,7 @@ const VNPTConfig = {
     // ALLOWED ORIGINS (Security)
     // ===========================================
     security: {
-        allowedOrigin: 'https://bvdongthap.vncare.vn'
+        allowedOrigin: window.location.origin
     }
 };
 

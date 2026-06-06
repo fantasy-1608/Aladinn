@@ -586,10 +586,7 @@
         }
 
         // SECURITY: Block unknown or write intents
-        if (!READ_ONLY_INTENTS.has(event.data.type)) {
-            if (event.data.type === 'TRIGGER_PTTT_PRINT') {
-                console.warn('[Aladinn API-Bridge] TRIGGER_PTTT_PRINT is disabled in Safe Mode');
-            }
+        if (!READ_ONLY_INTENTS.has(event.data.type) && event.data.type !== 'TRIGGER_PTTT_PRINT') {
             return;
         }
 
@@ -661,6 +658,9 @@
                 break;
             case 'REQ_FETCH_PATIENT_DEMOGRAPHICS':
                 fetchPatientDemographics(event.data.rowId, event.data.requestId);
+                break;
+            case 'TRIGGER_PTTT_PRINT':
+                triggerPtttPrint(event.data.rowId);
                 break;
             // SECURITY: REQ_CALL_SP has been removed to prevent arbitrary SP execution via XSS.
 
@@ -2003,7 +2003,9 @@
             // --- Step 2: Fetch list of drug sheets — gộp TẤT CẢ candidates (nhiều khoa) ---
             let sheets = [];
             const seenSheetIds = new Set();
-            for (const testId of candidates) {
+            
+            // Parallelize fetching sheets across all candidates to reduce waterfall latency
+            const fetchSheetPromises = candidates.map(async (testId) => {
                 try {
                     const params = {
                         func: 'ajaxExecuteQueryPaging',
@@ -2023,47 +2025,53 @@
                         const rows = data.rows || [];
                         if (rows.length > 0) {
                             debugLog(`[Aladinn Drug] Step 1: Found ${rows.length} drug sheets via candidate ${testId} (dayFilter: ${dayFilter})`);
-                            for (const row of rows) {
-                                const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
-                                if (sid && !seenSheetIds.has(sid)) {
-                                    seenSheetIds.add(sid);
-                                    sheets.push(row);
-                                }
-                            }
-                        }
-                    }
-                } catch (_e) { /* try next candidate */ }
-            }
-            // Strategy 2: NT.024.DSPHIEU with type=3 (drug sheets)
-            if (hsbaId) {
-                try {
-                    const p2 = {
-                        func: 'ajaxExecuteQueryPaging', uuid: uuid,
-                        params: ['NT.024.DSPHIEU'],
-                        options: [
-                            { name: '[0]', value: '' },
-                            { name: '[1]', value: String(benhnhanId) },
-                            { name: '[2]', value: '' }, // Rỗng để lấy TẤT CẢ các loại phiếu thay vì chỉ phiếu loại 3
-                            { name: '[3]', value: String(hsbaId) }
-                        ]
-                    };
-                    const url2 = `${baseUrl}?_search=false&rows=1000&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(p2))}`;
-                    const res2 = await fetch(url2, { credentials: 'include' });
-                    if (res2.ok) {
-                        const data2 = await res2.json();
-                        const rows2 = data2.rows || [];
-                        if (rows2.length > 0) {
-                            debugLog(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=''): Found ${rows2.length} sheets`);
-                            for (const row of rows2) {
-                                const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
-                                if (sid && !seenSheetIds.has(sid)) {
-                                    seenSheetIds.add(sid);
-                                    sheets.push(row);
-                                }
-                            }
+                            return rows;
                         }
                     }
                 } catch (_e) { /* silent */ }
+                return [];
+            });
+            
+            // Strategy 2: NT.024.DSPHIEU with type=3 (drug sheets)
+            if (hsbaId) {
+                const fetchDspHieuPromise = (async () => {
+                    try {
+                        const p2 = {
+                            func: 'ajaxExecuteQueryPaging', uuid: uuid,
+                            params: ['NT.024.DSPHIEU'],
+                            options: [
+                                { name: '[0]', value: '' },
+                                { name: '[1]', value: String(benhnhanId) },
+                                { name: '[2]', value: '' }, // Rỗng để lấy TẤT CẢ các loại phiếu thay vì chỉ phiếu loại 3
+                                { name: '[3]', value: String(hsbaId) }
+                            ]
+                        };
+                        const url2 = `${baseUrl}?_search=false&rows=1000&page=1&sidx=&sord=desc&postData=${encodeURIComponent(JSON.stringify(p2))}`;
+                        const res2 = await fetch(url2, { credentials: 'include' });
+                        if (res2.ok) {
+                            const data2 = await res2.json();
+                            const rows2 = data2.rows || [];
+                            if (rows2.length > 0) {
+                                debugLog(`[Aladinn Drug] Strategy 2 (NT.024.DSPHIEU type=''): Found ${rows2.length} sheets`);
+                                return rows2;
+                            }
+                        }
+                    } catch (_e) { /* silent */ }
+                    return [];
+                })();
+                fetchSheetPromises.push(fetchDspHieuPromise);
+            }
+
+            // Wait for all candidate sheet fetches concurrently
+            const allCandidateResults = await Promise.all(fetchSheetPromises);
+            for (const rows of allCandidateResults) {
+                for (const row of rows) {
+                    const sid = String(row.MAUBENHPHAMID || row.IDPHIEU || '');
+                    if (sid && !seenSheetIds.has(sid)) {
+                        seenSheetIds.add(sid);
+                        sheets.push(row);
+                    }
+                }
             }
 
             debugLog(`[Aladinn Drug] Step 1 total: ${sheets.length} unique sheets from ${candidates.length} candidates`);
@@ -2093,7 +2101,10 @@
             const MATERIAL_QUERY = 'NT.034.1';
 
             let allDrugs = [];
-            const detailPromises = sheets.map(async (sheet) => {
+            // Process sheets in chunks of 5 to avoid exceeding browser connection limits (which causes extreme latency)
+            for (let i = 0; i < sheets.length; i += 5) {
+                const chunk = sheets.slice(i, i + 5);
+                await Promise.all(chunk.map(async (sheet) => {
                 const sheetId = sheet.MAUBENHPHAMID || sheet.IDPHIEU;
                 const sheetDate = sheet.NGAYMAUBENHPHAM_SUDUNG || sheet.NGAYSD || sheet.NGAYSUDUNG || sheet.NGAYMAUBENHPHAM || '';
                 if (!sheetId) return;
@@ -2185,9 +2196,8 @@
                             });
                         }
                 } catch (_e) { /* skip failed sheet */ }
-            });
-
-            await Promise.all(detailPromises);
+                }));
+            }
 
             // Deduplicate drugs to prevent multiple queries from duplicating the same drug
             const uniqueDrugs = [];
@@ -3319,16 +3329,35 @@
                                     const refDisplay = item.TRISOBINHTHUONG || '';
 
                                     let status = '';
-                                    const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
-                                    if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                                    const flagRaw = String(item.BATTHUONG || item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || item.DANHGIA || item.TRANGTHAI || '').toLowerCase().trim();
+                                    if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'h' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
                                         status = 'Cao';
-                                    } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                                    } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'l' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
                                         status = 'Thấp';
+                                    } else if (flagRaw.includes('bất thường') || flagRaw.includes('abnormal')) {
+                                        status = 'Cao'; // Default to highlight
                                     }
+
+                                    let rMin = refMin;
+                                    let rMax = refMax;
+                                    // Extract min/max from refDisplay if missing
+                                    if ((!rMin || !rMax) && refDisplay) {
+                                        const dashMatch = refDisplay.match(/([\d.,]+)\s*(?:-|–)\s*([\d.,]+)/);
+                                        if (dashMatch) {
+                                            if (!rMin) rMin = dashMatch[1];
+                                            if (!rMax) rMax = dashMatch[2];
+                                        } else {
+                                            const ltMatch = refDisplay.match(/[<≤]\s*([\d.,]+)/);
+                                            if (ltMatch && !rMax) rMax = ltMatch[1];
+                                            const gtMatch = refDisplay.match(/[>≥]\s*([\d.,]+)/);
+                                            if (gtMatch && !rMin) rMin = gtMatch[1];
+                                        }
+                                    }
+
                                     if (!status && parsedValue) {
                                         const numVal = parseFloat(String(parsedValue).replace(',', '.'));
-                                        const numMin = parseFloat(String(refMin).replace(',', '.'));
-                                        const numMax = parseFloat(String(refMax).replace(',', '.'));
+                                        const numMin = parseFloat(String(rMin).replace(',', '.'));
+                                        const numMax = parseFloat(String(rMax).replace(',', '.'));
                                         if (!isNaN(numVal)) {
                                             if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
                                             else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
@@ -3405,7 +3434,10 @@
                     debugLog(`[API-Bridge] Fallback Old API XN sheets: ${uniqueSheets.length}`);
 
                     if (uniqueSheets.length > 0) {
-                        const detailPromises = uniqueSheets.map(async (sheet) => {
+                        // Process in chunks of 5 to avoid stalling network queue
+                        for (let i = 0; i < uniqueSheets.length; i += 5) {
+                            const chunk = uniqueSheets.slice(i, i + 5);
+                            await Promise.all(chunk.map(async (sheet) => {
                             const sheetId = sheet.MAUBENHPHAMID;
                             if (!sheetId) return;
 
@@ -3443,16 +3475,35 @@
                                         const refDisplay = item.TRISOBINHTHUONG || '';
 
                                         let status = '';
-                                        const flagRaw = String(item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || '').toLowerCase();
-                                        if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
+                                        const flagRaw = String(item.BATTHUONG || item.BATHUONG || item.BaThuong || item.FLAG_BATHUONG || item.DANHGIA || item.TRANGTHAI || '').toLowerCase().trim();
+                                        if (flagRaw === '1' || flagRaw === 'high' || flagRaw === 'h' || flagRaw === 'cao' || flagRaw.includes('tăng')) {
                                             status = 'Cao';
-                                        } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
+                                        } else if (flagRaw === '-1' || flagRaw === 'low' || flagRaw === 'l' || flagRaw === 'thấp' || flagRaw.includes('giảm')) {
                                             status = 'Thấp';
+                                        } else if (flagRaw.includes('bất thường') || flagRaw.includes('abnormal')) {
+                                            status = 'Cao';
                                         }
+
+                                        let rMin = refMin;
+                                        let rMax = refMax;
+                                        // Extract min/max from refDisplay if missing
+                                        if ((!rMin || !rMax) && refDisplay) {
+                                            const dashMatch = refDisplay.match(/([\d.,]+)\s*(?:-|–)\s*([\d.,]+)/);
+                                            if (dashMatch) {
+                                                if (!rMin) rMin = dashMatch[1];
+                                                if (!rMax) rMax = dashMatch[2];
+                                            } else {
+                                                const ltMatch = refDisplay.match(/[<≤]\s*([\d.,]+)/);
+                                                if (ltMatch && !rMax) rMax = ltMatch[1];
+                                                const gtMatch = refDisplay.match(/[>≥]\s*([\d.,]+)/);
+                                                if (gtMatch && !rMin) rMin = gtMatch[1];
+                                            }
+                                        }
+
                                         if (!status && parsedValue) {
                                             const numVal = parseFloat(String(parsedValue).replace(',', '.'));
-                                            const numMin = parseFloat(String(refMin).replace(',', '.'));
-                                            const numMax = parseFloat(String(refMax).replace(',', '.'));
+                                            const numMin = parseFloat(String(rMin).replace(',', '.'));
+                                            const numMax = parseFloat(String(rMax).replace(',', '.'));
                                             if (!isNaN(numVal)) {
                                                 if (!isNaN(numMax) && numVal > numMax) status = 'Cao';
                                                 else if (!isNaN(numMin) && numVal < numMin) status = 'Thấp';
@@ -3478,8 +3529,8 @@
                             } catch (errDetail) {
                                 console.error('[API-Bridge] Fallback Error fetching XN detail for sheet:', errDetail.message || 'Unknown error');
                             }
-                        });
-                        await Promise.all(detailPromises);
+                            }));
+                        }
                     }
                 } catch (errFallbackXn) {
                     console.error('[API-Bridge] Fallback Strategy B XN failed:', errFallbackXn.message || 'Unknown error');

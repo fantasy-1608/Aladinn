@@ -123,23 +123,23 @@
         toast.style.cssText = `
             position: fixed; bottom: 20px; right: 20px; z-index: 2147483647;
             max-width: 380px; padding: 14px 18px;
-            background: ${isKill ? 'linear-gradient(135deg, #7f1d1d, #991b1b)' : 'linear-gradient(135deg, #1a1510, #2d2418)'};
-            border: 1px solid ${isKill ? 'rgba(239,68,68,0.6)' : 'rgba(212,162,90,0.5)'};
+            background: ${isKill ? 'linear-gradient(135deg, #7f1d1d, #991b1b)' : 'linear-gradient(135deg, #004f9e, #1e5494)'};
+            border: 1px solid ${isKill ? 'rgba(239,68,68,0.6)' : 'rgba(0,79,158,0.5)'};
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            color: #e8dcc8; font-family: system-ui, sans-serif; font-size: 13px;
+            color: #ffffff; font-family: system-ui, sans-serif; font-size: 13px;
             line-height: 1.5;
             animation: aladinn-toast-in 0.4s ease-out;
         `;
         toast.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
                 <span style="font-size:18px;">${isKill ? '🚨' : '📢'}</span>
-                <strong style="color:${isKill ? '#fca5a5' : '#d4a25a'};">Thông báo từ Aladinn</strong>
+                <strong style="color:${isKill ? '#fca5a5' : '#e0f0ff'};">Thông báo từ Aladinn</strong>
             </div>
             <div>${safeMessage}</div>
             <button id="aladinn-toast-close" style="
                 position:absolute; top:8px; right:8px;
-                background:transparent; border:none; color:#e8dcc8;
+                background:transparent; border:none; color:#ffffff;
                 cursor:pointer; font-size:14px; opacity:0.7;
             ">✕</button>
         `;
