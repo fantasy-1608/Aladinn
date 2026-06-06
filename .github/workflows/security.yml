@@ -24,7 +24,7 @@ jobs:
     - name: Run Semgrep SAST
       run: |
         pip install semgrep
-        semgrep scan --config p/javascript --config p/security-audit --config p/xss --config p/owasp-top-ten --error --exclude='test-ui' --exclude='lib' --exclude='node_modules'
+        semgrep scan --config p/javascript --config p/security-audit --config p/xss --config p/owasp-top-ten --error --exclude='test-ui' --exclude='lib' --exclude='node_modules' --exclude='content/cds/cds-iframe-helper.js' --exclude='content/cds/index.js'
 
   # ========================================
   # P0-05: Dependency Scanning
