@@ -19,6 +19,21 @@ const UPDATE_CONFIG = {
 };
 
 /**
+ * Detect if installed from Chrome Web Store.
+ * CWS installs have 'update_url' auto-injected into the manifest by Chrome.
+ * Sideloaded (unpacked) installs do not.
+ * @returns {boolean}
+ */
+function isWebStoreInstall() {
+    try {
+        const manifest = chrome.runtime.getManifest();
+        return !!manifest.update_url;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * So sánh version semver đơn giản (1.0.0 < 1.1.0 < 2.0.0)
  * @returns {number} -1 nếu a < b, 0 nếu a == b, 1 nếu a > b
  */
@@ -45,6 +60,12 @@ function getCurrentVersion() {
  * Kiểm tra update từ GitHub Releases API
  */
 async function checkForUpdate() {
+    // CWS installs are auto-updated by Chrome — skip GitHub check
+    if (isWebStoreInstall()) {
+        console.log('[Aladinn Updater] ℹ️ Installed from Chrome Web Store — skipping GitHub update check (Chrome auto-updates).');
+        return null;
+    }
+
     try {
         const currentVersion = getCurrentVersion();
         
@@ -149,7 +170,7 @@ async function checkForUpdate() {
             await chrome.storage.local.remove('aladinn_update');
             chrome.action.setBadgeText({ text: '' });
             chrome.action.setTitle({ 
-                title: `Aladinn — VNPT HIS Assistant v${currentVersion}` 
+                title: `Aladinn v${currentVersion}` 
             });
             console.log(`[Aladinn Updater] ✅ Đang dùng phiên bản mới nhất: ${currentVersion}`);
             return null;

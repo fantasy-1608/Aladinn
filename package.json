@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "release": "node scripts/release.js",
+    "package:cws": "node scripts/package-cws.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",

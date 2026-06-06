@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Aladinn</title>
+    <style>
+        :root {
+            --primary: #2D509A;
+            --text: #333;
+            --bg: #fafbfc;
+            --card: #fff;
+            --border: #e1e4e8;
+            --accent: #5C86BF;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.7;
+            padding: 0;
+        }
+        .header {
+            background: var(--primary);
+            color: #fff;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.8rem; font-weight: 600; }
+        .header p { opacity: 0.85; margin-top: 0.5rem; font-size: 0.95rem; }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 4rem;
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.3rem;
+            margin-top: 2.5rem;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--border);
+        }
+        h3 {
+            color: var(--accent);
+            font-size: 1.05rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        p, li { margin-bottom: 0.6rem; font-size: 0.95rem; }
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.4rem; }
+        strong { color: var(--primary); }
+        code {
+            background: #f0f2f5;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+        }
+        th { background: #f6f8fa; color: var(--primary); font-weight: 600; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+        a { color: var(--accent); }
+        .badge {
+            display: inline-block;
+            background: #e8f0fe;
+            color: var(--primary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .vn-section {
+            background: #f6f8fa;
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 0 6px 6px 0;
+            margin-top: 2rem;
+        }
+        .vn-section h2 { border-bottom: none; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏺 Aladinn — Privacy Policy</h1>
+        <p>Last updated: June 6, 2026</p>
+    </div>
+
+    <div class="container">
+
+        <h2>Overview</h2>
+        <p>Aladinn is a Chrome browser extension that assists healthcare clinicians using the VNPT HIS (Hospital Information System) platform at vncare.vn. It provides voice-powered data entry, clinical data scanning, clinical decision support (CDS) alerts, and digital signing workflow assistance.</p>
+        <p>This privacy policy describes how Aladinn collects, uses, stores, and protects your data.</p>
+
+        <h2>What Data We Collect</h2>
+
+        <h3>1. User Preferences <span class="badge">Stored Locally</span></h3>
+        <ul>
+            <li>Voice input settings (language, auto-process toggle, theme)</li>
+            <li>Feature toggles (which modules are enabled: voice, scanner, CDS, sign)</li>
+            <li>Selected AI model preference</li>
+            <li>Creator name for signing workflow filter</li>
+        </ul>
+        <p><strong>Storage:</strong> <code>chrome.storage.local</code> (on your device only) and <code>chrome.storage.sync</code> (synced across your Chrome profile for non-sensitive settings like creator name and signing session counters).</p>
+
+        <h3>2. Encrypted API Key <span class="badge">Stored Locally</span></h3>
+        <ul>
+            <li>Your Google Gemini API key is encrypted using AES-GCM 256-bit encryption with a PIN-derived key (PBKDF2, 310,000 iterations, SHA-256)</li>
+            <li>The plaintext API key is <strong>never</strong> stored on disk — only the encrypted ciphertext</li>
+            <li>The decryption key exists only in RAM during your active session and is purged after 15 minutes of inactivity or on HIS logout</li>
+        </ul>
+        <p><strong>Storage:</strong> <code>chrome.storage.local</code> (encrypted ciphertext only). Never transmitted off-device.</p>
+
+        <h3>3. Clinical Data <span class="badge">Transient / In-Memory</span></h3>
+        <ul>
+            <li>When you use the clinical scanner or voice input features, Aladinn reads clinical data from the VNPT HIS web page (treatment grids, form fields, lab results)</li>
+            <li>This data is held <strong>in memory only</strong> for processing and display</li>
+            <li>Data is purged when you navigate away, log out of HIS, or after 15 minutes of inactivity</li>
+        </ul>
+
+        <h3>4. Audit Logs <span class="badge">Stored Locally / No PHI</span></h3>
+        <ul>
+            <li>Aladinn maintains local-only usage counters: number of scanner opens, AI requests, signing sessions, CDS alerts</li>
+            <li>These logs contain <strong>no patient identifiers</strong> — only event names, timestamps, and counts</li>
+            <li>Logs are automatically purged after 7 days and capped at 500 entries</li>
+        </ul>
+        <p><strong>Storage:</strong> <code>chrome.storage.local</code>. Never transmitted off-device.</p>
+
+        <hr>
+
+        <h2>Data Transmitted Off-Device</h2>
+
+        <h3>Google Gemini API</h3>
+        <p>When you use voice input or AI-powered clinical summarization, Aladinn sends clinical text to the Google Gemini API for processing. <strong>Before any transmission:</strong></p>
+        <ol>
+            <li>All Protected Health Information (PHI) is automatically redacted locally using the built-in PHI Redactor:
+                <ul>
+                    <li>Patient names are replaced with <code>[TÊN_BN]</code></li>
+                    <li>Phone numbers, ID card numbers, insurance numbers, and addresses are masked</li>
+                    <li>Clinical data (diagnoses, lab results, medications) is preserved for AI analysis</li>
+                </ul>
+            </li>
+            <li>If PHI is detected after redaction, the request is <strong>blocked entirely</strong> and an audit log entry is created</li>
+            <li>The API key used for authentication is your own personal Gemini API key — Aladinn does not use a shared or centralized API key</li>
+        </ol>
+        <p><strong>Google's privacy policy for Gemini API:</strong> <a href="https://ai.google.dev/gemini-api/terms" target="_blank">https://ai.google.dev/gemini-api/terms</a></p>
+
+        <h3>GitHub (Update Checks)</h3>
+        <p>Aladinn periodically checks for new versions via the GitHub Releases API and fetches a remote configuration file for safe-mode functionality. <strong>No user data is sent</strong> in these requests — only standard HTTP headers.</p>
+
+        <hr>
+
+        <h2>Data NOT Collected</h2>
+        <p>Aladinn does <strong>NOT</strong> collect:</p>
+        <ul>
+            <li>Browsing history</li>
+            <li>Personal communications</li>
+            <li>Location data</li>
+            <li>Financial information</li>
+            <li>Analytics or telemetry sent to external servers</li>
+            <li>Cookies or tracking identifiers</li>
+            <li>Data from any website other than vncare.vn</li>
+        </ul>
+
+        <hr>
+
+        <h2>Data Sharing</h2>
+        <p>Aladinn does <strong>NOT</strong> share your data with any third parties. Specifically:</p>
+        <ul>
+            <li>Data is <strong>NOT</strong> sold to third parties</li>
+            <li>Data is <strong>NOT</strong> used for advertising or profiling</li>
+            <li>Data is <strong>NOT</strong> used for creditworthiness or lending purposes</li>
+            <li>Data is <strong>NOT</strong> transmitted to any server other than Google Gemini API (for AI features) and GitHub (for update checks)</li>
+            <li>Google Gemini receives <strong>only de-identified clinical text</strong> — never raw patient data</li>
+        </ul>
+
+        <hr>
+
+        <h2>Data Retention and Deletion</h2>
+        <table>
+            <thead>
+                <tr><th>Data Type</th><th>Retention</th><th>How to Delete</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>User preferences</td><td>Until you change them or uninstall</td><td>Extension Options page or uninstall</td></tr>
+                <tr><td>Encrypted API key</td><td>Until you clear it or uninstall</td><td>Extension Options page → Clear API Key</td></tr>
+                <tr><td>In-memory clinical data</td><td>Purged on logout, navigation, or 15-min idle</td><td>Automatic</td></tr>
+                <tr><td>Audit logs</td><td>Auto-purged after 7 days (max 500 entries)</td><td>Extension Options page → Clear Logs</td></tr>
+                <tr><td>chrome.storage.sync data</td><td>Until you clear Chrome sync data</td><td>Chrome Settings → Sync → Clear Data</td></tr>
+            </tbody>
+        </table>
+        <p>When you uninstall Aladinn, all locally stored data is automatically removed by Chrome.</p>
+
+        <hr>
+
+        <h2>Security Measures</h2>
+        <ol>
+            <li><strong>Encryption:</strong> API keys are encrypted with AES-GCM 256-bit, derived from your PIN via PBKDF2 (310,000 iterations)</li>
+            <li><strong>Session Timeout:</strong> Decryption keys in RAM are automatically purged after 15 minutes of inactivity</li>
+            <li><strong>Logout Detection:</strong> When HIS logout is detected, all cached patient data and session keys are immediately purged</li>
+            <li><strong>PHI Redaction:</strong> All clinical text is automatically de-identified before external AI API calls</li>
+            <li><strong>Sender Validation:</strong> All internal messages are validated against the extension's own ID and trusted domains</li>
+            <li><strong>Domain Restriction:</strong> Content scripts only execute on *.vncare.vn — no other websites are affected</li>
+        </ol>
+
+        <hr>
+
+        <h2>Compliance</h2>
+        <p>Aladinn is designed to comply with:</p>
+        <ul>
+            <li><strong>Vietnam Personal Data Protection Law 2025</strong> (Luật BVDLCN 91/2025/QH15) — Medical data classified as sensitive, requiring explicit consent</li>
+            <li><strong>Vietnam Medical Examination and Treatment Law 2023</strong> (Luật KB-CB 15/2023/QH15) — Medical record confidentiality and patient rights</li>
+            <li><strong>Decree 102/2025</strong> — National health database, HL7 FHIR compliance</li>
+            <li><strong>Circular 13/2025/TT-BYT</strong> — Electronic medical records, digital signatures</li>
+        </ul>
+
+        <hr>
+
+        <h2>Changes to This Policy</h2>
+        <p>If we make material changes to this privacy policy, we will update the "Last updated" date at the top. For significant changes, we will notify users through the extension's update notification system.</p>
+
+        <hr>
+
+        <h2>Contact</h2>
+        <p>For privacy inquiries, questions, or concerns:</p>
+        <ul>
+            <li><strong>Email:</strong> <a href="mailto:trunganh1608@gmail.com">trunganh1608@gmail.com</a></li>
+            <li><strong>GitHub Issues:</strong> <a href="https://github.com/fantasy-1608/Aladinn/issues" target="_blank">github.com/fantasy-1608/Aladinn/issues</a></li>
+            <li><strong>Author:</strong> Huỳnh Trung Anh</li>
+        </ul>
+
+        <hr>
+
+        <div class="vn-section">
+            <h2>🇻🇳 Chính Sách Quyền Riêng Tư (Tiếng Việt)</h2>
+            <p><em>Cập nhật lần cuối: 06/06/2026</em></p>
+            <p>Aladinn là tiện ích mở rộng Chrome hỗ trợ y bác sĩ sử dụng VNPT HIS. Aladinn <strong>KHÔNG</strong> thu thập analytics, tracking, hay chia sẻ dữ liệu cá nhân. Dữ liệu lâm sàng chỉ được xử lý tạm thời trong bộ nhớ và được khử định danh (PHI Redaction) trước khi gửi lên AI.</p>
+            <h3>Dữ liệu được lưu trữ</h3>
+            <ul>
+                <li>Cài đặt người dùng (ngôn ngữ, tính năng bật/tắt) — lưu cục bộ</li>
+                <li>API Key Gemini — mã hóa AES-GCM 256-bit, không bao giờ gửi đi</li>
+                <li>Nhật ký kiểm tra (số lần sử dụng, không chứa thông tin bệnh nhân) — tự xóa sau 7 ngày</li>
+            </ul>
+            <h3>Dữ liệu gửi đi</h3>
+            <ul>
+                <li>Văn bản lâm sàng <strong>đã khử định danh</strong> → Google Gemini API (để phân tích AI)</li>
+                <li>Kiểm tra cập nhật → GitHub API (không gửi dữ liệu người dùng)</li>
+            </ul>
+            <h3>Cam kết</h3>
+            <ul>
+                <li>KHÔNG bán dữ liệu cho bên thứ ba</li>
+                <li>KHÔNG thu thập dữ liệu duyệt web, vị trí, tài chính</li>
+                <li>KHÔNG lưu thông tin định danh bệnh nhân</li>
+                <li>Tuân thủ Luật BVDLCN 2025 và Luật KB-CB 2023</li>
+            </ul>
+        </div>
+
+    </div>
+</body>
+</html>
