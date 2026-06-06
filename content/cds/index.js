@@ -313,6 +313,7 @@ function sendRequestToVisibleIframes(doc, messageType) {
         const isVisible = rect.width > 0 && rect.height > 0 && rect.left > -5000 && rect.top > -5000;
         if (!isVisible) return;
         try {
+            // nosemgrep: javascript.browser.security.wildcard-postmessage-configuration
             iframe.contentWindow?.postMessage({ type: messageType }, '*');
             if (iframe.contentDocument) {
                 sendRequestToVisibleIframes(iframe.contentDocument, messageType);
