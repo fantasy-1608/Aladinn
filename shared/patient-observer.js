@@ -37,17 +37,28 @@ HIS.PatientObserver = (function () {
 
     function _extractMaBA(tr) {
         if (!tr) return '';
-        // 1. Thử lấy từ td chứa HOSOBENHANID hoặc MABENHAN
-        const maBA = tr.querySelector("td[aria-describedby$='_MABENHAN'], td[aria-describedby$='_HOSOBENHANID']");
-        if (maBA && maBA.textContent.trim()) {
-            return maBA.textContent.trim();
+        // 1. Thử lấy từ td chứa HOSOBENHANID, MABENHAN, MAHOSOBENHAN, MABENHNHAN, KHAMBENHID, BENHNHANID, MABN, MABA
+        const maBAEl = tr.querySelector(
+            "td[aria-describedby$='_MABENHAN'], " +
+            "td[aria-describedby$='_HOSOBENHANID'], " +
+            "td[aria-describedby$='_MAHOSOBENHAN'], " +
+            "td[aria-describedby$='_MABENHNHAN'], " +
+            "td[aria-describedby$='_KHAMBENHID'], " +
+            "td[aria-describedby$='_BENHNHANID'], " +
+            "td[aria-describedby$='_MABN'], " +
+            "td[aria-describedby$='_MABA']"
+        );
+        if (maBAEl && maBAEl.textContent.trim()) {
+            return maBAEl.textContent.trim();
         }
         // 2. Fallback: Lấy cột số chứa 8-12 chữ số
         const cells = tr.querySelectorAll('td');
         if (cells && cells.length > 2) {
-            for (let i = 1; i < Math.min(5, cells.length); i++) {
+            for (let i = 1; i < cells.length; i++) {
                 const txt = cells[i].textContent.trim();
                 if (txt.length >= 8 && /^\d+$/.test(txt)) {
+                    // Tránh nhận nhầm cột điện thoại
+                    if (txt.startsWith('0') && txt.length === 10) continue;
                     return txt;
                 }
             }
@@ -60,6 +71,20 @@ HIS.PatientObserver = (function () {
      */
     function _extractPatientName(row) {
         if (!row) return '';
+        // 1. Thử lấy qua các cột tên phổ biến trong jqGrid của cả Ngoại và Nội trú
+        const nameCell = row.querySelector(
+            "td[aria-describedby$='_HOTEN'], " +
+            "td[aria-describedby$='_TENBENHNHAN'], " +
+            "td[aria-describedby$='_TEN_BN'], " +
+            "td[aria-describedby$='_TEN_BENHNHAN'], " +
+            "td[aria-describedby*='TENBENHNHAN'], " +
+            "td[aria-describedby*='HOTEN']"
+        );
+        if (nameCell && nameCell.textContent.trim()) {
+            return nameCell.textContent.trim();
+        }
+
+        // 2. Fallback: Quét các ô cột chữ có cấu trúc tên
         const cells = row.querySelectorAll('td');
         for (const cell of cells) {
             const t = (cell.textContent || '').trim();

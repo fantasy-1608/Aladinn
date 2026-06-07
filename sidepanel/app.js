@@ -34,14 +34,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Save states on change
-    const updateFeatures = () => {
-        chrome.storage.local.get(['aladinn_features'], (res) => {
-            const features = res.aladinn_features || {};
-            features.scanner = toggleScanner.checked;
-            features.voice = toggleVoice.checked;
-            features.sign = toggleSign.checked;
-            features.cds = toggleCds.checked;
-            chrome.storage.local.set({ aladinn_features: features });
+    // Save states on change
+    const updateFeatures = (e) => {
+        const id = e ? e.target.id : null;
+        const features = {
+            scanner: toggleScanner ? toggleScanner.checked : true,
+            voice: toggleVoice ? toggleVoice.checked : true,
+            sign: toggleSign ? toggleSign.checked : true,
+            cds: toggleCds ? toggleCds.checked : true
+        };
+        chrome.storage.local.set({ aladinn_features: features }, () => {
+            // Notify content scripts in the active tab
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, { type: 'FEATURE_TOGGLE', features }).catch(() => {});
+                }
+            });
+            // Notify background service worker
+            chrome.runtime.sendMessage({ type: 'FEATURE_TOGGLE', features }).catch(() => {});
+
+            if (id === 'toggle-voice') {
+                chrome.storage.local.set({ aladinn_voice_enabled: features.voice }, () => {
+                    chrome.runtime.sendMessage({ type: 'TOGGLE_VOICE', enabled: features.voice }).catch(() => {});
+                });
+            }
         });
     };
 

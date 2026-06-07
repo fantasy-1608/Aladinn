@@ -373,8 +373,8 @@ export const CDSExtractor = {
             const match1 = text.match(/Mã BA:\s*(\d+)/i);
             if (match1) return match1[1];
             
-            // Match dạng "123456789 | NGUYỄN VĂN A"
-            const match2 = text.match(/^(\d{8,12})\s*\|/);
+            // Match dạng "123456789 | NGUYỄN VĂN A" (cho phép khoảng trắng phía trước)
+            const match2 = text.match(/^\s*(\d{8,12})\s*\|/);
             if (match2) return match2[1];
         }
         
@@ -398,8 +398,8 @@ export const CDSExtractor = {
             const match1 = text.match(/Tên bệnh nhân:\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+)/i);
             if (match1 && match1[1].trim().length > 3) return match1[1].trim();
             
-            // Match dạng "123456789 | NGUYỄN HỮU ĐẢM |"
-            const match2 = text.match(/^\d{8,12}\s*\|\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+)\s*\|/i);
+            // Match dạng "123456789 | NGUYỄN HỮU ĐẢM |" (cho phép khoảng trắng phía trước)
+            const match2 = text.match(/^\s*\d{8,12}\s*\|\s*([A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ\s]+)\s*\|/i);
             if (match2 && match2[1].trim().length > 3) return match2[1].trim();
         }
         

@@ -1,13 +1,13 @@
 {
-    "version": 2,
+    "version": 3,
     "features": {
-        "autoSign": false,
-        "autoClick": false,
+        "autoSign": true,
+        "autoClick": true,
         "signSearch": true,
-        "cdsEngine": false,
-        "aiVoice": false,
+        "cdsEngine": true,
+        "aiVoice": true,
         "scanner": true,
-        "enableSmartPath": false
+        "enableSmartPath": true
     },
     "mode": "hospital_safe_mode",
     "emergencyMessage": ""
