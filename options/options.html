@@ -1,591 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Cài đặt Aladinn — Trợ lý VNPT HIS</title>
-    <style>
-        /* Nạp font chữ địa phương (local) để tuân thủ quy định bảo mật CSP của Chrome Manifest V3 */
-        @font-face {
-            font-family: 'Inter';
-            font-style: normal;
-            font-weight: 400 600;
-            font-display: swap;
-            src: url('../assets/fonts/inter-latin.woff2') format('woff2');
-            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0300-0301, U+0303, U+0309, U+0323, U+0340-0341, U+1EA0-1EF9, U+2000-206F, U+2074, U+20AB, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-        }
-        @font-face {
-            font-family: 'Outfit';
-            font-style: normal;
-            font-weight: 400 700;
-            font-display: swap;
-            src: url('../assets/fonts/outfit-latin.woff2') format('woff2');
-            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0300-0301, U+0303, U+0309, U+0323, U+0340-0341, U+1EA0-1EF9, U+2000-206F, U+2074, U+20AB, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-        }
-
-        :root {
-            --bg-body: #111418;
-            --bg-card: #191C20;
-            --bg-input: rgba(158, 202, 255, 0.04);
-            --border: rgba(66, 70, 79, 0.8);
-            --border-hover: rgba(140, 144, 153, 0.6);
-            --text-main: #E1E2E8;
-            --text-dim: #8C9099;
-            --primary: #9ECAFF;
-            --primary-hover: #B8D8FF;
-            --primary-light: rgba(158, 202, 255, 0.10);
-            --accent: #9ECAFF;
-            --success: #4ADE80;
-            --error: #FFB4AB;
-            --warning: #FBBF24;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --font-main: 'Inter', sans-serif;
-            --font-title: 'Outfit', sans-serif;
-        }
-
-        body {
-            font-family: var(--font-main);
-            background: var(--bg-body);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            background-image: 
-                radial-gradient(ellipse at 10% 0%, rgba(158, 202, 255, 0.04) 0%, transparent 45%),
-                radial-gradient(ellipse at 90% 100%, rgba(158, 202, 255, 0.02) 0%, transparent 40%);
-        }
-
-        .container {
-            width: 100%;
-            max-width: 960px;
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 40px;
-            animation: appFadeIn 0.5s ease;
-        }
-
-        @keyframes appFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Sidebar Navigation */
-        .sidebar {
-            background: #272A2F;
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            height: fit-content;
-            border: 1px solid var(--border);
-            position: sticky;
-            top: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .app-brand {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .genie-img {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            object-fit: cover;
-            background: var(--bg-body);
-            box-shadow: 0 4px 10px rgba(158, 202, 255, 0.15);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 22px;
-            font-family: var(--font-title);
-            font-weight: 700;
-            background: linear-gradient(135deg, #E1E2E8, #8C9099);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .version {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--accent);
-            margin-top: 4px;
-            display: inline-block;
-            background: var(--primary-light);
-            border: 1px solid rgba(158, 202, 255, 0.20);
-            padding: 2px 10px;
-            border-radius: 12px;
-        }
-
-        .badge-vip-pro {
-            font-size: 9px;
-            font-weight: 800;
-            color: #00e676;
-            background: rgba(0, 230, 118, 0.15);
-            border: 1px solid #00e676;
-            padding: 2px 6px;
-            border-radius: 0px;
-            margin-left: 6px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            display: inline-block;
-            vertical-align: middle;
-            line-height: 1;
-            animation: badge-glow-breath-opt 1.5s infinite alternate ease-in-out;
-        }
-
-        @keyframes badge-glow-breath-opt {
-            0% { box-shadow: 0 0 2px rgba(0, 230, 118, 0.2); }
-            100% { box-shadow: 0 0 8px rgba(0, 230, 118, 0.5); }
-        }
-
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .nav-item {
-            padding: 14px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-dim);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid transparent;
-        }
-
-        .nav-item .nav-icon {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-            flex-shrink: 0;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
-
-        .nav-item:hover {
-            background: rgba(158, 202, 255, 0.05);
-            color: var(--text-main);
-            border-color: rgba(158, 202, 255, 0.1);
-        }
-
-        .nav-item:hover .nav-icon {
-            opacity: 0.9;
-        }
-
-        .nav-item.active {
-            color: var(--accent);
-            background: var(--primary-light);
-            font-weight: 600;
-            border-color: rgba(158, 202, 255, 0.3);
-        }
-
-        .nav-item.active .nav-icon {
-            opacity: 1;
-            stroke: var(--accent);
-        }
-
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 60%;
-            width: 4px;
-            background: var(--primary);
-            border-radius: 0 4px 4px 0;
-        }
-
-        /* Main Content Area */
-        .content-area {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .section {
-            background: #1D2024;
-            border-radius: var(--radius-lg);
-            padding: 32px 40px;
-            border: 1px solid var(--border);
-            display: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .section.active {
-            display: block;
-            animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        h2 {
-            margin: 0 0 32px 0;
-            font-size: 20px;
-            font-family: var(--font-title);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-main);
-        }
-
-        h2 .section-icon {
-            width: 22px;
-            height: 22px;
-            stroke: var(--accent);
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-            flex-shrink: 0;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 28px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #d1d5db;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="password"],
-        select {
-            width: 100%;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            outline: none;
-            transition: 0.2s;
-            box-sizing: border-box;
-            font-family: var(--font-main);
-        }
-
-        input:focus, select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(158, 202, 255, 0.12);
-            background: rgba(158, 202, 255, 0.05);
-        }
-
-        .help-text {
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        .help-text a {
-            color: var(--accent);
-            text-decoration: none;
-            transition: 0.2s;
-        }
-
-        .help-text a:hover {
-            color: #D1E4FF;
-            text-decoration: underline;
-        }
-
-        /* Toggle Rows / Cards */
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            background: var(--bg-input);
-            border-radius: 14px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-        }
-
-        .toggle-row:hover {
-            border-color: var(--border-hover);
-            background: rgba(158, 202, 255, 0.06);
-        }
-
-        .toggle-info {
-            padding-right: 20px;
-        }
-
-        .toggle-info strong {
-            display: block;
-            margin-bottom: 4px;
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        .toggle-info span {
-            font-size: 13px;
-            color: var(--text-dim);
-            line-height: 1.5;
-            display: block;
-        }
-
-        /* iOS Style Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-            flex-shrink: 0;
-        }
-
-        .switch input { 
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.08);
-            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 24px;
-            border: 1px solid transparent;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 2px;
-            bottom: 2px;
-            background-color: white;
-            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        input:checked + .slider {
-            background-color: var(--primary);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(20px);
-        }
-
-        /* Buttons */
-        .btn {
-            background: var(--primary);
-            color: var(--bg-body);
-            border: none;
-            padding: 12px 24px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: var(--font-main);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(158, 202, 255, 0.25);
-        }
-
-        .btn-secondary {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(158, 202, 255, 0.08);
-            border-color: var(--border-hover);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn .btn-icon {
-            width: 16px;
-            height: 16px;
-            stroke: currentColor;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-        }
-
-        /* PIN Boxes */
-        .pin-boxes {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .pin-box {
-            width: 48px;
-            height: 56px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-size: 24px;
-            text-align: center;
-            color: var(--text-main);
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .pin-box:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(158, 202, 255, 0.12);
-            background: rgba(158, 202, 255, 0.05);
-        }
-
-        .pin-box.error {
-            border-color: var(--error);
-            box-shadow: 0 0 0 3px rgba(255, 180, 171, 0.15);
-            animation: shake 0.4s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
-        }
-
-        /* Magic Reveal Animation */
-        @keyframes magicAppear {
-            0% { opacity: 0; transform: scale(0.95) translateY(10px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .magic-reveal {
-            animation: magicAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-            border: 1px solid var(--primary) !important;
-            background: rgba(158, 202, 255, 0.05) !important;
-        }
-
-        /* Status Toast */
-        #status-toast {
-            position: fixed;
-            bottom: 32px;
-            right: 32px;
-            background: var(--success);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 14px;
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #status-toast::before {
-            content: '✓';
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            font-size: 12px;
-        }
-
-        #status-toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        
-        #status-toast.error {
-            background: var(--error);
-        }
-
-        #status-toast.error::before {
-            content: '!';
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(158, 202, 255, 0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(158, 202, 255, 0.4); }
-
-        /* AI Lock Container */
-        .ai-features-container {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .ai-features-container.locked {
-            opacity: 0.4;
-            pointer-events: none;
-            filter: grayscale(80%);
-        }
-        .lock-overlay-msg {
-            display: none;
-            color: var(--warning);
-            font-size: 14px;
-            margin-bottom: 20px;
-            padding: 12px;
-            background: rgba(251, 191, 36, 0.1);
-            border: 1px solid rgba(251, 191, 36, 0.3);
-            border-radius: 8px;
-            align-items: center;
-            gap: 8px;
-        }
-        .ai-features-container.locked .lock-overlay-msg {
-            display: flex;
-        }
-        
-        .group-title {
-            margin: 0 0 16px 0; 
-            font-size: 16px; 
-            font-family: var(--font-title); 
-            font-weight: 600; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px;
-            color: var(--accent);
-        }
-
-    </style>
+    <link rel="stylesheet" href="../styles/options.css">
 </head>
 <body>
 
@@ -593,22 +11,21 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="app-brand">
-                <img src="../assets/icons/aladinn-vector.svg" alt="Aladinn Genie Icon" class="genie-img">
+                <div class="genie-img">✨</div>
                 <div>
                     <h1 style="display: inline-block; vertical-align: middle;">Aladinn</h1>
-                    <span class="badge-vip-pro">VIP PRO</span>
-                    <span class="version" id="aladinn-version-tag" title="Phiên bản hiện tại">Version ...</span>
+                    <span class="badge-v2" id="aladinn-version-tag" style="cursor:pointer;" title="Click 5 lần để mở khóa tính năng ẩn">Version</span>
                 </div>
             </div>
 
             <nav class="nav-menu">
-                <div class="nav-item active" data-target="sec-basic">
+                <div class="nav-item active" data-target="sec-clinical">
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    <span>Cơ Bản</span>
+                    <span>Lâm sàng & Ký số</span>
                 </div>
-                <div class="nav-item" data-target="sec-advanced">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-                    <span>Nâng Cao</span>
+                <div class="nav-item" data-target="sec-ai">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.536 1.57 4.778 4 6.115V20l3.5-2.5c.477.069.976.1 1.5.1 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
+                    <span>Trợ lý AI</span>
                 </div>
                 <div class="nav-item" data-target="sec-templates">
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -616,17 +33,13 @@
                 </div>
                 <div class="nav-item" data-target="sec-features">
                     <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                    <span>Quản lý Tính năng</span>
-                </div>
-                <div class="nav-item" data-target="sec-ai-config">
-                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.536 1.57 4.778 4 6.115V20l3.5-2.5c.477.069.976.1 1.5.1 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
-                    <span>Tùy chỉnh AI</span>
+                    <span>Quản lý Hệ thống</span>
                 </div>
             </nav>
             
             <div style="margin-top: 40px;">
-                <button id="save-all-btn" class="btn" style="width: 100%; justify-content: center;">
-                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
+                <button id="save-all-btn" class="btn" style="width: 100%;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     Lưu Cấu Hình
                 </button>
             </div>
@@ -635,29 +48,16 @@
         <!-- Main Content -->
         <main class="content-area">
 
-            <!-- BASIC SETTINGS (NON-AI) -->
-            <section id="sec-basic" class="section active">
-                <h2>
-                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    Cơ Bản
-                </h2>
-
-                <h3 class="group-title">Tiện ích Bác sĩ & An toàn Lâm sàng</h3>
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <strong>Tooltip Sinh hiệu nổi</strong>
-                        <span>Hiển thị nhanh popup tooltip thông tin Sinh hiệu (HA, Mạch...) khi trỏ chuột vào giường bệnh</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="opt-scan-tooltip">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
+            <!-- TAB 1: LÂM SÀNG & KÝ SỐ -->
+            <section id="sec-clinical" class="section active">
+                <h2>Cấu hình Lâm sàng & Ký số</h2>
+                
+                <h3 class="group-title">Cảnh báo C.D.S & Dữ liệu</h3>
+                
                 <div class="toggle-row">
                     <div class="toggle-info">
                         <strong>Lược bỏ cảnh báo mức độ thấp (C.D.S)</strong>
-                        <span>C.D.S chỉ hiển thị các cảnh báo mức Độ Nghiêm trọng (Critical) và Cảnh báo (Warning). Ẩn các thông tin mức thấp để giảm thiểu phiền nhiễu.</span>
+                        <span>C.D.S chỉ hiển thị các cảnh báo mức Độ Nghiêm trọng (Critical) và Cảnh báo (Warning). Ẩn các mức thấp.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="opt-cds-filter-low" checked>
@@ -665,162 +65,173 @@
                     </label>
                 </div>
 
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <strong>Chế độ Shadow Mode (C.D.S)</strong>
-                        <span>Chạy ngầm việc quét chẩn đoán và thuốc, tính toán alert CDS nhưng KHÔNG HIỂN THỊ RA UI. Dùng để thu thập Audit Log phục vụ kiểm chứng an toàn.</span>
+                <div class="form-group" style="display:flex; gap:16px; margin-top:20px; background:var(--bg-input); padding:20px; border-radius:12px; border:1px solid var(--border);">
+                    <div style="flex:1;">
+                        <label>Chu kỳ làm mới danh sách (Phút)</label>
+                        <input type="number" id="opt-scan-refresh" value="5" min="1" max="60">
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" id="opt-cds-shadow-mode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="form-group" style="margin-top: 20px;">
-                    <button id="btn-sync-cds-data" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 14px;">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-                        Đồng bộ / Nạp lại CSDL Thuốc C.D.S
-                    </button>
-                    <div class="help-text" style="text-align: center; margin-top: 8px;">Ép tải lại toàn bộ các bộ luật cảnh báo thuốc mới nhất từ máy chủ.</div>
+                    <div style="flex:1;">
+                        <label>Loại Giao diện cảnh báo C.D.S</label>
+                        <select id="opt-cds-ui-type">
+                            <option value="toast">Hiển thị Toast góc phải (Ít phiền)</option>
+                            <option value="modal" selected>Hiển thị Modal Popup (Chú ý cao)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <hr style="border: 0; border-top: 1px dashed var(--border); margin: 32px 0;">
+                
+                <h3 class="group-title">Ký số (Smart CA)</h3>
 
-                <h3 class="group-title">Cấu hình Ký số (Smart CA)</h3>
+                <div class="form-group" style="background:var(--bg-input); padding:20px; border-radius:12px; border:1px solid var(--border);">
+                    <label>⏱️ Thời gian trễ giữa 2 hồ sơ liên tiếp (Throttle/Delay)</label>
+                    <p style="font-size:13px; color:var(--text-dim); margin:0 0 16px 0;">Bảo vệ hệ thống không bị quá tải và chặn IP khi bạn nhấn "Ký hàng loạt".</p>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <input type="range" id="throttle-slider" min="0" max="5" step="0.5" value="1.5" style="flex:1;">
+                        <span id="throttle-val" style="font-weight:600; width:60px; text-align:right; color:var(--primary);">1.5 giây</span>
+                    </div>
+                </div>
+
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <strong>Ký số Nâng cao (Siêu tốc)</strong>
-                        <span>Kích hoạt luồng xử lý chữ ký số thế hệ mới, tối ưu tốc độ và tự động thử lại khi nghẽn mạng</span>
+                        <strong>Ký song song (Nhanh hơn nhưng rủi ro)</strong>
+                        <span>Không đợi hồ sơ trước ký xong, gửi lệnh ký liên tục. Không khuyến khích cho mạng yếu.</span>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="opt-sign-advanced" checked>
+                        <input type="checkbox" id="opt-sign-advanced">
                         <span class="slider"></span>
                     </label>
                 </div>
-                
+
                 <div class="toggle-row">
                     <div class="toggle-info">
                         <strong>Chế độ Ký Cảnh giác (Safe Mode)</strong>
-                        <span>Tạm dừng tính năng Ký số hàng loạt khi C.D.S phát hiện tương tác thuốc có mức độ nghiêm trọng</span>
+                        <span>Tạm dừng tính năng Ký số hàng loạt nếu C.D.S phát hiện rủi ro.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="opt-sign-safemode" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-
             </section>
 
+            <!-- TAB 2: TRỢ LÝ AI -->
+            <section id="sec-ai" class="section">
+                <h2>Cấu hình Trợ lý AI (Gemini)</h2>
 
-            <!-- ADVANCED SETTINGS (AI) -->
-            <section id="sec-advanced" class="section">
-                <h2>
-                    <svg class="section-icon" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-                    Nâng Cao
-                </h2>
-                
-                <div style="background: rgba(158, 202, 255, 0.05); border: 1px solid rgba(158, 202, 255, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 32px;">
-                    <p style="margin: 0 0 16px 0; line-height: 1.6; font-size: 14px;">
-                        Khu vực này cho phép bạn cấu hình Trợ lý AI (Sử dụng Google Gemini). Các tính năng cần suy luận thông minh của AI sẽ được mở khóa sau khi bạn thiết lập thành công API Key bên dưới.
-                    </p>
-                    
-                    <div class="form-group" style="margin-bottom: 20px;">
+                <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 32px;">
+                    <div class="form-group" style="margin-bottom: 24px;">
                         <label>Gemini API Key</label>
                         <div style="display: flex; gap: 12px;">
                             <input type="password" id="opt-api-key" placeholder="Nhập API Key ở đây..." style="flex: 1;">
-                            <button id="fetch-models-btn" class="btn btn-secondary" style="padding: 0 20px; white-space: nowrap;">
-                                <svg class="btn-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                Dò tìm mô hình
-                            </button>
-                        </div>
-                        <div class="help-text">Nhận miễn phí API key tại <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.</div>
-                    </div>
-
-                    <div id="pin-setup-container" class="form-group" style="margin-bottom: 0;">
-                        <label id="pin-title">Tạo mã bảo vệ PIN (6 chữ số)</label>
-                        <div class="pin-boxes" id="pin-boxes-container">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="0">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="1">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="2">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="3">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="4">
-                            <input type="password" maxlength="1" class="pin-box" data-idx="5">
-                        </div>
-                        <div class="help-text" id="pin-help-text">Mã PIN này sẽ bảo vệ và mã hóa API Key của bạn. Không ai có thể xem trộm.</div>
-                        
-                        <div id="pin-actions" style="margin-top: 20px; display: none; gap: 12px;">
-                            <button id="btn-change-pin" class="btn btn-secondary">Đổi mã PIN</button>
-                            <button id="btn-reset-pin" class="btn btn-secondary" style="color: var(--error); border-color: rgba(255, 180, 171, 0.3);">Xóa mã PIN & Khôi phục</button>
+                            <button id="fetch-models-btn" class="btn btn-secondary" style="padding: 0 20px; white-space: nowrap;">Dò Model</button>
                         </div>
                     </div>
-                    <!-- Hidden input for generic save logic -->
-                    <input type="hidden" id="opt-pin" value="">
-                </div>
-
-                <div id="ai-features-container" class="ai-features-container locked">
-                    <div class="lock-overlay-msg">
-                        <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        <span>Vui lòng nhập API Key và thiết lập mã PIN ở trên, sau đó nhấn "Lưu Cấu Hình" để mở khóa các tùy chọn AI bên dưới.</span>
-                    </div>
-
-                    <h3 class="group-title">Thiết lập Trợ lý</h3>
-                    <div class="form-group">
-                        <label>Mô hình AI ưu tiên</label>
+                    
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>Mô hình xử lý AI (Model)</label>
                         <select id="opt-ai-model">
-                            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Khuyên dùng - Cân bằng tốc độ / thông minh)</option>
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Tốc độ cao)</option>
-                            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Hiểu sâu, nhưng phản hồi chậm hơn)</option>
+                            <option value="gemini-1.5-flash">gemini-1.5-flash (Khuyên dùng)</option>
                         </select>
                     </div>
 
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label id="pin-title">Mã bảo vệ PIN (6 chữ số)</label>
+                        <div class="pin-boxes">
+                            <input type="password" maxlength="1" class="pin-box">
+                            <input type="password" maxlength="1" class="pin-box">
+                            <input type="password" maxlength="1" class="pin-box">
+                            <input type="password" maxlength="1" class="pin-box">
+                            <input type="password" maxlength="1" class="pin-box">
+                            <input type="password" maxlength="1" class="pin-box">
+                        </div>
+                        <input type="hidden" id="opt-pin" value="">
+                        <p id="pin-help-text" style="font-size:13px; color:var(--text-dim); margin:8px 0 0 0;">Mã PIN này sẽ bảo vệ và mã hóa API Key của bạn an toàn bằng PBKDF2.</p>
+                        
+                        <div id="pin-actions" style="margin-top: 12px; display: none; gap: 8px;">
+                            <button id="btn-change-pin" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">Đổi Mã PIN</button>
+                            <button id="btn-reset-pin" class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;">Xóa PIN & API Key</button>
+                        </div>
+                    </div>
                 </div>
 
+                <div id="ai-features-container">
+                    <div class="form-group" style="background:var(--bg-input); padding:20px; border-radius:12px; border:1px solid var(--border);">
+                        <div style="display:flex; gap:16px;">
+                            <div style="flex:2;">
+                                <label>🌡️ Độ sáng tạo của AI (Temperature)</label>
+                                <p style="font-size:13px; color:var(--text-dim); margin:0 0 16px 0;">0.0 = Văn phong máy móc. 1.0 = Cực kỳ bay bổng.</p>
+                                <div style="display: flex; align-items: center; gap: 16px;">
+                                    <input type="range" id="opt-ai-temperature" min="0" max="1" step="0.1" value="0.2" style="flex:1;">
+                                    <span id="temp-val" style="font-weight:600; width:40px; text-align:right; color:var(--primary);">0.2</span>
+                                </div>
+                            </div>
+                            <div style="flex:1;">
+                                <label>Cỡ chữ hiển thị AI</label>
+                                <select id="opt-ai-fontsize" style="margin-top:4px;">
+                                    <option value="13px">Nhỏ (13px)</option>
+                                    <option value="15px" selected>Vừa (15px)</option>
+                                    <option value="18px">Lớn (18px)</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label>Tỷ giá USD/VNĐ</label>
+                                <input type="number" id="opt-usd-rate" value="25500" style="margin-top:4px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="background:var(--bg-input); padding:20px; border-radius:12px; border:1px solid var(--border);">
+                        <h3 class="group-title" style="margin-bottom:16px;">Tùy chỉnh Prompt Hệ thống</h3>
+                        
+                        <label style="color:var(--primary);">Prompt Tóm tắt Cận Lâm Sàng</label>
+                        <textarea id="opt-prompt-cls" placeholder="Nhập prompt mớm lời cho AI khi tóm tắt kết quả xét nghiệm, siêu âm..." style="height:80px; margin-bottom:16px;"></textarea>
+
+                        <label style="color:var(--primary);">Prompt AI Voice (Điền Form)</label>
+                        <textarea id="opt-prompt-voice" placeholder="Nhập prompt hướng dẫn AI cách bóc tách giọng nói bác sĩ vào các trường thông tin..." style="height:80px;"></textarea>
+                    </div>
+
+                    <!-- Hidden VIP feature added via JS -->
+                </div>
             </section>
 
-            <!-- TEMPLATE SETTINGS -->
+            <!-- TAB 3: MẪU BỆNH ÁN -->
             <section id="sec-templates" class="section">
-                <h2>
-                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Quản lý Mẫu Bệnh Án
-                </h2>
+                <h2>Quản lý Mẫu Bệnh Án</h2>
 
-                <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
+                <p style="font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
                     Gõ <strong>//</strong> trong bất kỳ ô nhập liệu nào của VNPT HIS (Phiếu điều trị, Diễn biến, Lời dặn...) để hiển thị danh sách các mẫu dưới đây.
                 </p>
 
-                <div class="form-group" style="background: rgba(158, 202, 255, 0.05); border: 1px solid rgba(158, 202, 255, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                    <h3 class="group-title" style="margin-bottom: 16px;">Thêm Mẫu Mới</h3>
-                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                        <input type="text" id="tpl-shortcut" placeholder="Phím tắt (vd: tim → gõ //tim)" style="width: 200px;">
+                <div class="form-group" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 32px;">
+                    <h3 class="group-title" style="margin-bottom: 20px;">Thêm / Sửa Mẫu</h3>
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                        <input type="text" id="tpl-shortcut" placeholder="Phím tắt (vd: tim → gõ //tim)" style="width: 220px;">
                         <input type="text" id="tpl-title" placeholder="Tiêu đề mẫu (vd: Khám tim mạch)" style="flex: 1;">
                     </div>
-                    <textarea id="tpl-content" placeholder="Nội dung mẫu bệnh án..." style="width: 100%; height: 80px; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); padding: 12px 16px; border-radius: 10px; font-family: var(--font-main); font-size: 14px; margin-bottom: 12px; resize: vertical; box-sizing: border-box;"></textarea>
-                    <button id="btn-add-template" class="btn" style="width: 100%; justify-content: center;">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Thêm Mẫu
+                    <textarea id="tpl-content" placeholder="Nội dung mẫu bệnh án..." style="height: 100px; margin-bottom: 16px;"></textarea>
+                    <button id="btn-add-template" class="btn" style="width: 100%;">
+                        + Thêm Mẫu
                     </button>
                 </div>
 
-                <div id="template-list-container" style="display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Template items will be rendered here by JS -->
+                <div id="template-list-container" style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- Templates rendered by JS -->
                 </div>
             </section>
 
-            <!-- FEATURE FLAGS -->
+            <!-- TAB 4: HỆ THỐNG -->
             <section id="sec-features" class="section">
-                <h2>
-                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                    Quản lý Tính năng
-                </h2>
+                <h2>Quản lý Hệ thống Tính năng</h2>
 
-                <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
-                    Bật/tắt từng tính năng của Aladinn. Mặc định tất cả đều BẬT. Nếu tính năng nào gây sự cố, hãy tắt nó tạm thời mà không cần gỡ extension.
+                <p style="font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;">
+                    Bật/tắt từng tính năng cốt lõi của Aladinn. Mặc định tất cả đều BẬT. Nếu tính năng nào gây sự cố, hãy tắt tạm thời mà không cần gỡ cài đặt tiện ích.
                 </p>
 
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <strong>📊 Scanner (Quét dữ liệu bệnh nhân)</strong>
-                        <span>Quét sinh hiệu, thuốc, CĐHA, lịch sử bệnh án. Hiển thị badge trên grid.</span>
+                        <strong>📊 Scanner (Quét dữ liệu lâm sàng)</strong>
+                        <span>Quét sinh hiệu, thuốc, CĐHA, lịch sử bệnh án. Hiển thị badge trên grid bệnh nhân.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="flag-scanner" checked>
@@ -831,7 +242,7 @@
                 <div class="toggle-row">
                     <div class="toggle-info">
                         <strong>✍️ Sign (Ký số tự động)</strong>
-                        <span>Lọc hồ sơ, ký số tuần tự, tự động xác nhận SmartCA.</span>
+                        <span>Lọc hồ sơ, ký số tuần tự, tự động xác nhận SmartCA trên VNPT HIS.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="flag-sign" checked>
@@ -842,7 +253,7 @@
                 <div class="toggle-row">
                     <div class="toggle-info">
                         <strong>🧠 CDS (Hỗ trợ quyết định lâm sàng)</strong>
-                        <span>Phân tích đơn thuốc, cảnh báo tương tác thuốc, kiểm tra BHYT.</span>
+                        <span>Phân tích đơn thuốc, cảnh báo tương tác thuốc và kiểm tra BHYT.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="flag-cds" checked>
@@ -852,7 +263,7 @@
 
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <strong>🎙️ Voice AI (Giọng nói AI)</strong>
+                        <strong>🎙️ Voice AI (Nhập liệu bằng Giọng nói)</strong>
                         <span>Nhận diện giọng nói, AI phân tích và tự động điền form khám bệnh.</span>
                     </div>
                     <label class="switch">
@@ -860,14 +271,13 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-
-                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 28px 0;">
-
-                <h3 class="group-title">🛠️ Chế độ Phát triển</h3>
+                
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 32px 0;">
+                
                 <div class="toggle-row">
                     <div class="toggle-info">
-                        <strong>🐛 Debug Mode</strong>
-                        <span>Hiển thị log chi tiết trong Console (F12). Hữu ích khi gỡ lỗi. Tắt khi dùng bình thường.</span>
+                        <strong>🛠️ Chế độ Gỡ lỗi (Debug Mode) & Màn Hình Phụ (Shadow Mode)</strong>
+                        <span>Chỉ dành cho lập trình viên. Log thông tin ra Console và chạy ngầm C.D.S để lấy mẫu thử.</span>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="flag-debug">
@@ -875,106 +285,18 @@
                     </label>
                 </div>
 
+                <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+                    <button id="btn-sync-cds-data" class="btn btn-secondary">Đồng bộ dữ liệu C.D.S ngay lập tức</button>
+                </div>
+
             </section>
-
-            <!-- AI CONFIG -->
-            <section id="sec-ai-config" class="section">
-                <h2>
-                    <svg class="section-icon" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.536 1.57 4.778 4 6.115V20l3.5-2.5c.477.069.976.1 1.5.1 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
-                    Tùy chỉnh AI
-                </h2>
-
-                <!-- Thống kê sử dụng -->
-                <h3 class="group-title">📊 Thống kê sử dụng hôm nay</h3>
-                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px;">
-                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
-                        <div style="font-size:22px; font-weight:700; color:var(--primary); font-family:var(--font-title);" id="stat-tokens">—</div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Tổng Token</div>
-                    </div>
-                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
-                        <div style="font-size:22px; font-weight:700; color:var(--success); font-family:var(--font-title);" id="stat-cost">—</div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Chi phí (đ)</div>
-                    </div>
-                    <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
-                        <div style="font-size:22px; font-weight:700; color:var(--accent); font-family:var(--font-title);" id="stat-calls">—</div>
-                        <div style="font-size:12px; color:var(--text-dim); margin-top:4px;">Lần gọi AI</div>
-                    </div>
-                </div>
-
-                <!-- Tỷ giá -->
-                <div class="form-group">
-                    <label>Tỷ giá USD/VNĐ (dùng để tính chi phí)</label>
-                    <input type="text" id="opt-usd-rate" placeholder="25500" style="max-width:200px;">
-                    <div class="help-text">Mặc định: 25.500 VNĐ/USD. Cập nhật nếu tỷ giá thay đổi.</div>
-                </div>
-
-                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 28px 0;">
-
-                <!-- Prompt tùy chỉnh CLS -->
-                <h3 class="group-title">📝 Prompt: Tóm tắt CLS + Thuốc</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    Biến: <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{patientRef}}</code>
-                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{birthYear}}</code>
-                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{diagnosis}}</code>
-                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{drugs}}</code>
-                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{abnormal}}</code>
-                    <code style="background:rgba(158,202,255,0.1); padding:1px 6px; border-radius:4px; font-size:12px;">{{keylabs}}</code>.
-                    Để trống = dùng prompt mặc định (hiển thị qua placeholder).
-                </p>
-                <div class="form-group">
-                    <textarea id="opt-prompt-cls" style="width:100%; height:180px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
-                </div>
-                <div style="display:flex; gap:12px; margin-bottom:32px;">
-                    <button id="btn-reset-prompt-cls" class="btn btn-secondary">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-                        Reset về mặc định
-                    </button>
-                </div>
-
-                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0 0 28px 0;">
-
-                <!-- Prompt AI Voice -->
-                <h3 class="group-title">🎙️ Prompt: AI Voice (Nhập liệu giọng nói)</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    System prompt cho tính năng nhập liệu bằng giọng nói. AI sẽ trích xuất dữ liệu lâm sàng từ văn bản giọng nói và trả về JSON.
-                    Để trống = dùng prompt hệ thống mặc định.
-                </p>
-                <div class="form-group">
-                    <textarea id="opt-prompt-voice" style="width:100%; height:180px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-main); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6;"></textarea>
-                </div>
-                <div style="display:flex; gap:12px; margin-bottom:32px;">
-                    <button id="btn-reset-prompt-voice" class="btn btn-secondary">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-                        Reset về mặc định
-                    </button>
-                </div>
-
-                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 0 0 28px 0;">
-
-                <!-- Prompt Tổng kết bệnh án -->
-                <h3 class="group-title">📋 Prompt: Tổng kết bệnh án (sắp ra mắt)</h3>
-                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px; line-height:1.6;">
-                    Prompt dành cho tính năng tóm tắt bệnh án toàn diện (AI VIP). Chức năng đang được phát triển.
-                    Để trống = dùng prompt mặc định khi tính năng ra mắt.
-                </p>
-                <div class="form-group">
-                    <textarea id="opt-prompt-medical" style="width:100%; height:120px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-dim); padding:12px 16px; border-radius:10px; font-family:var(--font-main); font-size:12px; resize:vertical; box-sizing:border-box; line-height:1.6; opacity:0.7;"></textarea>
-                </div>
-                <div style="display:flex; gap:12px;">
-                    <button id="btn-reset-prompt-medical" class="btn btn-secondary">
-                        <svg class="btn-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-                        Reset về mặc định
-                    </button>
-                </div>
-            </section>
-
 
         </main>
     </div>
 
-    <!-- Status Toast -->
-    <div id="status-toast">Đã lưu toàn bộ Cấu hình!</div>
+    <!-- Toast -->
+    <div id="status-toast">Lưu cấu hình thành công!</div>
 
-    <script type="module" src="options.js"></script>
+    <script src="options.js" type="module"></script>
 </body>
 </html>

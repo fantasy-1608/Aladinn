@@ -3,7 +3,7 @@ import globals from 'globals';
 
 export default [
   js.configs.recommended,
-  { ignores: ['dist/**', 'lib/**', 'dist-zip/**', '**/*.min.js', 'assets/**', 'scripts/**', 'tests/**', 'vite.config.mjs', 'coverage/**'] },
+  { ignores: ['dist/**', 'lib/**', 'dist-zip/**', '**/*.min.js', 'assets/**', 'scripts/**', 'tests/**', 'vite.config.mjs', 'coverage/**', 'scratch/**', 'test*.js', 'test-*.js', 'test_*.js'] },
   {
     languageOptions: {
       ecmaVersion: 2022,

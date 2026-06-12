@@ -103,7 +103,7 @@
     document.addEventListener('click', broadcastContext);
     
     // Self-healing context broadcast every 1.5s
-    setInterval(broadcastContext, 1500);
+    setInterval(function() { if (!document.hidden) broadcastContext(); }, 1500);
 
     function sendResponse(success, filledCount, error) {
         var target = window.parent || window.top;

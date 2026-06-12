@@ -367,7 +367,8 @@
                     }, sp, params, cache);
                     return; // Async call initiated successfully
                 } catch (_e) {
-                    // Fallback to manual fetch if callback pattern is not supported by this proxy version
+                    // Fallback to original sync call if callback pattern is not supported by this proxy version.
+                    // Some VNPT HIS jabsorb deployments return an empty response for manual RestService ajaxCALL_SP_O.
                     if (!_asyncCallSpO._warnedSps) _asyncCallSpO._warnedSps = new Set();
                     if (!_asyncCallSpO._warnedSps.has(sp)) {
                         _asyncCallSpO._warnedSps.add(sp);
@@ -375,7 +376,6 @@
                     }
                 }
 
-                // Fallback: Thực hiện cuộc gọi đồng bộ (sync) nguyên bản để khôi phục dữ liệu
                 try {
                     const result = _jsonrpc.AjaxJson.ajaxCALL_SP_O(sp, params, cache);
                     resolve(result);
@@ -426,22 +426,40 @@
     async function fetchPatientContextRows(rowData, rowId) {
         const candidates = Array.from(new Set(_buildContextCandidates(rowData, rowId)));
         const benhnhanId = rowData.BENHNHANID || '';
+        const hsbaId = rowData.HOSOBENHANID || rowData.HSBAID || '';
         const optionSets = [];
+
+        // Thử search bằng BENHNHANID + HOSOBENHANID (Bỏ trống KHAMBENHID) để lấy TOÀN BỘ các lượt khám trong đợt (Cấp cứu + Nội trú)
+        if (benhnhanId && hsbaId) {
+            optionSets.push([
+                { name: '[0]', value: '' },
+                { name: '[1]', value: String(benhnhanId) },
+                { name: '[2]', value: '' },
+                { name: '[3]', value: String(hsbaId) }
+            ]);
+        }
+
         for (const candidate of candidates) {
             optionSets.push([
                 { name: '[0]', value: String(candidate) },
                 { name: '[1]', value: String(benhnhanId) },
                 { name: '[2]', value: '' },
-                { name: '[3]', value: String(rowData.HOSOBENHANID || rowData.HSBAID || candidate) }
+                { name: '[3]', value: String(hsbaId || candidate) }
             ]);
             optionSets.push([{ name: '[0]', value: String(candidate) }]);
         }
 
+        let allRows = [];
         for (const options of optionSets) {
             const rows = await _fetchHisPagingRows('NGT02K016.EV003', options, 50);
-            if (rows.length > 0) return rows;
+            if (rows.length > 0) {
+                // Nếu đây là lượt search tổng (lấy tất cả các Khám Bệnh ID), trả về luôn
+                if (options[0].value === '') return rows;
+                // Nếu không, lưu lại
+                allRows = allRows.concat(rows);
+            }
         }
-        return [];
+        return allRows.length > 0 ? allRows : [];
     }
 
     async function resolveTreatmentContext(rowData, rowId) {
@@ -744,7 +762,30 @@
                 } catch (_e) { }
             };
 
-            if (kbIdHienTai) await trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+            const ctxRows = await fetchPatientContextRows(rowData, rowId);
+            const kbIds = new Set();
+            if (kbIdHienTai) kbIds.add(String(kbIdHienTai));
+            
+            const targetHsbaId = String(hsbaId || '');
+            const targetTiepNhanId = String(rowData.TIEPNHANID || '');
+            
+            for (const r of ctxRows) {
+                const rHsba = String(r.HOSOBENHANID || r.HSBAID || r.HO_SO_BENH_AN_ID || '');
+                const rTiepNhan = String(r.TIEPNHANID || r.TIEP_NHAN_ID || '');
+                // Chỉ lấy các KHAMBENHID có cùng HSBAID hoặc TIEPNHANID để không lấy nhầm đợt khám cũ
+                if ((targetHsbaId && rHsba === targetHsbaId) || (targetTiepNhanId && rTiepNhan === targetTiepNhanId)) {
+                    if (r.KHAMBENHID) kbIds.add(String(r.KHAMBENHID));
+                    if (r.KHAM_BENH_ID) kbIds.add(String(r.KHAM_BENH_ID));
+                    if (r.MADIEUTRI) kbIds.add(String(r.MADIEUTRI));
+                    if (r.MA_DIEU_TRI) kbIds.add(String(r.MA_DIEU_TRI));
+                }
+            }
+
+            // Gọi NT.006 và NT.005 cho tất cả các KHAMBENHID trong cùng đợt (Bao gồm cả cấp cứu/ngoại trú)
+            for (const kb of Array.from(kbIds)) {
+                await trySP('NT.006', { KHAMBENHID: kb });
+                await trySP('NT.005', kb);
+            }
             if (hsbaId) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hsbaId });
 
             sendResult('FETCH_HISTORY_RESULT', rowId, { 
@@ -1025,7 +1066,27 @@
                     } catch (_e) { }
                 };
 
-                if (kbIdHienTai) await trySP('NT.006', { KHAMBENHID: kbIdHienTai });
+                const ctxRows = await fetchPatientContextRows(rowData, rowId);
+                const kbIds = new Set();
+                if (kbIdHienTai) kbIds.add(String(kbIdHienTai));
+                const targetHsbaId = String(hosobenhanid || '');
+                const targetTiepNhanId = String(rowData.TIEPNHANID || '');
+                for (const r of ctxRows) {
+                    const rHsba = String(r.HOSOBENHANID || r.HSBAID || r.HO_SO_BENH_AN_ID || '');
+                    const rTiepNhan = String(r.TIEPNHANID || r.TIEP_NHAN_ID || '');
+                    if ((targetHsbaId && rHsba === targetHsbaId) || (targetTiepNhanId && rTiepNhan === targetTiepNhanId)) {
+                        if (r.KHAMBENHID) kbIds.add(String(r.KHAMBENHID));
+                        if (r.KHAM_BENH_ID) kbIds.add(String(r.KHAM_BENH_ID));
+                        if (r.MADIEUTRI) kbIds.add(String(r.MADIEUTRI));
+                        if (r.MA_DIEU_TRI) kbIds.add(String(r.MA_DIEU_TRI));
+                    }
+                }
+
+                for (const kb of Array.from(kbIds)) {
+                    if (!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) {
+                        await trySP('NT.006', { KHAMBENHID: kb });
+                    }
+                }
                 if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && hosobenhanid) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hosobenhanid });
                 if ((!found.w || !found.h || !found.bp || !finalVitals.pulse || !finalVitals.temperature) && kbIdHienTai) await trySP('NT.005', kbIdHienTai);
             }
@@ -2403,42 +2464,81 @@
                 _context              // Bổ sung ContextGuard token
             };
 
-            // === PHẦN 1: Bệnh sử từ HSBA API (Nội trú) ===
-            if (hsbaId) {
-                try {
-                    const params = JSON.stringify({ HOSOBENHANID: hsbaId });
-                    const hsbaRes = await _asyncCallSpO('NT.006.HSBA.HIS', params, 0);
-                    const data = (typeof hsbaRes === 'string' && hsbaRes.trim() !== '') ? JSON.parse(hsbaRes) : hsbaRes;
-                    const records = Array.isArray(data) ? data : [data];
+            // === PHẦN 1: Bệnh sử từ HSBA API (Nội trú & Cấp cứu) ===
+            try {
+                const ctxRows = await fetchPatientContextRows(rowData, rowId);
+                const kbIds = new Set();
+                const targetHsbaId = String(hsbaId);
+                const targetTiepNhanId = String(contextInfo.TIEPNHANID || rowData.TIEPNHANID || '');
+                
+                for (const r of ctxRows) {
+                    const rHsba = String(r.HOSOBENHANID || r.HSBAID || r.HO_SO_BENH_AN_ID || '');
+                    const rTiepNhan = String(r.TIEPNHANID || r.TIEP_NHAN_ID || '');
+                    if ((targetHsbaId && rHsba === targetHsbaId) || (targetTiepNhanId && rTiepNhan === targetTiepNhanId)) {
+                        if (r.KHAMBENHID) kbIds.add(String(r.KHAMBENHID));
+                        if (r.KHAM_BENH_ID) kbIds.add(String(r.KHAM_BENH_ID));
+                        if (r.MADIEUTRI) kbIds.add(String(r.MADIEUTRI));
+                        if (r.MA_DIEU_TRI) kbIds.add(String(r.MA_DIEU_TRI));
+                    }
+                }
+                if (contextInfo.KHAMBENHID) kbIds.add(String(contextInfo.KHAMBENHID));
 
-                    for (let i = records.length - 1; i >= 0; i--) {
-                        const rec = records[i];
-                        if (!rec) continue;
-                        if (rec.LYDOVAOVIEN && !result.lyDoVaoVien) {
-                            result.lyDoVaoVien = _cleanLydoVaoVien(rec.LYDOVAOVIEN);
-                        }
-                        if (rec.QUATRINHBENHLY && !result.quaTrinhBenhLy) result.quaTrinhBenhLy = rec.QUATRINHBENHLY;
-                        if (rec.TIENSUBENH_BANTHAN && !result.tienSuBanThan) result.tienSuBanThan = rec.TIENSUBENH_BANTHAN;
-                        if (rec.KHAMBENH_TOANTHAN && !result.khamToanThan) result.khamToanThan = rec.KHAMBENH_TOANTHAN;
-                        if (rec.KHAMBENH_BOPHAN && !result.khamBoPhan) result.khamBoPhan = rec.KHAMBENH_BOPHAN;
-                        if (rec.TOMTATKQCANLAMSANG && !result.tomTatCLS) result.tomTatCLS = rec.TOMTATKQCANLAMSANG;
-                        // Universal scan cho chẩn đoán
-                        if (!result.chanDoanBanDau) {
-                            for (const k in rec) {
-                                const uk = k.toUpperCase();
-                                if ((uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN')) && rec[k] && String(rec[k]).trim().length > 1) {
-                                    if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
-                                        if (!result.chanDoanKemTheo) result.chanDoanKemTheo = String(rec[k]).trim();
-                                    } else {
-                                        result.chanDoanBanDau = String(rec[k]).trim();
-                                    }
+                const processRecord = (rec) => {
+                    if (!rec) return;
+                    if (!result.lyDoVaoVien) {
+                        result.lyDoVaoVien = _cleanLydoVaoVien(_firstValue(rec, ['LYDOVAOVIEN', 'LY_DO_VAO_VIEN', 'LYDO_VAO_VIEN', 'LYDOVV', 'LY_DO_VV', 'LYDOVAOKHOA']));
+                    }
+                    if (!result.quaTrinhBenhLy) {
+                        result.quaTrinhBenhLy = _cleanHisText(_firstValue(rec, ['QUATRINHBENHLY', 'QUA_TRINH_BENH_LY', 'QTBENHLY', 'BENHSU', 'BENH_SU', 'KHAMBENH_BENHSU']));
+                    }
+                    if (!result.tienSuBanThan) {
+                        result.tienSuBanThan = _cleanHisText(_firstValue(rec, ['TIENSUBENH_BANTHAN', 'TIEN_SU_BAN_THAN', 'TIENSU_BANTHAN', 'TIENSU', 'TIEN_SU']));
+                    }
+                    if (!result.tienSuGiaDinh) {
+                        result.tienSuGiaDinh = _cleanHisText(_firstValue(rec, ['TIENSUBENH_GIADINH', 'TIENSUGIADINH', 'TIEN_SU_GIA_DINH']));
+                    }
+                    if (!result.khamToanThan) {
+                        result.khamToanThan = _cleanHisText(_firstValue(rec, ['KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'KHAMTOANTHAN', 'TOANTHAN']));
+                    }
+                    if (!result.khamBoPhan) {
+                        result.khamBoPhan = _cleanHisText(_firstValue(rec, ['KHAMBENH_BOPHAN', 'KHAM_BO_PHAN', 'KHAMBOPHAN', 'BOPHAN']));
+                    }
+                    if (!result.tomTatCLS) {
+                        result.tomTatCLS = _cleanHisText(_firstValue(rec, ['TOMTATKQCANLAMSANG', 'TOMTAT_CLS', 'TOM_TAT_CLS', 'TOM_TAT_KQ_CAN_LAM_SANG']));
+                    }
+                    // Universal scan cho chẩn đoán
+                    if (!result.chanDoanBanDau) {
+                        for (const k in rec) {
+                            const uk = k.toUpperCase();
+                            if ((uk.includes('CHANDOAN') || uk.includes('CHAN_DOAN')) && rec[k] && String(rec[k]).trim().length > 1) {
+                                if (uk.includes('KEMTHEO') || uk.includes('PHU') || uk.includes('_KT')) {
+                                    if (!result.chanDoanKemTheo) result.chanDoanKemTheo = String(rec[k]).trim();
+                                } else {
+                                    result.chanDoanBanDau = String(rec[k]).trim();
                                 }
                             }
                         }
                     }
-                } catch (e) {
-                    console.warn('[API-Bridge] fetchClinicalSummary HSBA error:', e);
+                };
+
+                const trySP = async (sp, p) => {
+                    try {
+                        const params = (typeof p === 'object') ? JSON.stringify(p) : p;
+                        const res = await _asyncCallSpO(sp, params, 0);
+                        if (!res) return;
+                        const data = (typeof res === 'string' && res.trim() !== '') ? JSON.parse(res) : res;
+                        const recs = Array.isArray(data) ? data : [data];
+                        for (let i = recs.length - 1; i >= 0; i--) processRecord(recs[i]);
+                    } catch (_e) { }
+                };
+
+                for (const kb of Array.from(kbIds)) {
+                    await trySP('NT.006', { KHAMBENHID: kb });
+                    await trySP('NT.005', kb);
                 }
+                if (hsbaId) await trySP('NT.006.HSBA.HIS', { HOSOBENHANID: hsbaId });
+            } catch (e) {
+                console.warn('[API-Bridge] fetchClinicalSummary HSBA error:', e);
             }
 
             // === PHẦN 1B: Fallback DOM — Đọc từ tab "Bệnh án" (Ngoại trú) ===
@@ -2451,26 +2551,33 @@
                         if (!el) return '';
                         return (el.value || el.textContent || '').trim();
                     };
+                    var _domValAny = function (ids) {
+                        for (var di = 0; di < ids.length; di++) {
+                            var val = _domVal(ids[di]);
+                            if (val) return val;
+                        }
+                        return '';
+                    };
                     // Đọc từ các field tabBenhAntxt* trong tab "Bệnh án"
                     if (!result.lyDoVaoVien) {
-                        result.lyDoVaoVien = _cleanLydoVaoVien(_domVal('tabBenhAntxtLYDOVAOVIEN'));
+                        result.lyDoVaoVien = _cleanLydoVaoVien(_domValAny(['tabBenhAntxtLYDOVAOVIEN', 'tcBenhAntxtLYDOVAOVIEN', 'txtLYDOVAOVIEN']));
                     }
-                    if (!result.quaTrinhBenhLy) result.quaTrinhBenhLy = _domVal('tabBenhAntxtQUATRINHBENHLY');
-                    if (!result.tienSuBanThan) result.tienSuBanThan = _domVal('tabBenhAntxtTIENSUBENH_BANTHAN');
-                    if (!result.tienSuGiaDinh) result.tienSuGiaDinh = _domVal('tabBenhAntxtTIENSUBENH_GIADINH');
-                    if (!result.khamToanThan) result.khamToanThan = _domVal('tabBenhAntxtKHAMBENH_TOANTHAN');
-                    if (!result.khamBoPhan) result.khamBoPhan = _domVal('tabBenhAntxtKHAMBENH_BOPHAN');
-                    if (!result.tomTatCLS) result.tomTatCLS = _domVal('tabBenhAntxtTOMTATKQCANLAMSANG');
-                    if (!result.huongXuLy) result.huongXuLy = _domVal('tabBenhAntxtHUONGXULY');
+                    if (!result.quaTrinhBenhLy) result.quaTrinhBenhLy = _domValAny(['tabBenhAntxtQUATRINHBENHLY', 'tabBenhAntxtQTBENHLY', 'tcBenhAntxtQTBENHLY', 'txtQTBENHLY', 'txtQUATRINHBENHLY']);
+                    if (!result.tienSuBanThan) result.tienSuBanThan = _domValAny(['tabBenhAntxtTIENSUBENH_BANTHAN', 'tabBenhAntxtBANTHAN', 'tcBenhAntxtBANTHAN', 'txtBANTHAN', 'txtTIENSUBENH_BANTHAN']);
+                    if (!result.tienSuGiaDinh) result.tienSuGiaDinh = _domValAny(['tabBenhAntxtTIENSUBENH_GIADINH', 'tcBenhAntxtGIADINH', 'txtGIADINH', 'txtTIENSUBENH_GIADINH']);
+                    if (!result.khamToanThan) result.khamToanThan = _domValAny(['tabBenhAntxtKHAMBENH_TOANTHAN', 'tcBenhAntxtTOANTHAN', 'txtTOANTHAN', 'txtKHAMBENH_TOANTHAN']);
+                    if (!result.khamBoPhan) result.khamBoPhan = _domValAny(['tabBenhAntxtKHAMBENH_BOPHAN', 'tcBenhAntxtBOPHAN', 'txtBOPHAN', 'txtKHAMBENH_BOPHAN']);
+                    if (!result.tomTatCLS) result.tomTatCLS = _domValAny(['tabBenhAntxtTOMTATKQCANLAMSANG', 'tcBenhAntxtTOMTATKQCANLAMSANG', 'txtXETNGHIEMCANLAMSANG', 'txtKETQUAXNCLS', 'txtKQXNCLS']);
+                    if (!result.huongXuLy) result.huongXuLy = _domValAny(['tabBenhAntxtHUONGXULY', 'tcBenhAntxtHUONGXULY', 'txtHUONGXULY']);
 
                     // Chẩn đoán từ DOM
                     if (!result.chanDoanBanDau || isOutpatient) {
-                        result.chanDoanBanDau = _domVal('tabBenhAntxtCHANDOANBANDAU') || _findDomValBySelectors(['[id$="CHANDOANBANDAU" i]', '[id$="CHANDOANCHINH" i]']);
+                        result.chanDoanBanDau = _domValAny(['tabBenhAntxtCHANDOANBANDAU', 'tcBenhAntxtCHANDOANBANDAU', 'txtCHANDOANBANDAU']) || _findDomValBySelectors(['input[id$="CHANDOANBANDAU" i], textarea[id$="CHANDOANBANDAU" i], select[id$="CHANDOANBANDAU" i]', 'input[id$="CHANDOANCHINH" i], textarea[id$="CHANDOANCHINH" i], select[id$="CHANDOANCHINH" i]']);
                     }
                     if (!result.chanDoanBanDau || isOutpatient) {
                         // Fallback: bệnh chính
-                        var maBenhChinh = _domVal('tabBenhAntxtMABENHCHINH') || _findDomValBySelectors(['[id$="MABENHCHINH" i]']);
-                        var tenBenhChinh = _domVal('tabBenhAntxtBENHCHINH') || _findDomValBySelectors(['[id$="BENHCHINH" i]:not([id$="MABENHCHINH" i])']);
+                        var maBenhChinh = _domValAny(['tabBenhAntxtMABENHCHINH', 'tcBenhAntxtMABENHCHINH', 'txtMABENHCHINH']) || _findDomValBySelectors(['input[id$="MABENHCHINH" i], textarea[id$="MABENHCHINH" i], select[id$="MABENHCHINH" i]']);
+                        var tenBenhChinh = _domValAny(['tabBenhAntxtBENHCHINH', 'tcBenhAntxtBENHCHINH', 'txtBENHCHINH']) || _findDomValBySelectors(['input[id$="BENHCHINH" i]:not([id$="MABENHCHINH" i]), textarea[id$="BENHCHINH" i]:not([id$="MABENHCHINH" i]), select[id$="BENHCHINH" i]:not([id$="MABENHCHINH" i])']);
                         if (tenBenhChinh) {
                             if (tenBenhChinh.includes('-')) {
                                 result.chanDoanBanDau = tenBenhChinh;
@@ -2480,8 +2587,8 @@
                         }
                     }
                     if (!result.chanDoanKemTheo || isOutpatient) {
-                        var maKemTheo = _domVal('tabBenhAntxtMABENHKEMTHEO') || _findDomValBySelectors(['[id$="MABENHKEMTHEO" i]']);
-                        var tenKemTheo = _domVal('tabBenhAntxtBENHKEMTHEO') || _findDomValBySelectors(['[id$="BENHKEMTHEO" i]:not([id$="MABENHKEMTHEO" i])', '[id$="CHANDOANKEMTHEO" i]']);
+                        var maKemTheo = _domValAny(['tabBenhAntxtMABENHKEMTHEO', 'tcBenhAntxtMABENHKEMTHEO', 'txtMABENHKEMTHEO']) || _findDomValBySelectors(['input[id$="MABENHKEMTHEO" i], textarea[id$="MABENHKEMTHEO" i], select[id$="MABENHKEMTHEO" i]']);
+                        var tenKemTheo = _domValAny(['tabBenhAntxtBENHKEMTHEO', 'tcBenhAntxtBENHKEMTHEO', 'txtBENHKEMTHEO']) || _findDomValBySelectors(['input[id$="BENHKEMTHEO" i]:not([id$="MABENHKEMTHEO" i]), textarea[id$="BENHKEMTHEO" i]:not([id$="MABENHKEMTHEO" i]), select[id$="BENHKEMTHEO" i]:not([id$="MABENHKEMTHEO" i])', 'input[id$="CHANDOANKEMTHEO" i], textarea[id$="CHANDOANKEMTHEO" i], select[id$="CHANDOANKEMTHEO" i]']);
                         if (tenKemTheo) {
                             if (tenKemTheo.includes('-') || tenKemTheo.includes(';')) {
                                 result.chanDoanKemTheo = tenKemTheo;
@@ -2847,30 +2954,19 @@
                         const activeKbId = String(rowData.KHAMBENHID || rowData.MADIEUTRI || rowData.KHAM_BENH_ID || '').replace(/&nbsp;|undefined|null/g, '').trim();
                         const activeHsbaId = String(rowData.HOSOBENHANID || rowData.HSBAID || rowData.HO_SO_BENH_AN_ID || '').replace(/&nbsp;|undefined|null/g, '').trim();
 
-                        // 1. Patient ID conflict
-                        if (dataBnId && activeBnId && dataBnId !== activeBnId) {
-                            console.warn(`[Aladinn API-Bridge] Lock mismatch: Patient ID conflict (data: ${dataBnId}, active: ${activeBnId}). Suppressing: ${type}`);
-                            return; // Fail-closed!
-                        }
-                        // 2. Encounter ID conflict
-                        if (dataKbId && activeKbId && dataKbId !== activeKbId) {
-                            console.warn(`[Aladinn API-Bridge] Lock mismatch: Encounter ID conflict (data: ${dataKbId}, active: ${activeKbId}). Suppressing: ${type}`);
-                            return; // Fail-closed!
-                        }
-                        // 3. HSBA ID conflict
-                        if (dataHsbaId && activeHsbaId && dataHsbaId !== activeHsbaId) {
-                            console.warn(`[Aladinn API-Bridge] Lock mismatch: HSBA ID conflict (data: ${dataHsbaId}, active: ${activeHsbaId}). Suppressing: ${type}`);
-                            return; // Fail-closed!
-                        }
-
-                        // 4. Must have at least one valid overlap
+                        // Must have at least one valid overlap
                         const hasBnMatch = dataBnId && activeBnId && dataBnId === activeBnId;
                         const hasKbMatch = dataKbId && activeKbId && dataKbId === activeKbId;
                         const hasHsbaMatch = dataHsbaId && activeHsbaId && dataHsbaId === activeHsbaId;
 
-                        if (!hasBnMatch && !hasKbMatch && !hasHsbaMatch) {
-                            console.warn(`[Aladinn API-Bridge] Lock mismatch: No matching non-empty identifiers. Suppressing: ${type}`);
-                            return; // Fail-closed!
+                        const isMismatch = (!hasBnMatch && !hasKbMatch && !hasHsbaMatch) || 
+                                           (dataBnId && activeBnId && dataBnId !== activeBnId) || 
+                                           (dataKbId && activeKbId && dataKbId !== activeKbId) || 
+                                           (dataHsbaId && activeHsbaId && dataHsbaId !== activeHsbaId);
+
+                        if (isMismatch) {
+                            console.warn(`[Aladinn API-Bridge] Lock mismatch: patient context conflict. Suppressing ${type}`);
+                            return; // Fail-closed: requestId must not override patient-context mismatch.
                         }
                     }
                 }
@@ -2884,7 +2980,7 @@
             if (!_fbBnId && !_fbKbId && !_fbHsbaId && rowId) {
                 const { effectiveRowId } = resolveActiveGrid(null, { strict: false });
                 if (effectiveRowId && String(effectiveRowId).trim() !== String(rowId).trim()) {
-                    console.warn(`[Aladinn API-Bridge] Row ID mismatch fallback guard: requested=${rowId}, active=${effectiveRowId}. Suppressing: ${type}`);
+                    console.warn(`[Aladinn API-Bridge] Row ID mismatch fallback guard. Suppressing ${type}`);
                     return;
                 }
             }
@@ -3208,6 +3304,33 @@
 
             const uuid = _jsonrpc.AjaxJson.uuid;
             const baseUrl = '/vnpthis/RestService';
+            const LAB_DETAIL_LIMIT = 12;
+            const LAB_DETAIL_CONCURRENCY = 2;
+            const LAB_DETAIL_TIMEOUT_MS = 4500;
+
+            const _fetchJsonWithTimeout = async (url, timeoutMs = LAB_DETAIL_TIMEOUT_MS) => {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const res = await fetch(url, {
+                        credentials: 'include',
+                        signal: controller.signal
+                    });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } catch (_e) {
+                    return null;
+                } finally {
+                    clearTimeout(timer);
+                }
+            };
+
+            const _forEachLimited = async (items, limit, worker) => {
+                for (let i = 0; i < items.length; i += limit) {
+                    const chunk = items.slice(i, i + limit);
+                    await Promise.all(chunk.map(worker));
+                }
+            };
 
             // ══════════════════════════════════════════════════════
             // PROVEN STRATEGY: NT.024.DSPHIEU with HOSOBENHANID
@@ -3222,8 +3345,8 @@
                     u.searchParams.set('rows', '500');
                     u.searchParams.set('page', '1');
                     u.searchParams.set('postData', JSON.stringify(p));
-                    const r = await fetch(u.toString(), { credentials: 'include' });
-                    if (r.ok) { const d = await r.json(); return d.rows || []; }
+                    const d = await _fetchJsonWithTimeout(u.toString(), 5000);
+                    return d?.rows || [];
                 } catch (_e) { /* silent */ }
                 return [];
             };
@@ -3291,7 +3414,8 @@
 
             if (newApiSheets.length > 0) {
                 try {
-                    const detailPromises = newApiSheets.map(async (sheet) => {
+                    const limitedNewApiSheets = newApiSheets.slice(0, LAB_DETAIL_LIMIT);
+                    await _forEachLimited(limitedNewApiSheets, LAB_DETAIL_CONCURRENCY, async (sheet) => {
                         const sheetId = sheet.MAUBENHPHAMID;
                         if (!sheetId) return;
 
@@ -3308,9 +3432,8 @@
                         detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
 
                         try {
-                            const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
-                            if (detailRes.ok) {
-                                const detailData = await detailRes.json();
+                            const detailData = await _fetchJsonWithTimeout(detailUrl.toString());
+                            if (detailData) {
                                 (detailData.rows || []).forEach(item => {
                                     const getVal = (obj, keys) => {
                                         if (!obj) return '';
@@ -3385,8 +3508,6 @@
                         }
                     });
 
-                    await Promise.all(detailPromises);
-
                     if (allLabs.length > 0) {
                         loadedXnFromNewApi = true;
                         if (window.__ALADINN_DEBUG__) console.log(`[API-Bridge] Strategy A XN Success: Loaded ${allLabs.length} details`);
@@ -3434,10 +3555,8 @@
                     debugLog(`[API-Bridge] Fallback Old API XN sheets: ${uniqueSheets.length}`);
 
                     if (uniqueSheets.length > 0) {
-                        // Process in chunks of 5 to avoid stalling network queue
-                        for (let i = 0; i < uniqueSheets.length; i += 5) {
-                            const chunk = uniqueSheets.slice(i, i + 5);
-                            await Promise.all(chunk.map(async (sheet) => {
+                        const limitedFallbackSheets = uniqueSheets.slice(0, LAB_DETAIL_LIMIT);
+                        await _forEachLimited(limitedFallbackSheets, LAB_DETAIL_CONCURRENCY, async (sheet) => {
                             const sheetId = sheet.MAUBENHPHAMID;
                             if (!sheetId) return;
 
@@ -3454,9 +3573,8 @@
                             detailUrl.searchParams.set('postData', JSON.stringify(detailParams));
 
                             try {
-                                const detailRes = await fetch(detailUrl.toString(), { credentials: 'include' });
-                                if (detailRes.ok) {
-                                    const detailData = await detailRes.json();
+                                const detailData = await _fetchJsonWithTimeout(detailUrl.toString());
+                                if (detailData) {
                                     (detailData.rows || []).forEach(item => {
                                         const getVal = (obj, keys) => {
                                             if (!obj) return '';
@@ -3529,8 +3647,7 @@
                             } catch (errDetail) {
                                 console.error('[API-Bridge] Fallback Error fetching XN detail for sheet:', errDetail.message || 'Unknown error');
                             }
-                            }));
-                        }
+                        });
                     }
                 } catch (errFallbackXn) {
                     console.error('[API-Bridge] Fallback Strategy B XN failed:', errFallbackXn.message || 'Unknown error');

@@ -7,6 +7,21 @@
 import { PHIRedactor } from './phi-redactor.js';
 import { SchemaValidator } from './schema-validator.js';
 
+/**
+ * Đọc model từ cấu hình người dùng trực tiếp từ storage.
+ */
+export async function getActiveGeminiModel() {
+    return new Promise(resolve => {
+        if (typeof chrome === 'undefined' || !chrome.storage) {
+            resolve('gemini-1.5-flash');
+            return;
+        }
+        chrome.storage.local.get(['his_settings', 'selectedModel'], res => {
+            resolve(res.his_settings?.geminiModel || res.selectedModel || 'gemini-1.5-flash');
+        });
+    });
+}
+
 // ========================================
 // Crypto Helper (for decrypting API key in background context)
 // SECURITY: PIN is never stored. Only the derived CryptoKey (non-extractable) is cached.
@@ -437,7 +452,7 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
     try {
         const apiVersion = 'v1beta';
         const baseUrl = 'https://generativelanguage.googleapis.com';
-        const effectiveModel = model || 'gemini-2.0-flash';
+        const effectiveModel = model || await getActiveGeminiModel();
         const modelUrl = `${baseUrl}/${apiVersion}/models/${effectiveModel}:generateContent`;
         const payload = {
             contents: [{ parts: [{ text: redactedPrompt }] }],
@@ -466,7 +481,7 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
 }
 
 export async function requestScannerAI({ prompt, model, requestId, generationConfig, systemInstruction }) {
-    const effectiveModel = model || 'gemini-2.0-flash';
+    const effectiveModel = model || await getActiveGeminiModel();
 
     // Tối ưu generationConfig mặc định cho clinical summary
     const baseConfig = {
@@ -515,7 +530,7 @@ Dưới đây là toàn bộ số liệu chăm sóc và điều trị của đ�
 
     const data = await callGeminiGenerateContent({
         prompt: `DỮ LIỆU ĐIỀU TRỊ (Đã được ẩn danh):\n${rawTreatments || ''}`,
-        model: model || 'gemini-2.0-flash',
+        model: model || await getActiveGeminiModel(),
         generationConfig: {
             temperature: 0.1,
             topP: 0.8,
@@ -606,7 +621,7 @@ export async function requestAI({ text, model, requestId }) {
         const systemPrompt = buildSystemPrompt(redactedPrompt);
         const apiVersion = 'v1beta';
         const baseUrl = 'https://generativelanguage.googleapis.com';
-        const effectiveModel = model || 'gemini-2.0-flash';
+        const effectiveModel = model || await getActiveGeminiModel();
         const modelUrl = `${baseUrl}/${apiVersion}/models/${effectiveModel}:generateContent`;
 
         const payload = {

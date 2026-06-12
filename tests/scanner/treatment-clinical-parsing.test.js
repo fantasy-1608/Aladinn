@@ -290,6 +290,61 @@ describe('Bóc tách Dữ liệu Lâm sàng Tờ điều trị VNPT HIS', () => 
         });
     });
 
+    describe('Ánh xạ alias dữ liệu khám vào viện từ API HIS', () => {
+        const firstValue = (row, keys) => {
+            for (const key of keys) {
+                const value = row[key];
+                if (value !== undefined && value !== null && String(value).trim() !== '') return String(value).trim();
+            }
+            return '';
+        };
+
+        const mapAdmissionRecord = (rec) => ({
+            lyDoVaoVien: firstValue(rec, ['LYDOVAOVIEN', 'LY_DO_VAO_VIEN', 'LYDO_VAO_VIEN', 'LYDOVV', 'LY_DO_VV', 'LYDOVAOKHOA']),
+            quaTrinhBenhLy: firstValue(rec, ['QUATRINHBENHLY', 'QUA_TRINH_BENH_LY', 'QTBENHLY', 'BENHSU', 'BENH_SU', 'KHAMBENH_BENHSU']),
+            tienSuBanThan: firstValue(rec, ['TIENSUBENH_BANTHAN', 'TIEN_SU_BAN_THAN', 'TIENSU_BANTHAN', 'TIENSU', 'TIEN_SU']),
+            khamToanThan: firstValue(rec, ['KHAMBENH_TOANTHAN', 'KHAM_TOAN_THAN', 'KHAMTOANTHAN', 'TOANTHAN']),
+            khamBoPhan: firstValue(rec, ['KHAMBENH_BOPHAN', 'KHAM_BO_PHAN', 'KHAMBOPHAN', 'BOPHAN']),
+            tomTatCLS: firstValue(rec, ['TOMTATKQCANLAMSANG', 'TOMTAT_CLS', 'TOM_TAT_CLS', 'TOM_TAT_KQ_CAN_LAM_SANG'])
+        });
+
+        it('nhận các key có gạch dưới từ stored procedure bệnh án', () => {
+            const mapped = mapAdmissionRecord({
+                LY_DO_VAO_VIEN: 'Tổn thương nông ở đầu',
+                QUA_TRINH_BENH_LY: 'Bệnh nhân té, đau vùng đầu',
+                TIEN_SU_BAN_THAN: 'Tăng huyết áp',
+                KHAM_TOAN_THAN: 'Tỉnh, tiếp xúc tốt',
+                KHAM_BO_PHAN: 'Vết thương vùng đầu',
+                TOM_TAT_CLS: 'CT sọ não chưa ghi nhận xuất huyết'
+            });
+
+            expect(mapped.lyDoVaoVien).toBe('Tổn thương nông ở đầu');
+            expect(mapped.quaTrinhBenhLy).toBe('Bệnh nhân té, đau vùng đầu');
+            expect(mapped.tienSuBanThan).toBe('Tăng huyết áp');
+            expect(mapped.khamToanThan).toBe('Tỉnh, tiếp xúc tốt');
+            expect(mapped.khamBoPhan).toBe('Vết thương vùng đầu');
+            expect(mapped.tomTatCLS).toBe('CT sọ não chưa ghi nhận xuất huyết');
+        });
+
+        it('nhận các key rút gọn BENHSU, TIENSU, TOANTHAN, BOPHAN', () => {
+            const mapped = mapAdmissionRecord({
+                LYDOVV: 'Đau ngực',
+                BENHSU: 'Đau ngực giờ thứ 3',
+                TIENSU: 'Đái tháo đường',
+                TOANTHAN: 'Da niêm hồng',
+                BOPHAN: 'Tim đều',
+                TOM_TAT_KQ_CAN_LAM_SANG: 'Troponin âm tính'
+            });
+
+            expect(mapped.lyDoVaoVien).toBe('Đau ngực');
+            expect(mapped.quaTrinhBenhLy).toBe('Đau ngực giờ thứ 3');
+            expect(mapped.tienSuBanThan).toBe('Đái tháo đường');
+            expect(mapped.khamToanThan).toBe('Da niêm hồng');
+            expect(mapped.khamBoPhan).toBe('Tim đều');
+            expect(mapped.tomTatCLS).toBe('Troponin âm tính');
+        });
+    });
+
     describe('Giải mã HTML Entities cho Y lệnh / Chế độ ăn / Chăm sóc thời gian thực', () => {
         // Giả lập hàm decode tương tự như trong api-bridge.js
         function _decodeHtmlEntities(str) {

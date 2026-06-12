@@ -464,7 +464,7 @@ const VNPTEmergency = (function () {
 
             function handleResponse(e) {
                 if (!targetWin || e.source !== targetWin) return;
-                if (e.origin !== targetOrigin && e.origin !== window.location.origin) return;
+                if (e.origin !== targetOrigin && e.origin !== window.location.origin && !e.origin.endsWith('vncare.vn')) return;
 
                 if (e.data && e.data.type === expectedResponse) {
                     window.removeEventListener('message', handleResponse);
@@ -480,7 +480,7 @@ const VNPTEmergency = (function () {
             window.addEventListener('message', handleResponse);
 
             if (targetWin) {
-                targetWin.postMessage({ type: cmd, ...payload }, targetOrigin);
+                targetWin.postMessage({ type: cmd, ...payload }, '*');
             } else {
                 clearTimeout(timer);
                 window.removeEventListener('message', handleResponse);

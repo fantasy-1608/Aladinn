@@ -1,23 +1,18 @@
 # Baseline Status
 
-## Current state of Aladinn Extension (Phase 0)
+**Ngày thực hiện:** 2026-06-11
+**Nhánh (Branch):** (Current/Default)
 
-### 1. Repository Structure
+## Kết quả kiểm tra Baseline (Giai đoạn 0)
 
-- `background/`: Background service worker, updater, ai-client.
-- `content/`: Content scripts (scanner, voice, cds).
-- `injected/`: Scripts injected into page context (api-bridge, ajax-interceptor, grid-hook).
-- `options/`, `popup/`: UI pages.
-- `tests/`, `shared/`: Testing and shared utilities.
-- Package structure: Manifest V3, Vite build, Vitest.
+1. **Cài đặt thư viện (`pnpm install`)**: Thành công.
+2. **Kiểm tra mã nguồn (`pnpm run lint`)**: Thành công (0 errors, 0 warnings).
+3. **Chạy Unit Tests (`pnpm run test`)**: Thành công.
+   - Tổng số File test: 42 passed
+   - Tổng số Test case: 390 passed
+4. **Build Production (`pnpm run build`)**: Thành công (152ms). Vite build ra thư mục `dist/` đầy đủ các module.
 
-### 2. Validation Results (Date: 2026-05-17)
-
-- **Lint**: Pass (6 warnings, 0 errors).
-- **Test**: Fail (129 pass, 1 fail).
-  - Failed test: `tests/scanner/scanner-utils.test.js > LAB_CATEGORIES > has 3 categories` (Expected 3, got 4).
-- **Build**: Pass (`dist/` generated successfully).
-
-### 3. Conclusion
-
-The baseline is established. The single failing test is a minor data categorization issue (`LAB_CATEGORIES` length expected 3 got 4) which does not block Phase 1 documentation tasks. Proceeding to Phase 1.
+## Tình trạng tổng quan
+- Dự án có thể khởi chạy và biên dịch (compile) hoàn toàn bình thường.
+- Không có lỗi nghiêm trọng ở thời điểm bắt đầu nâng cấp.
+- Đã sẵn sàng bước sang **Giai đoạn 1: Tài liệu AI & Quy trình**.

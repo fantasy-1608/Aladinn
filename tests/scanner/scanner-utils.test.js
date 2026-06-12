@@ -9,6 +9,7 @@ import {
     isAbnormal,
     statusColor,
     classifyLab,
+    normalizeAdmissionExamFields,
     LAB_CATEGORIES,
 } from '../../content/scanner/scanner-utils.js';
 
@@ -194,6 +195,46 @@ describe('statusColor', () => {
     it('returns null for normal status', () => {
         expect(statusColor('Normal')).toBeNull();
         expect(statusColor(null)).toBeNull();
+    });
+});
+
+describe('normalizeAdmissionExamFields', () => {
+    it('uses clinical summary when legacy history object is empty', () => {
+        const rows = normalizeAdmissionExamFields({}, {
+            lyDoVaoVien: 'Đau bụng vùng thượng vị',
+            quaTrinhBenhLy: 'Đau tăng sau ăn',
+            tienSuBanThan: 'Tăng huyết áp',
+            khamToanThan: 'Tỉnh, tiếp xúc tốt',
+            khamBoPhan: 'Bụng mềm',
+            chanDoanBanDau: 'K29 - Viêm dạ dày',
+            tomTatCLS: 'Bạch cầu tăng nhẹ'
+        });
+
+        expect(rows.map(row => row.label)).toEqual([
+            'Lý do vào viện',
+            'Bệnh sử',
+            'Tiền sử bản thân',
+            'Khám toàn thân',
+            'Khám bộ phận',
+            'Chẩn đoán ban đầu',
+            'Tóm tắt CLS'
+        ]);
+        expect(rows.find(row => row.key === 'KHAMBENH_TOANTHAN')?.value).toBe('Tỉnh, tiếp xúc tốt');
+    });
+
+    it('keeps legacy history values before clinical summary fallback values', () => {
+        const rows = normalizeAdmissionExamFields(
+            { LYDOVAOVIEN: 'Sốt cao', KHAMBENH_TOANTHAN: 'Mệt nhiều' },
+            { lyDoVaoVien: 'Đau đầu', khamToanThan: 'Tỉnh' }
+        );
+
+        expect(rows.find(row => row.key === 'LYDOVAOVIEN')?.value).toBe('Sốt cao');
+        expect(rows.find(row => row.key === 'KHAMBENH_TOANTHAN')?.value).toBe('Mệt nhiều');
+    });
+
+    it('omits empty fields so the tab can show an empty state only when truly empty', () => {
+        expect(normalizeAdmissionExamFields({}, {})).toEqual([]);
+        expect(normalizeAdmissionExamFields({ LYDOVAOVIEN: '   ' }, { khamBoPhan: '' })).toEqual([]);
     });
 });
 

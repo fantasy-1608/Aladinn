@@ -41,60 +41,12 @@ const VNPTRowObserver = (function () {
     }
 
     /**
-     * Đề xuất 1: Pre-fetch demographics khi chọn BN (ngầm, không mở UI)
-     * Lưu vào VNPTStore để history.js, emergency.js và các module khác dùng ngay
-     * Auto-hook: subscribe vào selectedPatientId → fetch ngầm demographics
+     * Giữ patient selection nhẹ: không prefetch demographics khi chỉ chọn dòng.
+     * Dữ liệu lâm sàng chỉ tải khi người dùng mở chức năng cần dữ liệu.
      */
-    let _lastDemoFetchId = '';
     function prefetchDemographics(pid) {
-        if (!pid || pid === _lastDemoFetchId) return;
-        _lastDemoFetchId = pid;
-
-        if (!window.VNPTMessaging) return;
-
-        let token = null;
-        if (window.VNPTPatientContextGuard) {
-            token = window.VNPTPatientContextGuard.captureGridOnly(pid);
-        }
-
-        window.VNPTMessaging.sendRequest('REQ_FETCH_PATIENT_DEMOGRAPHICS', { rowId: pid, contextToken: token }, 5000)
-            .then((res) => {
-                if (token && window.VNPTPatientContextGuard) {
-                    if (!window.VNPTPatientContextGuard.validate(token, { allowGridOnly: true })) {
-                        console.warn('[Aladinn] Drop stale demographics result', pid);
-                        return;
-                    }
-                }
-
-                if (res && res.demographics) {
-                    // Update map
-                    if (window.VNPTPatientContextGuard && window.VNPTStore?.actions?.updatePatientDemographics) {
-                        const patientKey = window.VNPTPatientContextGuard.hashIdentity({
-                            rowId: pid,
-                            khambenhId: res?._context?.KHAMBENHID,
-                            hosobenhanId: res?._context?.HOSOBENHANID,
-                            benhnhanId: res?._context?.BENHNHANID
-                        });
-                        window.VNPTStore.actions.updatePatientDemographics(patientKey, res.demographics);
-                    }
-                }
-            })
-            .catch(() => { /* silent — DOM fallback vẫn hoạt động */ });
+        void pid;
     }
-
-    // Auto-hook: khi selectedPatientId thay đổi → prefetch ngầm
-    function autoHookDemographics() {
-        if (window.VNPTStore) {
-            window.VNPTStore.subscribe('selectedPatientId', (pid) => {
-                if (pid) prefetchDemographics(pid);
-            });
-        } else {
-            // Retry sau 2s nếu Store chưa sẵn sàng
-            setTimeout(autoHookDemographics, 2000);
-        }
-    }
-    // Khởi chạy auto-hook ngay khi module load
-    setTimeout(autoHookDemographics, 500);
 
     return {
         init,

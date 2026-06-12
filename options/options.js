@@ -24,12 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const elements = {
         apiKey: document.getElementById('opt-api-key'),
         aiModel: document.getElementById('opt-ai-model'),
-        scanTooltip: document.getElementById('opt-scan-tooltip'),
+        scanRefresh: document.getElementById('opt-scan-refresh'),
+        cdsUiType: document.getElementById('opt-cds-ui-type'),
         cdsFilterLow: document.getElementById('opt-cds-filter-low'),
-        cdsShadowMode: document.getElementById('opt-cds-shadow-mode'),
+        throttleSlider: document.getElementById('throttle-slider'),
         signSafeMode: document.getElementById('opt-sign-safemode'),
         signAdvanced: document.getElementById('opt-sign-advanced'),
         pin: document.getElementById('opt-pin'),
+        aiTemperature: document.getElementById('opt-ai-temperature'),
+        aiFontsize: document.getElementById('opt-ai-fontsize'),
+        usdRate: document.getElementById('opt-usd-rate'),
+        promptCls: document.getElementById('opt-prompt-cls'),
+        promptVoice: document.getElementById('opt-prompt-voice'),
         // Feature Flags
         flagScanner: document.getElementById('flag-scanner'),
         flagSign: document.getElementById('flag-sign'),
@@ -37,6 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
         flagVoice: document.getElementById('flag-voice'),
         flagDebug: document.getElementById('flag-debug')
     };
+
+    if (elements.throttleSlider) {
+        const tVal = document.getElementById('throttle-val');
+        elements.throttleSlider.addEventListener('input', (e) => {
+            if (tVal) tVal.textContent = e.target.value + ' giây';
+        });
+    }
+    if (elements.aiTemperature) {
+        const tVal = document.getElementById('temp-val');
+        elements.aiTemperature.addEventListener('input', (e) => {
+            if (tVal) tVal.textContent = e.target.value;
+        });
+    }
 
     // Track crypto state for save operations
     let _pinSalt = '';
@@ -130,25 +149,34 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleAIFeatures(hasValidApi);
         });
 
-        // Load scanner settings
-        chrome.storage.local.get(['vnpt_scanner_settings', 'his_settings'], (res) => {
-            const sSettings = res.his_settings || res.vnpt_scanner_settings || { vitalsDisplay: true, templateAutofill: true };
-            elements.scanTooltip.checked = sSettings.vitalsDisplay !== undefined ? sSettings.vitalsDisplay : (sSettings.showTooltip || false);
-            // scanNutrition toggle removed — always enabled
-            if (elements.signSafeMode && sSettings.signSafeMode !== undefined) {
-                elements.signSafeMode.checked = sSettings.signSafeMode;
+        // Load scanner and other settings
+        chrome.storage.local.get(['vnpt_scanner_settings', 'his_settings', 'ai_temperature', 'ai_fontsize', 'usd_rate', 'prompt_cls', 'prompt_voice'], (res) => {
+            const sSettings = res.his_settings || res.vnpt_scanner_settings || {};
+            
+            if (elements.scanRefresh && sSettings.scanRefresh !== undefined) elements.scanRefresh.value = sSettings.scanRefresh;
+            if (elements.cdsUiType && sSettings.cdsUiType !== undefined) elements.cdsUiType.value = sSettings.cdsUiType;
+            if (elements.throttleSlider && sSettings.signThrottle !== undefined) {
+                elements.throttleSlider.value = sSettings.signThrottle;
+                const tv = document.getElementById('throttle-val');
+                if (tv) tv.textContent = sSettings.signThrottle + ' giây';
             }
-            if (elements.signAdvanced && sSettings.signAdvanced !== undefined) {
-                elements.signAdvanced.checked = sSettings.signAdvanced;
+            if (elements.signSafeMode && sSettings.signSafeMode !== undefined) elements.signSafeMode.checked = sSettings.signSafeMode;
+            if (elements.signAdvanced && sSettings.signAdvanced !== undefined) elements.signAdvanced.checked = sSettings.signAdvanced;
+
+            if (elements.aiTemperature && res.ai_temperature !== undefined) {
+                elements.aiTemperature.value = res.ai_temperature;
+                const tv = document.getElementById('temp-val');
+                if (tv) tv.textContent = res.ai_temperature;
             }
+            if (elements.aiFontsize && res.ai_fontsize !== undefined) elements.aiFontsize.value = res.ai_fontsize;
+            if (elements.usdRate && res.usd_rate !== undefined) elements.usdRate.value = res.usd_rate;
+            if (elements.promptCls && res.prompt_cls !== undefined) elements.promptCls.value = res.prompt_cls;
+            if (elements.promptVoice && res.prompt_voice !== undefined) elements.promptVoice.value = res.prompt_voice;
         });
 
         chrome.storage.local.get(['vnpt_cds_settings'], (res) => {
             if (elements.cdsFilterLow) {
                 elements.cdsFilterLow.checked = res.vnpt_cds_settings ? res.vnpt_cds_settings.filterLow !== false : true;
-            }
-            if (elements.cdsShadowMode) {
-                elements.cdsShadowMode.checked = res.vnpt_cds_settings ? res.vnpt_cds_settings.shadowMode === true : false;
             }
         });
 
@@ -258,13 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const res = await new Promise(r => chrome.storage.local.get(['his_settings'], r));
-        const currentHisSettings = res.his_settings || {
-            scanTimeout: 5000, apiTimeout: 8000, autoScan: true, 
-            vitalsDisplay: true, historySummary: true, templateAutofill: true, 
-            darkMode: false, aiEnabled: false, geminiApiKey: '', geminiModel: 'gemini-1.5-flash'
-        };
+        const currentHisSettings = res.his_settings || {};
 
-        currentHisSettings.vitalsDisplay = elements.scanTooltip.checked;
+        currentHisSettings.scanRefresh = elements.scanRefresh ? parseInt(elements.scanRefresh.value) : 5;
+        currentHisSettings.cdsUiType = elements.cdsUiType ? elements.cdsUiType.value : 'modal';
+        currentHisSettings.signThrottle = elements.throttleSlider ? parseFloat(elements.throttleSlider.value) : 1.5;
         currentHisSettings.templateAutofill = true; // Always enabled
         currentHisSettings.geminiModel = elements.aiModel.value;
         if (elements.signSafeMode) currentHisSettings.signSafeMode = elements.signSafeMode.checked;
@@ -282,13 +308,17 @@ document.addEventListener('DOMContentLoaded', () => {
             aladinn_voice_appSettings: { autoChuyenVien: true },
             his_settings: currentHisSettings,
             vnpt_scanner_settings: {
-                showTooltip: elements.scanTooltip.checked,
                 autoForm: true // Always enabled
             },
             vnpt_cds_settings: {
-                filterLow: elements.cdsFilterLow.checked,
-                shadowMode: elements.cdsShadowMode ? elements.cdsShadowMode.checked : false
-            }
+                filterLow: elements.cdsFilterLow ? elements.cdsFilterLow.checked : true,
+                shadowMode: elements.flagDebug ? elements.flagDebug.checked : false
+            },
+            ai_temperature: elements.aiTemperature ? parseFloat(elements.aiTemperature.value) : 0.2,
+            ai_fontsize: elements.aiFontsize ? elements.aiFontsize.value : '15px',
+            usd_rate: elements.usdRate ? parseInt(elements.usdRate.value) : 25500,
+            prompt_cls: elements.promptCls ? elements.promptCls.value : '',
+            prompt_voice: elements.promptVoice ? elements.promptVoice.value : ''
         };
 
         // Feature Flags

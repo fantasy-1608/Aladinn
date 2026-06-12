@@ -175,15 +175,15 @@
 
 .vnpt-toast-container {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
+    bottom: 52px;
+    right: 22px;
     z-index: 2147483647 !important;
     display: flex;
     flex-direction: column-reverse;
     align-items: flex-end;
-    gap: 6px;
+    gap: 8px;
     pointer-events: none;
-    max-width: 380px;
+    max-width: min(420px, calc(100vw - 44px));
 }
 
 .vnpt-toast {
@@ -199,10 +199,15 @@
     pointer-events: auto;
     cursor: default;
     overflow: hidden;
-    box-shadow: var(--al-shadow-md);
-    border: 1px solid var(--al-outline);
+    background: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    border: 1px solid #9ec5e8;
     font-family: var(--al-font);
     white-space: nowrap;
+    color: #1f2933 !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 .vnpt-toast-enter {
@@ -215,33 +220,33 @@
 }
 
 .vnpt-toast-info {
-    background: var(--al-surface);
-    border-color: var(--al-outline); /* var(--al-outline) */
-    color: var(--al-text); /* var(--al-text) */
+    background: #ffffff !important;
+    border-color: #9ec5e8;
+    color: #1f2933 !important;
 }
 
 .vnpt-toast-info .vnpt-toast-icon { color: var(--al-primary); /* var(--al-primary) */ }
 
 .vnpt-toast-success {
-    background: #eafaf1; /* Soft green */
+    background: #eafaf1 !important; /* Soft green */
     border-color: var(--al-success); /* var(--al-success) */
-    color: var(--al-text);
+    color: #1f2933 !important;
 }
 
 .vnpt-toast-success .vnpt-toast-icon { color: var(--al-success); }
 
 .vnpt-toast-warning {
-    background: #fef9e7; /* Soft yellow */
+    background: #fef9e7 !important; /* Soft yellow */
     border-color: var(--al-warning); /* var(--al-warning) */
-    color: var(--al-text);
+    color: #1f2933 !important;
 }
 
 .vnpt-toast-warning .vnpt-toast-icon { color: #d97706; }
 
 .vnpt-toast-error {
-    background: #fdedec; /* Soft red */
+    background: #fdedec !important; /* Soft red */
     border-color: var(--al-error); /* var(--al-error) */
-    color: var(--al-text);
+    color: #1f2933 !important;
 }
 
 .vnpt-toast-error .vnpt-toast-icon { color: var(--al-error); }

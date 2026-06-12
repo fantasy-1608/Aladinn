@@ -26,6 +26,10 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
     let _smartcaUserName = '';    // User currently in SmartCA session
     let _smartcaEmail = '';       // Email from SmartCA session
     let _smartcaUserId = '';      // UserID from SmartCA session
+    
+    // Silent Probe variables
+    let _hasProbed = false;
+    let _probingInProgress = false;
     let _isMonitoring = false;
     let _observer = null;
     let _badgeEl = null;
@@ -85,75 +89,124 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
     function scrapeSmartCAInfo() {
         const info = { userId: '', email: '', name: '' };
 
-        const docs = [document];
-        const iframes = document.querySelectorAll('iframe');
-        for (const iframe of iframes) {
-            try {
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
-                if (doc) docs.push(doc);
-            } catch (_e) { /* cross-origin */ }
-        }
-
-        for (const doc of docs) {
-            const allText = doc.body?.innerText || '';
-
-            // Strategy 1: After "Tên người dùng:", skip label-like lines
-            const labelRx = /Tên\s*người\s*(?:ký|dùng)\s*[:：]/i;
-            const labelIdx = allText.search(labelRx);
-            if (labelIdx >= 0) {
-                const afterLabel = allText.substring(labelIdx).replace(labelRx, '');
-                const lines = afterLabel.split('\n').map(l => l.trim()).filter(Boolean);
-                for (const line of lines) {
-                    if (line.endsWith(':') || line.endsWith('：')) continue;
-                    if (!isValidName(line)) continue;
-                    info.name = line;
-                    break;
+        // CHUẨN NHẤT & NHANH NHẤT: Đọc trực tiếp từ sessionStorage của HIS!
+        try {
+            const rawData = sessionStorage.getItem('hisl2_smartca');
+            if (rawData) {
+                const parsed = JSON.parse(rawData);
+                if (parsed && parsed.user) {
+                    if (parsed.user.fullName) info.name = parsed.user.fullName.trim();
+                    if (parsed.user.email) info.email = parsed.user.email.trim();
+                    if (parsed.user.uid) info.userId = parsed.user.uid.trim();
                 }
             }
-
-            // Strategy 2: DOM — find label, match value by flex sibling index
-            if (!info.name) {
-                const allEls = doc.querySelectorAll('td, th, label, span, b, font, p');
-                for (const el of allEls) {
-                    const text = (el.textContent || '').trim();
-                    if (text.length > 50 || text.length < 5 || el.children.length > 2) continue;
-                    if (!/^Tên\s*người/i.test(text)) continue;
-
-                    const row = el.closest('tr');
-                    if (row) {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length >= 2) {
-                            const v = cells[cells.length - 1].textContent.trim();
-                            if (v && isValidName(v) && !v.endsWith(':')) { info.name = v; break; }
-                        }
-                    }
-                    const parent = el.parentElement;
-                    if (parent) {
-                        const myIdx = Array.from(parent.children).indexOf(el);
-                        const parentNext = parent.nextElementSibling;
-                        if (parentNext && parentNext.children.length > myIdx) {
-                            const v = parentNext.children[myIdx].textContent.trim();
-                            if (v && isValidName(v) && !v.endsWith(':')) { info.name = v; break; }
-                        }
-                        if (el.nextElementSibling) {
-                            const v = el.nextElementSibling.textContent.trim();
-                            if (v && isValidName(v) && !v.endsWith(':')) {
-                                info.name = v; break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            const em = allText.match(/Email\s*[:：]\s*\n?\s*([^\s\n]+@[^\s\n]+)/i);
-            if (em) info.email = em[1].trim();
-            const uid = allText.match(/User\s*ID\s*[:：]\s*\n?\s*(\d{6,})/i);
-            if (uid) info.userId = uid[1].trim();
-
-            if (info.name) break;
+        } catch (e) {
+            // parse error, ignore
         }
 
         return info;
+    }
+
+    /**
+     * Silent Probe - Programmatically trigger SmartCA check while hiding the UI
+     */
+    function silentProbeSmartCA() {
+        if (_hasProbed || _probingInProgress) return;
+        const icon = document.getElementById('smartcaicon');
+        if (!icon) return;
+
+        if (Logger) Logger.info('SmartCA-Guard', 'Starting silent probe...');
+        _probingInProgress = true;
+        
+        // 1. Inject CSS to hide all dialogs temporarily
+        let style = document.getElementById('aladinn-silent-probe-style');
+        if (!style) {
+            style = document.createElement('style');
+            style.id = 'aladinn-silent-probe-style';
+            // Hide standard HIS dialogs, jQuery UI dialogs, jBox wrappers
+            style.textContent = `
+                body.aladinn-probing .ui-dialog,
+                body.aladinn-probing .ui-widget-overlay,
+                body.aladinn-probing .jBox-wrapper,
+                body.aladinn-probing .jBox-overlay,
+                body.aladinn-probing .modal,
+                body.aladinn-probing .modal-backdrop {
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                    position: absolute !important;
+                    left: -9999px !important;
+                    top: -9999px !important;
+                    z-index: -2147483648 !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Save active element to restore focus later
+        const activeElement = document.activeElement;
+        
+        document.body.classList.add('aladinn-probing');
+        
+        // 2. Trigger the check (simulate click natively to avoid CSP errors)
+        icon.click();
+
+        // 3. Poll for results
+        let checks = 0;
+        const pollIntv = setInterval(function() {
+            checks++;
+            const info = scrapeSmartCAInfo();
+            
+            // If we found a name, OR we timed out (8 seconds = 80 checks)
+            if (info.name || checks > 80) {
+                clearInterval(pollIntv);
+                
+                if (info.name) {
+                    if (Logger) Logger.info('SmartCA-Guard', 'Silent probe SUCCESS! Detected: ' + info.name);
+                    _smartcaUserName = info.name;
+                    _smartcaEmail = info.email || '';
+                    _smartcaUserId = info.userId || '';
+                    updateBadgeState();
+                } else {
+                    if (Logger) Logger.info('SmartCA-Guard', 'Silent probe timeout/empty (User not logged in).');
+                }
+
+                // 4. Close the probed dialog
+                closeProbedDialog();
+
+                // 5. Restore normal state after a brief delay (allow close animation)
+                setTimeout(() => {
+                    document.body.classList.remove('aladinn-probing');
+                    if (activeElement && typeof activeElement.focus === 'function') {
+                        activeElement.focus();
+                    }
+                    _hasProbed = true;
+                    _probingInProgress = false;
+                }, 300);
+            }
+        }, 100);
+    }
+
+    function closeProbedDialog() {
+        // 1. Fallback Try jQuery UI close button natively
+        const closeBtns = document.querySelectorAll('.ui-dialog-titlebar-close, .jBox-closeButton, [data-dismiss="modal"]');
+        for (const btn of closeBtns) {
+            btn.click();
+            return;
+        }
+
+        // 2. Try generic "X" or "Đóng" button in the dialog header
+        const allBtns = document.querySelectorAll('button, a');
+        for (const btn of allBtns) {
+            const txt = (btn.textContent || btn.title || '').trim().toLowerCase();
+            if (txt === 'đóng' || txt === 'close' || txt === 'x') {
+                const zIndex = parseInt(window.getComputedStyle(btn).zIndex || '0');
+                // Only click if it's likely a dialog button (inside a dialog container)
+                if (btn.closest('.ui-dialog') || btn.closest('.jBox-wrapper') || btn.closest('.modal')) {
+                    btn.click();
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -554,7 +607,7 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
     // =============================================
     // SmartCA Logout Handler
     // =============================================
-    function handleSmartCALogout(onSuccess) {
+    function handleSmartCALogout(onSuccess, onFailure) {
         if (Logger) Logger.info('SmartCA-Guard', 'Automated SmartCA logout requested');
 
         function simulateClick(el) {
@@ -632,7 +685,8 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 }, 300);
             } else if (attempts >= 15) { // 7.5 seconds
                 clearInterval(pollInterval);
-                showGuardToast('⚠️ Không tìm thấy nút đăng xuất. Hãy tự tìm nút "Đăng xuất" trên màn hình SmartCA.', 'warning', 6000);
+                showGuardToast('⚠️ Không tìm thấy nút đăng xuất tự động. Hãy tự mở hộp thoại SmartCA (góc dưới trái) và nhấn nút "Đăng xuất" bằng tay.', 'warning', 8000);
+                if (typeof onFailure === 'function') onFailure();
             }
         }, 500);
     }
@@ -723,55 +777,28 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 if (icon) icon.click();
 
                 // 2. Trigger robust SmartCA Logout polling
-                handleSmartCALogout(function() {
-                    // 3. On success, update the warning UI
-                    warning.style.background = '#f0fdf4';
-                    warning.style.borderLeftColor = '#22c55e';
-                    warning.innerHTML = [
-                        '<div style="color: #166534; font-weight: bold; font-size: 13px; margin-bottom: 6px;">',
-                        '    ✅ ĐÃ ĐĂNG XUẤT TÀI KHOẢN CŨ',
-                        '</div>',
-                        '<div style="font-size: 12px; color: #15803d; line-height: 1.5; font-weight: 600;">',
-                        '    Hệ thống đã sẵn sàng. Vui lòng bấm nút bên dưới để đăng nhập lại đúng tài khoản Bác sĩ điều trị.',
-                        '</div>'
-                    ].join('');
-
-                    // Add Login Button
-                    var loginBtn = doc.createElement('button');
-                    loginBtn.innerHTML = '🔑 ĐĂNG NHẬP SMARTCA LẠI';
-                    loginBtn.style.cssText = [
-                        'margin-top: 8px',
-                        'background: #22c55e',
-                        'color: white',
-                        'border: none',
-                        'padding: 8px 12px',
-                        'border-radius: 0px',
-                        'cursor: pointer',
-                        'font-size: 12px',
-                        'font-weight: bold',
-                        'display: flex',
-                        'align-items: center',
-                        'gap: 4px',
-                        'width: 100%',
-                        'justify-content: center',
-                        'transition: background 0.2s',
-                        'box-shadow: 0 2px 4px rgba(34,197,94,0.3)'
-                    ].join(';');
-                    loginBtn.onmouseover = function() { this.style.background = '#16a34a'; };
-                    loginBtn.onmouseout = function() { this.style.background = '#22c55e'; };
-                    
-                    loginBtn.onclick = function(ev) {
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        var ic = document.getElementById('smartcaicon');
-                        if (ic) ic.click();
-                    };
-
-                    warning.appendChild(loginBtn);
-
-                    // Also remove persistent toast
-                    removePersistentMismatchToast();
-                });
+                handleSmartCALogout(
+                    function() {
+                        // On success, update the warning UI (if it's not already removed by the monitor loop)
+                        warning.style.background = '#f0fdf4';
+                        warning.style.borderLeftColor = '#22c55e';
+                        warning.innerHTML = [
+                            '<div style="color: #166534; font-weight: bold; font-size: 13px; margin-bottom: 6px;">',
+                            '    ✅ ĐÃ ĐĂNG XUẤT TÀI KHOẢN CŨ',
+                            '</div>',
+                            '<div style="font-size: 12px; color: #15803d; line-height: 1.5; font-weight: 600;">',
+                            '    Hệ thống đã sẵn sàng. Vui lòng đăng nhập lại đúng tài khoản Bác sĩ điều trị.',
+                            '</div>'
+                        ].join('');
+                    },
+                    function() {
+                        // On failure
+                        autoLogoutBtn.innerHTML = '⚠️ Thử lại hoặc tự bấm Đăng xuất';
+                        autoLogoutBtn.style.opacity = '1';
+                        autoLogoutBtn.style.pointerEvents = 'auto';
+                        autoLogoutBtn.style.background = '#d97706'; // amber
+                    }
+                );
             };
 
             warning.appendChild(autoLogoutBtn);
@@ -816,6 +843,8 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
 
         // Periodic check for e-Seal dialog
         _checkInterval = setInterval(function() {
+            if (document.hidden) return; // PAUSE in background to save CPU
+            
             // Re-detect HIS user if not found yet
             if (!_hisUserName) detectHISUser();
 
@@ -824,44 +853,59 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
                 enhanceSmartCAIcon();
             }
 
-            // Check if e-Seal dialog is visible
-            if (isEsealDialogVisible()) {
-                const info = scrapeSmartCAInfo();
-                
-                // Cập nhật tên SmartCA nếu phát hiện mới
-                if (info.name && info.name !== _smartcaUserName) {
-                    _smartcaUserName = info.name;
-                    _smartcaEmail = info.email || _smartcaEmail;
-                    _smartcaUserId = info.userId || _smartcaUserId;
-                    updateBadgeState();
-                    if (Logger) Logger.info('SmartCA-Guard', 'SmartCA user detected: "' + _smartcaUserName + '"');
-                }
-                // Cập nhật email/userId nếu thiếu
-                if (info.email && !_smartcaEmail) _smartcaEmail = info.email;
-                if (info.userId && !_smartcaUserId) _smartcaUserId = info.userId;
+            // Luôn quét SmartCA (lấy cả phần tử ẩn) thay vì đợi người dùng click mở dialog!
+            const info = scrapeSmartCAInfo();
+            
+            // Cập nhật tên SmartCA nếu phát hiện mới
+            if (info.name && info.name !== _smartcaUserName) {
+                _smartcaUserName = info.name;
+                _smartcaEmail = info.email || _smartcaEmail;
+                _smartcaUserId = info.userId || _smartcaUserId;
+                updateBadgeState();
+                if (Logger) Logger.info('SmartCA-Guard', 'SmartCA user detected proactively: "' + _smartcaUserName + '"');
+            }
+            // Cập nhật email/userId nếu thiếu
+            if (info.email && !_smartcaEmail) _smartcaEmail = info.email;
+            if (info.userId && !_smartcaUserId) _smartcaUserId = info.userId;
+
+            // Kích hoạt Silent Probe nếu chưa có thông tin
+            if (!_smartcaUserName && !_hasProbed && !_probingInProgress) {
+                // Wait 2 seconds after load before probing to avoid blocking page load
+                setTimeout(silentProbeSmartCA, 2000);
+                _probingInProgress = true; // Mark early to prevent multiple timeouts
             }
 
             // PA3: Kiểm tra match/mismatch MỌI LÚC (không chỉ khi dialog mở)
             // Đây là cải tiến cốt lõi — cảnh báo chủ động không đợi dialog
-            if (_smartcaUserName && _hisUserName) {
+            if (!_smartcaUserName) {
+                // Đã đăng xuất (hoặc chưa đăng nhập), dọn dẹp các cảnh báo
+                window.__aladinnSmartCAMismatch = false;
+                removePersistentMismatchToast();
+                
+                // Gỡ bỏ warning box nếu có
+                const docs = [document];
+                const iframes = document.querySelectorAll('iframe');
+                for (const iframe of iframes) {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        if (doc) docs.push(doc);
+                    } catch (_e) { /* cross-origin */ }
+                }
+                for (const doc of docs) {
+                    const w = doc.getElementById('aladinn-smartca-mismatch-warning');
+                    if (w) w.remove();
+                }
+            } else if (_smartcaUserName && _hisUserName) {
                 const match = namesMatch(_hisUserName, _smartcaUserName);
                 if (match === false) {
                     // MISMATCH! 
-
-                    // PA3: Hiện toast cảnh báo chủ động (persistent, không tự ẩn)
                     showPersistentMismatchToast();
-
-                    // Inject warning vào dialog nếu dialog đang mở
                     if (isEsealDialogVisible()) {
                         injectMismatchWarning();
                     }
-
-                    // PA4: Block auto-sign
                     window.__aladinnSmartCAMismatch = true;
                 } else if (match === true) {
                     window.__aladinnSmartCAMismatch = false;
-
-                    // Gỡ persistent toast nếu đã khớp
                     removePersistentMismatchToast();
                     
                     // REMOVE warning box if it exists

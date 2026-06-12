@@ -6,8 +6,6 @@
  */
 
 const VNPTHistory = (function () {
-    /** @type {string | null} */
-    let lastPatientId = null;
     /** @type {HTMLDivElement | null} */
     let fillButton = null;
     /** @type {HTMLIFrameElement | null} */
@@ -63,42 +61,8 @@ const VNPTHistory = (function () {
             }
         });
 
-        if (window.VNPTStore) {
-            window.VNPTStore.subscribe('selectedPatientId', (pid) => {
-                if (pid) onPatientSelected(pid);
-            });
-
-            const currentPid = window.VNPTStore.get('selectedPatientId');
-            if (currentPid) onPatientSelected(currentPid);
-        }
+        // Không tải bệnh sử khi chỉ chọn bệnh nhân. Dữ liệu chỉ tải trong thao tác người dùng rõ ràng.
         console.log('[History] Module initialized (Top Frame)');
-    }
-
-    /**
-     * @param {string} pid 
-     */
-    async function onPatientSelected(pid) {
-        if (!pid || pid === lastPatientId) return;
-
-        console.log('[History] Phát hiện chọn bệnh nhân:', pid);
-        lastPatientId = pid;
-
-        try {
-            const history = await fetchHistoryForPatient(pid);
-            if (history) {
-                console.log('[History] Dữ liệu khám trích xuất thành công:', pid, history);
-                const store = (/** @type {any} */ (window)).VNPTStore;
-                if (store && store.actions && typeof store.actions.updateMedicalHistory === 'function') {
-                    let patientKey = pid;
-                    if (window.VNPTPatientContextGuard) {
-                        patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
-                    }
-                    store.actions.updateMedicalHistory(patientKey, history);
-                }
-            }
-        } catch (e) {
-            console.warn('[History] Lỗi trích xuất medical history:', e);
-        }
     }
 
     /** @type {string} */
@@ -406,15 +370,45 @@ const VNPTHistory = (function () {
             
             // KHÔNG dùng cache (medicalHistoryMap) khi fill bệnh án để chống lỗi lấy nhầm dữ liệu bệnh nhân cũ khi trùng pid (row index)
 
-            // Cập nhật cache cho lần sau (Sử dụng patientKey để đảm bảo an toàn)
-            if (history && window.VNPTStore?.actions?.updateMedicalHistory && window.VNPTPatientContextGuard) {
-                const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
-                window.VNPTStore.actions.updateMedicalHistory(patientKey, history);
+            if (!history) {
+                history = {};
             }
 
-            if (!history) {
+            // Fallback: Lấy dữ liệu trực tiếp từ DOM của màn hình nền (dành cho trường hợp người dùng vừa nhập nhưng chưa bấm Lưu)
+            const getDomValue = (ids) => {
+                for (const id of ids) {
+                    let el = document.getElementById(id);
+                    if (el && el.value && el.value.trim()) return el.value.trim();
+                    const iframes = document.querySelectorAll('iframe');
+                    for (const iframe of Array.from(iframes)) {
+                        if (iframe === target) continue; // Bỏ qua iframe của phiếu đang điền
+                        try {
+                            const iDoc = iframe.contentDocument;
+                            if (!iDoc) continue;
+                            el = iDoc.getElementById(id);
+                            if (el && el.value && el.value.trim()) return el.value.trim();
+                        } catch (_) {}
+                    }
+                }
+                return '';
+            };
+
+            history.LYDOVAOVIEN = history.LYDOVAOVIEN || getDomValue(['tcBenhAntxtLYDOVAOVIEN', 'txtLYDOVAOVIEN']);
+            history.QUATRINHBENHLY = history.QUATRINHBENHLY || getDomValue(['tcBenhAntxtQTBENHLY', 'txtQTBENHLY', 'txtQUATRINHBENHLY']);
+            history.TIENSUBENH_BANTHAN = history.TIENSUBENH_BANTHAN || getDomValue(['tcBenhAntxtBANTHAN', 'txtBANTHAN', 'txtTIENSUBENH_BANTHAN']);
+            history.TIENSUBENH_GIADINH = history.TIENSUBENH_GIADINH || getDomValue(['tcBenhAntxtGIADINH', 'txtGIADINH', 'txtTIENSUBENH_GIADINH']);
+            history.KHAMBENH_TOANTHAN = history.KHAMBENH_TOANTHAN || getDomValue(['tcBenhAntxtTOANTHAN', 'txtTOANTHAN', 'txtKHAMBENH_TOANTHAN']);
+            history.KHAMBENH_BOPHAN = history.KHAMBENH_BOPHAN || getDomValue(['tcBenhAntxtBOPHAN', 'txtBOPHAN', 'txtKHAMBENH_BOPHAN']);
+
+            if (Object.keys(history).length === 0) {
                 window.VNPTRealtime?.showToast('❌ Không tìm thấy dữ liệu khám!', 'warning');
                 return;
+            }
+
+            // Cập nhật cache cho lần sau (Sử dụng patientKey để đảm bảo an toàn)
+            if (window.VNPTStore?.actions?.updateMedicalHistory && window.VNPTPatientContextGuard) {
+                const patientKey = window.VNPTPatientContextGuard.hashIdentity({ rowId: pid });
+                window.VNPTStore.actions.updateMedicalHistory(patientKey, history);
             }
 
             if (window.VNPTPatientContextGuard && contextToken) {
@@ -454,7 +448,7 @@ const VNPTHistory = (function () {
                         }
                     }
 
-                    console.log('[History] Đã đồng bộ Sinh hiệu đầy đủ vào Bệnh án:', vitals);
+                    console.log('[History] Đã đồng bộ Sinh hiệu vào Bệnh án');
                 }
             } catch (e) {
                 console.warn('[History] Lỗi đồng bộ Sinh hiệu:', e);
@@ -555,7 +549,7 @@ const VNPTHistory = (function () {
                                 ? { code: subMatch[1], text: subMatch[2] }
                                 : { code: '', text: subRaw };
                         }
-                        console.log('[History] Đã đồng bộ Chẩn đoán vào Bệnh án:', history.mainDiag, history.subDiag);
+                        console.log('[History] Đã đồng bộ Chẩn đoán vào Bệnh án');
                     }
                 } else {
                     console.warn('[History] Không lấy được dữ liệu chẩn đoán từ API hay Cache.');

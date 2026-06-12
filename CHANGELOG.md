@@ -7,6 +7,14 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.1.3] — 2026-06-12
+
+### 🛠️ Cập nhật & Bảo trì
+
+- **Nâng cấp phiên bản**: Phát hành chính thức phiên bản `2.1.3` để cập nhật hệ thống và chuẩn bị cho các đợt cập nhật tính năng tiếp theo.
+
+---
+
 ## [2.1.2] — 2026-06-06
 
 ### ✨ Side Panel & Tính năng Lâm sàng Mới

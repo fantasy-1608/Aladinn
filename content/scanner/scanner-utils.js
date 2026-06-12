@@ -108,6 +108,71 @@ export function statusColor(status) {
     return null;
 }
 
+// ── Admission Exam Normalization ─────────────────────────────────────
+
+export function normalizeAdmissionExamFields(historyData = {}, clinicalSummary = {}) {
+    const valueFrom = (...values) => {
+        for (const value of values) {
+            const text = String(value ?? '').trim();
+            if (text) return text;
+        }
+        return '';
+    };
+
+    return [
+        {
+            key: 'LYDOVAOVIEN',
+            label: 'Lý do vào viện',
+            value: valueFrom(historyData.LYDOVAOVIEN, clinicalSummary.lyDoVaoVien)
+        },
+        {
+            key: 'QUATRINHBENHLY',
+            label: 'Bệnh sử',
+            value: valueFrom(historyData.QUATRINHBENHLY, clinicalSummary.quaTrinhBenhLy)
+        },
+        {
+            key: 'TIENSUBENH_BANTHAN',
+            label: 'Tiền sử bản thân',
+            value: valueFrom(historyData.TIENSUBENH_BANTHAN, clinicalSummary.tienSuBanThan)
+        },
+        {
+            key: 'TIENSUBENH_GIADINH',
+            label: 'Tiền sử gia đình',
+            value: valueFrom(historyData.TIENSUBENH_GIADINH, clinicalSummary.tienSuGiaDinh)
+        },
+        {
+            key: 'KHAMBENH_TOANTHAN',
+            label: 'Khám toàn thân',
+            value: valueFrom(historyData.KHAMBENH_TOANTHAN, clinicalSummary.khamToanThan)
+        },
+        {
+            key: 'KHAMBENH_BOPHAN',
+            label: 'Khám bộ phận',
+            value: valueFrom(historyData.KHAMBENH_BOPHAN, clinicalSummary.khamBoPhan)
+        },
+        {
+            key: 'CHANDOANBANDAU',
+            label: 'Chẩn đoán ban đầu',
+            value: valueFrom(historyData.CHANDOANBANDAU, clinicalSummary.chanDoanBanDau)
+        },
+        {
+            key: 'CHANDOANKEMTHEO',
+            label: 'Chẩn đoán kèm theo',
+            value: valueFrom(historyData.CHANDOAN_KEMTHEO, historyData.CHANDOANKEMTHEO, clinicalSummary.chanDoanKemTheo)
+        },
+        {
+            key: 'TOMTATKQCANLAMSANG',
+            label: 'Tóm tắt CLS',
+            value: valueFrom(historyData.TOMTATKQCANLAMSANG, historyData.TOMTAT_CLS, clinicalSummary.tomTatCLS)
+        },
+        {
+            key: 'HUONGXULY',
+            label: 'Hướng xử lý',
+            value: valueFrom(historyData.HUONGXULY, clinicalSummary.huongXuLy)
+        }
+    ].filter(field => field.value);
+}
+
 // ── Lab Classification ───────────────────────────────────────────────
 
 export const LAB_CATEGORIES = {

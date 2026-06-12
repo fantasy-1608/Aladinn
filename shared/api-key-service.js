@@ -465,9 +465,9 @@ HIS.ApiKeyService = (function () {
             const stored = await new Promise(resolve =>
                 chrome.storage.local.get(['selectedModel', 'his_settings'], resolve)
             );
-            return stored.his_settings?.geminiModel || stored.selectedModel || 'gemini-2.0-flash';
+            return stored.his_settings?.geminiModel || stored.selectedModel || 'gemini-1.5-flash';
         } catch (_) {
-            return 'gemini-2.0-flash';
+            return 'gemini-1.5-flash';
         }
     }
 

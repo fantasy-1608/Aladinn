@@ -4,6 +4,7 @@
  * Fits into the Aladinn namespace.
  */
 
+import { normalizeAdmissionExamFields } from './scanner-utils.js';
 import { extractVitals } from './vital-extractor.js';
 
 window.Aladinn = window.Aladinn || {};
@@ -681,6 +682,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         demographics: demographics || null,
                         clinicalData: {
                             history: historyData || {},
+                            clinicalSummary: clinicalSummary || {},
                             treatments: treatmentList || [],
                             yLenhList,
                             admissionTimes: clinicalSummary?.admissionTimes || {},
@@ -759,8 +761,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     window.VNPTStore.actions.selectPatient(data.rowId);
                     if (data.patientName) {
                         window.VNPTStore.set('selectedPatientName', data.patientName);
-                        _injectInlineSummaryBtn(data.rowElement, data.patientName);
                     }
+                    document.querySelectorAll('.his-inline-summary-btn').forEach(btn => btn.remove());
                 });
 
                 HIS.EventBus.on('grid:ready', () => _injectQuickActionsDropdown());
@@ -867,64 +869,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }, 100);
             }
 
-            // Function to inject a small summary button next to the patient's name
+            // Inline summary button disabled: CLS + Thuốc chỉ tải khi người dùng mở từ sidebar/dropdown.
             function _injectInlineSummaryBtn(row, patientName) {
-                if (!row || !patientName) return;
-
-                // Wait slightly for jqGrid to finish its selection redraw
-                setTimeout(() => {
-                    // Remove old button if exists anywhere
-                    document.querySelectorAll('.his-inline-summary-btn').forEach(btn => btn.remove());
-
-                    // Find the cell containing the patient name
-                    const cells = row.querySelectorAll('td');
-                    let nameCell = null;
-                    for (const cell of cells) {
-                        const text = (cell.textContent || '').trim();
-                        if (text === patientName || text.includes(patientName)) {
-                            nameCell = cell;
-                            break;
-                        }
-                    }
-
-                    if (!nameCell) return;
-
-                    // Ensure the cell can properly position float items if needed
-                    // without changing its display type
-                    nameCell.style.position = 'relative';
-
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'his-inline-summary-btn';
-                    btn.innerHTML = AI_MAGNIFIER_SVG;
-                    btn.title = 'Xem tóm tắt Cận lâm sàng & Thuốc (Aladinn)';
-
-                    btn.addEventListener('click', async (e) => {
-                        e.preventDefault(); // Prevent form submission
-                        e.stopPropagation(); // Prevent row click event
-                        
-                        // Nếu đang tải thì bỏ qua
-                        if (btn.classList.contains('loading')) return;
-
-                        btn.classList.add('loading');
-                        btn.innerHTML = '<span class="his-spinner-inline"></span>';
-                        
-                        const success = await showAiLabSummary();
-                        
-                        if (!success) {
-                            btn.classList.remove('loading');
-                            btn.innerHTML = AI_MAGNIFIER_SVG;
-                        }
-                        // Nếu success, showAiLabSummary sẽ tự update nút thành ready
-                    });
-
-                    // Stop jqGrid from interpreting clicks on the button as row interactions
-                    ['mousedown', 'mouseup', 'dblclick'].forEach(evt => {
-                        btn.addEventListener(evt, e => e.stopPropagation());
-                    });
-
-                    nameCell.appendChild(btn);
-                }, 50);
+                void row;
+                void patientName;
+                document.querySelectorAll('.his-inline-summary-btn').forEach(btn => btn.remove());
             }
 
             // Export to Aladinn namespace
@@ -948,16 +897,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         _injectQuickActionsDropdown();
                     }
                     
-                    // Khôi phục nút inline nếu dòng được chọn bị vẽ lại nhưng mất nút inline
-                    const activeRow = document.querySelector('tr.ui-state-highlight');
-                    if (activeRow && !activeRow.querySelector('.his-inline-summary-btn')) {
-                        const pid = window.VNPTStore?.get('selectedPatientId');
-                        const pName = window.VNPTStore?.get('selectedPatientName');
-                        if (pid && pName) {
-                            if (Logger) Logger.debug('Scanner.SelfHealing', 'Detected active row summary button removed. Re-injecting...');
-                            _injectInlineSummaryBtn(activeRow, pName);
-                        }
-                    }
+                    document.querySelectorAll('.his-inline-summary-btn').forEach(btn => btn.remove());
                 });
 
                 // Khởi động quan sát trên toàn bộ document body với cấu hình nhẹ để tối ưu hiệu năng
@@ -2699,26 +2639,18 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- Khám vào viện (admission exam only) ---
         let khamVaoVienHtml = '';
         const historyData = patientInfo?.clinicalData?.history || {};
+        const clinicalSummaryData = patientInfo?.clinicalData?.clinicalSummary || {};
+        const admissionExamFields = normalizeAdmissionExamFields(historyData, clinicalSummaryData);
         const _hasLamsangData = allDates.length > 0 || Object.keys(historyData).length > 0; void _hasLamsangData;
 
-        if (Object.keys(historyData).length > 0) {
+        if (admissionExamFields.length > 0) {
             khamVaoVienHtml += `<div style="background:rgba(158,202,255,0.05); border:1px solid rgba(158,202,255,0.2); border-radius:10px; padding:16px; margin-bottom:16px;">
                 <h4 style="color:#9ECAFF; margin:0 0 12px 0; font-size:16.8px; display:flex; align-items:center; gap:6px;">🏥 Khám bệnh án</h4>`;
-            const fields = [
-                { key: 'LYDOVAOVIEN', label: 'Lý do vào viện' },
-                { key: 'QUATRINHBENHLY', label: 'Bệnh sử' },
-                { key: 'TIENSUBENH_BANTHAN', label: 'Tiền sử bản thân' },
-                { key: 'KHAMBENH_TOANTHAN', label: 'Khám toàn thân' },
-                { key: 'KHAMBENH_BOPHAN', label: 'Khám bộ phận' },
-                { key: 'TOMTATKQCANLAMSANG', label: 'Tóm tắt CLS' }
-            ];
-            for (const f of fields) {
-                if (historyData[f.key]) {
-                    khamVaoVienHtml += `<div style="margin-bottom:10px;">
-                        <span style="color:#555555; font-weight:600; font-size:14.4px; display:block; margin-bottom:2px;">${f.label}:</span>
-                        <div style="color:#333333; font-size:15.6px; line-height:1.5; white-space:pre-wrap;">${historyData[f.key]}</div>
-                    </div>`;
-                }
+            for (const f of admissionExamFields) {
+                khamVaoVienHtml += `<div style="margin-bottom:10px;">
+                    <span style="color:#555555; font-weight:600; font-size:14.4px; display:block; margin-bottom:2px;">${escapeHtml(f.label)}:</span>
+                    <div style="color:#333333; font-size:15.6px; line-height:1.5; white-space:pre-wrap;">${escapeHtml(f.value)}</div>
+                </div>`;
             }
             khamVaoVienHtml += '</div>';
         } else {
@@ -4166,4 +4098,3 @@ Trình bày theo cấu trúc (NGẮN GỌN, y khoa chuyên nghiệp):
     }
 
 })();
-

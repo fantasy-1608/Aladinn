@@ -164,6 +164,56 @@
     }
 
     // ========================================
+    // GLOBAL LOADING INDICATOR
+    // ========================================
+    function injectGlobalLoadingBar() {
+        if (document.getElementById('aladinn-global-loader')) return;
+        const loader = document.createElement('div');
+        loader.id = 'aladinn-global-loader';
+        loader.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, transparent);
+            background-size: 200% 100%;
+            z-index: 2147483647;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        `;
+        document.body.appendChild(loader);
+
+        if (!document.getElementById('aladinn-loader-style')) {
+            const style = document.createElement('style');
+            style.id = 'aladinn-loader-style';
+            style.textContent = `
+                @keyframes aladinn-shimmer {
+                    0% { background-position: 100% 0; }
+                    100% { background-position: -100% 0; }
+                }
+                .aladinn-loading-active {
+                    opacity: 1 !important;
+                    animation: aladinn-shimmer 1.5s infinite linear;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        let loadingTimeout = null;
+        window.addEventListener('ALADINN_LOADING', (e) => {
+            const isLoading = e.detail?.isLoading;
+            if (isLoading) {
+                loader.classList.add('aladinn-loading-active');
+                if (loadingTimeout) clearTimeout(loadingTimeout);
+                // Auto hide after 15s max to prevent stuck loader
+                loadingTimeout = setTimeout(() => {
+                    loader.classList.remove('aladinn-loading-active');
+                }, 15000);
+            } else {
+                loader.classList.remove('aladinn-loading-active');
+                if (loadingTimeout) clearTimeout(loadingTimeout);
+            }
+        });
+    }
+
+    // ========================================
     // SECURITY: Shared nonce + random JWT channel (per-session)
     // ========================================
     const __ALADINN_NONCE__ = crypto.randomUUID();
@@ -808,12 +858,54 @@
     }
 
     // ========================================
+    // ROLE GUARD (Doctor vs Nurse Kill Switch)
+    // ========================================
+    async function checkNurseRole() {
+        return new Promise((resolve) => {
+            const listener = (event) => {
+                if (event.origin !== window.location.origin) return;
+                if (event.data && event.data.type === 'ALADINN_ROLE_CHECK_RESULT') {
+                    window.removeEventListener('message', listener);
+                    clearTimeout(timeout);
+                    // Dựa theo dự án Nurse, USER_GROUP_ID === '5' là Điều dưỡng
+                    resolve(event.data.userGroupId === '5');
+                }
+            };
+            window.addEventListener('message', listener);
+
+            // Bơm script vào page context để đọc biến toàn cục window.userInfo của HIS
+            // Sử dụng file tĩnh để tránh bị chặn bởi Chrome CSP (unsafe-inline)
+            const script = document.createElement('script');
+            script.src = chrome.runtime.getURL('injected/role-check.js');
+            script.onload = () => {
+                script.remove(); // Xoá DOM sau khi tải xong
+            };
+            (document.head || document.documentElement).appendChild(script);
+
+            // Fallback an toàn (fail open) nếu HIS không có userInfo hoặc cấu trúc trang thay đổi
+            const timeout = setTimeout(() => {
+                window.removeEventListener('message', listener);
+                resolve(false); 
+            }, 3500);
+        });
+    }
+
+    // ========================================
     // ENTRY POINT
     // ========================================
     loadFeatureFlags()
         .then(features => applyRemoteConfig(features))
-        .then(features => {
+        .then(async features => {
             try {
+                // [KILL SWITCH] Chặn hoàn toàn tiện ích đối với Điều dưỡng để nhường không gian cho app Nurse
+                const isNurse = await checkNurseRole();
+                if (isNurse) {
+                    if (Logger) Logger.warn('RoleGuard', '🛑 Phát hiện tài khoản Điều dưỡng. Aladinn tự động ngắt kết nối hoàn toàn.');
+                    return; // Trả về ngay lập tức, không gọi initModules()
+                }
+                // Khởi tạo loading bar
+                injectGlobalLoadingBar();
+                
                 initModules(features);
             } catch (err) {
                 console.error('[Aladinn] Critical error during initialization:', err);

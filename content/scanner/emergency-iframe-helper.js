@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = window.location.origin;
+    var PARENT_ORIGIN = '*';
     var $ = window.jQuery || window.$;
 
     if (window._vnptEmergencyHandler) {
@@ -330,5 +330,5 @@
     document.addEventListener('click', broadcastContext);
     
     // Self-healing context broadcast every 1.5s
-    setInterval(broadcastContext, 1500);
+    setInterval(function() { if (!document.hidden) broadcastContext(); }, 1500);
 })();

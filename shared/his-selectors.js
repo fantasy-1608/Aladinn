@@ -32,8 +32,8 @@ HIS.Selectors = {
     // ==========================================
     // FORM FIELDS (common across modules)
     // ==========================================
-    PATIENT_ID: 'input[name*="BENHNHAN"], input[id*="maBenhNhan"]',
-    PATIENT_NAME: 'input[name*="HOTEN"], input[id*="hoTen"]',
+    PATIENT_ID: 'input[name="BENHNHAN" i], input[id*="maBenhNhan" i], input[id*="txtMaBN" i], input[id*="txtMaBA" i]',
+    PATIENT_NAME: 'input[name*="HOTEN" i]:not([type="hidden"]), input[id*="hoTen" i], input[id*="txtHoTen" i]',
 
     // Doctor & Nurse selects
     DOCTOR_SELECT: 'select[id*="bacSi"], select[name*="BACSI"]',

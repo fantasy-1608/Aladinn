@@ -125,10 +125,9 @@ describe('Self-Healing UI & Live Persistence Observer', () => {
         expect(aladinnBtn).not.toBeNull();
     });
 
-    it('should automatically restore active row summary button if row is re-rendered without the button', async () => {
+    it('should not inject active row summary button when patient selection is passive', async () => {
         window.Aladinn.Scanner.init();
 
-        // Inject summary button on patient selection
         const patientSelectedHandler = window.HIS.EventBus.on.mock.calls.find(c => c[0] === 'patient:selected')[1];
         const activeRow = document.querySelector('tr.ui-state-highlight');
         
@@ -140,19 +139,16 @@ describe('Self-Healing UI & Live Persistence Observer', () => {
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Check if inline summary button was injected
-        let inlineBtn = activeRow.querySelector('.his-inline-summary-btn');
-        expect(inlineBtn).not.toBeNull();
-
-        // Simulate HIS redrawing the row, removing our inline button
-        inlineBtn.remove();
+        expect(window.VNPTStore.actions.selectPatient).toHaveBeenCalledWith('BN123');
         expect(activeRow.querySelector('.his-inline-summary-btn')).toBeNull();
 
-        // Wait for MutationObserver self-healing callback
+        const staleButton = document.createElement('button');
+        staleButton.className = 'his-inline-summary-btn';
+        activeRow.appendChild(staleButton);
+        expect(activeRow.querySelector('.his-inline-summary-btn')).not.toBeNull();
+
         await new Promise(resolve => setTimeout(resolve, 150));
 
-        // Verify button is restored autonomously
-        inlineBtn = activeRow.querySelector('.his-inline-summary-btn');
-        expect(inlineBtn).not.toBeNull();
+        expect(activeRow.querySelector('.his-inline-summary-btn')).toBeNull();
     });
 });

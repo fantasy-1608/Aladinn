@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Aladinn",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "description": "Tiện ích mở rộng hỗ trợ y bác sĩ trên hệ thống VNPT HIS: Nhập liệu giọng nói AI, Quét dữ liệu lâm sàng, Ký số tự động",
     "author": "Huỳnh Trung Anh",
     "permissions": [
@@ -113,6 +113,7 @@
                 "injected/ajax-interceptor.js",
                 "injected/grid-hook.js",
                 "injected/api-bridge.js",
+                "injected/role-check.js",
                 "content/shared/self-healing.js",
                 "content/shared/typing-effect.js",
                 "content/scanner/*-iframe-helper.js",

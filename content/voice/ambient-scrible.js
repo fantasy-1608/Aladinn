@@ -19,6 +19,7 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
     // Chốt chặn Context Bệnh nhân
     let startPatientId = null;
     let contextToken = null;
+    let patientSetByRecording = false;
 
     // Biến lưu trữ kết quả SOAP từ AI
     window.currentResults = null;
@@ -114,7 +115,28 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
             } catch (_) {}
         }
 
-        // Cách 3: Quét trực tiếp DOM các trường thông dụng trên HIS
+        // Cách 3: Quét trực tiếp DOM bằng CSS Selector linh hoạt (không phân biệt chữ hoa thường)
+        const selector = window.HIS?.Selectors?.PATIENT_ID || 'input[name*="BENHNHAN" i], input[id*="maBenhNhan" i], input[id*="txtMaBN" i], input[id*="txtMaBA" i]';
+        function searchSelectorInFrames(root) {
+            let el = root.querySelector(selector);
+            if (el && el.value && el.value.trim() !== '') return el.value.trim();
+            const iframes = root.querySelectorAll('iframe');
+            for (const iframe of iframes) {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (doc) {
+                        const pid = searchSelectorInFrames(doc);
+                        if (pid) return pid;
+                    }
+                } catch(e) {}
+            }
+            return null;
+        }
+
+        const domPid = searchSelectorInFrames(document);
+        if (domPid) return domPid;
+
+        // Fallback cũ nếu querySelector thất bại
         const elements = findElementInAllFrames('txtMaBenhNhan') || findElementInAllFrames('txtMaBA') || findElementInAllFrames('txtMaBenhAn');
         if (elements && elements.value) return elements.value.trim();
 
@@ -289,10 +311,14 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
 
         // Lưu ID bệnh nhân lúc bắt đầu ghi âm
         startPatientId = getActivePatientId();
+        patientSetByRecording = true;
         
-        // Khởi động chốt chặn PatientContextGuard nếu có sẵn
+        // Khởi động chốt chặn PatientContextGuard nếu có sẵn (chỉ khi VNPTStore có dữ liệu)
         if (window.VNPTPatientContextGuard?.captureGridOnly) {
-            contextToken = window.VNPTPatientContextGuard.captureGridOnly(startPatientId);
+            const storePid = window.VNPTStore?.get ? window.VNPTStore.get('selectedPatientId') : window.VNPTStore?.getState?.()?.selectedPatientId;
+            if (storePid && storePid !== 'anonymous_patient') {
+                contextToken = window.VNPTPatientContextGuard.captureGridOnly(storePid);
+            }
         }
 
         // Lưu vào global để truyền sang module autofill
@@ -343,6 +369,40 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
             return;
         }
 
+        // Nếu người dùng chỉ nhập chữ mà không bấm thu âm (hoặc vừa đổi bệnh nhân và nhập tay),
+        // cần thiết lập/cập nhật lại chốt chặn ID.
+        if (!startPatientId || !patientSetByRecording) {
+            startPatientId = getActivePatientId();
+            window.Aladinn = window.Aladinn || {};
+            window.Aladinn.Voice = window.Aladinn.Voice || {};
+            window.Aladinn.Voice.startPatientId = startPatientId;
+            
+            if (window.VNPTPatientContextGuard?.captureGridOnly) {
+                // Chỉ kích hoạt PatientContextGuard nếu thực sự lấy được ID từ VNPTStore
+                const storePid = window.VNPTStore?.get ? window.VNPTStore.get('selectedPatientId') : window.VNPTStore?.getState?.()?.selectedPatientId;
+                if (storePid && storePid !== 'anonymous_patient') {
+                    contextToken = window.VNPTPatientContextGuard.captureGridOnly(storePid);
+                    window.Aladinn.Voice.contextToken = contextToken;
+                } else {
+                    // Nếu không có trong store (bệnh nhân mới), reset contextToken để bỏ qua bước 2
+                    contextToken = null;
+                    window.Aladinn.Voice.contextToken = null;
+                }
+            }
+        }
+        
+        // Đặt lại cờ sau khi đã chốt ID xong để các lần gọi AI tiếp theo trên cùng bệnh nhân không ghi đè nếu không cần
+        patientSetByRecording = false;
+
+        // Kích hoạt bảng nhập PIN nếu AI bị khóa
+        if (window.HIS && window.HIS.ApiKeyService) {
+            const unlocked = await window.HIS.ApiKeyService.ensureUnlocked();
+            if (!unlocked) {
+                showToast('⚠️ Chưa mở khóa AI VIP. Vui lòng thử lại!', true);
+                return;
+            }
+        }
+
         // Hiện trạng thái loading phẳng
         setLoading(true);
         showToast('🧠 AI đang phân tích dữ liệu lâm sàng...');
@@ -351,12 +411,18 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
         const sanitizedText = redactPHI(text);
         if (Logger) Logger.info('Voice.Redaction', 'Dữ liệu thô đã khử PHI cục bộ trước khi truyền gửi.');
 
+        // Lấy mô hình AI từ cấu hình người dùng (nếu có ApiKeyService)
+        let selectedModel = 'gemini-1.5-flash';
+        if (window.HIS && window.HIS.ApiKeyService) {
+            selectedModel = await window.HIS.ApiKeyService.getModel();
+        }
+
         // Gửi yêu cầu qua Background Service Worker
         chrome.runtime.sendMessage({
             type: 'AI_REQUEST',
             payload: {
                 text: sanitizedText,
-                model: 'gemini-2.0-flash',
+                model: selectedModel,
                 requestId: 'ambient-' + Date.now()
             }
         }, response => {
@@ -400,7 +466,7 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
 
         // Chặn đứng lập tức nếu phát hiện chuyển đổi bệnh nhân (Nhiễm chéo thông tin)
         if (!isContextValid) {
-            showPatientMismatchError();
+            showPatientMismatchError(startPatientId, currentPatientId);
             return;
         }
 
@@ -442,14 +508,18 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
         }
     }
 
-    function showPatientMismatchError() {
+    function showPatientMismatchError(startId, currentId) {
         const errorContainer = document.getElementById('his-mismatch-error');
         if (errorContainer) {
             errorContainer.innerHTML = `
                 <div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 12px; font-size: 11px; font-weight: bold; line-height: 1.5; border-radius: 0px;">
                     ⚠️ CẢNH BÁO AN TOÀN LÂM SÀNG:<br>
                     Phát hiện sai lệch thông tin bệnh nhân! Bác sĩ đã chuyển sang bệnh nhân khác trên HIS trong khi chờ AI phản hồi.<br>
-                    <span style="text-decoration: underline;">HÀNH ĐỘNG BỊ CHẶN ĐỨNG</span> để tránh nhiễm chéo dữ liệu lâm sàng nguy hiểm.
+                    <span style="text-decoration: underline;">HÀNH ĐỘNG BỊ CHẶN ĐỨNG</span> để tránh nhiễm chéo dữ liệu lâm sàng nguy hiểm.<br>
+                    <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(0,0,0,0.1); font-size: 10px; font-weight: normal; color: #666;">
+                        Mã lúc gọi AI: <b>${startId || 'null'}</b> <br>
+                        Mã hiện tại trên HIS: <b>${currentId || 'null'}</b>
+                    </div>
                 </div>
             `;
             errorContainer.classList.remove('aladinn-hidden');
@@ -564,6 +634,25 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
                 padding: 0;
                 margin: 0;
             }
+            #his-toast {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: #fff;
+                padding: 10px 20px;
+                border-radius: 4px;
+                z-index: 9999999;
+                font-size: 13px;
+                opacity: 0;
+                transition: opacity 0.3s;
+                pointer-events: none;
+                font-family: Arial, sans-serif;
+                font-weight: bold;
+            }
+            #his-toast.show { opacity: 1; }
+            #his-toast.error { background: #dc3545; }
         `;
         document.head.appendChild(style);
     }
@@ -727,8 +816,12 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
     }
 
     function showToast(message, isError = false) {
-        const toast = document.getElementById('his-toast');
-        if (!toast) return;
+        let toast = document.getElementById('his-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'his-toast';
+            document.body.appendChild(toast);
+        }
         toast.textContent = message;
         toast.className = 'his-toast show' + (isError ? ' error' : '');
         setTimeout(() => toast.classList.remove('show'), 3000);
@@ -851,6 +944,10 @@ window.Aladinn.Voice = window.Aladinn.Voice || {};
     }
 
     function loadDemoData() {
+        // Lấy mã bệnh nhân hiện tại để gắn chốt chặn an toàn cho test
+        startPatientId = getActivePatientId();
+        contextToken = null; // Bỏ qua validate token phức tạp khi test demo
+        
         window.transcript = 'Bệnh nhân nam 52 tuổi, khai đau ngực sau xương ức khoảng 3 tiếng nay, đau kiểu bóp nghẹt lan ra vai trái. Bệnh sử: tăng huyết áp 8 năm uống thuốc liên tục, gia đình có bố bị tai biến. Khám thấy mệt mỏi, mạch quay rõ 82 lần, huyết áp đo được 145 trên 90, SpO2 duy trì 98%, cân nặng nặng 70 cân, chiều cao đo được một mét bảy mươi.';
         
         const transcriptTextarea = document.getElementById('his-transcript');
