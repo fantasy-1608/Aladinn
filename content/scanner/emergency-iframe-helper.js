@@ -17,6 +17,7 @@
 
     window._vnptEmergencyHandler = async function (event) {
         if (event.source !== window.parent) return;
+        if (!event.origin.match(/^https?:\/\/(.*\.?)(vnpt\.vn|vncare\.vn)$/)) return;
         
         if (!event.data || (event.data.type !== 'EMERGENCY_FILL_FORM' && event.data.type !== 'EMERGENCY_FILL_FORM_API')) return;
 

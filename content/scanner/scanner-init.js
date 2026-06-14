@@ -503,7 +503,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         _clsAbortController.abort('CLS_PATIENT_CHANGED');
                     });
                     
-                    window.VNPTRealtime?.showToast('🪄 Đang tải CLS + Thuốc từ VNPT HIS...', 'info');
+                    window.VNPTRealtime?.TaskHub?.add('sync_cls', 'Đồng bộ bệnh án', 'Đang tải CLS + Thuốc từ VNPT HIS...');
                     
                     // Đề xuất 3: Generic bridge fetch helper — thay thế 6 hàm lặp
                     const bridgeFetch = (reqType, resType, rowId, extractFn, timeout = 10000, prefix = 'req') => {
@@ -599,12 +599,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     // [SAFETY] Checkpoint 1: Kiểm tra BN có thay đổi sau fetch
                     // ═══════════════════════════════════════════════════════════
                     if (_clsAbortSignal.aborted) {
+                        window.VNPTRealtime?.TaskHub?.remove('sync_cls');
                         window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy để đảm bảo an toàn.', 'warning');
                         return false;
                     }
                     if (window.VNPTPatientContextGuard && contextToken) {
                         const stillValid = window.VNPTPatientContextGuard.validate(contextToken);
                         if (!stillValid) {
+                            window.VNPTRealtime?.TaskHub?.remove('sync_cls');
                             window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy để đảm bảo an toàn.', 'warning');
                             return false;
                         }
@@ -718,11 +720,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         }
                     } catch (e) { console.error('[AI Lab] Error fetching labs:', e); }
 
-                    // ── Phase C: Deferred fetches — chỉ lazy-load Thuốc & PTTT (tốn thời gian) ──
                     const deferredFetches = {
                         fetchDrugs: () => fetchDrugsFromBridge(pid),     // Tab Lâm sàng
                         fetchPttt: () => fetchPtttFromBridge(pid),       // Tab Lâm sàng
                         _abortSignal: _clsAbortSignal,
+                        _abortController: _clsAbortController,
                         _contextToken: contextToken,
                     };
 
@@ -738,15 +740,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         inlineBtn.innerHTML = AI_MAGNIFIER_SVG;
                         inlineBtn.title = 'Xem tóm tắt Cận lâm sàng & Thuốc (Aladinn)';
                     }
+                    
+                    window.VNPTRealtime?.TaskHub?.remove('sync_cls');
 
                     return true;
                 } catch (err) {
                     // [SAFETY] Không hiển thị lỗi nếu chỉ là context mismatch (BN đã chuyển)
                     if (err.message && err.message.includes('PATIENT_CONTEXT_MISMATCH')) {
+                        window.VNPTRealtime?.TaskHub?.remove('sync_cls');
                         window.VNPTRealtime?.showToast('⚠️ Bệnh nhân đã thay đổi. Dữ liệu CLS bị hủy.', 'warning');
                         return false;
                     }
                     console.error('[AI Lab] Lỗi:', err);
+                    window.VNPTRealtime?.TaskHub?.remove('sync_cls');
                     window.VNPTRealtime?.showToast('❌ Lỗi tạo tóm tắt: ' + (err.message || 'Lỗi không xác định'), 'warning');
                     return false;
                 } finally {
@@ -791,11 +797,11 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     btn.id = 'aladinn-quick-actions-btn';
                     btn.type = 'button';
                     btn.title = 'Tiện ích Aladinn';
-                    btn.innerHTML = '<span style="font-size:14px; line-height:1;">🧞</span>';
-                    btn.style.cssText = 'background:linear-gradient(135deg, rgba(158,202,255,0.15), rgba(158,202,255,0.05)); border:1px solid rgba(158,202,255,0.4); border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:2px 6px; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.1); outline:none; height:22px; width:28px; margin:0 auto;';
+                    btn.innerHTML = '<span style="font-size:14px; line-height:1; display:block;">🧞</span>';
+                    btn.style.cssText = 'background:transparent; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; transition:all 0.2s; box-shadow:none; outline:none; height:18px; width:18px; margin:0 auto; transform-origin:center;';
                     
-                    btn.onmouseover = () => btn.style.background = 'rgba(158,202,255,0.25)';
-                    btn.onmouseout = () => btn.style.background = 'linear-gradient(135deg, rgba(158,202,255,0.15), rgba(158,202,255,0.05))';
+                    btn.onmouseover = () => btn.style.transform = 'scale(1.15)';
+                    btn.onmouseout = () => btn.style.transform = 'scale(1)';
 
                     const dropdown = document.createElement('div');
                     dropdown.id = 'aladinn-quick-actions-menu';
@@ -1298,7 +1304,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             singleRow: singleRow,
             onStart: (m) => {
                 if (window.VNPTMenuManager) window.VNPTMenuManager.toggleStopButton(true);
-                if (m !== 'bhyt' && window.VNPTRealtime) window.VNPTRealtime.showToast(`🚀 Bắt đầu quét ${m}...`, 'info');
+                if (m !== 'bhyt' && window.VNPTRealtime) window.VNPTRealtime.TaskHub?.add(`scan_${m}`, 'Quét Bệnh án', `Đang tải ${m}...`);
             },
             onProgress: (count, total) => {
                 const percent = Math.round((count / total) * 100);
@@ -1340,7 +1346,10 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 if (m === 'bhyt') {
                     finalizeBhytReport();
                 } else {
-                    if (window.VNPTRealtime) window.VNPTRealtime.showToast(`✅ Quét ${m} hoàn tất!`, 'success');
+                    if (window.VNPTRealtime) {
+                        window.VNPTRealtime.TaskHub?.remove(`scan_${m}`);
+                        window.VNPTRealtime.showToast(`✅ Quét ${m} hoàn tất!`, 'success');
+                    }
                 }
                 if (m === 'room' && window.VNPTStore) window.VNPTStore.actions.endScan({}, stats);
             }
@@ -3022,6 +3031,12 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             if (window._clsModalUnsubPatient) {
                 window._clsModalUnsubPatient();
                 window._clsModalUnsubPatient = null;
+            }
+            if (deferredFetches?._abortController) {
+                deferredFetches._abortController.abort('MODAL_CLOSED');
+            }
+            if (window.VNPTRealtime?.TaskHub) {
+                window.VNPTRealtime.TaskHub.remove('sync_cls');
             }
         }
 

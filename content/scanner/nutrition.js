@@ -279,10 +279,11 @@ const VNPTNutrition = (function () {
             }
 
             if (!vitals || !vitals.weight || !vitals.height || vitals.height === '0') {
-                window.VNPTRealtime?.showToast('⏳ Đang quét chỉ số chiều cao/cân nặng...', 'info');
+                window.VNPTRealtime?.TaskHub?.add('sync_vitals', 'Đồng bộ Dữ liệu', 'Đang quét chỉ số chiều cao/cân nặng...');
                 vitals = await fetchVitalsForPatient(patientId, contextToken);
                 if (vitals && vitals.weight) cachedVitals = vitals;
             }
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
 
             if (window.VNPTPatientContextGuard && contextToken) {
                 await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'nutrition_after_vitals' });
@@ -298,7 +299,7 @@ const VNPTNutrition = (function () {
                 }
             }
 
-            window.VNPTRealtime?.showToast('⏳ Đang điền phiếu...', 'info');
+            window.VNPTRealtime?.TaskHub?.add('fill_dd03', 'Phiếu DD-03', 'Đang điền dữ liệu dinh dưỡng...');
 
             if (window.VNPTPatientContextGuard && contextToken) {
                 const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
@@ -390,16 +391,18 @@ const VNPTNutrition = (function () {
             }, 'NUTRITION_FILL_RESULT');
 
             const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
+            window.VNPTRealtime?.TaskHub?.remove('fill_dd03');
             window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu DD-03 cho bệnh nhân: ${ptName}`, 'success');
-
-            // Ẩn button sau khi điền xong
-            hideFillButton();
+            console.log('[Nutrition] Đã điền xong phiếu DD-03.');           hideFillButton();
         } catch (e) {
             console.error('[Nutrition] Lỗi:', e);
             let msg = (e instanceof Error) ? e.message : 'Lỗi';
             if (msg === 'FORM_CONTEXT_MISMATCH') {
                 msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
             }
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
+            window.VNPTRealtime?.TaskHub?.remove('fill_dd03');
             window.VNPTRealtime?.showToast('❌ ' + msg, 'error');
         }
     }

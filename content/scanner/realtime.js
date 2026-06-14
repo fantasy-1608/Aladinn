@@ -95,6 +95,7 @@ const VNPTRealtime = (function () {
         }
         // Accelerate remaining toasts when new one arrives
         for (const [k, entry] of _activeToasts) {
+            if (entry.type === 'loading') continue;
             clearTimeout(entry.timer);
             entry.timer = setTimeout(() => _removeToast(k), 1500);
         }
@@ -105,15 +106,21 @@ const VNPTRealtime = (function () {
      * @param {string} message
      * @param {'info'|'warning'|'success'|'error'|'loading'} [type='info']
      * @param {string} [id] - Optional ID to allow updating an existing toast instead of stacking
+     * @param {string} [subtitle] - Optional subtitle (smaller text below message)
      */
-    function showToast(message, type = 'info', id = null) {
+    function showToast(message, type = 'info', id = null, subtitle = '') {
         const container = _ensureContainer();
         type = _detectType(message, type);
         const baseDuration = DURATION[type] || DURATION.info;
         const duration = _getDynamicDuration(baseDuration, type);
 
         // Clean message (remove leading emoji if duplicated by icon)
-        const cleanMsg = message.replace(/^[\p{Emoji}]+\s*/u, '').trim() || message;
+        let cleanMsg = message.replace(/^[\p{Emoji}]+\s*/u, '').trim() || message;
+        let showDots = false;
+        if (cleanMsg.endsWith('...')) {
+            cleanMsg = cleanMsg.slice(0, -3);
+            showDots = true;
+        }
 
         // Auto-group: nếu cùng message đang hiện → tăng counter
         const msgKey = id || message.trim();
@@ -123,13 +130,49 @@ const VNPTRealtime = (function () {
             
             // If we provided an ID, we might be updating the message text
             if (id) {
-                const msgEl = existing.el.querySelector('.vnpt-toast-message');
-                if (msgEl) msgEl.innerHTML = cleanMsg;
+                const msgEl = existing.el.querySelector('.vnpt-toast-title');
+                if (msgEl) {
+                    msgEl.innerHTML = cleanMsg + (showDots ? '<span class="vnpt-toast-dots"></span>' : '');
+                } else {
+                    const oldMsgEl = existing.el.querySelector('.vnpt-toast-message');
+                    if (oldMsgEl) {
+                        oldMsgEl.innerHTML = `<span class="vnpt-toast-title">${cleanMsg}${showDots ? '<span class="vnpt-toast-dots"></span>' : ''}</span>` + 
+                            (subtitle ? `<span class="vnpt-toast-subtitle">${subtitle}</span>` : '');
+                    }
+                }
+                const subEl = existing.el.querySelector('.vnpt-toast-subtitle');
+                if (subEl) {
+                    if (subtitle) {
+                        subEl.innerHTML = subtitle;
+                    } else {
+                        subEl.remove();
+                    }
+                } else if (!subEl && subtitle) {
+                    const msgContainer = existing.el.querySelector('.vnpt-toast-message');
+                    if (msgContainer) {
+                        const newSub = document.createElement('span');
+                        newSub.className = 'vnpt-toast-subtitle';
+                        newSub.innerHTML = subtitle;
+                        msgContainer.appendChild(newSub);
+                    }
+                }
+
                 // If type changes to something else, we might want to update icon
-                if (type === 'success' || type === 'error' || type === 'warning') {
+                if (type === 'success' || type === 'error' || type === 'warning' || type === 'loading') {
+                    existing.type = type;
                     const iconEl = existing.el.querySelector('.vnpt-toast-icon');
                     if (iconEl) iconEl.innerHTML = _getIcon(type);
                     existing.el.className = `vnpt-toast vnpt-toast-${type} vnpt-toast-enter`;
+                    
+                    // Toggle loading bar
+                    const hasBar = existing.el.querySelector('.vnpt-toast-loading-bar');
+                    if (type === 'loading' && !hasBar) {
+                        const bar = document.createElement('div');
+                        bar.className = 'vnpt-toast-loading-bar';
+                        existing.el.appendChild(bar);
+                    } else if (type !== 'loading' && hasBar) {
+                        hasBar.remove();
+                    }
                 }
             } else {
                 const badge = existing.el.querySelector('.vnpt-toast-badge');
@@ -156,6 +199,12 @@ const VNPTRealtime = (function () {
         const toast = document.createElement('div');
         toast.className = `vnpt-toast vnpt-toast-${type} vnpt-toast-enter`;
 
+        if (type === 'loading') {
+            const bar = document.createElement('div');
+            bar.className = 'vnpt-toast-loading-bar';
+            toast.appendChild(bar);
+        }
+
         // Icon
         const iconEl = document.createElement('div');
         iconEl.className = 'vnpt-toast-icon';
@@ -167,7 +216,18 @@ const VNPTRealtime = (function () {
 
         const msgEl = document.createElement('span');
         msgEl.className = 'vnpt-toast-message';
-        msgEl.innerHTML = cleanMsg;
+        
+        const titleEl = document.createElement('span');
+        titleEl.className = 'vnpt-toast-title';
+        titleEl.innerHTML = cleanMsg + (showDots ? '<span class="vnpt-toast-dots"></span>' : '');
+        msgEl.appendChild(titleEl);
+
+        if (subtitle) {
+            const subEl = document.createElement('span');
+            subEl.className = 'vnpt-toast-subtitle';
+            subEl.innerHTML = subtitle;
+            msgEl.appendChild(subEl);
+        }
 
         const badgeEl = document.createElement('span');
         badgeEl.className = 'vnpt-toast-badge';
@@ -209,12 +269,60 @@ const VNPTRealtime = (function () {
 
         // Track
         const timer = setTimeout(() => _removeToast(msgKey), duration);
-        _activeToasts.set(msgKey, { el: toast, count: 1, timer });
+        _activeToasts.set(msgKey, { el: toast, count: 1, timer, type });
     }
+
+    // --- TASK HUB ---
+    const _activeTasks = new Map();
+    let _wasRunningTasks = false;
+
+    function _renderTaskHub() {
+        if (_activeTasks.size === 0) {
+            if (_wasRunningTasks) {
+                _wasRunningTasks = false;
+                _removeToast('aladinn_global_task_hub');
+            }
+            return;
+        }
+        
+        _wasRunningTasks = true;
+        
+        if (_activeTasks.size === 1) {
+            const task = Array.from(_activeTasks.values())[0];
+            showToast(task.title, 'loading', 'aladinn_global_task_hub', task.subtitle);
+        } else {
+            const tasks = Array.from(_activeTasks.values());
+            const title = `Đang xử lý ${tasks.length} tiến trình...`;
+            let subtitle = tasks.slice(0, 3).map(t => `• ${t.subtitle || t.title}`).join('<br>');
+            if (tasks.length > 3) {
+                subtitle += `<br><span style="color:#888;">• ... và ${tasks.length - 3} tiến trình khác</span>`;
+            }
+            showToast(title, 'loading', 'aladinn_global_task_hub', subtitle);
+        }
+    }
+
+    const TaskHub = {
+        add: function(id, title, subtitle = '') {
+            _activeTasks.set(id, { id, title, subtitle });
+            _renderTaskHub();
+        },
+        remove: function(id) {
+            if (_activeTasks.has(id)) {
+                _activeTasks.delete(id);
+                _renderTaskHub();
+            }
+        },
+        clear: function() {
+            _activeTasks.clear();
+            _renderTaskHub();
+        }
+    };
 
     // Public API
     return {
-        showToast
+        showToast,
+        hideToast: _removeToast,
+        TaskHub
     };
 })();
 

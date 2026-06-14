@@ -1469,7 +1469,7 @@
                     // Tích hợp dữ liệu thời gian thực từ DOM Tờ điều trị đang soạn thảo
                     try {
                         const domSheet = scrapeTreatmentSheetFromDOM();
-                        if (domSheet) {
+                        if (domSheet && !_isDomSheetDuplicate(domSheet, treatments)) {
                             const now = new Date();
                             const timeStr = ('0' + now.getDate()).slice(-2) + '/' +
                                           ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
@@ -2282,6 +2282,47 @@
     }
 
     /**
+     * Helper kiểm tra xem dữ liệu DOM có đang trùng lặp với dữ liệu đã lưu (đang ở chế độ Xem lại) hay không
+     */
+    function _isDomSheetDuplicate(domSheet, recentTreatments) {
+        if (!domSheet || !recentTreatments || !recentTreatments.length) return false;
+        
+        var norm = function(str) {
+            var decoded = typeof _decodeHtmlEntities === 'function' ? _decodeHtmlEntities(str || '') : (str || '');
+            return String(decoded).replace(/<[^>]+>/g, '').replace(/[\s\uFEFF\xA0]+/g, '').toLowerCase();
+        };
+        
+        var d_dienBien = norm(domSheet.dienBienBenh);
+        var d_huongXuLy = norm(domSheet.huongXuLy);
+        var d_khamToanThan = norm(domSheet.khamToanThanTDT);
+        var d_yLenh = norm(domSheet.yLenh);
+        var d_chanDoan = norm(domSheet.chanDoanChinh);
+        
+        var d_sinhHieu = '';
+        if (domSheet.sinhHieu) {
+            d_sinhHieu = norm(domSheet.sinhHieu.pulse) + norm(domSheet.sinhHieu.temperature) + norm(domSheet.sinhHieu.bloodPressure);
+        }
+        
+        // Chỉ cần check 5 tờ gần nhất để tối ưu
+        var maxCheck = Math.min(recentTreatments.length, 5);
+        for (var i = 0; i < maxCheck; i++) {
+            var t = recentTreatments[i];
+            var t_dienBien = norm(t.DIENBIEN);
+            var t_huongXuLy = norm(t.XULY || t.HUONGXUTRI || t.HUONGXULY);
+            var t_khamToanThan = norm(t.TOANTHAN || t.KHAMTOANTHAN);
+            var t_yLenh = norm(t.YLENH);
+            var t_chanDoan = norm(t.CHANDOANCHINH);
+            var t_sinhHieu = norm(t.MACH) + norm(t.NHIETDO) + norm(t.HUYETAP);
+            
+            var hasData = d_dienBien || d_huongXuLy || d_khamToanThan || d_yLenh || d_chanDoan || d_sinhHieu;
+            if (hasData && d_dienBien === t_dienBien && d_huongXuLy === t_huongXuLy && d_khamToanThan === t_khamToanThan && d_yLenh === t_yLenh && d_chanDoan === t_chanDoan && d_sinhHieu === t_sinhHieu) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Trích xuất dữ liệu lâm sàng thời gian thực từ DOM Tờ điều trị Nội trú đang mở (NTU02D021_BuongDieuTri)
      * Ưu tiên dữ liệu trực quan bác sĩ đang nhập chưa bấm Lưu.
      */
@@ -2888,7 +2929,8 @@
             // === PHẦN 4: Ưu tiên ghi đè bằng DOM thời gian thực từ tờ điều trị đang mở (nếu có) ===
             try {
                 var domSheet = scrapeTreatmentSheetFromDOM();
-                if (domSheet) {
+                var recentTreatments = result.treatmentHistory && result.treatmentHistory.treatments ? result.treatmentHistory.treatments : [];
+                if (domSheet && !_isDomSheetDuplicate(domSheet, recentTreatments)) {
                     debugLog('[API-Bridge] fetchClinicalSummary: Ghi đè bằng dữ liệu DOM thời gian thực từ tờ điều trị đang mở');
                     if (domSheet.dienBienBenh) result.dienBienBenh = domSheet.dienBienBenh;
                     if (domSheet.khamToanThanTDT) result.khamToanThanTDT = domSheet.khamToanThanTDT;

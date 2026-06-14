@@ -12,7 +12,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = window.location.origin;
+    var PARENT_ORIGIN = '*';
     var $ = window.jQuery || window.$;
 
     if (window._vnptNhapBenhNhanHandler) {
@@ -21,6 +21,7 @@
 
     window._vnptNhapBenhNhanHandler = async function (event) {
         if (event.source !== window.parent && event.source !== window.top) return;
+        if (!event.origin.match(/^https?:\/\/(.*\.?)(vnpt\.vn|vncare\.vn)$/)) return;
         if (!event.data || event.data.type !== 'NHAPBENHNHAN_FILL_FORM') return;
 
         // Bỏ qua nếu chạy trong môi trường Content Script sandbox của Chrome để tránh xung đột với Injected Script

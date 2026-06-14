@@ -191,3 +191,31 @@ Mọi xử lý dữ liệu phải tuân thủ tuyệt đối quy tắc trong `AG
 - [ ] Chạy `gitnexus_impact` trước khi sửa code để đánh giá rủi ro lên các flow thực thi.
 - [ ] Chạy `pnpm run test` (nếu có test liên quan) và đảm bảo không phá vỡ các test hiện tại.
 - [ ] Không có thông tin nhạy cảm (PHI) nào bị in ra console.warn hoặc console.error ngoài các thông báo lỗi chung chung (để phục vụ debug).
+
+## Follow-up — 2026-06-14T02:54:15Z
+
+# Teamwork Project Prompt
+
+Thực hiện code review, đánh giá rủi ro (impact analysis) và kiểm tra tính tương thích cho các thay đổi chưa được commit trong dự án Aladinn. Báo cáo lại kết quả để chuẩn bị commit.
+
+Working directory: /Users/trunganh/CNTT/Aladinn
+Integrity mode: development
+
+## Requirements
+
+### R1. Code Review & Risk Assessment
+Phân tích toàn bộ các file hiện đang ở trạng thái uncommitted trong dự án. Đánh giá chi tiết các thay đổi về mặt logic và UI/UX (ví dụ: `api-bridge.js`, `sign-init.js`, `aladinn-components.css`...). Tuyệt đối **không được tự ý chỉnh sửa** bất kỳ file mã nguồn nào.
+
+### R2. Safety & Impact Analysis
+Team AI phải tự đọc các file cấu hình dự án (đặc biệt là `AGENTS.md` và `SKILL.md`) để hiểu các quy tắc an toàn. Bắt buộc sử dụng công cụ `gitnexus_impact` để đánh giá blast radius cho các hàm/symbol bị thay đổi, đặc biệt là các logic liên quan đến dữ liệu lâm sàng hoặc HIS.
+
+### R3. Quality Assurance
+Tự động chạy các lệnh kiểm tra tiêu chuẩn (như `pnpm run test`, `pnpm run build`) và bất kỳ bài kiểm tra bổ sung nào mà team thấy cần thiết để đảm bảo code an toàn và không có lỗi cú pháp.
+
+## Acceptance Criteria
+
+### Verification & Reporting
+- [ ] Báo cáo (Report) phải liệt kê rõ danh sách các file đã được review.
+- [ ] Báo cáo phải chứa kết quả chạy `gitnexus_impact` cho các thay đổi cốt lõi (HIGH/CRITICAL risk nếu có).
+- [ ] Báo cáo phải bao gồm kết quả chạy của các lệnh test/build.
+- [ ] Đưa ra kết luận cuối cùng: Thay đổi này đã an toàn để commit chưa? Cần lưu ý rủi ro gì còn sót lại không?

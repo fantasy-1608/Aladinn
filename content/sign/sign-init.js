@@ -227,9 +227,25 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
     }
 
     /**
-     * Show a notice - uses Sign UI toast if available, else falls back to alert
+     * Show a notice - uses Global Toast if available, else falls back to Sign UI toast or alert
      */
-    function showNotice(msg) {
+    function showNotice(msg, subtitle = '') {
+        if (window.VNPTRealtime && window.VNPTRealtime.showToast) {
+            let type = 'info';
+            if (msg.includes('✅') || msg.includes('🎉')) type = 'success';
+            else if (msg.includes('⚠️') || msg.includes('⏭️')) type = 'warning';
+            else if (msg.includes('❌') || msg.includes('🛑')) type = 'error';
+            else if (msg.includes('⏳') || msg.includes('⚡')) type = 'loading';
+            
+            if (type === 'loading') {
+                window.VNPTRealtime.TaskHub?.add('sign_task', msg, subtitle);
+            } else {
+                window.VNPTRealtime.TaskHub?.remove('sign_task');
+                window.VNPTRealtime.showToast(msg, type, null, subtitle);
+            }
+            return;
+        }
+
         const UI = window.Aladinn?.Sign?.UI;
         if (UI && UI.showToast) {
             UI.showToast(msg, 3000);
@@ -680,7 +696,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
         // Update panel
         wardPanelSetPatient(patientName);
         wardPanelUpdateStats();
-        showNotice(`⏳ [${idx}/${total}] Đang mở QLBA: ${patientName}...`);
+        showNotice('⏳ Trích xuất Hồ sơ', `[${idx}/${total}] Đang mở QLBA: ${patientName}...`);
         if (Logger) Logger.info('Sign', `Processing patient ${idx}/${total}: ${patientName}`);
 
         try {
@@ -809,7 +825,7 @@ window.Aladinn.Sign = window.Aladinn.Sign || {};
                     }
 
                     if (Logger) Logger.info('Sign', `QLBA closed by HIS — re-opening for ${patientName}`);
-                    showNotice(`🔄 [${idx}/${total}] Mở lại QLBA cho ${patientName}...`);
+                    showNotice('⏳ Mở lại Hồ sơ', `[${idx}/${total}] Đang mở lại QLBA cho ${patientName}...`);
 
                     try {
                         // Re-click the QLBA button

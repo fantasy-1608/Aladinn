@@ -271,13 +271,14 @@ const VNPTEmergency = (function () {
 
             // Fetch if still missing
             if (!vitals || !vitals.pulse || !vitals.temperature || !vitals.bloodPressure) {
-                window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
+                window.VNPTRealtime?.TaskHub?.add('sync_vitals', 'Đồng bộ Dữ liệu', 'Đang lấy sinh hiệu...');
                 const fresh = await fetchVitalsForPatient(pid, contextToken);
                 if (fresh) {
                     vitals = fresh;
                     cachedVitals = vitals;
                 }
             }
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
 
             if (window.VNPTPatientContextGuard && contextToken) {
                 await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'emergency_after_vitals' });
@@ -370,7 +371,7 @@ const VNPTEmergency = (function () {
                 }
             }
 
-            window.VNPTRealtime?.showToast('⏳ Đang tạo phiếu qua API...', 'info');
+            window.VNPTRealtime?.TaskHub?.add('api_cc', 'Khởi tạo Phiếu', 'Đang tạo phiếu qua API...');
 
             if (window.VNPTPatientContextGuard && contextToken) {
                 const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
@@ -400,14 +401,18 @@ const VNPTEmergency = (function () {
             }, 'EMERGENCY_FILL_RESULT');
 
             const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
+            window.VNPTRealtime?.TaskHub?.remove('api_cc');
             window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu cấp cứu cho bệnh nhân: ${ptName}`, 'success');
-            hideFillButton(); // Ẩn button sau khi điền
+            console.log('[Emergency] Fill success'); // Ẩn button sau khi điền
         } catch (e) {
             console.error('[Emergency] Lỗi:', e);
             let msg = e instanceof Error ? e.message : 'Lỗi';
             if (msg === 'FORM_CONTEXT_MISMATCH') {
-                msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
+                msg = 'Thông tin điền vào KHÔNG KHỚP với bệnh nhân hiện tại! Đã chặn.';
             }
+            window.VNPTRealtime?.TaskHub?.remove('sync_vitals');
+            window.VNPTRealtime?.TaskHub?.remove('api_cc');
             window.VNPTRealtime?.showToast(`❌ ${msg}`, 'error');
         }
     }

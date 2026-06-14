@@ -687,7 +687,16 @@ const VNPTClinicalFill = (function () {
     }
 
     function buildChuyenVienData(raw) {
-        const join = (...parts) => parts.filter(p => p && String(p).trim()).join('. ');
+        const flatten = (str) => {
+            if (!str) return '';
+            return String(str)
+                .split('\n')
+                .map(s => s.trim())
+                .filter(Boolean)
+                .join('. ')
+                .replace(/\.\s*\./g, '.'); // Tránh 2 dấu chấm liên tiếp
+        };
+        const join = (...parts) => parts.map(flatten).filter(p => p).join('. ').replace(/\.\s*\./g, '.');
         const v = raw.sinhHieu || {};
         const vitalStr = [
             v.pulse ? 'Mạch: ' + v.pulse + ' l/p' : '',
@@ -705,11 +714,11 @@ const VNPTClinicalFill = (function () {
 
         return {
             'dauHieuLamSang': dauHieu,
-            'quaTrinhBenhLy': raw.quaTrinhBenhLy || '',
-            'ketQuaCLS': raw.tomTatCLS || '',
+            'quaTrinhBenhLy': flatten(raw.quaTrinhBenhLy) || '',
+            'ketQuaCLS': flatten(raw.tomTatCLS) || '',
             'tinhTrangNguoiBenh': tinhTrang,
             'thuoc': 'Toa thuốc Bệnh viện',
-            'huongDieuTri': raw.huongXuLy || 'Chuyển tuyến trên'
+            'huongDieuTri': flatten(raw.huongXuLy) || 'Chuyển tuyến trên'
         };
     }
 
@@ -1019,6 +1028,8 @@ const VNPTClinicalFill = (function () {
             await window.VNPTPatientContextGuard.assertValidOrThrow(contextToken, { stage: 'clinical_after_fetch' });
         }
 
+        window.VNPTRealtime?.hideToast('⏳ Đang trích xuất dữ liệu lâm sàng...');
+
         // Guard: bridge timeout hoặc lỗi kết nối
         if (raw.timeout || raw.success === false) {
             window.VNPTRealtime?.showToast('❌ Không thể trích xuất dữ liệu lâm sàng. Vui lòng thử lại.', 'error');
@@ -1095,6 +1106,7 @@ const VNPTClinicalFill = (function () {
 
         const fillLabel = isHC ? 'Hội chẩn' : (isCV ? 'Chuyển viện' : (isNBN ? 'CĐ Vào khoa' : 'Xử trí'));
         const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+        window.VNPTRealtime?.hideToast('⏳ Đang điền form...');
         window.VNPTRealtime?.showToast(`✅ Đã điền xong phiếu ${fillLabel} cho bệnh nhân: ${ptName}`, 'success');
     }
 

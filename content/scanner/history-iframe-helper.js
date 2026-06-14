@@ -6,7 +6,7 @@
  */
 (function () {
     'use strict';
-    var PARENT_ORIGIN = window.location.origin;
+    var PARENT_ORIGIN = '*';
     var _$ = window.jQuery || window.$;
 
     if (window._vnptHistoryHandler) {
@@ -23,6 +23,7 @@
 
     window._vnptHistoryHandler = async function (event) {
         if (event.source !== window.top) return;
+        if (!event.origin.match(/^https?:\/\/(.*\.?)(vnpt\.vn|vncare\.vn)$/)) return;
         if (!event.data) return;
 
         if (event.data.type === 'LOG_FIELDS') {

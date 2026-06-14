@@ -365,7 +365,7 @@ const VNPTHistory = (function () {
 
             // LUÔN fetch mới từ API — tránh lấy nhầm data BN cũ từ cache
             // Cache medicalHistoryMap có thể stale khi chuyển BN nhanh
-            window.VNPTRealtime?.showToast('⏳ Đang lấy dữ liệu bệnh nhân...', 'info');
+            window.VNPTRealtime?.TaskHub?.add('sync_patient', 'Đồng bộ Dữ liệu', 'Đang lấy dữ liệu bệnh nhân...');
             let history = await fetchHistoryForPatient(pid, contextToken);
             
             // KHÔNG dùng cache (medicalHistoryMap) khi fill bệnh án để chống lỗi lấy nhầm dữ liệu bệnh nhân cũ khi trùng pid (row index)
@@ -418,7 +418,7 @@ const VNPTHistory = (function () {
             // Đồng bộ hoá Cân nặng, Chiều cao từ module Sinh hiệu (Vitals) sang Bệnh án
             try {
                 // LUÔN fetch mới sinh hiệu — tránh lấy nhầm data BN cũ
-                window.VNPTRealtime?.showToast('⏳ Đang lấy sinh hiệu...', 'info');
+                window.VNPTRealtime?.TaskHub?.add('sync_patient', 'Đồng bộ Dữ liệu', 'Đang lấy sinh hiệu...');
                 let vitals = await fetchVitalsForPatient(pid, contextToken);
                 
                 // Fallback: dùng cache nếu API thất bại
@@ -456,7 +456,7 @@ const VNPTHistory = (function () {
 
             // Đồng bộ hoá Chẩn đoán ban đầu từ dữ liệu Lâm sàng (để điền Bệnh án)
             try {
-                window.VNPTRealtime?.showToast('⏳ Đang lấy chẩn đoán...', 'info');
+                window.VNPTRealtime?.TaskHub?.add('sync_patient', 'Đồng bộ Dữ liệu', 'Đang lấy chẩn đoán...');
                 const cRes = await window.VNPTMessaging.sendRequest('REQ_FETCH_CLINICAL_SUMMARY', { rowId: pid, contextToken }, 5000);
                 
                 let mainDiagStr = '';
@@ -558,7 +558,7 @@ const VNPTHistory = (function () {
                 console.warn('[History] Lỗi đồng bộ Chẩn đoán:', e);
             }
 
-            window.VNPTRealtime?.showToast('⏳ Đang điền bệnh án...', 'info');
+            window.VNPTRealtime?.TaskHub?.remove('sync_patient');
 
             if (window.VNPTPatientContextGuard && contextToken) {
                 const confirmed = await window.VNPTPatientContextGuard.showContextConfirmDialog(contextToken);
@@ -567,6 +567,8 @@ const VNPTHistory = (function () {
                     return;
                 }
             }
+
+            window.VNPTRealtime?.TaskHub?.add('create_ba', 'Tạo Bệnh án', 'Đang điền dữ liệu vào form...');
 
             // Inject helper
             await injectHelper(target);
@@ -896,7 +898,7 @@ const VNPTHistory = (function () {
                         globalWin.VNPTRealtime?.showToast('⚡ Chuyển sang chế độ Bình thường (BASE)', 'info');
                         console.warn('[History] VIP → BASE: phiên AI chưa mở khóa');
                     } else {
-                        globalWin.VNPTRealtime?.showToast('🪄 AI Đang phân tích Bệnh án...', 'info');
+                        globalWin.VNPTRealtime?.TaskHub?.add('ai_analysis', 'Phân tích lâm sàng', 'AI đang tổng hợp bệnh án...');
                         const resolvedModel = await HIS.getAiModel();
 
                         const aiSummary = await globalWin.GeminiAPI.summarizeHistory(
@@ -1011,6 +1013,9 @@ const VNPTHistory = (function () {
             }, 'HISTORY_FILL_RESULT');
 
             const ptName = window.VNPTStore?.get('selectedPatientName') || '';
+            window.VNPTRealtime?.TaskHub?.remove('sync_patient');
+            window.VNPTRealtime?.TaskHub?.remove('create_ba');
+            window.VNPTRealtime?.TaskHub?.remove('ai_analysis');
             window.VNPTRealtime?.showToast(`✅ Đã điền xong Bệnh án cho bệnh nhân: ${ptName}`, 'success');
             console.log('[History] Đã gửi lệnh fill cho các trường:', Object.keys(mapping));
 
@@ -1020,6 +1025,9 @@ const VNPTHistory = (function () {
             if (msg === 'FORM_CONTEXT_MISMATCH') {
                 msg = 'Cảnh báo: Thông tin điền vào KHÔNG KHỚP với tên bệnh nhân trên màn hình! Đã chặn thao tác để đảm bảo an toàn.';
             }
+            window.VNPTRealtime?.TaskHub?.remove('sync_patient');
+            window.VNPTRealtime?.TaskHub?.remove('create_ba');
+            window.VNPTRealtime?.TaskHub?.remove('ai_analysis');
             window.VNPTRealtime?.showToast('❌ ' + msg, 'error');
         }
     }
