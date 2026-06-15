@@ -7,6 +7,22 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.2.0] — 2026-06-15
+
+### ✨ Tính năng mới (New Features)
+
+- **Clinical Decision Support (CDS) Engine**: Tích hợp module kiểm tra tương tác thuốc, chẩn đoán, cảnh báo lâm sàng.
+- **AI Pharmacist Pipeline**: Xử lý, cào dữ liệu và chuẩn hóa thuốc tự động.
+- **Performance Diagnostics & Caching**: Tích hợp các module bộ nhớ đệm `normalization-cache`, `runtime-rule-index` và đầu dò hiệu năng.
+- **Hỗ trợ Form Iframe**: Cải tiến cơ chế điền tự động cho form Hội chẩn, Dinh dưỡng, Chuyển viện, Nhập bệnh nhân.
+
+### 🛠️ Cập nhật & Bảo trì
+
+- Khắc phục triệt để lỗi unused variables trên toàn bộ các file `content/scanner/*-iframe-helper.js`.
+- Cập nhật GitNexus Index.
+
+---
+
 ## [2.1.3] — 2026-06-12
 
 ### 🛠️ Cập nhật & Bảo trì
