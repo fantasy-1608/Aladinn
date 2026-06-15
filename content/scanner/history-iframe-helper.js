@@ -80,8 +80,12 @@
                 fillQueue.push({ type: 'val', id: 'txtBENHCHINH', val: data.mainDiag.text });
             }
             if (data.subDiag) {
+                var subDiagText = data.subDiag.text || '';
+                if (data.subDiag.code && !subDiagText.includes(data.subDiag.code)) {
+                    subDiagText = data.subDiag.code + '-' + subDiagText;
+                }
                 fillQueue.push({ type: 'combo', id: 'txtMABENHKEMTHEO', val: data.subDiag.code });
-                fillQueue.push({ type: 'val', id: 'txtBENHKEMTHEO', val: data.subDiag.text });
+                fillQueue.push({ type: 'val', id: 'txtBENHKEMTHEO', val: subDiagText });
             }
 
             // Lọc riêng các trường Combo (như Mã bệnh) để xử lý trước.

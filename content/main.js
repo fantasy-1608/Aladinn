@@ -28,6 +28,8 @@ import '../shared/messaging.js';
 import '../shared/patient-observer.js';
 import '../shared/ui-components.js';
 import '../shared/diagnostic.js';
+import { LazyLoaderUI } from './shared/lazy-loader-ui.js';
+import './shared/his-performance-probe.js';
 import './scanner/index.js';
 import './sign/index.js';
 import './voice/index.js';
@@ -43,5 +45,11 @@ import { initTemplateEngine } from './template/template-engine.js';
 
 // Khởi tạo các module tiện ích
 setTimeout(() => {
+    LazyLoaderUI.init();
     initTemplateEngine();
+    
+    // Khởi tạo HIS Performance Probe (P0)
+    if (window.AladinnHISPerformanceProbe) {
+        window.AladinnHISPerformanceProbe.init(true); // default true for P0
+    }
 }, 1000);

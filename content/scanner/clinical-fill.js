@@ -744,7 +744,7 @@ const VNPTClinicalFill = (function () {
         // Chuẩn hoá toàn bộ mảng mã bệnh: loại bỏ khoảng trắng thừa xung quanh '-'
         const parts = diagString.split(';').map(p => {
             p = p.trim();
-            const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+            const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)\s*(?:[-–:]\s*)?(.*)$/i);
             if (match) {
                 return match[1].toUpperCase() + '-' + match[2].trim();
             }

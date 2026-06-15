@@ -108,6 +108,11 @@
                     subDiagText = data.subDiag.code + '-' + subDiagText;
                 }
                 
+                // Điền mã ICD vào combogrid Bệnh kèm theo
+                if (data.subDiag.code && window.VNPT_TypingEffect) {
+                    window.VNPT_TypingEffect.setComboGrid('txtTKCHANDOANRAVIEN_KEMTHEO', data.subDiag.code);
+                }
+                
                 // Điền trực tiếp vào textarea Bệnh kèm theo
                 if (window.VNPT_TypingEffect) {
                     await window.VNPT_TypingEffect.fillFormSequential([{ id: 'txtCHANDOANRAVIEN_KEMTHEO', val: subDiagText }], true);

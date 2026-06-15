@@ -969,5 +969,28 @@ Dùng ngôn ngữ y khoa chuyên nghiệp. NGẮN GỌN. KHÔNG viết câu mở
     setupResetBtn('btn-reset-prompt-voice', 'voice_system',   'opt-prompt-voice');
     setupResetBtn('btn-reset-prompt-medical','medical_summary','opt-prompt-medical');
 
+    const btnExportPerf = document.getElementById('btn-export-perf');
+    if (btnExportPerf) {
+        btnExportPerf.addEventListener('click', async () => {
+            const data = await chrome.storage.local.get('aladinn_cds_perf_telemetry');
+            const records = data.aladinn_cds_perf_telemetry || [];
+            if (records.length === 0) {
+                showToast('Không có dữ liệu hiệu năng nào!');
+                return;
+            }
+            const headers = Object.keys(records[0]).join(',');
+            const rows = records.map(r => Object.values(r).join(','));
+            const csv = [headers, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `aladinn_perf_report_${Date.now()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Đã xuất ${records.length} dòng báo cáo!`);
+        });
+    }
+
     loadAIConfig();
 });

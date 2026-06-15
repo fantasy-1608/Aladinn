@@ -3,6 +3,8 @@
  * Được chuyển đổi từ dự án Checkmap sang Vanilla JS để tương thích với Aladinn.
  */
 
+import { runtimeRuleIndex } from './runtime-rule-index.js';
+
 export const KB_SCHEMA_VERSION = 5; // Bumped for Pipeline v1.0 — forces full re-seed
 export const KB_SEED_VERSION = '2026-05-02-pipeline-v9-full'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
 
@@ -165,11 +167,13 @@ export async function initializeKnowledgeBase(forceSync = false) {
         console.log(`[Aladinn CDS] DB check: stored="${currentSeedVersion}" vs required="${KB_SEED_VERSION}" force=${forceSync}`);
         if (!forceSync && currentSeedVersion === KB_SEED_VERSION) {
             console.log('[Aladinn CDS] DB is up-to-date, skipping seed.');
+            await runtimeRuleIndex.init(db);
             return;
         }
         console.log('[Aladinn CDS] 🔄 Seeding database...');
         await seedKnowledgeBase(db);
         console.log('[Aladinn CDS] ✅ Seed complete.');
+        await runtimeRuleIndex.init(db);
     } catch (err) {
         console.error('[Aladinn CDS] ❌ initializeKnowledgeBase FAILED:', err);
     }
@@ -387,6 +391,8 @@ export async function importCrawledDrugs(drugs) {
     await setMetaValue(db, 'lastCrawlNewGenerics', newGenericEntries.length);
     
     console.log(`[Aladinn CDS] 📥 Import hoàn tất: ${newBrandEntries.length} biệt dược mới, ${newGenericEntries.length} hoạt chất mới (từ ${drugs.length} thuốc cào)`);
+    
+    await runtimeRuleIndex.init(db);
     
     return {
         newBrands: newBrandEntries.length,

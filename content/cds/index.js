@@ -8,7 +8,7 @@ import { initializeKnowledgeBase, importCrawledDrugs, getCrawlMetadata } from '.
 import { CDSExtractor, CDSCacheManager } from './extractor.js';
 import { analyzeLocally, runBhytAuditRules, icdMatchesRequirement } from './engine.js';
 import { CDSUI } from './ui.js';
-
+import { CDSPerformance } from './performance-diagnostics.js';
 console.log('[Aladinn CDS] 📦 Module loaded.');
 
 let isCDSEnabled = true;
@@ -18,6 +18,9 @@ let isKBLoaded = false;
 let scanTimer = null;
 let modalObserver = null;
 let lastScanHash = '';
+
+// Khởi tạo Performance Diagnostics (P0)
+CDSPerformance.init(true);
 let lastScanResultString = '';
 let isModalOpen = false;
 let currentScanMode = ''; // 'realtime' | 'oneshot' | ''
@@ -54,9 +57,13 @@ function filterSatisfiedInsuranceAlerts(alerts, diagnoses) {
 // ===== CORE SCAN =====
 async function runScan() {
     if (!isCDSEnabled || !isKBLoaded) return;
+    CDSPerformance.startScan('auto_scan');
 
     try {
+        CDSPerformance.mark('extract_start');
         const context = await CDSExtractor.extractContext();
+        CDSPerformance.mark('extract_end');
+        CDSPerformance.measure('extract_context_ms', 'extract_start', 'extract_end');
         
         // Nếu có dữ liệu từ iframe helper → merge
         if (iframeDrugs.length > 0) {
@@ -129,15 +136,24 @@ async function runScan() {
             + '||' + context.encounter.diagnoses.map(d => d.code).sort().join('|')
             + '||labs:' + context.labs.map(l => l.code + '=' + l.value).sort().join('|');
         
-        if (currentHash === lastScanHash) return;
+        if (currentHash === lastScanHash) {
+            CDSPerformance.endScan({ skippedByHash: true });
+            return;
+        }
         lastScanHash = currentHash;
 
+        CDSPerformance.mark('analyze_start');
         const result = await analyzeLocally(context, filterLow);
         result.alerts = filterSatisfiedInsuranceAlerts(result.alerts, context.encounter.diagnoses);
+        CDSPerformance.mark('analyze_end');
+        CDSPerformance.measure('analyze_ms', 'analyze_start', 'analyze_end');
         
-        // CHỐNG NHẢY LUNG TUNG: Chỉ update nếu alert thực sự thay đổi
-        const resultString = JSON.stringify(result.alerts) + '||' + context.medications.length;
-        if (resultString === lastScanResultString) return;
+        // CHỐNG NHẢY LUNG TUNG: Chỉ update nếu alert thực sự thay đổi HOẶC bệnh nhân thay đổi
+        const resultString = (context.patient?.id || '') + '$$' + JSON.stringify(result.alerts) + '||' + context.medications.length;
+        if (resultString === lastScanResultString) {
+            CDSPerformance.endScan({ skippedByHash: false });
+            return;
+        }
         lastScanResultString = resultString;
 
         console.log('[Aladinn CDS] ✅', result.alerts.length, 'alerts,', context.medications.length, 'drugs.');
@@ -162,14 +178,26 @@ async function runScan() {
             } catch (_e) {}
         }
 
+        CDSPerformance.mark('render_start');
         CDSUI.update({
             summary: { critical_count, warning_count, info_count, total_scanned: context.medications.length },
             alerts: result.alerts,
             debug: result.debug,
             context
         });
+        CDSPerformance.mark('render_end');
+        CDSPerformance.measure('render_ms', 'render_start', 'render_end');
+
+        CDSPerformance.endScan({
+            iframeCount: iframeDrugs.length,
+            medCount: context.medications.length,
+            diagCount: context.encounter.diagnoses.length,
+            labCount: context.labs.length,
+            alertCount: result.alerts.length
+        });
 
     } catch (error) {
+        CDSPerformance.endScan();
         console.error('[Aladinn CDS] 💥 Scan error:', error);
     }
 }

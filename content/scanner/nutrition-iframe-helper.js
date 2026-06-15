@@ -10,8 +10,6 @@
     'use strict';
     var PARENT_ORIGIN = '*';
 
-    var $ = window.jQuery || window.$;
-
     // Cleanup listener cũ (tránh duplicate)
     if (window._vnptNutritionHandler) {
         window.removeEventListener('message', window._vnptNutritionHandler);

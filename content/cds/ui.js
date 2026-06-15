@@ -271,6 +271,35 @@ export const CDSUI = {
             isDown = false;
             setTimeout(() => this.isDragging = false, 50);
         });
+
+        // Event Delegation cho SmartScore
+        const smartScoreContainer = document.getElementById('cds-smartscore-container');
+        if (smartScoreContainer) {
+            smartScoreContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+                
+                const action = target.getAttribute('data-action');
+                const scoreId = target.getAttribute('data-score-id');
+                
+                if (action === 'score-change') {
+                    if (target.tagName === 'INPUT' && target.type === 'checkbox') return; // Nhường cho sự kiện 'change' xử lý
+                    const criteriaKey = target.getAttribute('data-criteria-key');
+                    let val = target.getAttribute('data-val');
+                    if (!isNaN(val) && val !== '') val = Number(val);
+                    this.onScoreCriteriaChange(scoreId, criteriaKey, val);
+                }
+            });
+            
+            smartScoreContainer.addEventListener('change', (e) => {
+                const target = e.target;
+                if (target.tagName === 'INPUT' && target.type === 'checkbox' && target.getAttribute('data-action') === 'score-change') {
+                    const scoreId = target.getAttribute('data-score-id');
+                    const criteriaKey = target.getAttribute('data-criteria-key');
+                    this.onScoreCriteriaChange(scoreId, criteriaKey, target.checked);
+                }
+            });
+        }
     },
 
     switchTab(tab) {
@@ -536,6 +565,13 @@ export const CDSUI = {
                 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
                 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
             }
+            
+            /* Smart Score Segment Buttons */
+            .score-segment-group { display: flex !important; width: 100% !important; border: 1px solid #a6c9e2 !important; border-radius: 0px !important; overflow: hidden !important; background: #ffffff !important; }
+            .score-segment-btn { flex: 1 !important; text-align: center !important; padding: 6px 2px !important; font-size: 11px !important; font-weight: bold !important; color: #475569 !important; border-right: 1px solid #e2e8f0 !important; cursor: pointer !important; transition: all 0.15s !important; display: flex !important; justify-content: center !important; align-items: center !important; user-select: none !important; }
+            .score-segment-btn:last-child { border-right: none !important; }
+            .score-segment-btn:hover { background: #f1f5f9 !important; }
+            .score-segment-btn.active { background: #004f9e !important; color: #ffffff !important; }
             
             /* Drug Coverage Summary */
             .cds-coverage-summary { margin-top: 10px !important; }
@@ -1030,6 +1066,13 @@ export const CDSUI = {
         const container = document.getElementById('cds-smartscore-container');
         if (!container) return;
 
+        // Lưu lại trạng thái mở/đóng hiện tại của các accordion trước khi re-render
+        const openStates = {};
+        container.querySelectorAll('.score-card-body').forEach(el => {
+            const id = el.id.replace('score-card-body-', '');
+            openStates[id] = el.style.display === 'block';
+        });
+
         if (!this.currentContext) {
             container.innerHTML = '<div class="cds-empty-state">Chưa có dữ liệu bệnh nhân để tính điểm. Hãy chọn bệnh nhân trên HIS.</div>';
             return;
@@ -1046,14 +1089,21 @@ export const CDSUI = {
 
         let html = '<div style="display:flex; flex-direction:column; gap:8px; padding: 2px 0;">';
 
-        Object.entries(SmartScoreEngine.SCORING_SYSTEMS).forEach(([id, sys]) => {
-            const evalInfo = evaluations[id] || { suggested: false, prefilled: {} };
+        // Sắp xếp đưa các thang điểm gợi ý lên đầu tiên
+        const sortedSystems = Object.entries(SmartScoreEngine.SCORING_SYSTEMS).sort(([idA], [idB]) => {
+            const aSuggested = evaluations[idA]?.suggested ? 1 : 0;
+            const bSuggested = evaluations[idB]?.suggested ? 1 : 0;
+            return bSuggested - aSuggested;
+        });
+
+        sortedSystems.forEach(([id, sys]) => {
+            const evalInfo = evaluations[id] || { suggested: false, prefilled: {}, missingLabs: {} };
             
             // Khởi tạo giá trị mặc định cho thang điểm
             if (!this.scoreStates[id]) {
                 this.scoreStates[id] = {};
                 Object.entries(sys.criteria).forEach(([k, crit]) => {
-                    if (evalInfo.prefilled[k] !== undefined) {
+                    if (evalInfo.prefilled && evalInfo.prefilled[k] !== undefined) {
                         this.scoreStates[id][k] = evalInfo.prefilled[k];
                     } else {
                         this.scoreStates[id][k] = crit.default;
@@ -1062,11 +1112,12 @@ export const CDSUI = {
             }
 
             const vals = this.scoreStates[id];
-            const { total, risk, rec } = sys.calculate(vals);
+            const { total, risk, rec, color } = sys.calculate(vals);
 
             const isSuggested = evalInfo.suggested;
             const borderStyle = isSuggested ? 'border: 1px solid #004f9e; border-left: 4px solid #004f9e;' : 'border: 1px solid #a6c9e2; border-left: 4px solid #a6c9e2;';
             const bgHeader = isSuggested ? '#eaf2ff' : '#f5f9fd';
+            const isOpen = openStates[id] !== undefined ? openStates[id] : isSuggested;
 
             html += `
                 <div class="score-card" id="score-card-${id}" style="${borderStyle} background:#ffffff; font-size:12px; margin-bottom: 8px;">
@@ -1077,60 +1128,49 @@ export const CDSUI = {
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
-                    <div class="score-card-body" id="score-card-body-${id}" style="padding:10px; display:${isSuggested ? 'block' : 'none'}; border-top: 1px solid #cbd5e1;">
+                    <div class="score-card-body" id="score-card-body-${id}" style="padding:10px; display:${isOpen ? 'block' : 'none'}; border-top: 1px solid #cbd5e1;">
                         <p style="margin: 0 0 8px 0; color:#64748b; font-size:11px; font-style:italic; line-height:1.3;">${sys.description}</p>
                         
                         <div class="score-criteria-inputs" style="display:flex; flex-direction:column; gap:6px;">
             `;
 
-            // Vẽ các trường nhập liệu tiêu chuẩn
             Object.entries(sys.criteria).forEach(([k, crit]) => {
                 const curVal = vals[k];
+
                 if (crit.type === 'checkbox') {
                     const isChecked = !!curVal;
-                    const autoFillLabel = evalInfo.prefilled[k] ? ' <span style="color:#16a34a; font-size:10px; font-weight:bold;">(Tự động điền 🧪)</span>' : '';
                     html += `
                         <label style="display:flex; align-items:flex-start; gap:6px; cursor:pointer; font-weight:normal; color:#333; padding: 4px; transition: background 0.15s;">
-                            <input type="checkbox" id="crit-${id}-${k}" ${isChecked ? 'checked' : ''} style="margin-top:2px; border-radius:0px; border:1px solid #a6c9e2; width:13px; height:13px;" onchange="window.CDSUI.onScoreCriteriaChange('${id}', '${k}', this.checked)">
-                            <span>${crit.label}${autoFillLabel}</span>
+                            <input type="checkbox" id="crit-${id}-${k}" ${isChecked ? 'checked' : ''} style="margin-top:2px; border-radius:0px; border:1px solid #a6c9e2; width:13px; height:13px;" data-action="score-change" data-score-id="${id}" data-criteria-key="${k}">
+                            <span>${crit.label}</span>
                         </label>
                     `;
                 } else if (crit.type === 'select') {
-                    let optionsHtml = '';
+                    let segmentsHtml = '<div class="score-segment-group">';
                     crit.options.forEach(opt => {
-                        optionsHtml += `<option value="${opt.val}" ${Number(curVal) === opt.val ? 'selected' : ''}>${opt.text}</option>`;
+                        const isActive = Number(curVal) === opt.val;
+                        segmentsHtml += `<div class="score-segment-btn ${isActive ? 'active' : ''}" data-action="score-change" data-score-id="${id}" data-criteria-key="${k}" data-val="${opt.val}" title="${opt.text}">${opt.text}</div>`;
                     });
+                    segmentsHtml += '</div>';
+
                     html += `
                         <div style="display:flex; flex-direction:column; gap:3px; padding: 4px;">
                             <span style="font-weight:bold; color:#475569;">${crit.label}</span>
-                            <select id="crit-${id}-${k}" style="border:1px solid #a6c9e2; border-radius:0px; padding:4px; font-size:11px; width:100%; outline:none; background:#ffffff; color:#333;" onchange="window.CDSUI.onScoreCriteriaChange('${id}', '${k}', this.value)">
-                                ${optionsHtml}
-                            </select>
+                            ${segmentsHtml}
                         </div>
                     `;
                 }
             });
 
             // Hiển thị kết quả điểm và khuyến cáo
-            let riskColor = '#16a34a'; // Xanh lá
-            if (risk.toLowerCase().includes('nặng') || risk.toLowerCase().includes('cao') || risk.toLowerCase().includes('rất nghi ngờ')) {
-                riskColor = '#dc2626'; // Đỏ
-            } else if (risk.toLowerCase().includes('trung bình') || risk.toLowerCase().includes('nhóm 2') || risk.toLowerCase().includes('có khả năng')) {
-                riskColor = '#d97706'; // Vàng cam
-            }
-
             html += `
                         </div>
                         
-                        <div class="score-results" style="margin-top:10px; padding:8px 10px; background:#f0f7ff; border:1px dashed #a6c9e2; display:flex; flex-direction:column; gap:3px;">
+                        <div class="score-card-result ${color || 'green'}" style="margin-top:10px; padding:8px 10px; background:#f0f7ff; border:1px dashed #a6c9e2; display:flex; flex-direction:column; gap:3px;">
                             <div style="font-weight:bold; color:#004f9e; font-size:12px;">Kết quả: <span style="color:#ef4444; font-size:14px;">${total}</span> điểm</div>
-                            <div style="font-weight:bold; color:#1e293b;">Đánh giá: <span style="color:${riskColor};">${risk}</span></div>
+                            <div style="font-weight:bold; color:#1e293b;">Đánh giá: <span style="${color === 'red' ? 'color:#dc2626;' : (color === 'orange' ? 'color:#d97706;' : 'color:#16a34a;')}">${risk}</span></div>
                             <div style="color:#475569; font-size:11px; line-height:1.35; font-style:italic;">💡 Khuyến cáo: ${rec}</div>
                         </div>
-
-                        <button class="score-fill-btn" style="margin-top:10px; width:100%; padding:6px 0; background:#004f9e; color:#ffffff; font-weight:bold; border:none; border-radius:0px; cursor:pointer; text-align:center; transition:background 0.15s; font-size:11px;" onclick="window.CDSUI.onScoreFillClick('${id}')">
-                            💾 Điền kết quả y án (1-Click)
-                        </button>
                     </div>
                 </div>
             `;

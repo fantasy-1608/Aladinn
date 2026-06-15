@@ -9,7 +9,6 @@
 (function () {
     'use strict';
     var PARENT_ORIGIN = '*';
-    var $ = window.jQuery || window.$;
 
     if (window._vnptChuyenVienHandler) {
         window.removeEventListener('message', window._vnptChuyenVienHandler);

@@ -482,7 +482,7 @@ const VNPTHistory = (function () {
                                 if (!nextEl && el.parentElement) nextEl = el.parentElement.nextElementSibling;
                                 
                                 if (nextEl && nextEl.innerText) {
-                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?[^a-zA-Z0-9]+.*)/i);
+                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?\s*(?:[-–:]\s*)?.*)/i);
                                     if (match) mainDiagStr = match[1].split('\n')[0].trim();
                                 }
                             }
@@ -493,7 +493,7 @@ const VNPTHistory = (function () {
                                 if (!nextEl && el.parentElement) nextEl = el.parentElement.nextElementSibling;
                                 
                                 if (nextEl && nextEl.innerText) {
-                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?[^a-zA-Z0-9]+.*)/i);
+                                    const match = nextEl.innerText.match(/([A-Z]\d{2}(?:\.\d+)?\s*(?:[-–:]\s*)?.*)/i);
                                     if (match) subDiagStr = match[1].split('\n')[0].trim();
                                 }
                             }
@@ -529,7 +529,7 @@ const VNPTHistory = (function () {
                 if (diagSource) {
                     const parts = diagSource.split(';').map(p => {
                         p = p.trim();
-                        const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)[^a-zA-Z0-9]*(.*)$/i);
+                        const match = p.match(/^([A-Z]\d{2}(?:\.\d+)?)\s*(?:[-–:]\s*)?(.*)$/i);
                         if (match) {
                             return match[1].toUpperCase() + '-' + match[2].trim();
                         }

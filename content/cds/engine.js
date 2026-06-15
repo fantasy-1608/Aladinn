@@ -17,6 +17,42 @@ import {
     // logAuditEvent
 } from './db.js';
 import { injectCalculatedEgfr } from './egfr-alerts.js';
+import { runtimeRuleIndex } from './runtime-rule-index.js';
+import { normalizationCache } from './normalization-cache.js';
+
+// Feature flags
+let cds_runtime_rule_index = true;
+let cds_normalization_cache = true;
+
+if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(['cds_runtime_rule_index', 'cds_normalization_cache'], (result) => {
+        if (result.cds_runtime_rule_index !== undefined) {
+            cds_runtime_rule_index = !!result.cds_runtime_rule_index;
+        }
+        if (result.cds_normalization_cache !== undefined) {
+            cds_normalization_cache = !!result.cds_normalization_cache;
+        }
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local') {
+            if (changes.cds_runtime_rule_index !== undefined) {
+                cds_runtime_rule_index = !!changes.cds_runtime_rule_index.newValue;
+            }
+            if (changes.cds_normalization_cache !== undefined) {
+                cds_normalization_cache = !!changes.cds_normalization_cache.newValue;
+            }
+        }
+    });
+}
+
+export function setFeatureFlags(flags) {
+    if (flags.cds_runtime_rule_index !== undefined) cds_runtime_rule_index = flags.cds_runtime_rule_index;
+    if (flags.cds_normalization_cache !== undefined) cds_normalization_cache = flags.cds_normalization_cache;
+}
+
+export function getFeatureFlags() {
+    return { cds_runtime_rule_index, cds_normalization_cache };
+}
 
 const ALIAS_MAP = {
     // Tên thay thế phổ biến
@@ -268,15 +304,38 @@ function mapConditionGroups(icdCodes, mappings) {
 }
 
 export async function normalizeContext(context) {
-    const db = await openDatabase();
-    const genericMap = await getDrugGenericMap(db);
-    const brandMap = await getBrandMap(db);
-    const mappings = await getConditionGroupMappings(db);
+    let genericMap, brandMap, mappings;
+    
+    if (cds_runtime_rule_index && runtimeRuleIndex.initialized) {
+        genericMap = runtimeRuleIndex.genericMap;
+        brandMap = runtimeRuleIndex.brandMap;
+        mappings = runtimeRuleIndex.conditionGroupMappings;
+    } else {
+        const db = await openDatabase();
+        genericMap = await getDrugGenericMap(db);
+        brandMap = await getBrandMap(db);
+        mappings = await getConditionGroupMappings(db);
+    }
 
     const normalizedDrugs = new Set();
     const unmappedDrugsSet = new Set();
     
     for (const med of (context.medications || [])) {
+        const cacheKey = `${med.display_name}||${med.generic_candidate || ''}`;
+        if (cds_normalization_cache) {
+            const cachedValue = normalizationCache.get(cacheKey);
+            if (cachedValue !== undefined) {
+                if (cachedValue === '__IGNORED__') {
+                    // Do nothing, it's ignored
+                } else if (cachedValue) {
+                    normalizedDrugs.add(cachedValue);
+                } else {
+                    unmappedDrugsSet.add(med.display_name.replace(/[\s\u00a0\u200b]+/g, ' ').trim());
+                }
+                continue;
+            }
+        }
+
         const genericCandidate = med.generic_candidate ? normalizeToken(med.generic_candidate) : null;
         let normalized = null;
         
@@ -309,13 +368,36 @@ export async function normalizeContext(context) {
             }
         }
 
+        let finalNormalized = null;
+        let isIgnored = false;
+        
         if (normalized) {
             // Strip parenthetical content from resolved generic name
             // E.g. "enoxaparin (natri)" → "enoxaparin" to match DDI rules
             const cleanGeneric = normalized.replace(/\(.*?\)/g, '').trim();
-            normalizedDrugs.add(cleanGeneric || normalized);
+            finalNormalized = cleanGeneric || normalized;
+            normalizedDrugs.add(finalNormalized);
         } else {
-            unmappedDrugsSet.add(med.display_name.replace(/[\s\u00a0\u200b]+/g, ' ').trim());
+            const rawName = med.display_name.replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+            const normalizedRawName = rawName.normalize('NFC');
+            
+            // Danh sách các từ khóa thuốc/vật tư bỏ qua không cần hiển thị "Chưa có dữ liệu"
+            const IGNORED_UNMAPPED_DRUGS = [
+                /natri\s*clorid/i, /nacl/i, /ringer/i, /glucose/i, /nước\s*cất/i, 
+                /huyết\s*thanh/i, /bơm\s*kim/i, /dây\s*truyền/i, /băng\s*dính/i, 
+                /cồn/i, /oxy/i, /gạc/i, /kim\s*luồn/i, /nước\s*muối/i, /lidocain/i,
+                /uốn\s*ván/i, /sat/i, /vaccin/i, /vắc\s*xin/i, /kháng\s*độc/i,
+                /huyết thanh kháng độc tố uốn ván tinh chế/i
+            ];
+            
+            isIgnored = IGNORED_UNMAPPED_DRUGS.some(regex => regex.test(normalizedRawName));
+            if (!isIgnored) {
+                unmappedDrugsSet.add(rawName);
+            }
+        }
+
+        if (cds_normalization_cache) {
+            normalizationCache.set(cacheKey, isIgnored ? '__IGNORED__' : finalNormalized);
         }
     }
 
@@ -754,55 +836,221 @@ function runCriticalLabAlerts(context) {
 }
 
 export async function analyzeLocally(context, filterLow = true) {
-    const db = await openDatabase();
     const enrichedContext = injectCalculatedEgfr(context);
     const normalized = await normalizeContext(enrichedContext);
 
-    const [genericMap, ddiRules, drugDiseaseRules, insuranceFormulary, insuranceRules, renalRules, drugLabRules] = await Promise.all([
-        getDrugGenericMap(db),
-        getDdiRules(db),
-        getDrugDiseaseRules(db),
-        getInsuranceFormulary(db),
-        getInsuranceRules(db),
-        getRenalAdjustmentRules(db),
-        getDrugLabRules(db)
-    ]);
-
-    // Check CTCH missing diagnosis rule
-    const _isSurgicalProphylaxis = normalized.normalized_drugs.some(d => ['cefuroxime', 'cefazolin', 'ceftriaxone'].includes(d));
-    const noDiagnosisAlerts = [];
-    
-    if (normalized.icd_codes.length === 0 && normalized.normalized_drugs.length > 0) {
-        noDiagnosisAlerts.push({
-            rule_code: 'WARN-NO-DIAGNOSIS',
-            domain: 'clinical',
-            severity: 'high', // Made critical to prevent un-billed meds
-            title: 'Chưa có chẩn đoán BHYT',
-            effect: 'Không thể kiểm tra an toàn hoặc giải quyết BHYT.',
-            recommendation: 'Bắt buộc nhập ICD10 trước khi kê đơn.',
-            matched_items: {}
-        });
-    }
-
-    // 🔍 DEBUG: Show what's being matched
-    if (typeof window !== 'undefined' && window.__ALADINN_DEBUG__) {
-        console.log(`[Aladinn CDS] 🔍 DEBUG: normalized_drugs = [${normalized.normalized_drugs.join(', ')}]`);
-        console.log(`[Aladinn CDS] 🔍 DEBUG: DDI rules loaded = ${ddiRules.length}, Drug-Disease = ${drugDiseaseRules.length}`);
-        if (normalized.unmapped_drugs.length > 0) {
-            console.log(`[Aladinn CDS] ⚠️ Unmapped drugs: [${normalized.unmapped_drugs.join(', ')}]`);
+    let allAlerts;
+    if (cds_runtime_rule_index && runtimeRuleIndex.initialized) {
+        // Run rules completely synchronously using the in-memory indexes
+        const noDiagnosisAlerts = [];
+        if (normalized.icd_codes.length === 0 && normalized.normalized_drugs.length > 0) {
+            noDiagnosisAlerts.push({
+                rule_code: 'WARN-NO-DIAGNOSIS',
+                domain: 'clinical',
+                severity: 'high', // Made critical to prevent un-billed meds
+                title: 'Chưa có chẩn đoán BHYT',
+                effect: 'Không thể kiểm tra an toàn hoặc giải quyết BHYT.',
+                recommendation: 'Bắt buộc nhập ICD10 trước khi kê đơn.',
+                matched_items: {}
+            });
         }
+
+        const ddiAlerts = [];
+        const drugs = normalized.normalized_drugs;
+        for (let i = 0; i < drugs.length; i++) {
+            for (let j = i + 1; j < drugs.length; j++) {
+                const a = drugs[i], b = drugs[j];
+                const key = [a, b].sort().join('|');
+                const matches = runtimeRuleIndex.ddiMap.get(key) || [];
+                for (const match of matches) {
+                    ddiAlerts.push({
+                        rule_code: match.rule_code,
+                        domain: 'interaction',
+                        severity: match.severity,
+                        title: 'Tương tác thuốc',
+                        effect: match.clinical_effect || 'Tương tác cần chú ý',
+                        recommendation: match.recommendation || 'Theo dõi hoặc thay thế',
+                        matched_items: { drug: [a, b] }
+                    });
+                }
+            }
+        }
+
+        const drugDiseaseAlerts = [];
+        const labs = enrichedContext.labs || [];
+        const localLabMap = new Map();
+        for (const lab of labs) {
+            localLabMap.set(lab.code, lab);
+        }
+        const hasLowEgfr = localLabMap.has('eGFR') && localLabMap.get('eGFR').value < 45;
+
+        for (const drug of drugs) {
+            const rules = runtimeRuleIndex.drugDiseaseMap.get(drug) || [];
+            for (const rule of rules) {
+                const hasCondition = normalized.condition_groups.includes(rule.condition_group_code);
+                if (!hasCondition) continue;
+                if (rule.rule_code === 'DX-METFORMIN-LOWEGFR-001' && !hasLowEgfr) continue;
+
+                drugDiseaseAlerts.push({
+                    rule_code: rule.rule_code,
+                    domain: 'drug_disease',
+                    severity: rule.severity,
+                    title: 'Chống chỉ định/Thận trọng',
+                    effect: rule.rationale || 'Không phù hợp với bệnh lý.',
+                    recommendation: rule.recommendation || 'Cân nhắc thay thế',
+                    matched_items: { drug: [rule.generic_name], condition: [rule.condition_group_code] }
+                });
+            }
+        }
+
+        // Drug-Lab Rules from Index
+        const candidateLabRules = new Set();
+        for (const drug of drugs) {
+            const rules = runtimeRuleIndex.labMap.get(drug) || [];
+            for (const r of rules) {
+                candidateLabRules.add(r);
+            }
+        }
+        for (const rule of candidateLabRules) {
+            const labResult = localLabMap.get(rule.lab_code);
+            if (!labResult) continue;
+
+            const v = labResult.value;
+            let triggered = false;
+            if (rule.operator === '<' && v < rule.threshold) triggered = true;
+            else if (rule.operator === '>' && v > rule.threshold) triggered = true;
+            else if (rule.operator === 'range' && v >= rule.threshold && v <= (rule.threshold_max ?? Infinity)) triggered = true;
+
+            if (!triggered) continue;
+
+            const matchedDrug = rule.drugs.find(d => drugs.includes(d));
+            drugDiseaseAlerts.push({
+                rule_code: rule.rule_code,
+                domain: 'drug_lab',
+                severity: rule.severity,
+                title: '⚠️ Xét nghiệm bất thường + Thuốc',
+                effect: `${rule.clinical_effect} (${rule.lab_code} = ${labResult.value} ${labResult.unit})`,
+                recommendation: rule.recommendation,
+                matched_items: { drug: [matchedDrug], lab: [rule.lab_code], value: [String(labResult.value)] }
+            });
+        }
+
+        // Renal Adjustment Rules from Index
+        const egfrResult = localLabMap.get('eGFR');
+        if (egfrResult) {
+            const egfr = egfrResult.value;
+            for (const drug of drugs) {
+                const rules = runtimeRuleIndex.renalMap.get(drug) || [];
+                for (const rule of rules) {
+                    let triggered = false;
+                    if (rule.operator === '<' && egfr < rule.egfr_threshold) triggered = true;
+                    else if (rule.operator === '<=' && egfr <= rule.egfr_threshold) triggered = true;
+
+                    if (!triggered) continue;
+
+                    drugDiseaseAlerts.push({
+                        rule_code: rule.rule_code,
+                        domain: 'renal',
+                        severity: rule.severity,
+                        title: '🩺 Chỉnh liều theo chức năng thận',
+                        effect: `${rule.rationale} (eGFR = ${egfr} mL/phút)`,
+                        recommendation: rule.recommendation,
+                        matched_items: { drug: [rule.generic_name], lab: ['eGFR'], value: [String(egfr)] }
+                    });
+                }
+            }
+        }
+
+        // Insurance Rules
+        const insuranceAlerts = [];
+        for (const drug of drugs) {
+            const entry = runtimeRuleIndex.insuranceFormularyMap.get(drug);
+            if (entry && !entry.is_covered) {
+                insuranceAlerts.push({
+                    rule_code: `INS-NOT-COVERED-${drug.toUpperCase()}`,
+                    domain: 'insurance',
+                    severity: 'medium', // Warning
+                    title: 'BHYT Không thanh toán',
+                    effect: `Thuốc ${drug} không nằm trong danh mục BHYT.`,
+                    recommendation: entry.note || 'Thông báo bệnh nhân hoặc chọn thuốc khác.',
+                    matched_items: { drug: [drug] }
+                });
+            }
+        }
+
+        for (const drug of drugs) {
+            const rules = runtimeRuleIndex.insuranceRuleMap.get(drug) || [];
+            for (const rule of rules) {
+                if (rule.condition_type === 'icd_prefix_required') {
+                    const allowed = (rule.condition_value || '').split(',').map(v => v.trim().toUpperCase()).filter(Boolean);
+                    const hasMatch = allowed.length === 0 || normalized.icd_codes.some(icd => allowed.some(p => icdMatchesRequirement(icd, p)));
+                    if (!hasMatch) {
+                        if (['paracetamol', 'acetaminophen'].includes(rule.generic_name.toLowerCase())) {
+                            continue;
+                        }
+
+                        insuranceAlerts.push({
+                            rule_code: rule.rule_code,
+                            domain: 'insurance',
+                            severity: rule.severity,
+                            title: 'Rủi ro xuất toán BHYT',
+                            effect: rule.message || 'Thiếu chẩn đoán ICD phù hợp.',
+                            recommendation: rule.recommendation || 'Kiểm tra lại chẩn đoán.',
+                            matched_items: { drug: [rule.generic_name], icd: normalized.icd_codes },
+                            missing_icd: allowed.join(', ')
+                        });
+                    }
+                }
+            }
+        }
+
+        // Duplicate therapy & Critical lab
+        const duplicateTherapyAlerts = runDuplicateTherapyRules(normalized, runtimeRuleIndex.genericMap);
+        const criticalLabAlerts = runCriticalLabAlerts(enrichedContext);
+
+        allAlerts = dedupeAlerts([
+            ...noDiagnosisAlerts,
+            ...duplicateTherapyAlerts,
+            ...ddiAlerts,
+            ...drugDiseaseAlerts,
+            ...insuranceAlerts,
+            ...criticalLabAlerts
+        ]);
+    } else {
+        const db = await openDatabase();
+        const [genericMap, ddiRules, drugDiseaseRules, insuranceFormulary, insuranceRules, renalRules, drugLabRules] = await Promise.all([
+            getDrugGenericMap(db),
+            getDdiRules(db),
+            getDrugDiseaseRules(db),
+            getInsuranceFormulary(db),
+            getInsuranceRules(db),
+            getRenalAdjustmentRules(db),
+            getDrugLabRules(db)
+        ]);
+
+        const noDiagnosisAlerts = [];
+        if (normalized.icd_codes.length === 0 && normalized.normalized_drugs.length > 0) {
+            noDiagnosisAlerts.push({
+                rule_code: 'WARN-NO-DIAGNOSIS',
+                domain: 'clinical',
+                severity: 'high', // Made critical to prevent un-billed meds
+                title: 'Chưa có chẩn đoán BHYT',
+                effect: 'Không thể kiểm tra an toàn hoặc giải quyết BHYT.',
+                recommendation: 'Bắt buộc nhập ICD10 trước khi kê đơn.',
+                matched_items: {}
+            });
+        }
+
+        allAlerts = dedupeAlerts([
+            ...noDiagnosisAlerts,
+            ...runDuplicateTherapyRules(normalized, genericMap),
+            ...runDdiRules(ddiRules, normalized),
+            ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
+            ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext),
+            ...runCriticalLabAlerts(enrichedContext)
+        ]);
     }
 
-    let allAlerts = dedupeAlerts([
-        ...noDiagnosisAlerts,
-        ...runDuplicateTherapyRules(normalized, genericMap),
-        ...runDdiRules(ddiRules, normalized),
-        ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
-        ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext),
-        ...runCriticalLabAlerts(enrichedContext)
-    ]);
-
-    // Lọc Alert Fatigue theo Setting
     if (filterLow) {
         allAlerts = allAlerts.filter(a => a.severity === 'high' || a.severity === 'medium');
     }

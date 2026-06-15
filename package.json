@@ -1,6 +1,6 @@
 {
   "name": "aladinn-his-assistant",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "Tiện ích mở rộng AI (Giọng nói & Quét Dữ liệu) cho hệ thống VNPT HIS",
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "analyze": "gitnexus analyze"
+    "analyze": "gitnexus analyze",
+    "sync:drugs": "node scripts/sync-drugs.cjs",
+    "process:drugs": "npm run sync:drugs && node scripts/ai-pharmacist-pipeline.cjs && npm run build"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",
