@@ -112,9 +112,13 @@ export async function getFeatureFlags() {
  * @returns {Promise<Object>} Module reference
  */
 async function _importModule(name) {
-  const path = MODULE_PATHS[name];
-  if (!path) throw new Error(`Unknown module: ${name}`);
-  return import(/* @vite-ignore */ path);
+  switch (name) {
+    case 'scanner': return import('./scanner/index.js');
+    case 'sign': return import('./sign/index.js');
+    case 'voice': return import('./voice/index.js');
+    case 'cds': return import('./cds/index.js');
+    default: throw new Error(`Unknown module: ${name}`);
+  }
 }
 
 /**
