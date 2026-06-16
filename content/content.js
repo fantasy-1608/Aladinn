@@ -120,42 +120,16 @@
 
         const toast = document.createElement('div');
         toast.id = 'aladinn-emergency-toast';
-        toast.style.cssText = `
-            position: fixed; bottom: 20px; right: 20px; z-index: 2147483647;
-            max-width: 380px; padding: 14px 18px;
-            background: ${isKill ? 'linear-gradient(135deg, #7f1d1d, #991b1b)' : 'linear-gradient(135deg, #004f9e, #1e5494)'};
-            border: 1px solid ${isKill ? 'rgba(239,68,68,0.6)' : 'rgba(0,79,158,0.5)'};
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            color: #ffffff; font-family: system-ui, sans-serif; font-size: 13px;
-            line-height: 1.5;
-            animation: aladinn-toast-in 0.4s ease-out;
-        `;
+        toast.className = `aladinn-emergency-toast${isKill ? ' kill' : ''}`;
+        
         toast.innerHTML = `
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="font-size:18px;">${isKill ? '🚨' : '📢'}</span>
-                <strong style="color:${isKill ? '#fca5a5' : '#e0f0ff'};">Thông báo từ Aladinn</strong>
+            <div class="aladinn-emergency-toast-header">
+                <span class="aladinn-emergency-toast-icon">${isKill ? '🚨' : '📢'}</span>
+                <strong class="aladinn-emergency-toast-title${isKill ? ' kill' : ''}">Thông báo từ Aladinn</strong>
             </div>
             <div>${safeMessage}</div>
-            <button id="aladinn-toast-close" style="
-                position:absolute; top:8px; right:8px;
-                background:transparent; border:none; color:#ffffff;
-                cursor:pointer; font-size:14px; opacity:0.7;
-            ">✕</button>
+            <button id="aladinn-toast-close" class="aladinn-emergency-toast-close">✕</button>
         `;
-
-        // Inject animation keyframe
-        if (!document.getElementById('aladinn-toast-style')) {
-            const style = document.createElement('style');
-            style.id = 'aladinn-toast-style';
-            style.textContent = `
-                @keyframes aladinn-toast-in {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
 
         document.body.appendChild(toast);
         document.getElementById('aladinn-toast-close').onclick = () => toast.remove();
@@ -170,31 +144,8 @@
         if (document.getElementById('aladinn-global-loader')) return;
         const loader = document.createElement('div');
         loader.id = 'aladinn-global-loader';
-        loader.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 3px;
-            background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, transparent);
-            background-size: 200% 100%;
-            z-index: 2147483647;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-        `;
+        loader.className = 'aladinn-global-loader';
         document.body.appendChild(loader);
-
-        if (!document.getElementById('aladinn-loader-style')) {
-            const style = document.createElement('style');
-            style.id = 'aladinn-loader-style';
-            style.textContent = `
-                @keyframes aladinn-shimmer {
-                    0% { background-position: 100% 0; }
-                    100% { background-position: -100% 0; }
-                }
-                .aladinn-loading-active {
-                    opacity: 1 !important;
-                    animation: aladinn-shimmer 1.5s infinite linear;
-                }
-            `;
-            document.head.appendChild(style);
-        }
 
         let loadingTimeout = null;
         window.addEventListener('ALADINN_LOADING', (e) => {
@@ -428,19 +379,7 @@
         // ========================================
         if (window === window.top) {
             function injectAuraStyles(targetEl) {
-                targetEl.style.display = 'inline-flex';
-                targetEl.style.alignItems = 'center';
-                targetEl.style.gap = '6px';
-                targetEl.style.padding = '0';
-                targetEl.style.borderRadius = '0px';
-                targetEl.style.background = 'transparent';
-                targetEl.style.border = 'none';
-                targetEl.style.color = '#ffffff';
-                targetEl.style.fontWeight = '600';
-                targetEl.style.position = 'relative';
-                targetEl.style.zIndex = '1';
-                targetEl.style.boxShadow = 'none';
-                targetEl.style.fontSize = '12px';
+                targetEl.classList.add('his-mystic-username-aura');
                 
                 // Dọn dẹp badge VIP PRO cũ và icon cũ nếu có
                 const oldBadge = targetEl.querySelector('.aladinn-pro-badge');
@@ -451,29 +390,6 @@
                 if (!targetEl.querySelector('.aladinn-active-dot')) {
                     const dot = document.createElement('span');
                     dot.className = 'aladinn-active-dot';
-                    dot.style.width = '7px';
-                    dot.style.height = '7px';
-                    dot.style.background = '#00e676';
-                    dot.style.borderRadius = '50%';
-                    dot.style.display = 'inline-block';
-                    dot.style.boxShadow = '0 0 6px #00e676';
-                    dot.style.marginRight = '2px';
-                    dot.style.flexShrink = '0';
-                    
-                    // Hiệu ứng nhịp thở nhấp nháy êm dịu (chu kỳ 3s)
-                    if (!document.getElementById('aladinn-active-dot-animation')) {
-                        const style = document.createElement('style');
-                        style.id = 'aladinn-active-dot-animation';
-                        style.textContent = `
-                            @keyframes aladinn-active-dot-breath {
-                                0% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
-                                50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 10px rgba(0, 230, 118, 0.8); }
-                                100% { opacity: 0.35; transform: scale(0.85); box-shadow: 0 0 3px rgba(0, 230, 118, 0.4); }
-                            }
-                        `;
-                        document.head.appendChild(style);
-                    }
-                    dot.style.animation = 'aladinn-active-dot-breath 3s infinite ease-in-out';
                     
                     // Chèn chấm xanh vào PHÍA TRƯỚC tên người dùng
                     targetEl.insertBefore(dot, targetEl.firstChild);

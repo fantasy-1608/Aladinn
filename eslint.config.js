@@ -32,5 +32,21 @@ export default [
       'semi': ['warn', 'always'],
       'quotes': ['warn', 'single', { avoidEscape: true }]
     }
+  },
+  {
+    files: ['__tests__/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        vi: 'readonly'
+      }
+    }
   }
 ];

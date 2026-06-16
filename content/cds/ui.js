@@ -956,35 +956,18 @@ export const CDSUI = {
         if (!toast) {
             toast = document.createElement('div');
             toast.id = 'aladinn-bhyt-toast';
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #fff9db;
-                color: #d9480f;
-                padding: 14px 20px;
-                border-radius: 0px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                z-index: 2147483647;
-                font-family: system-ui, sans-serif;
-                font-size: 14px;
-                max-width: 400px;
-                border: 1px solid #f59e0b;
-                transition: opacity 0.3s, transform 0.3s;
-                pointer-events: none;
-            `;
+            toast.className = 'aladinn-bhyt-toast';
             document.body.appendChild(toast);
         }
 
         const count = alerts.length;
         toast.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <span style="font-size: 20px;">🛡️</span>
-                <strong style="font-size: 15px; color: #d9480f;">BHYT Guard: Cảnh báo Xuất toán</strong>
+            <div class="aladinn-bhyt-toast-header">
+                <span class="aladinn-bhyt-toast-icon">🛡️</span>
+                <strong class="aladinn-bhyt-toast-title">BHYT Guard: Cảnh báo Xuất toán</strong>
             </div>
             <div>Phát hiện <b>${count}</b> quy tắc BHYT có thể bị xuất toán hoặc sai lệch thông tin hành chính.</div>
-            <div style="margin-top: 6px; font-size: 12px; opacity: 0.85;"><i>Mời bác sĩ nhấp mở Panel Aladinn ở góc phải màn hình HIS để kiểm tra chi tiết.</i></div>
+            <div class="aladinn-bhyt-toast-footer"><i>Mời bác sĩ nhấp mở Panel Aladinn ở góc phải màn hình HIS để kiểm tra chi tiết.</i></div>
         `;
         
         toast.style.opacity = '1';

@@ -791,21 +791,19 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     const innerDiv = document.getElementById('jqgh_grdBenhNhan_ICON1') || targetTh.querySelector('div') || targetTh;
 
                     const container = document.createElement('div');
-                    container.style.cssText = 'position:relative; display:inline-block; vertical-align:middle; z-index:99; text-align:center; width:100%;';
+                    container.className = 'aladinn-scanner-indicator-container';
 
                     const btn = document.createElement('button');
                     btn.id = 'aladinn-quick-actions-btn';
                     btn.type = 'button';
                     btn.title = 'Tiện ích Aladinn';
-                    btn.innerHTML = '<span style="font-size:14px; line-height:1; display:block;">🧞</span>';
-                    btn.style.cssText = 'background:transparent; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; transition:all 0.2s; box-shadow:none; outline:none; height:18px; width:18px; margin:0 auto; transform-origin:center;';
-                    
-                    btn.onmouseover = () => btn.style.transform = 'scale(1.15)';
-                    btn.onmouseout = () => btn.style.transform = 'scale(1)';
+                    btn.className = 'aladinn-scanner-indicator-btn';
+                    btn.innerHTML = '<span class="aladinn-scanner-dot-success">🧞</span>';
 
                     const dropdown = document.createElement('div');
                     dropdown.id = 'aladinn-quick-actions-menu';
-                    dropdown.style.cssText = 'position:absolute; background:linear-gradient(135deg,#111418,#191C20); border:1px solid rgba(158,202,255,0.3); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; min-width:180px; padding:6px 0; animation:vnpt-fade-in 0.15s ease-out; z-index: 999999;';
+                    dropdown.className = 'aladinn-scanner-indicator-dropdown';
+                    dropdown.style.display = 'none'; // Dynamic visibility stays in JS
 
                     const items = [
                         { icon: '🖨️', text: 'Quét Buồng', action: () => window.Aladinn.Scanner.startScanning({mode: 'room'}) },
@@ -817,10 +815,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
                     items.forEach(item => {
                         const opt = document.createElement('div');
+                        opt.className = 'aladinn-scanner-indicator-opt';
                         opt.innerHTML = `<span style="margin-right:8px; font-size:14px;">${item.icon}</span> <span style="font-size:13px; font-weight:500;">${item.text}</span>`;
-                        opt.style.cssText = 'padding:10px 16px; color:#9ECAFF; cursor:pointer; display:flex; align-items:center; transition:background 0.2s; white-space:nowrap; text-align:left;';
-                        opt.onmouseover = () => opt.style.background = 'rgba(158,202,255,0.1)';
-                        opt.onmouseout = () => opt.style.background = 'transparent';
                         opt.onclick = (e) => {
                             e.stopPropagation();
                             dropdown.style.display = 'none';
@@ -1264,7 +1260,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // Finalize the report modal
     function finalizeBhytReport() {
         const dot = document.getElementById('bhyt-scan-dot');
-        if (dot) { dot.innerHTML = '✅'; dot.className = ''; dot.style.cssText = 'font-size:14px;'; }
+        if (dot) { dot.innerHTML = '✅'; dot.className = 'aladinn-scanner-dot-success'; }
 
         const totalErrors = _bhytScanResults.reduce((s, r) => s + r.errors.length, 0);
         const statusEl = document.getElementById('bhyt-status-text');
@@ -1390,10 +1386,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         let badge = nameTd.querySelector('.aladinn-scan-drugs-badge');
         if (!badge) {
             badge = document.createElement('span');
-            badge.className = 'aladinn-scan-drugs-badge';
+            badge.className = 'aladinn-scan-drugs-badge aladinn-scanner-badge-status-1';
             badge.innerHTML = '💊';
             badge.title = 'Đã có thuốc ngày hôm nay';
-            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 6px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));';
             nameTd.appendChild(badge);
         }
     }
@@ -1406,10 +1401,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         let badge = nameTd.querySelector('.aladinn-scan-pttt-badge');
         if (!badge) {
             badge = document.createElement('span');
-            badge.className = 'aladinn-scan-pttt-badge';
+            badge.className = 'aladinn-scan-pttt-badge aladinn-scanner-badge-status-2';
             badge.innerHTML = '🪡';
             badge.title = `Có ${count} phiếu PTTT (Click để in chứng nhận)`;
-            badge.style.cssText = 'font-size: 14px; display: inline-block; margin-left: 4px; vertical-align: text-top; filter: drop-shadow(0 0 2px rgba(255,255,255,0.8)); cursor: pointer; transform-origin: bottom center; transition: transform 0.2s;';
             
             // Add click listener
             badge.addEventListener('click', (e) => {
@@ -1453,13 +1447,13 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
 
         if (count > 0) {
             badge.innerHTML = `🛡️<sup style="font-size:9px;color:#f87171;font-weight:700">${count}</sup>`;
-            badge.style.cssText = 'font-size:14px;display:inline-block;margin-left:6px;vertical-align:text-top;cursor:help;';
+            badge.className = 'aladinn-scan-bhyt-badge aladinn-scanner-badge-status-help';
             const errorText = errors.map(e => `• ${e.tenDV}: ${e.loi}`).join('\n');
             badge.title = `Phát hiện ${count} lỗi thời gian BHYT:\n${errorText}`;
             tr.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
         } else {
             badge.innerHTML = '✅';
-            badge.style.cssText = 'font-size:14px;display:inline-block;margin-left:6px;vertical-align:text-top;filter:grayscale(100%);opacity:0.5;';
+            badge.className = 'aladinn-scan-bhyt-badge aladinn-scanner-badge-status-disabled';
             badge.title = 'Thời gian BHYT hợp lệ';
             tr.style.backgroundColor = '';
         }
@@ -2707,8 +2701,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         // --- Modal ---
         const modal = document.createElement('div');
         modal.id = 'vnpt-lab-timeline-modal';
-        modal.className = 'vnpt-glass-overlay';
-        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:2147480000;';
+        modal.className = 'vnpt-glass-overlay aladinn-scanner-modal-overlay';
 
         // Giới tính: API-first (demographics) → patientInfo → DOM fallback
         let headerGender = '';
@@ -3053,7 +3046,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     if (!existingModal.querySelector('#cls-context-warning-banner')) {
                         const warningBanner = document.createElement('div');
                         warningBanner.id = 'cls-context-warning-banner';
-                        warningBanner.style.cssText = 'background:#c62828; color:#fff; padding:10px 16px; font-size:13px; font-weight:700; text-align:center; position:absolute; top:0; left:0; right:0; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+                        warningBanner.className = 'aladinn-scanner-warning-banner';
                         warningBanner.innerHTML = '⚠️ CẢNH BÁO: Bạn đã chuyển sang bệnh nhân khác. Thông tin CLS bên dưới là của bệnh nhân TRƯỚc ĐÓ. Modal sẽ tự đóng sau 3 giây.';
                         const innerContainer = existingModal.querySelector('.his-modal-body') || existingModal.firstElementChild;
                         if (innerContainer) {
@@ -3425,7 +3418,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 } else {
                     const textarea = document.createElement('textarea');
                     textarea.value = prompt;
-                    textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+                    textarea.className = 'aladinn-hidden-textarea';
                     document.body.appendChild(textarea);
                     textarea.focus();
                     textarea.select();

@@ -661,37 +661,31 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = '';
             
             if (templates.length === 0) {
-                listContainer.innerHTML = '<div style="color: var(--text-dim); text-align: center; padding: 20px;">Chưa có mẫu nào. Hãy thêm mẫu mới!</div>';
+                listContainer.innerHTML = '<div class="aladinn-options-empty-template">Chưa có mẫu nào. Hãy thêm mẫu mới!</div>';
                 return;
             }
 
             templates.forEach(tpl => {
                 const item = document.createElement('div');
-                item.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;';
+                item.className = 'aladinn-options-template-item';
                 item.innerHTML = `
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-weight: 600; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="aladinn-options-template-info">
+                        <div class="aladinn-options-template-header">
                             ${escapeHtml(tpl.title)}
-                            <span style="background: rgba(158, 202, 255, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--accent);">//${escapeHtml(tpl.shortcut)}</span>
+                            <span class="aladinn-options-template-shortcut">//${escapeHtml(tpl.shortcut)}</span>
                         </div>
-                        <div style="font-size: 13px; color: var(--text-dim); white-space: pre-wrap; word-break: break-word;">${escapeHtml(tpl.content)}</div>
+                        <div class="aladinn-options-template-content">${escapeHtml(tpl.content)}</div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
-                        <button class="btn-edit-tpl" data-id="${escapeHtml(tpl.id)}" title="Ch\u1ec9nh s\u1eeda" style="background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px; opacity: 0.75; transition: 0.2s;">
+                    <div class="aladinn-options-template-actions">
+                        <button class="btn-edit-tpl aladinn-options-template-btn-edit" data-id="${escapeHtml(tpl.id)}" title="Ch\u1ec9nh s\u1eeda">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="btn-delete-tpl" data-id="${escapeHtml(tpl.id)}" title="X\u00f3a" style="background: transparent; border: none; color: var(--error); cursor: pointer; padding: 4px; opacity: 0.7; transition: 0.2s;">
+                        <button class="btn-delete-tpl aladinn-options-template-btn-delete" data-id="${escapeHtml(tpl.id)}" title="X\u00f3a">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
                 `;
                 listContainer.appendChild(item);
-            });
-
-            // Hover effect for buttons
-            document.querySelectorAll('.btn-edit-tpl, .btn-delete-tpl').forEach(btn => {
-                btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; btn.style.transform = 'scale(1.15)'; });
-                btn.addEventListener('mouseleave', () => { btn.style.opacity = btn.classList.contains('btn-edit-tpl') ? '0.75' : '0.7'; btn.style.transform = 'scale(1)'; });
             });
 
             // Edit button handler

@@ -897,3 +897,304 @@
   padding: 12px !important;
   font-size: 14px !important;
 }
+
+/* ── CDS Cache Debug Panel ── */
+.aladinn-cds-debug-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2147483647;
+    width: 450px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: linear-gradient(145deg, #ffffff, #f9f9f9);
+    border: 1px solid rgba(212, 162, 90, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+    color: #333333;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 15px;
+}
+
+.aladinn-cds-debug-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #004f9e;
+    font-size: 16px;
+}
+
+.aladinn-cds-debug-h3 {
+    margin-top: 0;
+    color: #004f9e;
+    border-bottom: 1px solid rgba(0,79,158,0.3);
+    padding-bottom: 8px;
+}
+
+.aladinn-cds-debug-h4 {
+    color: #004f9e;
+    margin: 10px 0 5px;
+}
+
+.aladinn-cds-debug-list-container {
+    background: rgba(0,0,0,0.3);
+    padding: 5px;
+    border-radius: 4px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.aladinn-cds-debug-meds-container {
+    background: rgba(0,0,0,0.3);
+    padding: 5px;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.aladinn-cds-debug-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.aladinn-cds-debug-btn-reset {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.aladinn-cds-debug-btn-refresh {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* ── BHYT Toast ── */
+.aladinn-bhyt-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%, -20px);
+    background: #fff9db;
+    color: #d9480f;
+    padding: 14px 20px;
+    border-radius: 0px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 2147483647;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    max-width: 400px;
+    border: 1px solid #f59e0b;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.aladinn-bhyt-toast-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.aladinn-bhyt-toast-icon {
+    font-size: 20px;
+}
+
+.aladinn-bhyt-toast-title {
+    font-size: 15px;
+    color: #d9480f;
+}
+
+.aladinn-bhyt-toast-footer {
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+/* ── SmartCA Guard Tooltip & Toast ── */
+.aladinn-smartca-tooltip {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483646;
+    background: #ffffff;
+    border: 1px solid #a6c9e2;
+    box-shadow: 0 4px 12px rgba(0, 79, 158, 0.15);
+    padding: 10px 14px;
+    min-width: 220px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.5;
+    pointer-events: none;
+    border-radius: 0px;
+    white-space: nowrap;
+}
+
+.aladinn-smartca-tooltip-header {
+    font-weight: 700;
+    font-size: 11px;
+    color: #004f9e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 4px;
+}
+
+.aladinn-smartca-tooltip-row {
+    margin-bottom: 3px;
+}
+
+.aladinn-smartca-tooltip-row-muted {
+    margin-bottom: 3px;
+    color: #666;
+}
+
+.aladinn-smartca-tooltip-status {
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid #e5e7eb;
+    font-weight: 700;
+}
+
+/* Persistent Toast */
+.aladinn-smartca-persistent-toast {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+    background: #ffffff;
+    border: 2px solid #dc2626;
+    border-left: 6px solid #dc2626;
+    box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    min-width: 420px;
+    max-width: 520px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    border-radius: 0px;
+    animation: aladinnSmartcaShake 0.5s ease;
+}
+
+.aladinn-smartca-toast-body {
+    padding: 12px 16px;
+}
+
+.aladinn-smartca-toast-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.aladinn-smartca-toast-icon {
+    font-size: 20px;
+}
+
+.aladinn-smartca-toast-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #dc2626;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.aladinn-smartca-toast-details {
+    font-size: 12.5px;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.aladinn-smartca-toast-detail-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 3px;
+}
+
+.aladinn-smartca-toast-label-his {
+    color: #004f9e;
+    font-weight: 700;
+    min-width: 60px;
+}
+
+.aladinn-smartca-toast-value-his {
+    color: #004f9e;
+}
+
+.aladinn-smartca-toast-label-smartca {
+    color: #dc2626;
+    font-weight: 700;
+    min-width: 60px;
+}
+
+.aladinn-smartca-toast-value-smartca {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.aladinn-smartca-toast-warning-box {
+    font-size: 11.5px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    padding: 6px 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.aladinn-smartca-toast-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.aladinn-smartca-toast-btn-logout {
+    flex: 1;
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 0px;
+    transition: background 200ms;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.aladinn-smartca-toast-btn-logout:hover {
+    background: #b91c1c;
+}
+
+.aladinn-smartca-toast-btn-dismiss {
+    background: #f3f4f6;
+    color: #666;
+    border: 1px solid #d1d5db;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 0px;
+    transition: background 200ms;
+}
+
+.aladinn-smartca-toast-btn-dismiss:hover {
+    background: #e5e7eb;
+}

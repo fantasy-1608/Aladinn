@@ -267,26 +267,7 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
 
         _tooltipEl = document.createElement('div');
         _tooltipEl.id = 'aladinn-smartca-tooltip';
-        _tooltipEl.style.cssText = [
-            'position: absolute',
-            'top: calc(100% + 6px)',
-            'left: 50%',
-            'transform: translateX(-50%)',
-            'z-index: 2147483646',
-            'background: #ffffff',
-            'border: 1px solid #a6c9e2',
-            'box-shadow: 0 4px 12px rgba(0, 79, 158, 0.15)',
-            'padding: 10px 14px',
-            'min-width: 220px',
-            'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
-            'font-size: 12px',
-            'color: #333',
-            'line-height: 1.5',
-            'display: none',
-            'pointer-events: none',
-            'border-radius: 0px',
-            'white-space: nowrap'
-        ].join(';');
+        _tooltipEl.className = 'aladinn-smartca-tooltip';
         
         document.body.appendChild(_tooltipEl);
     }
@@ -312,22 +293,22 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         }
 
         const rows = [];
-        rows.push('<div style="font-weight:700;font-size:11px;color:#004f9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;">VNPT SmartCA</div>');
+        rows.push('<div class="aladinn-smartca-tooltip-header">VNPT SmartCA</div>');
         
         if (_smartcaUserName) {
-            rows.push('<div style="margin-bottom:3px;"><b>Người ký:</b> ' + _escHtml(_smartcaUserName) + '</div>');
+            rows.push('<div class="aladinn-smartca-tooltip-row"><b>Người ký:</b> ' + _escHtml(_smartcaUserName) + '</div>');
         }
         if (_smartcaEmail) {
-            rows.push('<div style="margin-bottom:3px;color:#666;"><b>Email:</b> ' + _escHtml(_smartcaEmail) + '</div>');
+            rows.push('<div class="aladinn-smartca-tooltip-row-muted"><b>Email:</b> ' + _escHtml(_smartcaEmail) + '</div>');
         }
         if (_smartcaUserId) {
-            rows.push('<div style="margin-bottom:3px;color:#666;"><b>UserID:</b> ' + _escHtml(_smartcaUserId) + '</div>');
+            rows.push('<div class="aladinn-smartca-tooltip-row-muted"><b>UserID:</b> ' + _escHtml(_smartcaUserId) + '</div>');
         }
         if (_hisUserName) {
-            rows.push('<div style="margin-bottom:3px;"><b>BS HIS:</b> ' + _escHtml(_hisUserName) + '</div>');
+            rows.push('<div class="aladinn-smartca-tooltip-row"><b>BS HIS:</b> ' + _escHtml(_hisUserName) + '</div>');
         }
 
-        rows.push('<div style="margin-top:6px;padding-top:4px;border-top:1px solid #e5e7eb;font-weight:700;color:' + statusColor + ';">' + statusIcon + ' ' + statusText + '</div>');
+        rows.push('<div class="aladinn-smartca-tooltip-status" style="color:' + statusColor + ';">' + statusIcon + ' ' + statusText + '</div>');
 
         _tooltipEl.innerHTML = rows.join('');
     }
@@ -395,54 +376,30 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
 
         _persistentToastEl = document.createElement('div');
         _persistentToastEl.id = 'aladinn-smartca-persistent-toast';
-        _persistentToastEl.style.cssText = [
-            'position: fixed',
-            'top: 12px',
-            'left: 50%',
-            'transform: translateX(-50%)',
-            'z-index: 2147483647',
-            'background: #ffffff',
-            'border: 2px solid #dc2626',
-            'border-left: 6px solid #dc2626',
-            'box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1)',
-            'padding: 0',
-            'min-width: 420px',
-            'max-width: 520px',
-            'font-family: "Segoe UI", system-ui, -apple-system, sans-serif',
-            'border-radius: 0px',
-            'animation: aladinnSmartcaShake 0.5s ease'
-        ].join(';');
+        _persistentToastEl.className = 'aladinn-smartca-persistent-toast';
 
         _persistentToastEl.innerHTML = [
-            '<div style="padding:12px 16px;">',
-            '  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">',
-            '    <span style="font-size:20px;">🚨</span>',
-            '    <span style="font-size:13px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.5px;">Chữ ký số không khớp tài khoản HIS</span>',
+            '<div class="aladinn-smartca-toast-body">',
+            '  <div class="aladinn-smartca-toast-header">',
+            '    <span class="aladinn-smartca-toast-icon">🚨</span>',
+            '    <span class="aladinn-smartca-toast-title">Chữ ký số không khớp tài khoản HIS</span>',
             '  </div>',
-            '  <div style="font-size:12.5px;color:#444;line-height:1.6;margin-bottom:10px;">',
-            '    <div style="display:flex;gap:6px;margin-bottom:3px;">',
-            '      <span style="color:#004f9e;font-weight:700;min-width:60px;">BS HIS:</span>',
-            '      <span style="color:#004f9e;">' + _escHtml(_hisUserName) + '</span>',
+            '  <div class="aladinn-smartca-toast-details">',
+            '    <div class="aladinn-smartca-toast-detail-row">',
+            '      <span class="aladinn-smartca-toast-label-his">BS HIS:</span>',
+            '      <span class="aladinn-smartca-toast-value-his">' + _escHtml(_hisUserName) + '</span>',
             '    </div>',
-            '    <div style="display:flex;gap:6px;">',
-            '      <span style="color:#dc2626;font-weight:700;min-width:60px;">SmartCA:</span>',
-            '      <span style="color:#dc2626;font-weight:700;">' + _escHtml(_smartcaUserName) + '</span>',
+            '    <div class="aladinn-smartca-toast-detail-row">',
+            '      <span class="aladinn-smartca-toast-label-smartca">SmartCA:</span>',
+            '      <span class="aladinn-smartca-toast-value-smartca">' + _escHtml(_smartcaUserName) + '</span>',
             '    </div>',
             '  </div>',
-            '  <div style="font-size:11.5px;color:#666;line-height:1.5;margin-bottom:12px;padding:6px 8px;background:#fef2f2;border:1px solid #fecaca;">',
+            '  <div class="aladinn-smartca-toast-warning-box">',
             '    ⚠️ Nếu tiếp tục ký, chữ ký sẽ mang tên <b>' + _escHtml(_smartcaUserName) + '</b> — không phải bác sĩ đang điều trị.',
             '  </div>',
-            '  <div style="display:flex;gap:8px;">',
-            '    <button id="aladinn-smartca-toast-logout" style="',
-            '      flex:1;background:#dc2626;color:white;border:none;padding:8px 12px;',
-            '      cursor:pointer;font-size:12px;font-weight:700;border-radius:0px;',
-            '      transition:background 200ms;display:flex;align-items:center;justify-content:center;gap:4px;',
-            '    ">🔄 Đăng xuất SmartCA ngay</button>',
-            '    <button id="aladinn-smartca-toast-dismiss" style="',
-            '      background:#f3f4f6;color:#666;border:1px solid #d1d5db;padding:8px 12px;',
-            '      cursor:pointer;font-size:12px;font-weight:600;border-radius:0px;',
-            '      transition:background 200ms;',
-            '    ">Bỏ qua</button>',
+            '  <div class="aladinn-smartca-toast-buttons">',
+            '    <button id="aladinn-smartca-toast-logout" class="aladinn-smartca-toast-btn-logout">🔄 Đăng xuất SmartCA ngay</button>',
+            '    <button id="aladinn-smartca-toast-dismiss" class="aladinn-smartca-toast-btn-dismiss">Bỏ qua</button>',
             '  </div>',
             '</div>'
         ].join('');
@@ -468,8 +425,6 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         const dismissBtn = document.getElementById('aladinn-smartca-toast-dismiss');
 
         if (logoutBtn) {
-            logoutBtn.onmouseover = function() { this.style.background = '#b91c1c'; };
-            logoutBtn.onmouseout = function() { this.style.background = '#dc2626'; };
             logoutBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -490,8 +445,6 @@ window.Aladinn.Scanner.SmartCAGuard = (function () {
         }
 
         if (dismissBtn) {
-            dismissBtn.onmouseover = function() { this.style.background = '#e5e7eb'; };
-            dismissBtn.onmouseout = function() { this.style.background = '#f3f4f6'; };
             dismissBtn.onclick = function(e) {
                 e.preventDefault();
                 removePersistentMismatchToast();

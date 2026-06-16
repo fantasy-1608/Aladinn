@@ -5,7 +5,6 @@
     "description": "Tiện ích mở rộng hỗ trợ y bác sĩ trên hệ thống VNPT HIS: Nhập liệu giọng nói AI, Quét dữ liệu lâm sàng, Ký số tự động",
     "author": "Huỳnh Trung Anh",
     "permissions": [
-        "activeTab",
         "alarms",
         "scripting",
         "storage",

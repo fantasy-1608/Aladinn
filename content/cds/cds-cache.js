@@ -237,18 +237,11 @@ class CDSCacheManager {
 
         const panel = document.createElement('div');
         panel.id = 'aladinn-cds-debug-panel';
-        panel.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 2147483647;
-            width: 450px; max-height: 80vh; overflow-y: auto;
-            background: linear-gradient(145deg, #ffffff, #f9f9f9);
-            border: 1px solid rgba(212,162,90,0.4); border-radius: 12px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.8);
-            color: #333333; font-family: 'Courier New', monospace; font-size: 12px; padding: 15px;
-        `;
+        panel.className = 'aladinn-cds-debug-panel';
         
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '❌';
-        closeBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; background: transparent; border: none; cursor: pointer; color: #004f9e; font-size: 16px;';
+        closeBtn.className = 'aladinn-cds-debug-close-btn';
         closeBtn.onclick = () => panel.remove();
         
         const ttlRemaining = this.cache._medsTimestamp ? Math.max(0, 300000 - (Date.now() - this.cache._medsTimestamp)) : 0;
@@ -257,31 +250,31 @@ class CDSCacheManager {
         const _escHtml = (str) => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         
         panel.innerHTML = `
-            <h3 style="margin-top: 0; color: #004f9e; border-bottom: 1px solid rgba(0,79,158,0.3); padding-bottom: 8px;">🧞 AI Cache Debug Panel</h3>
+            <h3 class="aladinn-cds-debug-h3">🧞 AI Cache Debug Panel</h3>
             <div><strong>Patient Key:</strong> ${_escHtml(this._patientKey || 'N/A')}</div>
             <div><strong>BenhNhan ID:</strong> ${_escHtml(this.cache.benhnhanId || 'N/A')}</div>
             <div><strong>KhamBenh ID:</strong> ${_escHtml(this.cache.khambenhId || 'N/A')}</div>
             <div><strong>Patient IDs:</strong> ${_escHtml(Array.from(this.cache.patientIds).join(', ') || 'None')}</div>
             <div><strong>Medications TTL:</strong> ${ttlRemaining > 0 ? Math.round(ttlRemaining/1000) + 's' : 'Expired/None'}</div>
             
-            <h4 style="color: #004f9e; margin: 10px 0 5px;">Diagnoses (${this.cache.diagnoses.length})</h4>
-            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+            <h4 class="aladinn-cds-debug-h4">Diagnoses (${this.cache.diagnoses.length})</h4>
+            <div class="aladinn-cds-debug-list-container">
                 ${this.cache.diagnoses.map(d => `[${_escHtml(d.code)}] ${_escHtml(d.name || '')}`).join('<br>') || 'None'}
             </div>
             
-            <h4 style="color: #004f9e; margin: 10px 0 5px;">Medications (${this.cache.medications.length})</h4>
-            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 150px; overflow-y: auto;">
+            <h4 class="aladinn-cds-debug-h4">Medications (${this.cache.medications.length})</h4>
+            <div class="aladinn-cds-debug-meds-container">
                 ${this.cache.medications.map(m => _escHtml(m.display_name)).join('<br>') || 'None'}
             </div>
             
-            <h4 style="color: #004f9e; margin: 10px 0 5px;">Labs (${this.cache.labs.length})</h4>
-            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; max-height: 100px; overflow-y: auto;">
+            <h4 class="aladinn-cds-debug-h4">Labs (${this.cache.labs.length})</h4>
+            <div class="aladinn-cds-debug-list-container">
                 ${this.cache.labs.map(l => `[${_escHtml(l.code)}] ${_escHtml(l.value)}`).join('<br>') || 'None'}
             </div>
             
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <button id="btn-force-reset" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Force Reset All</button>
-                <button id="btn-refresh-ui" style="background: #3b82f6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Refresh Panel</button>
+            <div class="aladinn-cds-debug-actions">
+                <button id="btn-force-reset" class="aladinn-cds-debug-btn-reset">Force Reset All</button>
+                <button id="btn-refresh-ui" class="aladinn-cds-debug-btn-refresh">Refresh Panel</button>
             </div>
         `;
         

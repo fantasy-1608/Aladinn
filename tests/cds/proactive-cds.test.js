@@ -240,7 +240,7 @@ describe('Proactive CDS & eGFR Alerts', () => {
             };
 
             const result = await analyzeLocally(context);
-            expect(result.alerts).toHaveLength(1);
+            expect(result.alerts).toHaveLength(2);
             
             const renalAlert = result.alerts[0];
             expect(renalAlert.domain).toBe('renal');
@@ -248,6 +248,10 @@ describe('Proactive CDS & eGFR Alerts', () => {
             expect(renalAlert.rule_code).toBe('RENAL-METFORMIN-45');
             expect(renalAlert.effect).toContain('eGFR = 37.5 mL/phút');
             expect(renalAlert.recommendation).toBe('Chuyển sang điều trị Insulin hoặc thuốc khác');
+
+            const orderSetAlert = result.alerts[1];
+            expect(orderSetAlert.rule_code).toBe('ORDER-SET-I10');
+            expect(orderSetAlert.domain).toBe('order_set');
         });
     });
 });
