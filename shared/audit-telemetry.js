@@ -275,6 +275,20 @@ const AuditEvents = {
         logAuditEvent('voice_recording_started', 'voice_ai');
         incrementMetric('voice_recording');
     },
+
+    /** [P0-03] PHI pipeline blocked an AI request */
+    phiPipelineBlocked: (context, reasons) =>
+        logAuditEvent('phi_pipeline_blocked', 'security', {
+            success: false,
+            errorCode: 'PHI_BLOCKED',
+            extra: { context, reasons }
+        }),
+
+    /** [P0-03] PHI pipeline redacted fields before AI request */
+    phiPipelineRedacted: (context, redactedCount) =>
+        logAuditEvent('phi_pipeline_redacted', 'security', {
+            extra: { context, redacted_count: redactedCount }
+        }),
 };
 
 // Export for use across the extension

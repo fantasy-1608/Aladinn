@@ -4,12 +4,15 @@
  * Cho phép admin tắt nóng tính năng mà không cần bác sĩ cài lại extension.
  *
  * Nguyên tắc an toàn:
- * - Fail-open: Nếu không tải được config → mọi tính năng vẫn BẬT.
+ * - FAIL-CLOSED: Nếu chữ ký số không hợp lệ → từ chối config, dùng cache/default.
  * - Non-blocking: Không chặn luồng UI hay khởi tạo extension.
  * - TTL: Cache 30 phút, tự động refresh.
+ * - Ed25519 signature verification trước khi chấp nhận config mới.
  */
 
 import { UPDATE_CONFIG } from './updater.js';
+import { verifyConfigSignature } from '../shared/crypto-verify.js';
+import { logAuditEvent } from '../shared/audit-telemetry.js';
 
 // ========================================
 // CONFIG
@@ -18,6 +21,10 @@ const REMOTE_CONFIG = {
     // URL raw trên GitHub (main branch)
     get url() {
         return `https://raw.githubusercontent.com/${UPDATE_CONFIG.githubRepo}/main/remote-config.json`;
+    },
+    // Signature URL = config URL + '.sig'
+    get sigUrl() {
+        return `${this.url}.sig`;
     },
     // Cache 30 phút (ms)
     cacheTTL: 30 * 60 * 1000,
@@ -37,7 +44,16 @@ const DEFAULT_CONFIG = {
         cdsEngine: false,
         aiVoice: false,
         scanner: true,
-        enableSmartPath: false
+        enableSmartPath: false,
+        aiVip: false,
+        aiVipEasterEggReveal: false
+    },
+    aiVipPolicy: {
+        requirePinUnlocked: true,
+        requirePhiPipeline: true,
+        allowRawTreatmentText: false,
+        maxInputChars: 12000,
+        auditReveal: true
     },
     mode: 'safe_mode',
     emergencyMessage: '',
@@ -46,58 +62,133 @@ const DEFAULT_CONFIG = {
 };
 
 // ========================================
+// VALIDATION
+// ========================================
+
+/**
+ * Deep-validate feature fields: every value must be boolean.
+ * Rejects non-boolean feature values to prevent type-coercion attacks.
+ * @param {Object} features - The features object from remote config
+ * @returns {boolean} true if all feature values are booleans
+ */
+function validateFeatureTypes(features) {
+    if (!features || typeof features !== 'object') {
+        return false;
+    }
+    for (const value of Object.values(features)) {
+        if (typeof value !== 'boolean') {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ========================================
 // FETCH & CACHE
 // ========================================
 
 /**
- * Tải remote config từ GitHub.
+ * Fetch the config JSON and its Ed25519 signature in parallel.
+ * Returns { configText, configData, signatureBase64 } or null.
+ */
+async function fetchConfigAndSignature() {
+    const cacheBuster = `?t=${Date.now()}`;
+
+    const [configResponse, sigResponse] = await Promise.all([
+        fetch(`${REMOTE_CONFIG.url}${cacheBuster}`, {
+            cache: 'no-cache',
+            headers: { 'Accept': 'application/json' }
+        }),
+        fetch(`${REMOTE_CONFIG.sigUrl}${cacheBuster}`, {
+            cache: 'no-cache'
+        })
+    ]);
+
+    if (!configResponse.ok) {
+        console.log(`[Aladinn SafeMode] ⚠️ Config fetch failed: HTTP ${configResponse.status}`);
+        return null;
+    }
+
+    if (!sigResponse.ok) {
+        console.log(`[Aladinn SafeMode] ⚠️ Signature fetch failed: HTTP ${sigResponse.status}`);
+        return null;
+    }
+
+    const configText = await configResponse.text();
+    const signatureBase64 = (await sigResponse.text()).trim();
+    const configData = JSON.parse(configText);
+
+    return { configText, configData, signatureBase64 };
+}
+
+/**
+ * Tải remote config từ GitHub với Ed25519 signature verification.
  * Trả về config object đã được validate, hoặc null nếu lỗi.
  */
 async function fetchRemoteConfig() {
     try {
-        // Bypass GitHub raw CDN cache by adding a timestamp
-        const cacheBusterUrl = `${REMOTE_CONFIG.url}?t=${Date.now()}`;
-        const response = await fetch(cacheBusterUrl, {
-            cache: 'no-cache',
-            headers: { 'Accept': 'application/json' }
-        });
+        const fetched = await fetchConfigAndSignature();
+        if (!fetched) return null;
 
-        if (!response.ok) {
-            console.log(`[Aladinn SafeMode] ⚠️ Fetch failed: HTTP ${response.status}`);
+        const { configText, configData, signatureBase64 } = fetched;
+
+        // SECURITY: Verify Ed25519 signature before trusting config
+        const isValid = await verifyConfigSignature(configText, signatureBase64);
+        if (!isValid) {
+            console.log('[Aladinn SafeMode] 🚫 Signature verification FAILED — rejecting config.');
+            await logAuditEvent('remote_config_signature_failed', 'security', {
+                success: false,
+                errorCode: 'SIGNATURE_INVALID'
+            });
             return null;
         }
 
-        const data = await response.json();
-
         // Validate cấu trúc cơ bản
-        if (!data || typeof data.features !== 'object') {
+        if (!configData || typeof configData.features !== 'object') {
             console.log('[Aladinn SafeMode] ⚠️ Invalid config format, ignoring.');
+            return null;
+        }
+
+        // SECURITY: Deep schema validation — all feature values must be boolean
+        if (!validateFeatureTypes(configData.features)) {
+            console.log('[Aladinn SafeMode] ⚠️ Feature type validation failed, ignoring.');
+            await logAuditEvent('remote_config_schema_invalid', 'security', {
+                success: false,
+                errorCode: 'FEATURE_TYPE_INVALID'
+            });
             return null;
         }
 
         // SECURITY: Version phải tăng dần — không chấp nhận version cũ hơn
         const cached = await getRemoteConfig();
-        if (cached._source !== 'default' && typeof data.version === 'number' && typeof cached.version === 'number') {
-            if (data.version < cached.version) {
+        if (cached._source !== 'default' && typeof configData.version === 'number') {
+            if (typeof cached.version === 'number' && configData.version < cached.version) {
                 console.log('[Aladinn SafeMode] ⚠️ Remote config version rollback detected, ignoring.');
                 return null;
             }
         }
 
-        // Merge với default để đảm bảo không thiếu key
+        // Merge với default để đảm bảo không thiếu key (immutable)
+        // Merge aiVipPolicy if present in remote config
+        const mergedAiVipPolicy = {
+            ...DEFAULT_CONFIG.aiVipPolicy,
+            ...(configData.aiVipPolicy || {})
+        };
+
         const merged = {
-            version: data.version || 0,
+            version: configData.version || 0,
             features: {
                 ...DEFAULT_CONFIG.features,
-                ...data.features
+                ...configData.features
             },
-            mode: data.mode || DEFAULT_CONFIG.mode,
-            emergencyMessage: data.emergencyMessage || '',
+            aiVipPolicy: mergedAiVipPolicy,
+            mode: configData.mode || DEFAULT_CONFIG.mode,
+            emergencyMessage: configData.emergencyMessage || '',
             _fetchedAt: Date.now(),
             _source: 'github'
         };
 
-        console.log('[Aladinn SafeMode] ✅ Remote config loaded:', merged.features);
+        console.log('[Aladinn SafeMode] ✅ Remote config loaded (signature verified):', merged.features);
         return merged;
     } catch (err) {
         console.log('[Aladinn SafeMode] ⚠️ Network error:', err.message || err);
@@ -120,7 +211,7 @@ async function refreshRemoteConfig() {
 }
 
 /**
- * Lấy config từ cache (storage). Nếu chưa có → trả default (fail-open).
+ * Lấy config từ cache (storage). Nếu chưa có → trả default (fail-closed).
  */
 async function getRemoteConfig() {
     try {
@@ -138,7 +229,7 @@ async function getRemoteConfig() {
 /**
  * Kiểm tra một feature cụ thể có đang bật hay không.
  * @param {string} featureName - Tên feature (autoSign, cdsEngine, aiVoice, scanner)
- * @returns {Promise<boolean>} true nếu bật (hoặc nếu không tải được config)
+ * @returns {Promise<boolean>} true nếu bật
  */
 async function isFeatureEnabled(featureName) {
     const config = await getRemoteConfig();
@@ -187,5 +278,6 @@ export {
     getRemoteConfig,
     isFeatureEnabled,
     scheduleRemoteConfigRefresh,
-    handleRemoteConfigAlarm
+    handleRemoteConfigAlarm,
+    validateFeatureTypes
 };

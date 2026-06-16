@@ -4,8 +4,8 @@
  * Only runs in background service worker context.
  */
 
-import { PHIRedactor } from './phi-redactor.js';
 import { SchemaValidator } from './schema-validator.js';
+import { PHIPipeline } from '../shared/phi-pipeline.js';
 
 /**
  * Đọc model từ cấu hình người dùng trực tiếp từ storage.
@@ -421,16 +421,17 @@ async function callGeminiGenerateContent({ prompt, model, requestId, generationC
         throw aiError('Prompt không hợp lệ.', 'AI_INVALID_PAYLOAD');
     }
 
-    // 🛡️ SECURITY GUARD: Redact PHI before sending to external AI API
-    const redactedPrompt = PHIRedactor.redact(prompt);
-    if (PHIRedactor.containsPHI(redactedPrompt)) {
-        console.warn('[Aladinn Security] Blocked AI request due to remaining PHI detection.');
+    // 🛡️ [P0-03] SECURITY GUARD: Centralized PHI pipeline
+    const phiResult = PHIPipeline.prepareForAI({ feature: 'summary', payload: prompt });
+    const redactedPrompt = phiResult.redactedText;
+    if (phiResult.report.blocked) {
+        console.warn('[Aladinn Security] Blocked AI request via PHI pipeline.');
         try {
             if (typeof chrome !== 'undefined' && chrome.runtime) {
                 chrome.runtime.sendMessage({
                     type: 'LOG_AUDIT',
-                    auditType: 'phi_redaction_blocked',
-                    details: { context: 'callGeminiGenerateContent' }
+                    auditType: 'phi_pipeline_blocked',
+                    details: { context: 'callGeminiGenerateContent', reasons: phiResult.report.reasons }
                 });
             }
         } catch (_e) {}
@@ -513,6 +514,46 @@ export async function requestScannerAI({ prompt, model, requestId, generationCon
 }
 
 export async function summarizeHistoryAI({ rawTreatments, model, targetField }) {
+    // 🛡️ [P0-04] Read maxInputChars from aiVipPolicy in remote config
+    let maxInputChars = 12000;
+    try {
+        const rc = await new Promise(r =>
+            chrome.storage.local.get(['aladinn_remote_config'], r)
+        );
+        const policy = rc?.aladinn_remote_config?.aiVipPolicy;
+        if (policy && typeof policy.maxInputChars === 'number') {
+            maxInputChars = policy.maxInputChars;
+        }
+    } catch (_e) { /* use default */ }
+
+    // 🛡️ [P0-04] Enforce maxInputChars truncation
+    let safeInput = rawTreatments || '';
+    if (safeInput.length > maxInputChars) {
+        safeInput = safeInput.slice(0, maxInputChars);
+    }
+
+    // 🛡️ [P0-04] PHI pipeline with feature 'aiVip'
+    const phiResult = PHIPipeline.prepareForAI({
+        feature: 'aiVip',
+        payload: safeInput,
+        options: { maxChars: maxInputChars }
+    });
+    if (phiResult.report.blocked) {
+        console.warn('[Aladinn Security] Blocked AI VIP request via PHI pipeline.');
+        try {
+            chrome.runtime.sendMessage({
+                type: 'LOG_AUDIT',
+                auditType: 'ai_vip_phi_blocked',
+                details: { context: 'summarizeHistoryAI', reasons: phiResult.report.reasons }
+            });
+        } catch (_e) {}
+        throw aiError(
+            'Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử.',
+            'AI_PHI_BLOCKED'
+        );
+    }
+    const redactedInput = phiResult.redactedText;
+
     let systemInstruction = `Bạn là một Bác sĩ Trưởng khoa đang viết Tờ "Tổng kết Hồ sơ Bệnh án" (Phần 1: Quá trình bệnh lý và Diễn biến lâm sàng) để lưu trữ hồ sơ xuất viện theo Chuẩn Bộ Y tế Việt Nam.
 
 Dưới đây là toàn bộ số liệu chăm sóc và điều trị của đợt bệnh này. Hãy tổng hợp lại thành một bản tóm tắt có giá trị pháp lý và chuyên môn cao:
@@ -529,7 +570,7 @@ Dưới đây là toàn bộ số liệu chăm sóc và điều trị của đ�
     }
 
     const data = await callGeminiGenerateContent({
-        prompt: `DỮ LIỆU ĐIỀU TRỊ (Đã được ẩn danh):\n${rawTreatments || ''}`,
+        prompt: `DỮ LIỆU ĐIỀU TRỊ (Đã được ẩn danh):\n${redactedInput}`,
         model: model || await getActiveGeminiModel(),
         generationConfig: {
             temperature: 0.1,
@@ -601,16 +642,17 @@ export async function requestAI({ text, model, requestId }) {
         _abortControllers.set(requestId, controller);
     }
 
-    // 🛡️ SECURITY GUARD: Redact PHI
-    const redactedPrompt = PHIRedactor.redact(text);
-    if (PHIRedactor.containsPHI(redactedPrompt)) {
-        console.warn('[Aladinn Security] Blocked Voice AI request due to remaining PHI detection.');
+    // 🛡️ [P0-03] SECURITY GUARD: Centralized PHI pipeline
+    const phiResult = PHIPipeline.prepareForAI({ feature: 'voice', payload: text });
+    const redactedPrompt = phiResult.redactedText;
+    if (phiResult.report.blocked) {
+        console.warn('[Aladinn Security] Blocked Voice AI request via PHI pipeline.');
         try {
             if (typeof chrome !== 'undefined' && chrome.runtime) {
                 chrome.runtime.sendMessage({
                     type: 'LOG_AUDIT',
-                    auditType: 'phi_redaction_blocked',
-                    details: { context: 'requestAI' }
+                    auditType: 'phi_pipeline_blocked',
+                    details: { context: 'requestAI', reasons: phiResult.report.reasons }
                 });
             }
         } catch (_e) {}

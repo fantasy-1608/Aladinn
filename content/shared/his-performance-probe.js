@@ -10,6 +10,7 @@ export const HISPerformanceProbe = {
     enabled: false,
     observer: null,
     pendingAction: null, // { type, startTime }
+    _boundClickHandler: null,
     
     init(flagValue) {
         this.enabled = !!flagValue;
@@ -23,12 +24,15 @@ export const HISPerformanceProbe = {
     attachListeners() {
         if (!this.enabled) return;
         
-        // Listen to clicks on the document to detect opening models or changing tabs
-        document.addEventListener('click', this.handleDocumentClick.bind(this), true);
+        // Cache bound handler so removeEventListener can match (P1-05 fix)
+        this._boundClickHandler = this._boundClickHandler || this.handleDocumentClick.bind(this);
+        document.addEventListener('click', this._boundClickHandler, true);
     },
 
     detachListeners() {
-        document.removeEventListener('click', this.handleDocumentClick.bind(this), true);
+        if (this._boundClickHandler) {
+            document.removeEventListener('click', this._boundClickHandler, true);
+        }
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;

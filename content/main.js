@@ -30,10 +30,7 @@ import '../shared/ui-components.js';
 import '../shared/diagnostic.js';
 import { LazyLoaderUI } from './shared/lazy-loader-ui.js';
 import './shared/his-performance-probe.js';
-import './scanner/index.js';
-import './sign/index.js';
-import './voice/index.js';
-import './cds/index.js';
+import { loadModules } from './module-loader.js';
 import './content.js';
 import '../shared/styles/his-base.css';
 import '../styles/aladinn-core.css';
@@ -42,14 +39,24 @@ import '../styles/aladinn-scanner.css';
 import '../styles/aladinn-voice.css';
 import '../styles/aladinn-sign.css';
 import { initTemplateEngine } from './template/template-engine.js';
+import { SmartPhrases } from './shared/smart-phrases.js';
+
+// ── Feature modules: lazy-loaded based on feature flags (P1-04) ──
+loadModules().catch((err) => {
+    if (window.HIS?.Logger) {
+        window.HIS.Logger.error('Main', '❌ Feature module loading failed', err?.message);
+    }
+});
 
 // Khởi tạo các module tiện ích
 setTimeout(() => {
     LazyLoaderUI.init();
     initTemplateEngine();
+    SmartPhrases.init();
     
     // Khởi tạo HIS Performance Probe (P0)
     if (window.AladinnHISPerformanceProbe) {
         window.AladinnHISPerformanceProbe.init(true); // default true for P0
     }
 }, 1000);
+

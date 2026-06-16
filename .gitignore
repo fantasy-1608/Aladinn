@@ -32,3 +32,8 @@ coverage/
 .gitnexus
 .agents/
 scratch/
+
+# Ed25519 signing keys — NEVER commit private keys
+scripts/dev-signing-key.base64
+scripts/*.pem
+*.private.key

@@ -90,10 +90,23 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // ========================================
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
+        const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+        const installSalt = btoa(String.fromCharCode(...saltBytes));
         chrome.storage.local.set({
             aladinn_features: { voice: false, scanner: true, sign: false, cds: false },
             aladinn_voice_enabled: false,
-            aladinn_voice_settings: { language: 'vi-VN', autoProcess: false, theme: 'dark' }
+            aladinn_voice_settings: { language: 'vi-VN', autoProcess: false, theme: 'dark' },
+            aladinn_install_salt: installSalt
+        });
+    }
+    if (details.reason === 'update') {
+        // Migration: generate salt for installs that predate P1-03
+        chrome.storage.local.get('aladinn_install_salt', (res) => {
+            if (!res.aladinn_install_salt) {
+                const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+                const installSalt = btoa(String.fromCharCode(...saltBytes));
+                chrome.storage.local.set({ aladinn_install_salt: installSalt });
+            }
         });
     }
     updateBadge(true);

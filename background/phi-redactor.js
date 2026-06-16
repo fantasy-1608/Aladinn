@@ -57,6 +57,25 @@ const PHI_PATTERNS = [
     }
 ];
 
+// [P0-03] Extended patterns — used by redactFields() and PHIPipeline
+const FAMILY_NAME_PATTERN = {
+    name: 'FamilyName',
+    regex: /(Người\s*nhà|Liên\s*hệ|Bố|Mẹ|Cha|Vợ|Chồng|Con|Anh|Chị|Em)\s*[:：]\s*[^,;\n]+/gi,
+    replacement: '[FAMILY_INFO]'
+};
+
+const WARD_ROOM_BED_PATTERN = {
+    name: 'WardRoomBed',
+    regex: /(Khoa|Phòng|Giường|Buồng)\s*[:：]\s*[^,;\n]+/gi,
+    replacement: '[WARD_INFO]'
+};
+
+const TIMESTAMP_PATTERN = {
+    name: 'Timestamp',
+    regex: /(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}(\s+\d{1,2}:\d{2}(:\d{2})?)?)/g,
+    replacement: '[DATE]'
+};
+
 export class PHIRedactor {
     /**
      * Redact standard PHI patterns from text
@@ -126,4 +145,83 @@ export class PHIRedactor {
 
         return false;
     }
+
+    /**
+     * [P0-03] Apply redaction to a map of field names → values.
+     * Includes extended patterns (family, ward, timestamps).
+     * @param {Object<string, string>} fieldMap
+     * @param {{ allowDates?: boolean, allowWardInfo?: boolean }} options
+     * @returns {{ redactedMap: Object, redactedCount: number, reasons: string[] }}
+     */
+    static redactFields(fieldMap, options = {}) {
+        const { allowDates = false, allowWardInfo = false } = options;
+        let redactedCount = 0;
+        const reasons = [];
+        const redactedMap = {};
+
+        for (const [key, value] of Object.entries(fieldMap)) {
+            if (!value || typeof value !== 'string') {
+                redactedMap[key] = value ?? '';
+                continue;
+            }
+            let text = PHIRedactor.redact(value);
+            const afterBase = _countReplacements(value, text);
+            if (afterBase > 0) {
+                redactedCount += afterBase;
+                reasons.push('base_phi');
+            }
+
+            // Family/relative names
+            const beforeFamily = text;
+            text = text.replace(FAMILY_NAME_PATTERN.regex, FAMILY_NAME_PATTERN.replacement);
+            const familyHits = _countReplacements(beforeFamily, text);
+            if (familyHits > 0) {
+                redactedCount += familyHits;
+                reasons.push('family_name');
+            }
+
+            // Ward/room/bed
+            if (!allowWardInfo) {
+                const beforeWard = text;
+                text = text.replace(WARD_ROOM_BED_PATTERN.regex, WARD_ROOM_BED_PATTERN.replacement);
+                const wardHits = _countReplacements(beforeWard, text);
+                if (wardHits > 0) {
+                    redactedCount += wardHits;
+                    reasons.push('ward_info');
+                }
+            }
+
+            // Timestamps
+            if (!allowDates) {
+                const beforeTs = text;
+                text = text.replace(TIMESTAMP_PATTERN.regex, TIMESTAMP_PATTERN.replacement);
+                const tsHits = _countReplacements(beforeTs, text);
+                if (tsHits > 0) {
+                    redactedCount += tsHits;
+                    reasons.push('timestamp');
+                }
+            }
+
+            redactedMap[key] = text;
+        }
+
+        return {
+            redactedMap,
+            redactedCount,
+            reasons: [...new Set(reasons)]
+        };
+    }
+}
+
+/**
+ * Count bracket-replacement tokens added between original and redacted text.
+ * @param {string} original
+ * @param {string} redacted
+ * @returns {number}
+ */
+function _countReplacements(original, redacted) {
+    if (original === redacted) return 0;
+    const origTokens = (original.match(/\[[A-Z_]+\]/g) || []).length;
+    const newTokens = (redacted.match(/\[[A-Z_]+\]/g) || []).length;
+    return Math.max(0, newTokens - origTokens);
 }

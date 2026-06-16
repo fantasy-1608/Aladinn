@@ -545,105 +545,24 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // --- Easter Egg (AI VIP) ---
-    const versionTag = document.getElementById('aladinn-version-tag');
-    const advancedSection = document.getElementById('ai-features-container');
-    let clickCount = 0;
-    let clickTimer = null;
+    // --- Easter Egg (AI VIP) — P0-04 Controlled ---
+    import('./ai-vip-easter-egg.js').then(({ initAiVipEasterEgg }) => {
+        initAiVipEasterEgg({
+            hasPinHash: _hasPinHash,
+            hasEncryptedKey: _hasEncryptedKey,
+            showToast
+        });
+    }).catch(err => console.error('[Aladinn] AI VIP module load error:', err));
 
+    // Version tag display (kept outside module for general use)
+    const versionTag = document.getElementById('aladinn-version-tag');
     if (versionTag) {
-        // Dynamically update version from manifest
         try {
             const manifest = chrome.runtime.getManifest();
             if (manifest && manifest.version) {
                 versionTag.textContent = `Version ${manifest.version}`;
             }
         } catch (_e) { /* ignore if not in extension context */ }
-    }
-
-    if (versionTag && advancedSection) {
-        let aiVipContainer = document.getElementById('ai-vip-container');
-        if (!aiVipContainer) {
-            aiVipContainer = document.createElement('div');
-            aiVipContainer.id = 'ai-vip-container';
-            aiVipContainer.style.display = 'none';
-            aiVipContainer.className = 'toggle-row';
-            aiVipContainer.innerHTML = `
-                <div class="toggle-info">
-                    <strong style="color: var(--success);">✨ Tính năng ẩn: AI VIP (Tóm tắt Bệnh án)</strong>
-                    <span>Dùng Gemini tóm tắt hồ sơ khi xem màn hình Tổng kết.</span>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="opt-scan-aivip">
-                    <span class="slider"></span>
-                </label>
-            `;
-            advancedSection.appendChild(aiVipContainer);
-            
-            chrome.storage.local.get(['his_settings'], (res) => {
-                const sSettings = res.his_settings || {};
-                document.getElementById('opt-scan-aivip').checked = !!sSettings.aiEnabled;
-                if (sSettings.aiEnabled) {
-                    aiVipContainer.style.display = 'flex'; 
-                    versionTag.style.color = 'var(--success)';
-                }
-            });
-        }
-
-        versionTag.addEventListener('click', (e) => {
-            clickCount++;
-            if (clickTimer) clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-
-            if (clickCount >= 5) {
-                const isHidden = aiVipContainer.style.display === 'none';
-                
-                if (isHidden) {
-                    aiVipContainer.style.display = 'flex';
-                    aiVipContainer.classList.remove('magic-reveal');
-                    void aiVipContainer.offsetWidth; 
-                    aiVipContainer.classList.add('magic-reveal');
-                    
-                    versionTag.style.color = 'var(--success)';
-                    showToast('🧞✨ Bùm! Thần đèn đã ban cho bạn tính năng AI VIP!');
-                    
-                    createSparkles(e.clientX, e.clientY);
-                } else {
-                    aiVipContainer.style.display = 'none';
-                    aiVipContainer.classList.remove('magic-reveal');
-                    versionTag.style.color = '';
-                }
-                clickCount = 0;
-            }
-        });
-
-        function createSparkles(x, y) {
-            const container = document.createElement('div');
-            container.className = 'sparkle-container';
-            document.body.appendChild(container);
-            
-            for (let i = 0; i < 30; i++) {
-                const sparkle = document.createElement('div');
-                sparkle.className = 'sparkle';
-                sparkle.style.left = x + 'px';
-                sparkle.style.top = y + 'px';
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = 50 + Math.random() * 150;
-                const tx = Math.cos(angle) * velocity;
-                const ty = Math.sin(angle) * velocity;
-                
-                sparkle.style.setProperty('--tx', tx + 'px');
-                sparkle.style.setProperty('--ty', ty + 'px');
-                sparkle.style.animationDuration = (0.6 + Math.random() * 0.8) + 's';
-                
-                container.appendChild(sparkle);
-            }
-            
-            setTimeout(() => {
-                container.remove();
-            }, 2000);
-        }
     }
 
     // ========================================

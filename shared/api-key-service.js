@@ -17,16 +17,60 @@ HIS.ApiKeyService = (function () {
 
     // SECURITY: Hằng số chống brute-force PIN
     const MAX_PIN_ATTEMPTS = 5;
-    const PIN_LOCKOUT_MS = 5 * 60 * 1000; // 5 phút khóa
+    // Lockout durations by tier (escalating)
+    const LOCKOUT_TIERS_MS = [
+        5 * 60 * 1000,   // Tier 0: 5 phút
+        15 * 60 * 1000,  // Tier 1: 15 phút
+        30 * 60 * 1000,  // Tier 2: 30 phút
+    ];
 
-    // SECURITY: Biến trạng thái rate-limit PIN (trong bộ nhớ, reset khi reload trang)
+    // SECURITY: Biến trạng thái rate-limit PIN
+    // Persisted to chrome.storage.local — survives page reload
     let _pinAttemptCount = 0;
     let _pinLockoutUntil = 0;
+    let _pinLockoutTier = 0;
 
     /** @type {string} */
     let _cachedKey = '';
     /** @type {number} */
     let _cacheTimestamp = 0;
+
+    // --- Persistent lockout helpers ---
+
+    /** Save lockout state to chrome.storage.local */
+    function _persistLockout() {
+        chrome.storage.local.set({
+            pin_failed_attempts: _pinAttemptCount,
+            pin_lockout_until: _pinLockoutUntil,
+            pin_lockout_tier: _pinLockoutTier,
+        });
+    }
+
+    /** Restore lockout state from chrome.storage.local (called on module load) */
+    function _restoreLockout() {
+        return new Promise(resolve => {
+            chrome.storage.local.get(
+                ['pin_failed_attempts', 'pin_lockout_until', 'pin_lockout_tier'],
+                (data) => {
+                    _pinAttemptCount = data.pin_failed_attempts || 0;
+                    _pinLockoutUntil = data.pin_lockout_until || 0;
+                    _pinLockoutTier = data.pin_lockout_tier || 0;
+                    resolve();
+                }
+            );
+        });
+    }
+
+    /** Reset all lockout state in memory AND storage */
+    function _resetLockout() {
+        _pinAttemptCount = 0;
+        _pinLockoutUntil = 0;
+        _pinLockoutTier = 0;
+        _persistLockout();
+    }
+
+    // Restore lockout state on module load
+    _restoreLockout();
     /**
      * Check whether the background session can decrypt the Gemini API key.
      * SECURITY: Content scripts never receive the API key.
@@ -97,37 +141,47 @@ HIS.ApiKeyService = (function () {
 
     /**
      * Unlock encrypted key with a specific PIN.
+     * SECURITY: Content script NEVER decrypts — delegates to background.
      * @param {string} pin - The 6-digit PIN
-     * @returns {Promise<string>} Decrypted key or empty string
+     * @returns {Promise<string>} '__UNLOCKED__' sentinel or empty string
      */
     async function unlockWithPin(pin) {
-        if (!pin || !HIS.Crypto?.decryptAPIKey) return '';
+        if (!pin) return '';
+
+        // SECURITY: Check lockout (persisted state)
+        await _restoreLockout();
+        if (_pinLockoutUntil > Date.now()) return '';
+
         try {
             const stored = await new Promise(resolve =>
                 chrome.storage.local.get(['geminiApiKey_encrypted', 'pin_salt'], resolve)
             );
             if (!stored.geminiApiKey_encrypted || !stored.pin_salt) return '';
 
-            const decrypted = await HIS.Crypto.decryptAPIKey(
-                stored.geminiApiKey_encrypted, pin, stored.pin_salt
-            );
-            if (decrypted) {
-                // Cache PIN in background session for subsequent calls
-                try {
-                    const resp = await new Promise(resolve => {
-                        chrome.runtime.sendMessage({
-                            type: 'CACHE_SESSION_PIN',
-                            payload: { pin }
-                        }, resolve);
-                    });
-                    if (!resp?.ok) return '';
-                } catch (_) {
-                    return '';
-                }
+            // SECURITY: Send PIN to background only — no content-side decryption
+            const resp = await new Promise(resolve => {
+                chrome.runtime.sendMessage({
+                    type: 'CACHE_SESSION_PIN',
+                    payload: { pin }
+                }, resolve);
+            });
+
+            if (resp?.ok) {
+                _resetLockout();
                 _cachedKey = '__UNLOCKED__';
                 _cacheTimestamp = Date.now();
                 return _cachedKey;
             }
+
+            // Wrong PIN — record failure with persistence
+            _pinAttemptCount++;
+            if (_pinAttemptCount >= MAX_PIN_ATTEMPTS) {
+                const tierIdx = Math.min(_pinLockoutTier, LOCKOUT_TIERS_MS.length - 1);
+                _pinLockoutUntil = Date.now() + LOCKOUT_TIERS_MS[tierIdx];
+                _pinAttemptCount = 0;
+                _pinLockoutTier = Math.min(_pinLockoutTier + 1, LOCKOUT_TIERS_MS.length - 1);
+            }
+            _persistLockout();
         } catch (err) {
             console.warn('[ApiKeyService] PIN unlock failed:', err);
         }
@@ -389,7 +443,8 @@ HIS.ApiKeyService = (function () {
                 const pin = getPin();
                 if (pin.length !== 6) return;
 
-                // SECURITY: Rate limiting — chống brute-force PIN
+                // SECURITY: Rate limiting — chống brute-force PIN (persisted)
+                await _restoreLockout();
                 const now = Date.now();
                 if (_pinLockoutUntil > now) {
                     const remainSec = Math.ceil((_pinLockoutUntil - now) / 1000);
@@ -402,20 +457,17 @@ HIS.ApiKeyService = (function () {
                 submitBtn.textContent = '⏳ Đang xác minh...';
                 errorMsg.textContent = '';
 
+                // unlockWithPin now handles lockout counting + persistence
                 const key = await unlockWithPin(pin);
                 if (key) {
-                    // SECURITY: Reset bộ đếm khi nhập PIN đúng
-                    _pinAttemptCount = 0;
-                    _pinLockoutUntil = 0;
                     cleanup();
                     resolve(key);
                 } else {
-                    // SECURITY: Tăng bộ đếm khi nhập PIN sai
-                    _pinAttemptCount++;
-                    if (_pinAttemptCount >= MAX_PIN_ATTEMPTS) {
-                        _pinLockoutUntil = Date.now() + PIN_LOCKOUT_MS;
-                        _pinAttemptCount = 0;
-                        errorMsg.textContent = `🔒 Khóa 5 phút do nhập sai ${MAX_PIN_ATTEMPTS} lần.`;
+                    // Reload latest lockout state after unlockWithPin updated it
+                    await _restoreLockout();
+                    if (_pinLockoutUntil > Date.now()) {
+                        const tierMin = LOCKOUT_TIERS_MS[Math.min(_pinLockoutTier > 0 ? _pinLockoutTier - 1 : 0, LOCKOUT_TIERS_MS.length - 1)] / 60000;
+                        errorMsg.textContent = `🔒 Khóa ${tierMin} phút do nhập sai ${MAX_PIN_ATTEMPTS} lần.`;
                         errorMsg.style.color = '#dc2626';
                         submitBtn.textContent = '🔓 Xác nhận';
                         submitBtn.disabled = true;

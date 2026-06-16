@@ -12,14 +12,40 @@ window.Aladinn.Sign.Audit = (function () {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
+    let _cachedSalt = null;
+
+    async function _getInstallSalt() {
+        if (_cachedSalt) return _cachedSalt;
+        try {
+            const res = await new Promise(resolve =>
+                chrome.storage.local.get('aladinn_install_salt', resolve)
+            );
+            _cachedSalt = res.aladinn_install_salt || null;
+        } catch (_e) {
+            _cachedSalt = null;
+        }
+        return _cachedSalt;
+    }
+
     async function _hash(text) {
         if (!text) return null;
-        if (!crypto || !crypto.subtle) return btoa(text).substring(0, 16);
+        const salt = await _getInstallSalt();
+        if (!crypto?.subtle || !salt) {
+            return btoa((salt || '') + text).substring(0, 16);
+        }
         try {
-            const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-            return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
-        } catch(_e) {
-            return btoa(text).substring(0, 16);
+            const key = await crypto.subtle.importKey(
+                'raw', new TextEncoder().encode(salt),
+                { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+            );
+            const sig = await crypto.subtle.sign(
+                'HMAC', key, new TextEncoder().encode(text)
+            );
+            return Array.from(new Uint8Array(sig))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('').substring(0, 16);
+        } catch (_e) {
+            return btoa((salt || '') + text).substring(0, 16);
         }
     }
 
@@ -38,6 +64,7 @@ window.Aladinn.Sign.Audit = (function () {
             result: options.result || '',
             reasonCode: options.reasonCode || '',
             riskLevel: options.riskLevel || '',
+            targetName: options.targetName || '',
             pageUrlPath: window.location.pathname
         };
 

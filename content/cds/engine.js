@@ -661,6 +661,53 @@ function runInsuranceRules(formulary, rules, normalized, _context) {
     return alerts;
 }
 
+// ===== ORDER SETS (BỘ CHỈ ĐỊNH THÔNG MINH) =====
+const ORDER_SETS = [
+    {
+        icd_prefixes: ['I50'], // Suy tim
+        name: 'Suy tim (Heart Failure)',
+        suggestions: ['Siêu âm tim Doppler', 'Điện tâm đồ (ECG)', 'Pro-BNP', 'Điện giải đồ (K+, Na+)'],
+        rationale: 'Đánh giá chức năng tâm thu/tâm trương và nguy cơ rối loạn điện giải do lợi tiểu.'
+    },
+    {
+        icd_prefixes: ['E10', 'E11', 'E12', 'E13', 'E14'], // Đái tháo đường
+        name: 'Đái tháo đường (Diabetes)',
+        suggestions: ['Glucose máu lúc đói', 'HbA1c', 'Creatinin máu', 'Tổng phân tích nước tiểu'],
+        rationale: 'Kiểm soát đường huyết và tầm soát biến chứng thận.'
+    },
+    {
+        icd_prefixes: ['I10', 'I11', 'I12', 'I13', 'I14', 'I15'], // Tăng huyết áp
+        name: 'Tăng huyết áp (Hypertension)',
+        suggestions: ['Điện tâm đồ (ECG)', 'Creatinin máu', 'Siêu âm Doppler tim', 'Soi đáy mắt'],
+        rationale: 'Tầm soát biến chứng cơ quan đích (tim, thận, mắt).'
+    }
+];
+
+function runOrderSetRules(normalized) {
+    const alerts = [];
+    const triggeredSets = new Set();
+    
+    for (const icd of normalized.icd_codes) {
+        for (const set of ORDER_SETS) {
+            if (set.icd_prefixes.some(p => icd.toUpperCase().startsWith(p))) {
+                if (!triggeredSets.has(set.name)) {
+                    triggeredSets.add(set.name);
+                    alerts.push({
+                        rule_code: 'ORDER-SET-' + set.icd_prefixes[0],
+                        domain: 'order_set',
+                        severity: 'info',
+                        title: `💡 Bộ chỉ định: ${set.name}`,
+                        effect: set.rationale,
+                        recommendation: `Gợi ý chỉ định: ${set.suggestions.join(', ')}`,
+                        matched_items: { icd: [icd] }
+                    });
+                }
+            }
+        }
+    }
+    return alerts;
+}
+
 // ===== PHASE 2: BHYT PRE-CLAIM AUDIT (On-demand) =====
 
 /**
@@ -1007,6 +1054,7 @@ export async function analyzeLocally(context, filterLow = true) {
         // Duplicate therapy & Critical lab
         const duplicateTherapyAlerts = runDuplicateTherapyRules(normalized, runtimeRuleIndex.genericMap);
         const criticalLabAlerts = runCriticalLabAlerts(enrichedContext);
+        const orderSetAlerts = runOrderSetRules(normalized);
 
         allAlerts = dedupeAlerts([
             ...noDiagnosisAlerts,
@@ -1014,7 +1062,8 @@ export async function analyzeLocally(context, filterLow = true) {
             ...ddiAlerts,
             ...drugDiseaseAlerts,
             ...insuranceAlerts,
-            ...criticalLabAlerts
+            ...criticalLabAlerts,
+            ...orderSetAlerts
         ]);
     } else {
         const db = await openDatabase();
@@ -1047,12 +1096,13 @@ export async function analyzeLocally(context, filterLow = true) {
             ...runDdiRules(ddiRules, normalized),
             ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
             ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext),
-            ...runCriticalLabAlerts(enrichedContext)
+            ...runCriticalLabAlerts(enrichedContext),
+            ...runOrderSetRules(normalized)
         ]);
     }
 
     if (filterLow) {
-        allAlerts = allAlerts.filter(a => a.severity === 'high' || a.severity === 'medium');
+        allAlerts = allAlerts.filter(a => a.severity === 'high' || a.severity === 'medium' || a.domain === 'order_set');
     }
 
     return {

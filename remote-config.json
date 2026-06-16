@@ -1,5 +1,5 @@
 {
-    "version": 3,
+    "version": 4,
     "features": {
         "autoSign": true,
         "autoClick": true,
@@ -7,7 +7,16 @@
         "cdsEngine": true,
         "aiVoice": true,
         "scanner": true,
-        "enableSmartPath": true
+        "enableSmartPath": true,
+        "aiVip": false,
+        "aiVipEasterEggReveal": true
+    },
+    "aiVipPolicy": {
+        "requirePinUnlocked": true,
+        "requirePhiPipeline": true,
+        "allowRawTreatmentText": false,
+        "maxInputChars": 12000,
+        "auditReveal": true
     },
     "mode": "hospital_safe_mode",
     "emergencyMessage": ""
