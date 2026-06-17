@@ -45,7 +45,7 @@ async function initPopup() {
     }
 
     chrome.storage.local.get('aladinn_features', (result) => {
-        const features = { voice: true, scanner: true, sign: true, cds: true, ...result.aladinn_features };
+        const features = { voice: false, scanner: true, sign: false, cds: false, ...result.aladinn_features };
         if (toggleVoice) { toggleVoice.checked = features.voice; syncChipState('toggle-voice', features.voice); }
         if (toggleScanner) { toggleScanner.checked = features.scanner; syncChipState('toggle-scanner', features.scanner); updateSectionVisibility('toggle-scanner', features.scanner); }
         if (toggleSign) { toggleSign.checked = features.sign; syncChipState('toggle-sign', features.sign); updateSectionVisibility('toggle-sign', features.sign); }

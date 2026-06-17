@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Load Feature Flags
         chrome.storage.local.get(['aladinn_features', 'aladinn_debug_mode'], (res) => {
-            const flags = { scanner: true, sign: true, cds: true, voice: true, ...res.aladinn_features };
+            const flags = { scanner: true, sign: false, cds: false, voice: false, ...res.aladinn_features };
             if (elements.flagScanner) elements.flagScanner.checked = flags.scanner !== false;
             if (elements.flagSign) elements.flagSign.checked = flags.sign !== false;
             if (elements.flagCds) elements.flagCds.checked = flags.cds !== false;

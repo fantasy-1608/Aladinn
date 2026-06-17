@@ -40,7 +40,7 @@
                 return;
             }
             chrome.storage.local.get('aladinn_features', (result) => {
-                const features = { voice: true, scanner: true, sign: true, cds: true, ...result.aladinn_features };
+                const features = { voice: false, scanner: true, sign: false, cds: false, ...result.aladinn_features };
                 window.Aladinn.features = features;
                 resolve(features);
             });

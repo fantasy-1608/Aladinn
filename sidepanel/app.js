@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load initial states from storage
     chrome.storage.local.get(['aladinn_features'], (res) => {
-        const features = res.aladinn_features || { voice: true, scanner: true, sign: true, cds: true };
+        const features = res.aladinn_features || { voice: false, scanner: true, sign: false, cds: false };
         if (toggleScanner) toggleScanner.checked = !!features.scanner;
         if (toggleVoice) toggleVoice.checked = !!features.voice;
         if (toggleSign) toggleSign.checked = !!features.sign;
