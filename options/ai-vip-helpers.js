@@ -52,14 +52,9 @@ export function getAiVipPolicy(remoteConfig) {
  * @returns {{ allowed: boolean, reason: string|null }}
  */
 export function checkAiVipGates({ features, hasPinHash, hasEncryptedKey, policy }) {
-    // Gate 1: Remote config feature flag
-    if (features.aiVip === false) {
+    // Gate 1: Remote config feature flag must explicitly allow AI VIP
+    if (features.aiVipAllowed !== true) {
         return { allowed: false, reason: 'blocked_by_policy' };
-    }
-
-    // Gate 2: Easter egg reveal flag
-    if (features.aiVipEasterEggReveal === false) {
-        return { allowed: false, reason: 'reveal_disabled' };
     }
 
     // Gate 3: PIN requirement (if policy requires it)

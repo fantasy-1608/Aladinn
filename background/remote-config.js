@@ -45,8 +45,7 @@ const DEFAULT_CONFIG = {
         aiVoice: false,
         scanner: true,
         enableSmartPath: false,
-        aiVip: false,
-        aiVipEasterEggReveal: false
+        aiVipAllowed: false
     },
     aiVipPolicy: {
         requirePinUnlocked: true,

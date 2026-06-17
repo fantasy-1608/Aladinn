@@ -6,6 +6,7 @@
 
 import { SchemaValidator } from './schema-validator.js';
 import { PHIPipeline } from '../shared/phi-pipeline.js';
+import { logAuditEvent } from '../shared/audit-telemetry.js';
 
 /**
  * Đọc model từ cấu hình người dùng trực tiếp từ storage.
@@ -541,10 +542,8 @@ export async function summarizeHistoryAI({ rawTreatments, model, targetField }) 
     if (phiResult.report.blocked) {
         console.warn('[Aladinn Security] Blocked AI VIP request via PHI pipeline.');
         try {
-            chrome.runtime.sendMessage({
-                type: 'LOG_AUDIT',
-                auditType: 'ai_vip_phi_blocked',
-                details: { context: 'summarizeHistoryAI', reasons: phiResult.report.reasons }
+            logAuditEvent('ai_vip_phi_blocked', 'ai_client', { 
+                extra: { context: 'summarizeHistoryAI', reasons: phiResult.report.reasons }
             });
         } catch (_e) {}
         throw aiError(

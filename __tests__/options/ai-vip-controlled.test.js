@@ -105,7 +105,7 @@ describe('P0-04: AI VIP Policy Helpers', () => {
         it('should return allowed=true when all gates pass', async () => {
             const { checkAiVipGates } = await import('../../options/ai-vip-helpers.js');
             const result = checkAiVipGates({
-                features: { aiVip: true, aiVipEasterEggReveal: true },
+                features: { aiVipAllowed: true },
                 hasPinHash: true,
                 hasEncryptedKey: true,
                 policy: { requirePinUnlocked: true }
@@ -115,10 +115,10 @@ describe('P0-04: AI VIP Policy Helpers', () => {
             expect(result.reason).toBeNull();
         });
 
-        it('should block when aiVip feature is false', async () => {
+        it('should block when aiVipAllowed feature is false', async () => {
             const { checkAiVipGates } = await import('../../options/ai-vip-helpers.js');
             const result = checkAiVipGates({
-                features: { aiVip: false, aiVipEasterEggReveal: true },
+                features: { aiVipAllowed: false },
                 hasPinHash: true,
                 hasEncryptedKey: true,
                 policy: { requirePinUnlocked: true }
@@ -128,23 +128,23 @@ describe('P0-04: AI VIP Policy Helpers', () => {
             expect(result.reason).toBe('blocked_by_policy');
         });
 
-        it('should block when aiVipEasterEggReveal is false', async () => {
+        it('should block when aiVipAllowed is undefined', async () => {
             const { checkAiVipGates } = await import('../../options/ai-vip-helpers.js');
             const result = checkAiVipGates({
-                features: { aiVip: true, aiVipEasterEggReveal: false },
+                features: {},
                 hasPinHash: true,
                 hasEncryptedKey: true,
                 policy: { requirePinUnlocked: true }
             });
 
             expect(result.allowed).toBe(false);
-            expect(result.reason).toBe('reveal_disabled');
+            expect(result.reason).toBe('blocked_by_policy');
         });
 
         it('should require PIN when policy.requirePinUnlocked is true and no PIN hash', async () => {
             const { checkAiVipGates } = await import('../../options/ai-vip-helpers.js');
             const result = checkAiVipGates({
-                features: { aiVip: true, aiVipEasterEggReveal: true },
+                features: { aiVipAllowed: true },
                 hasPinHash: false,
                 hasEncryptedKey: false,
                 policy: { requirePinUnlocked: true }
@@ -157,7 +157,7 @@ describe('P0-04: AI VIP Policy Helpers', () => {
         it('should allow when PIN not required by policy', async () => {
             const { checkAiVipGates } = await import('../../options/ai-vip-helpers.js');
             const result = checkAiVipGates({
-                features: { aiVip: true, aiVipEasterEggReveal: true },
+                features: { aiVipAllowed: true },
                 hasPinHash: false,
                 hasEncryptedKey: false,
                 policy: { requirePinUnlocked: false }
@@ -182,14 +182,9 @@ describe('P0-04: Remote Config AI VIP defaults', () => {
         vi.restoreAllMocks();
     });
 
-    it('should have aiVip=false in DEFAULT_CONFIG.features', async () => {
+    it('should have aiVipAllowed=false in DEFAULT_CONFIG.features', async () => {
         const { DEFAULT_CONFIG } = await import('../../background/remote-config.js');
-        expect(DEFAULT_CONFIG.features.aiVip).toBe(false);
-    });
-
-    it('should have aiVipEasterEggReveal=false in DEFAULT_CONFIG.features', async () => {
-        const { DEFAULT_CONFIG } = await import('../../background/remote-config.js');
-        expect(DEFAULT_CONFIG.features.aiVipEasterEggReveal).toBe(false);
+        expect(DEFAULT_CONFIG.features.aiVipAllowed).toBe(false);
     });
 
     it('should have aiVipPolicy defaults in DEFAULT_CONFIG', async () => {
@@ -262,7 +257,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
         it('should create container and reveal after 5 clicks', () => {
             // Config allows
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
             storageData.pin_hash = 'hash';
             storageData.pin_salt = 'salt';
@@ -283,7 +278,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
 
         it('should NOT reveal with fewer than 5 clicks', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -300,7 +295,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
 
         it('should save aladinn_ai_vip_revealed = true on reveal', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
             storageData.pin_hash = 'hash';
             storageData.pin_salt = 'salt';
@@ -321,7 +316,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
     describe('remote config policy gate', () => {
         it('should show "khóa bởi Safe Mode" when aiVip is false', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: false, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: false }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -334,9 +329,9 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
             expect(container.textContent).toContain('khóa bởi Safe Mode');
         });
 
-        it('should log ai_vip_blocked_by_policy audit event when blocked', () => {
+        it('should log ai_vip_blocked_by_policy audit event when blocked', async () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: false, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: false }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -344,28 +339,15 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
             const versionTag = document.getElementById('aladinn-version-tag');
             clickNTimes(versionTag, 5);
 
-            const blockedAudit = sentMessages.find(
-                m => m.type === 'LOG_AUDIT' && m.auditType === 'ai_vip_blocked_by_policy'
+            await new Promise(r => setTimeout(r, 0)); // wait for async logAuditEvent
+            
+            const blockedAudit = storageData.aladinn_audit_log?.find(
+                m => m.event_name === 'ai_vip_blocked_by_policy'
             );
             expect(blockedAudit).toBeDefined();
         });
 
-        it('should not reveal when aiVipEasterEggReveal is false', () => {
-            storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: false }
-            };
 
-            initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
-
-            const versionTag = document.getElementById('aladinn-version-tag');
-            clickNTimes(versionTag, 5);
-
-            const container = document.getElementById('ai-vip-container');
-            // Should stay hidden or not exist
-            if (container) {
-                expect(container.style.display).toBe('none');
-            }
-        });
     });
 
     // ------------------------------------------
@@ -374,7 +356,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
     describe('PIN unlock gate', () => {
         it('should show PIN unlock prompt when no PIN hash', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: false, hasEncryptedKey: false });
@@ -394,9 +376,9 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
     // 4. Audit event logging
     // ------------------------------------------
     describe('audit event logging', () => {
-        it('should log ai_vip_easter_egg_revealed on reveal', () => {
+        it('should log ai_vip_revealed on reveal', async () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
             storageData.pin_hash = 'hash';
             storageData.pin_salt = 'salt';
@@ -407,15 +389,17 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
             const versionTag = document.getElementById('aladinn-version-tag');
             clickNTimes(versionTag, 5);
 
-            const revealAudit = sentMessages.find(
-                m => m.type === 'LOG_AUDIT' && m.auditType === 'ai_vip_easter_egg_revealed'
+            await new Promise(r => setTimeout(r, 0)); // wait for async logAuditEvent
+
+            const revealAudit = storageData.aladinn_audit_log?.find(
+                m => m.event_name === 'ai_vip_revealed'
             );
             expect(revealAudit).toBeDefined();
         });
 
-        it('should log ai_vip_enabled when toggle turned ON', () => {
+        it('should log ai_vip_enabled when toggle turned ON', async () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -428,15 +412,17 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
             toggle.checked = true;
             toggle.dispatchEvent(new Event('change'));
 
-            const enableAudit = sentMessages.find(
-                m => m.type === 'LOG_AUDIT' && m.auditType === 'ai_vip_enabled'
+            await new Promise(r => setTimeout(r, 0)); // wait for async logAuditEvent
+
+            const enableAudit = storageData.aladinn_audit_log?.find(
+                m => m.event_name === 'ai_vip_enabled'
             );
             expect(enableAudit).toBeDefined();
         });
 
-        it('should log ai_vip_disabled when toggle turned OFF', () => {
+        it('should log ai_vip_disabled when toggle turned OFF', async () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -449,8 +435,10 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
             toggle.checked = false;
             toggle.dispatchEvent(new Event('change'));
 
-            const disableAudit = sentMessages.find(
-                m => m.type === 'LOG_AUDIT' && m.auditType === 'ai_vip_disabled'
+            await new Promise(r => setTimeout(r, 0)); // wait for async logAuditEvent
+
+            const disableAudit = storageData.aladinn_audit_log?.find(
+                m => m.event_name === 'ai_vip_disabled'
             );
             expect(disableAudit).toBeDefined();
         });
@@ -462,7 +450,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
     describe('label text', () => {
         it('should display "thử nghiệm nội bộ" instead of "Tính năng ẩn"', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -482,7 +470,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
     describe('"Ẩn lại AI VIP" button', () => {
         it('should have a "Ẩn lại" button in the container', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });
@@ -496,7 +484,7 @@ describe('P0-04: Options Page AI VIP Easter Egg (DOM)', () => {
 
         it('should hide container and set revealed=false when "Ẩn lại" clicked', () => {
             storageData.aladinn_remote_config = {
-                features: { aiVip: true, aiVipEasterEggReveal: true }
+                features: { aiVipAllowed: true }
             };
 
             initAiVipEasterEgg({ hasPinHash: true, hasEncryptedKey: true });

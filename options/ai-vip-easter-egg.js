@@ -13,18 +13,7 @@
 
 import { checkAiVipGates, getAiVipPolicy } from './ai-vip-helpers.js';
 
-// ========================================
-// Audit helper (thin wrapper over existing pattern)
-// ========================================
-function logAiVipAudit(auditType, details = {}) {
-    try {
-        chrome.runtime.sendMessage({
-            type: 'LOG_AUDIT',
-            auditType,
-            details
-        });
-    } catch (_e) { /* fail-open for audit — do not block UX */ }
-}
+import { logAuditEvent } from '../shared/audit-telemetry.js';
 
 // ========================================
 // Main Initializer
@@ -150,8 +139,8 @@ function showControlledReveal(container, versionTag, opts) {
         if (gate.reason === 'blocked_by_policy') {
             renderBlockedByPolicy(container);
             revealContainer(container, versionTag, isRestore, clickEvent);
-            logAiVipAudit('ai_vip_blocked_by_policy', {
-                source: isRestore ? 'restore' : 'easter_egg'
+            logAuditEvent('ai_vip_blocked_by_policy', 'options', {
+                extra: { source: isRestore ? 'restore' : 'easter_egg' }
             });
             return;
         }
@@ -161,8 +150,8 @@ function showControlledReveal(container, versionTag, opts) {
             renderPinRequired(container);
             revealContainer(container, versionTag, isRestore, clickEvent);
             if (!isRestore) {
-                logAiVipAudit('ai_vip_easter_egg_revealed', {
-                    gated: 'pin_required'
+                logAuditEvent('ai_vip_revealed', 'options', {
+                    extra: { gated: 'pin_required' }
                 });
             }
             return;
@@ -176,8 +165,8 @@ function showControlledReveal(container, versionTag, opts) {
         chrome.storage.local.set({ aladinn_ai_vip_revealed: true });
 
         if (!isRestore) {
-            logAiVipAudit('ai_vip_easter_egg_revealed', {
-                gated: null
+            logAuditEvent('ai_vip_revealed', 'options', {
+                extra: { gated: null }
             });
             if (showToast) {
                 showToast('🧞✨ Bùm! Thần đèn đã ban cho bạn tính năng AI VIP!');
@@ -232,9 +221,9 @@ function renderFullToggle(container, currentEnabled) {
     if (toggle) {
         toggle.addEventListener('change', () => {
             if (toggle.checked) {
-                logAiVipAudit('ai_vip_enabled');
+                logAuditEvent('ai_vip_enabled', 'options');
             } else {
-                logAiVipAudit('ai_vip_disabled');
+                logAuditEvent('ai_vip_disabled', 'options');
             }
         });
     }
