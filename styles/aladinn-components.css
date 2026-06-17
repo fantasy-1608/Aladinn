@@ -1042,6 +1042,7 @@
     pointer-events: none;
     border-radius: 0px;
     white-space: nowrap;
+    display: none;
 }
 
 .aladinn-smartca-tooltip-header {
