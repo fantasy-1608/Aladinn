@@ -3086,5 +3086,13 @@
   {
     "ten": "Zodalan",
     "hc": "Midazolam"
+  },
+  {
+    "ten": "Zolicef",
+    "hc": "Cefazolin"
+  },
+  {
+    "ten": "Zoliicef",
+    "hc": "Cefazolin"
   }
 ]

@@ -495,112 +495,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-AGOMELAT-CIPROFLO-034",
-    "generic_a": "agomelatin",
-    "generic_b": "ciprofloxacin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nồng độ của agomelatin trong huyết thanh, tăng nguy cơ tác dụng không mong muốn(đau đầu, buồn ngủ, mệt mỏi, kích động, lo lắng, căng thẳng, chóng mặt, tím tái...)",
-    "mechanism": "Ciprofloxacin ức chế CYP1A2 mạnh làm giảm chuyển hóa của agomelatin",
-    "recommendation": "Chống chỉ định phối hợp",
-    "nhic_uid": "E05E1BEA-6F66-4D2D-A55D-341F3DDE6200",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CIPROFLO-TIZANIDI-035",
-    "generic_a": "ciprofloxacin",
-    "generic_b": "tizanidin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nồng độ của tizanidin trong huyết thanh, tăng nguy cơ tác dụng bất lợi (hạ huyết áp, buồn ngủ, nhịp tim chậm...)",
-    "mechanism": "Ciprofloxacin ức chế CYP1A2 mạnh làm giảm chuyển hóa của tizanidin",
-    "recommendation": "Chống chỉ định phối hợp",
-    "nhic_uid": "5E75D614-6550-4949-A48B-A44BCC1D0FBE",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CIPROFLO-DOMPERID-036",
-    "generic_a": "ciprofloxacin",
-    "generic_b": "domperidon",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "Chống chỉ định phối hợp.",
-    "nhic_uid": "5E33826E-B37A-44F9-B780-66FD3D9890F4",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CITALOPR-CLORPROM-037",
-    "generic_a": "citalopram",
-    "generic_b": "clorpromazin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
-    "nhic_uid": "2F8A433A-DD6B-4893-A802-6E6B0B90E52A",
-    "nhic_severity_raw": "Chống chỉ định có điều kiện",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CLORPROM-MOCSIFLO-038",
-    "generic_a": "clorpromazin",
-    "generic_b": "moxifloxacin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
-    "nhic_uid": "971B1107-D323-409B-9F4D-F20E14B28C2D",
-    "nhic_severity_raw": "Chống chỉ định có điều kiện",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CLORPROM-HALOPERI-039",
-    "generic_a": "clorpromazin",
-    "generic_b": "haloperidol",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
-    "nhic_uid": "CBD1DDB6-9E28-41E8-A447-AA0B4370F100",
-    "nhic_severity_raw": "Chống chỉ định có điều kiện",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CLORPROM-DOMPERID-040",
-    "generic_a": "clorpromazin",
-    "generic_b": "domperidon",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "Chống chỉ định phối hợp.",
-    "nhic_uid": "5BA2D4CC-E3F5-4A5B-BC49-7577C6F27C22",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-CLARITRO-HALOPERI-041",
+    "rule_code": "DDI-NHIC-CLARITRO-HALOPERI-034",
     "generic_a": "clarithromycin",
     "generic_b": "haloperidol",
     "severity": "high",
@@ -615,7 +510,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-LOVASTAT-042",
+    "rule_code": "DDI-NHIC-CLARITRO-LOVASTAT-035",
     "generic_a": "clarithromycin",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -630,7 +525,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-SIMVASTA-043",
+    "rule_code": "DDI-NHIC-CLARITRO-SIMVASTA-036",
     "generic_a": "clarithromycin",
     "generic_b": "simvastatin",
     "severity": "high",
@@ -645,7 +540,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-COLCICIN-044",
+    "rule_code": "DDI-NHIC-CLARITRO-COLCICIN-037",
     "generic_a": "clarithromycin",
     "generic_b": "colchicin",
     "severity": "high",
@@ -660,7 +555,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-DIHIDROE-045",
+    "rule_code": "DDI-NHIC-CLARITRO-DIHIDROE-038",
     "generic_a": "clarithromycin",
     "generic_b": "dihydroergotamin",
     "severity": "high",
@@ -675,7 +570,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-ERGOMETR-046",
+    "rule_code": "DDI-NHIC-CLARITRO-ERGOMETR-039",
     "generic_a": "clarithromycin",
     "generic_b": "ergometrin",
     "severity": "high",
@@ -690,7 +585,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-IVABRADI-047",
+    "rule_code": "DDI-NHIC-CLARITRO-IVABRADI-040",
     "generic_a": "clarithromycin",
     "generic_b": "ivabradin",
     "severity": "high",
@@ -705,7 +600,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-TICAGREL-048",
+    "rule_code": "DDI-NHIC-CLARITRO-TICAGREL-041",
     "generic_a": "clarithromycin",
     "generic_b": "ticagrelor",
     "severity": "high",
@@ -720,7 +615,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-FELODIPI-049",
+    "rule_code": "DDI-NHIC-CLARITRO-FELODIPI-042",
     "generic_a": "clarithromycin",
     "generic_b": "felodipin",
     "severity": "high",
@@ -735,7 +630,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLARITRO-DOMPERID-050",
+    "rule_code": "DDI-NHIC-CLARITRO-DOMPERID-043",
     "generic_a": "clarithromycin",
     "generic_b": "domperidon",
     "severity": "high",
@@ -744,6 +639,111 @@
     "mechanism": "Clarithromycin ức chế CYP3A4 làm giảm chuyển hóa của domperidon",
     "recommendation": "Chống chỉ định phối hợp",
     "nhic_uid": "5430DDD5-BA03-418D-898B-93D955050E66",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-AGOMELAT-CIPROFLO-044",
+    "generic_a": "agomelatin",
+    "generic_b": "ciprofloxacin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nồng độ của agomelatin trong huyết thanh, tăng nguy cơ tác dụng không mong muốn(đau đầu, buồn ngủ, mệt mỏi, kích động, lo lắng, căng thẳng, chóng mặt, tím tái...)",
+    "mechanism": "Ciprofloxacin ức chế CYP1A2 mạnh làm giảm chuyển hóa của agomelatin",
+    "recommendation": "Chống chỉ định phối hợp",
+    "nhic_uid": "E05E1BEA-6F66-4D2D-A55D-341F3DDE6200",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CIPROFLO-TIZANIDI-045",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "tizanidin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nồng độ của tizanidin trong huyết thanh, tăng nguy cơ tác dụng bất lợi (hạ huyết áp, buồn ngủ, nhịp tim chậm...)",
+    "mechanism": "Ciprofloxacin ức chế CYP1A2 mạnh làm giảm chuyển hóa của tizanidin",
+    "recommendation": "Chống chỉ định phối hợp",
+    "nhic_uid": "5E75D614-6550-4949-A48B-A44BCC1D0FBE",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CIPROFLO-DOMPERID-046",
+    "generic_a": "ciprofloxacin",
+    "generic_b": "domperidon",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "Chống chỉ định phối hợp.",
+    "nhic_uid": "5E33826E-B37A-44F9-B780-66FD3D9890F4",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CITALOPR-CLORPROM-047",
+    "generic_a": "citalopram",
+    "generic_b": "clorpromazin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
+    "nhic_uid": "2F8A433A-DD6B-4893-A802-6E6B0B90E52A",
+    "nhic_severity_raw": "Chống chỉ định có điều kiện",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CLORPROM-MOCSIFLO-048",
+    "generic_a": "clorpromazin",
+    "generic_b": "moxifloxacin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
+    "nhic_uid": "971B1107-D323-409B-9F4D-F20E14B28C2D",
+    "nhic_severity_raw": "Chống chỉ định có điều kiện",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CLORPROM-HALOPERI-049",
+    "generic_a": "clorpromazin",
+    "generic_b": "haloperidol",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "1. Chống chỉ định phối hợp ở các bệnh nhân có hội chứng QT kéo dài do di truyền hoặc mắc phải.\n2. Trên các đối tượng bệnh nhân khác, tốt nhất nên tránh phối hợp các thuốc này. Trong trường hợp cần thiết phối hợp, cần đánh giá cẩn thận nguy cơ/lợi ích và lượng giá các yếu tố nguy cơ trên từng bệnh nhân, đặc biệt là rối loạn điện giải (hạ kali máu, hạ magie máu, hạ calci máu), nhịp tim chậm, nữ giới trước khi quy��t định kê đơn.",
+    "nhic_uid": "CBD1DDB6-9E28-41E8-A447-AA0B4370F100",
+    "nhic_severity_raw": "Chống chỉ định có điều kiện",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-CLORPROM-DOMPERID-050",
+    "generic_a": "clorpromazin",
+    "generic_b": "domperidon",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "Chống chỉ định phối hợp.",
+    "nhic_uid": "5BA2D4CC-E3F5-4A5B-BC49-7577C6F27C22",
     "nhic_severity_raw": "Chống chỉ định",
     "is_active": true,
     "version": "1.0.0",
@@ -1005,37 +1005,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-ACITRETI-DOCSICIC-068",
-    "generic_a": "acitretin",
-    "generic_b": "doxycyclin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ tăng áp nội sọ lành tính (phù gai thị, đau đầu, buồn nôn và nôn, và rối loạn thị giác)",
-    "mechanism": "Hiệp đồng tăng độc tính",
-    "recommendation": "Chống chỉ định phối hợp",
-    "nhic_uid": "8A71AD15-8135-47D4-9F1C-CD43D6B99C92",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-DOCSICIC-ISOTRETI-069",
-    "generic_a": "doxycyclin",
-    "generic_b": "isotretinoin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ tăng áp nội sọ lành tính (phù gai thị, đau đầu, buồn nôn và nôn, và rối loạn thị giác)",
-    "mechanism": "Hiệp đồng tăng độc tính",
-    "recommendation": "Chống chỉ định phối hợp",
-    "nhic_uid": "C3589C2E-5FCE-418D-92E0-01525F5C3F5A",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-ARSENICT-DOMPERID-070",
+    "rule_code": "DDI-NHIC-ARSENICT-DOMPERID-068",
     "generic_a": "arsenic trioxid",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1050,7 +1020,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-ARTEMETE-DOMPERID-071",
+    "rule_code": "DDI-NHIC-ARTEMETE-DOMPERID-069",
     "generic_a": "artemether/lumefantrin",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1065,7 +1035,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CILOSTAZ-DOMPERID-072",
+    "rule_code": "DDI-NHIC-CILOSTAZ-DOMPERID-070",
     "generic_a": "cilostazol",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1080,7 +1050,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CITALOPR-DOMPERID-073",
+    "rule_code": "DDI-NHIC-CITALOPR-DOMPERID-071",
     "generic_a": "citalopram",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1095,7 +1065,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CLOROQUI-DOMPERID-074",
+    "rule_code": "DDI-NHIC-CLOROQUI-DOMPERID-072",
     "generic_a": "cloroquin",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1110,7 +1080,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DARUNAVI-DOMPERID-075",
+    "rule_code": "DDI-NHIC-DARUNAVI-DOMPERID-073",
     "generic_a": "darunavir/ritonavir",
     "generic_b": "domperidon",
     "severity": "high",
@@ -1125,7 +1095,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-HALOPERI-076",
+    "rule_code": "DDI-NHIC-DOMPERID-HALOPERI-074",
     "generic_a": "domperidon",
     "generic_b": "haloperidol",
     "severity": "high",
@@ -1140,7 +1110,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-SPIRAMIC-077",
+    "rule_code": "DDI-NHIC-DOMPERID-SPIRAMIC-075",
     "generic_a": "domperidon",
     "generic_b": "spiramycin",
     "severity": "high",
@@ -1155,7 +1125,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-MOCSIFLO-078",
+    "rule_code": "DDI-NHIC-DOMPERID-MOCSIFLO-076",
     "generic_a": "domperidon",
     "generic_b": "moxifloxacin",
     "severity": "high",
@@ -1170,7 +1140,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-LEVOFLOC-079",
+    "rule_code": "DDI-NHIC-DOMPERID-LEVOFLOC-077",
     "generic_a": "domperidon",
     "generic_b": "levofloxacin",
     "severity": "high",
@@ -1185,7 +1155,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-LOPINAVI-080",
+    "rule_code": "DDI-NHIC-DOMPERID-LOPINAVI-078",
     "generic_a": "domperidon",
     "generic_b": "lopinavir/ritonavir",
     "severity": "high",
@@ -1200,7 +1170,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-ITRACONA-081",
+    "rule_code": "DDI-NHIC-DOMPERID-ITRACONA-079",
     "generic_a": "domperidon",
     "generic_b": "itraconazol",
     "severity": "high",
@@ -1215,7 +1185,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-ERITROMI-082",
+    "rule_code": "DDI-NHIC-DOMPERID-ERITROMI-080",
     "generic_a": "domperidon",
     "generic_b": "erythromycin",
     "severity": "high",
@@ -1230,7 +1200,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-LEVOSULP-083",
+    "rule_code": "DDI-NHIC-DOMPERID-LEVOSULP-081",
     "generic_a": "domperidon",
     "generic_b": "levosulpirid",
     "severity": "high",
@@ -1245,7 +1215,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-ONDANSET-084",
+    "rule_code": "DDI-NHIC-DOMPERID-ONDANSET-082",
     "generic_a": "domperidon",
     "generic_b": "ondansetron",
     "severity": "high",
@@ -1260,7 +1230,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-PROPOFOL-085",
+    "rule_code": "DDI-NHIC-DOMPERID-PROPOFOL-083",
     "generic_a": "domperidon",
     "generic_b": "propofol",
     "severity": "high",
@@ -1275,7 +1245,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-SEVOFLUR-086",
+    "rule_code": "DDI-NHIC-DOMPERID-SEVOFLUR-084",
     "generic_a": "domperidon",
     "generic_b": "sevofluran",
     "severity": "high",
@@ -1290,7 +1260,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DOMPERID-SULPIRID-087",
+    "rule_code": "DDI-NHIC-DOMPERID-SULPIRID-085",
     "generic_a": "domperidon",
     "generic_b": "sulpirid",
     "severity": "high",
@@ -1299,6 +1269,36 @@
     "mechanism": "Hiệp đồng tăng tác dụng",
     "recommendation": "Chống chỉ định phối hợp.",
     "nhic_uid": "D539FF3B-1852-468C-9EF0-4FCDDF0DCF10",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-ACITRETI-DOCSICIC-086",
+    "generic_a": "acitretin",
+    "generic_b": "doxycyclin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ tăng áp nội sọ lành tính (phù gai thị, đau đầu, buồn nôn và nôn, và rối loạn thị giác)",
+    "mechanism": "Hiệp đồng tăng độc tính",
+    "recommendation": "Chống chỉ định phối hợp",
+    "nhic_uid": "8A71AD15-8135-47D4-9F1C-CD43D6B99C92",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-DOCSICIC-ISOTRETI-087",
+    "generic_a": "doxycyclin",
+    "generic_b": "isotretinoin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ tăng áp nội sọ lành tính (phù gai thị, đau đầu, buồn nôn và nôn, và rối loạn thị giác)",
+    "mechanism": "Hiệp đồng tăng độc tính",
+    "recommendation": "Chống chỉ định phối hợp",
+    "nhic_uid": "C3589C2E-5FCE-418D-92E0-01525F5C3F5A",
     "nhic_severity_raw": "Chống chỉ định",
     "is_active": true,
     "version": "1.0.0",
@@ -1695,22 +1695,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-IOPROMID-METFORMI-114",
-    "generic_a": "iopromid",
-    "generic_b": "metformin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ nhiễm toan lactic và suy thận cấp",
-    "mechanism": "Nguy cơ suy thận cấp liên quan đến cả metformin và thuốc cản quang iod. Suy thận cấp làm tăng nguy cơ nhiễm toan lactic.",
-    "recommendation": "1. Bệnh nhân có MLCT > 30 ml/phút/1,73m² và không có bằng chứng tổn thương thận cấp, được chỉ định tiêm thuốc cản quang đường tĩnh mạch hoặc tiêm thuốc cản quang đường động mạch tiếp xúc với thận thứ cấp (ví dụ: bơm thuốc vào tim phải, động mạch phổi, động mạch cảnh, động mạch dưới đòn, động mạch vành, động mạch mạc treo hay động mạch dưới động mạch thận): tiếp tục sử dụng metformin như bình thường.\n2. Bệnh nhân (1) MLCT < 30 ml/phút/1,73m² tiêm thuốc cản quang đường tĩnh mạch, đường động mạch tiếp xúc với thận thứ cấp, hoặc (2) Bệnh nhân tiêm thuốc cản quang đường động mạch tiếp xúc với thận đầu tiên (ví dụ: bơm thuốc vào tim trái, động mạch chủ ngực, động mạch chủ bụng trên động mạch thận hoặc động mạch thận) hoặc (3) Có tổn thương thận: Ngừng metformin trước hoặc tại thời điểm tiến hành thủ thuật chẩn đoán hình ảnh và không được dùng lại cho đến ít nhất 48 giờ sau đó. Sau 48 giờ, chỉ sử dụng lại metformin sau khi chức năng thận được đánh giá lại và cho thấy ổn định.\n* Lưu ý:\n- Các yếu tố nguy cơ: suy thận, suy tim, không đủ dịch hoặc thiếu dịch, sử dụng liều cao thuốc cản quang hoặc sử dụng đồng thời các thuốc độc tính trên thận khác. \n- Khuyến cáo về tương tác này không áp dụng trong trường hợp bơm thuốc cản quang iod để chụp X-quang tử cung - vòi trứng.",
-    "nhic_uid": "7E6647DC-386F-4FA2-8637-53F1C1CAD822",
-    "nhic_severity_raw": "Chống chỉ định có điều kiện",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-ALISKIRE-IRBESART-115",
+    "rule_code": "DDI-NHIC-ALISKIRE-IRBESART-114",
     "generic_a": "aliskiren",
     "generic_b": "irbesartan",
     "severity": "high",
@@ -1719,6 +1704,21 @@
     "mechanism": "Hiệp đồng tăng tác dụng",
     "recommendation": "1. Chống chỉ định ở bệnh nhân đái tháo đường hoặc suy thận (MLCT < 60 ml/ph/1,73 m²).\n2. Ở các đối tượng khác, cũng nên tránh phối hợp này. Trong trường hợp bắt buộc phối hợp, theo dõi chặt chẽ kali, creatinin và huyết áp của bệnh nhân.",
     "nhic_uid": "A0347F3A-C1E9-423F-B4CC-91F88BE520A6",
+    "nhic_severity_raw": "Chống chỉ định có điều kiện",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-IOPROMID-METFORMI-115",
+    "generic_a": "iopromid",
+    "generic_b": "metformin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ nhiễm toan lactic và suy thận cấp",
+    "mechanism": "Nguy cơ suy thận cấp liên quan đến cả metformin và thuốc cản quang iod. Suy thận cấp làm tăng nguy cơ nhiễm toan lactic.",
+    "recommendation": "1. Bệnh nhân có MLCT > 30 ml/phút/1,73m² và không có bằng chứng tổn thương thận cấp, được chỉ định tiêm thuốc cản quang đường tĩnh mạch hoặc tiêm thuốc cản quang đường động mạch tiếp xúc với thận thứ cấp (ví dụ: bơm thuốc vào tim phải, động mạch phổi, động mạch cảnh, động mạch dưới đòn, động mạch vành, động mạch mạc treo hay động mạch dưới động mạch thận): tiếp tục sử dụng metformin như bình thường.\n2. Bệnh nhân (1) MLCT < 30 ml/phút/1,73m² tiêm thuốc cản quang đường tĩnh mạch, đường động mạch tiếp xúc với thận thứ cấp, hoặc (2) Bệnh nhân tiêm thuốc cản quang đường động mạch tiếp xúc với thận đầu tiên (ví dụ: bơm thuốc vào tim trái, động mạch chủ ngực, động mạch chủ bụng trên động mạch thận hoặc động mạch thận) hoặc (3) Có tổn thương thận: Ngừng metformin trước hoặc tại thời điểm tiến hành thủ thuật chẩn đoán hình ảnh và không được dùng lại cho đến ít nhất 48 giờ sau đó. Sau 48 giờ, chỉ sử dụng lại metformin sau khi chức năng thận được đánh giá lại và cho thấy ổn định.\n* Lưu ý:\n- Các yếu tố nguy cơ: suy thận, suy tim, không đủ dịch hoặc thiếu dịch, sử dụng liều cao thuốc cản quang hoặc sử dụng đồng thời các thuốc độc tính trên thận khác. \n- Khuyến cáo về tương tác này không áp dụng trong trường hợp bơm thuốc cản quang iod để chụp X-quang tử cung - vòi trứng.",
+    "nhic_uid": "7E6647DC-386F-4FA2-8637-53F1C1CAD822",
     "nhic_severity_raw": "Chống chỉ định có điều kiện",
     "is_active": true,
     "version": "1.0.0",
@@ -2700,22 +2700,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-ALISKIRE-LOSARTAN-181",
-    "generic_a": "aliskiren",
-    "generic_b": "losartan",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ tăng kali máu, suy thận và hạ huyết áp",
-    "mechanism": "Hiệp đồng tăng tác dụng",
-    "recommendation": "1. Chống chỉ định ở bệnh nhân đái tháo đường hoặc suy thận (MLCT < 60 ml/ph/1,73 m²).\n2. Ở các đối tượng khác, cũng nên tránh phối hợp này. Trong trường hợp bắt buộc phối hợp, theo dõi chặt chẽ kali, creatinin và huyết áp của bệnh nhân.",
-    "nhic_uid": "DB6D95FF-1AE9-4BE8-88CE-976FF9FB50AC",
-    "nhic_severity_raw": "Chống chỉ định có điều kiện",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-BOCEPREV-LOVASTAT-182",
+    "rule_code": "DDI-NHIC-BOCEPREV-LOVASTAT-181",
     "generic_a": "boceprevir",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2730,7 +2715,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CICLOSPO-LOVASTAT-183",
+    "rule_code": "DDI-NHIC-CICLOSPO-LOVASTAT-182",
     "generic_a": "ciclosporin",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2745,7 +2730,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DANAZOL-LOVASTAT-184",
+    "rule_code": "DDI-NHIC-DANAZOL-LOVASTAT-183",
     "generic_a": "danazol",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2760,7 +2745,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DARUNAVI-LOVASTAT-185",
+    "rule_code": "DDI-NHIC-DARUNAVI-LOVASTAT-184",
     "generic_a": "darunavir/ritonavir",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2775,7 +2760,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-GEMFIBRO-LOVASTAT-186",
+    "rule_code": "DDI-NHIC-GEMFIBRO-LOVASTAT-185",
     "generic_a": "gemfibrozil",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2790,7 +2775,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-INDINAVI-LOVASTAT-187",
+    "rule_code": "DDI-NHIC-INDINAVI-LOVASTAT-186",
     "generic_a": "indinavir",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2805,7 +2790,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-INDINAVI-LOVASTAT-188",
+    "rule_code": "DDI-NHIC-INDINAVI-LOVASTAT-187",
     "generic_a": "indinavir/ritonavir",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2820,7 +2805,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-CICLOSPO-LOVASTAT-189",
+    "rule_code": "DDI-NHIC-CICLOSPO-LOVASTAT-188",
     "generic_a": "cyclosporin",
     "generic_b": "lovastatin",
     "severity": "high",
@@ -2830,6 +2815,21 @@
     "recommendation": "Chống chỉ định phối hợp.\nTrong trường hợp bắt buộc sử dụng dẫn chất statin, thay lovastatin bằng fluvastatin (tối đa 20 mg/ngày),  pravastatin (tối đa 20 mg/ngày), rosuvastatin (tối đa 5 mg/ngày).",
     "nhic_uid": "81336A34-10A1-4546-AD22-FFA1F5C8C109",
     "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-ALISKIRE-LOSARTAN-189",
+    "generic_a": "aliskiren",
+    "generic_b": "losartan",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ tăng kali máu, suy thận và hạ huyết áp",
+    "mechanism": "Hiệp đồng tăng tác dụng",
+    "recommendation": "1. Chống chỉ định ở bệnh nhân đái tháo đường hoặc suy thận (MLCT < 60 ml/ph/1,73 m²).\n2. Ở các đối tượng khác, cũng nên tránh phối hợp này. Trong trường hợp bắt buộc phối hợp, theo dõi chặt chẽ kali, creatinin và huyết áp của bệnh nhân.",
+    "nhic_uid": "DB6D95FF-1AE9-4BE8-88CE-976FF9FB50AC",
+    "nhic_severity_raw": "Chống chỉ định có điều kiện",
     "is_active": true,
     "version": "1.0.0",
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
@@ -3180,22 +3180,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-FURAZOLI-FENILEFR-213",
-    "generic_a": "furazolidon",
-    "generic_b": "phenylephrin",
-    "severity": "high",
-    "evidence_level": "high",
-    "clinical_effect": "Tăng nguy cơ xuất hiện cơn tăng huyết áp (đau đầu, đánh trống ngực, cứng cổ, tăng huyết áp)",
-    "mechanism": "Tăng tích lũy noradrenalin (norepinephrin). Tác dụng ức chế MAO của furazolidon do chất chuyển hóa của thuốc, xuất hiện chậm sau 5 - 10 ngày.",
-    "recommendation": "1. Chống chỉ định sử dụng phenylephrin sử dụng đường uống đồng thời hoặc trong vòng 14 ngày trước đó có sử dụng furazolidon.\n2. Đối với phenylephrin sử dụng đường tiêm, cần sử dụng rất thận trọng trên bệnh nhân đang dùng furazolidon trong điều kiện giám sát huyết áp chặt chẽ.",
-    "nhic_uid": "8F103276-4988-462E-B0A8-0B7235BEC1F9",
-    "nhic_severity_raw": "Chống chỉ định",
-    "is_active": true,
-    "version": "1.0.0",
-    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
-  },
-  {
-    "rule_code": "DDI-NHIC-ARTEMETE-FENITOIN-214",
+    "rule_code": "DDI-NHIC-ARTEMETE-FENITOIN-213",
     "generic_a": "artemether/lumefantrin",
     "generic_b": "phenytoin",
     "severity": "high",
@@ -3210,7 +3195,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DACLATAS-FENITOIN-215",
+    "rule_code": "DDI-NHIC-DACLATAS-FENITOIN-214",
     "generic_a": "daclatasvir",
     "generic_b": "phenytoin",
     "severity": "high",
@@ -3225,7 +3210,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-DELAMANI-FENITOIN-216",
+    "rule_code": "DDI-NHIC-DELAMANI-FENITOIN-215",
     "generic_a": "delamanid",
     "generic_b": "phenytoin",
     "severity": "high",
@@ -3240,7 +3225,7 @@
     "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
   },
   {
-    "rule_code": "DDI-NHIC-GRAZOPRE-FENITOIN-217",
+    "rule_code": "DDI-NHIC-GRAZOPRE-FENITOIN-216",
     "generic_a": "grazoprevir/elbasvir",
     "generic_b": "phenytoin",
     "severity": "high",
@@ -3249,6 +3234,21 @@
     "mechanism": "Phenytoin cảm ứng CYP3A4 mạnh làm tăng chuyển hóa của Grazoprevir/elbasvir",
     "recommendation": "Chống chỉ định phối hợp.",
     "nhic_uid": "31A27753-A783-464A-B455-2CE20992F0E0",
+    "nhic_severity_raw": "Chống chỉ định",
+    "is_active": true,
+    "version": "1.0.0",
+    "_source": "CSDL Tuong Tac Thuoc - Bo Y Te (NHIC)"
+  },
+  {
+    "rule_code": "DDI-NHIC-FURAZOLI-FENILEFR-217",
+    "generic_a": "furazolidon",
+    "generic_b": "phenylephrin",
+    "severity": "high",
+    "evidence_level": "high",
+    "clinical_effect": "Tăng nguy cơ xuất hiện cơn tăng huyết áp (đau đầu, đánh trống ngực, cứng cổ, tăng huyết áp)",
+    "mechanism": "Tăng tích lũy noradrenalin (norepinephrin). Tác dụng ức chế MAO của furazolidon do chất chuyển hóa của thuốc, xuất hiện chậm sau 5 - 10 ngày.",
+    "recommendation": "1. Chống chỉ định sử dụng phenylephrin sử dụng đường uống đồng thời hoặc trong vòng 14 ngày trước đó có sử dụng furazolidon.\n2. Đối với phenylephrin sử dụng đường tiêm, cần sử dụng rất thận trọng trên bệnh nhân đang dùng furazolidon trong điều kiện giám sát huyết áp chặt chẽ.",
+    "nhic_uid": "8F103276-4988-462E-B0A8-0B7235BEC1F9",
     "nhic_severity_raw": "Chống chỉ định",
     "is_active": true,
     "version": "1.0.0",
