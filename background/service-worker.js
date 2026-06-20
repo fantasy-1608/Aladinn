@@ -104,7 +104,8 @@ function setupContextMenus() {
         chrome.contextMenus.create({
             id: 'aladinn_ngoai_tru',
             title: 'Aladinn - Ngoại trú',
-            contexts: ['all']
+            contexts: ['all'],
+            documentUrlPatterns: ['https://*.vncare.vn/*']
         });
 
         const items = [
@@ -122,7 +123,8 @@ function setupContextMenus() {
                 id: item.id,
                 parentId: 'aladinn_ngoai_tru',
                 title: item.title,
-                contexts: ['all']
+                contexts: ['all'],
+                documentUrlPatterns: ['https://*.vncare.vn/*']
             });
         });
     });
