@@ -5654,5 +5654,1429 @@
     "dosage_form": "",
     "route": "",
     "is_primary": true
+  },
+  {
+    "brand_name": "acarbose 25",
+    "generic_name": "acarbose",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "agibeza 200",
+    "generic_name": "bezafibrat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "agimycob",
+    "generic_name": "metronidazol + neomycin + nystatin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "alanboss xl 5",
+    "generic_name": "alfuzosin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "alusi",
+    "generic_name": "magnesi trisilicat + nhôm hydroxyd",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "amoxicilin 500mg",
+    "generic_name": "amoxicilin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "apratam",
+    "generic_name": "piracetam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "azarga",
+    "generic_name": "brinzolamid + timolol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bambuterol 20",
+    "generic_name": "bambuterol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "berlthyrox 100",
+    "generic_name": "levothyroxin (muối natri)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bilaxten",
+    "generic_name": "bilastine",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bismogi",
+    "generic_name": "bismuth",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "calcium hasan 250mg",
+    "generic_name": "calci carbonat + calci gluconolactat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "calzytab",
+    "generic_name": "calci carbonat + vitamin d3",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "camsottdy.tw3",
+    "generic_name": "xuyên khung, khương hoạt, bạch chỉ, hoàng cầm, phòng phong, sinh địa, thương truật, cam thảo, tế tân",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "candesarmac h",
+    "generic_name": "candesartan + hydrochlorothiazid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "carbamazepin 200 mg",
+    "generic_name": "carbamazepin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "cedivas 12",
+    "generic_name": "candesartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "cetimed 10mg",
+    "generic_name": "cetirizin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "chè dây",
+    "generic_name": "chè dây",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "clarithromycin 500",
+    "generic_name": "clarithromycin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "clotannex",
+    "generic_name": "amlodipin + valsartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "colchicin 1 mg",
+    "generic_name": "colchicin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "coxtone",
+    "generic_name": "nabumeton",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "crinaphusa- trinh nữ hoàng cung",
+    "generic_name": "cao khô trinh nữ hoàng cung.",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "diltiazem stella 60 mg",
+    "generic_name": "diltiazem",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "dolotin 20 mg",
+    "generic_name": "lovastatin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "dolutegravir 50mg, lamivudine 300mg & tenofovir disoproxil fumarate 300mg tablets",
+    "generic_name": "lamivudine 300mg, tenofovir disoproxil fumarate 300mg, dolutegravir (dưới dạng dolutegravir sodium 52,6mg) 50mg",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "enalapril",
+    "generic_name": "enalapril",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "enaplus  hct 5/12.5",
+    "generic_name": "enalapril + hydrochlorothiazid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "enclacin 250 mg",
+    "generic_name": "clarithromycin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "ericox 60",
+    "generic_name": "etoricoxib",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "esseil-10",
+    "generic_name": "cilnidipin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "fastum gel",
+    "generic_name": "ketoprofen",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "flumetholon 0,1",
+    "generic_name": "fluorometholon",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "flutonin 20",
+    "generic_name": "fluoxetin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "fortipred",
+    "generic_name": "prednisolon acetat (natri phosphate)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "forug plus",
+    "generic_name": "magnesi hydroxyd + nhôm hydroxyd + simethicon",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "fucipa",
+    "generic_name": "fusidic acid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "haducarbo 50",
+    "generic_name": "acarbose",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "haisamin",
+    "generic_name": "hải sâm.",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "haloperidol 2 mg",
+    "generic_name": "haloperidol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hoạt huyết dưỡng não dth sachet",
+    "generic_name": "đinh lăng, bạch quả",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hoạt huyết dưỡng não đông dược việt",
+    "generic_name": "địa long, hoàng kỳ, đương quy, xích thược, xuyên khung, đào nhân, hồng hoa.",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hyvalor",
+    "generic_name": "valsartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hyvalor plus",
+    "generic_name": "amlodipin + valsartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "ibuprofen 400",
+    "generic_name": "ibuprofen",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "imefed 250 mg/ 31,25 mg",
+    "generic_name": "amoxicilin + acid clavulanic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "isoniazid 300mg [lta-qtc]",
+    "generic_name": "isoniazid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "isotretinoin 10mg [da liễu]",
+    "generic_name": "isotretinoin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "kasparin",
+    "generic_name": "alverin citrat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lamivudin hasan 150 [arv]",
+    "generic_name": "lamivudin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lanam sc 200mg/ 28,5mg",
+    "generic_name": "amoxicilin + acid clavulanic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "levetral",
+    "generic_name": "levetiracetam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lisimax-280",
+    "generic_name": "diệp hạ châu",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lopinavir/ ritonavir tablets usp 200 mg/50 mg",
+    "generic_name": "lopinavir/ ritonavir tablets usp 200 mg/50 mg",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lumigan",
+    "generic_name": "bimatoprost",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lục vị abipha",
+    "generic_name": "thục địa, hoài sơn, sơn thù,mẫu đơn bì,phục linh, trạch tả",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mariprax",
+    "generic_name": "pramipexol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mazzgin",
+    "generic_name": "vitamin b6 + magnesi lactat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mebendazol 500",
+    "generic_name": "mebendazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "medtrivit - b",
+    "generic_name": "vitamin b1 + b6 + b12",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "meloxicam od dwp 15mg",
+    "generic_name": "meloxicam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "metformin 500mg",
+    "generic_name": "metformin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "methyldopa 250mg",
+    "generic_name": "methyldopa",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "methylprednisolon 16",
+    "generic_name": "methyl prednisolon",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mibetel hct",
+    "generic_name": "telmisartan + hydroclorothiazid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "micezym 100",
+    "generic_name": "saccharomyces boulardii",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "midantin 875/125",
+    "generic_name": "amoxicilin + acid clavulanic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "misanlugel",
+    "generic_name": "aluminum phosphat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mumcal",
+    "generic_name": "calci lactat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "natri clorid 0,9% [nhỏ mũi]",
+    "generic_name": "natri clorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "natri clorid 0,9% [nhỏ mắt]",
+    "generic_name": "natri clorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "natrilix sr",
+    "generic_name": "indapamid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "neuropyl 400",
+    "generic_name": "piracetam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "nikoramyl 5",
+    "generic_name": "nicorandil",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "ofloxacin-pos 3mg/ml",
+    "generic_name": "ofloxacin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "olanxol",
+    "generic_name": "olanzapin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "opecosyl argin 5",
+    "generic_name": "perindopril",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "paincerin",
+    "generic_name": "diacerein",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "pantoprazol",
+    "generic_name": "pantoprazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "perglim m-2",
+    "generic_name": "glimepirid + metformin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "posod",
+    "generic_name": "kali iodid + natri iodid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "postezatal gold",
+    "generic_name": "progesteron",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "prolufo",
+    "generic_name": "alfuzosin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "quineril 10",
+    "generic_name": "quinapril",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "redlip 145",
+    "generic_name": "fenofibrat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "rhinips",
+    "generic_name": "bạch chỉ; tân di hoa; thương nhĩ tử; tinh dầu bạc hà",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "sitomet bd 50/1000",
+    "generic_name": "sitagliptin + metformin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "savi candesartan 12",
+    "generic_name": "candesartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "savi pramipexole 0.18",
+    "generic_name": "pramipexol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "savimetoc",
+    "generic_name": "paracetamol + methocarbamol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "sarvetil hctz 10/12.5",
+    "generic_name": "lisinopril + hydroclorothiazid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "sorbitol 5g",
+    "generic_name": "sorbitol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "spironolacton",
+    "generic_name": "spironolacton",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "thyroberg 100",
+    "generic_name": "levothyroxin (muối natri)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "taflotan",
+    "generic_name": "tafluprost",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tenofovir 300 [arv]",
+    "generic_name": "tenofovir disoproxil fumarat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tenofovir 300 [thường]",
+    "generic_name": "tenofovir (tdf)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "terbinafin 1%",
+    "generic_name": "terbinafin (hydroclorid)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "thuốc ho người lớn opc",
+    "generic_name": "tỳ bà diệp, cát cánh, bách bộ, tiền hồ, tang bạch bì, thiên môn, phục linh, cam thảo, hoàng cầm, cineol, menthol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tolura 80mg",
+    "generic_name": "telmisartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tuspi kids",
+    "generic_name": "paracetamol (acetaminophen)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "uprofen 400",
+    "generic_name": "ibuprofen",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vacodrota 80",
+    "generic_name": "drotaverin clohydrat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vacoomez's 20",
+    "generic_name": "esomeprazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "varogel s",
+    "generic_name": "magnesi hydroxyd + nhôm hydroxyd",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vcard-am 80 + 5",
+    "generic_name": "amlodipin + valsartan",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "viacoram 7mg/5mg",
+    "generic_name": "perindopril + amlodipin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vigentin 500/125 dt.",
+    "generic_name": "amoxicilin + acid clavulanic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vinpha e",
+    "generic_name": "vitamin e",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vitamin c - opc 100 mg hương cam",
+    "generic_name": "vitamin c",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vixcar",
+    "generic_name": "clopidogrel",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "zinc 10",
+    "generic_name": "kẽm gluconat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "đại bổ khí huyết",
+    "generic_name": "đương quy, xuyên khung, thục địa, bạch thược,đảng sâm, bạch linh, bạch truật, cam thảo",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "acyclovir 5%",
+    "generic_name": "aciclovir",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "alcool 90°",
+    "generic_name": "cồn 90°",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "aminic",
+    "generic_name": "acid amin*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "aminoleban",
+    "generic_name": "acid amin*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "amiparen 10%",
+    "generic_name": "acid amin*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "aspirin stella 81 mg",
+    "generic_name": "acetylsalicylic acid (dl-lysin acetylsalicylat)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bfs-nabica 8,4%",
+    "generic_name": "natri hydrocarbonat (natri bicarbonat)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "betaserc 24mg",
+    "generic_name": "betahistin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bidinatec 5",
+    "generic_name": "enalapril",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "biragan 150",
+    "generic_name": "paracetamol (acetaminophen)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "bironem 1g",
+    "generic_name": "meropenem*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "buflan 2g",
+    "generic_name": "cefoperazon + sulbactam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "camicin",
+    "generic_name": "ampicilin + sulbactam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "cefoxitin 2000",
+    "generic_name": "cefoxitin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "ciprofloxacin 200mg/100ml",
+    "generic_name": "ciprofloxacin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "ciproven 10 mg/ml",
+    "generic_name": "ciprofloxacin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "cordaflex",
+    "generic_name": "nifedipin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "cồn boric 3% (10ml)",
+    "generic_name": "cồn boric",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "danapha-trihex 2",
+    "generic_name": "trihexyphenidyl hydroclorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "dextrose 30%",
+    "generic_name": "glucose",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "diaphyllin venosum",
+    "generic_name": "aminophylin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "famotidin 20mg/2ml",
+    "generic_name": "famotidin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "fenilham",
+    "generic_name": "fentanyl",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "fosfomycin 4g",
+    "generic_name": "fosfomycin*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hadudipin",
+    "generic_name": "nicardipin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hemafetimax",
+    "generic_name": "sắt fumarat + acid folic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "hidrasec 30mg children",
+    "generic_name": "racecadotril",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "i.v.-globulin sn inj.",
+    "generic_name": "immune globulin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "imefed dt 500 mg/ 125 mg",
+    "generic_name": "amoxicilin + acid clavulanic",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "jardiance",
+    "generic_name": "empagliflozin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "kali clorid 10%",
+    "generic_name": "kali clorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lainmi 5mg",
+    "generic_name": "natri montelukast",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lanprasol 15",
+    "generic_name": "lansoprazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "linezan",
+    "generic_name": "linezolid*",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "lipovenoes 10% plr",
+    "generic_name": "nhũ dịch lipid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "loturocin",
+    "generic_name": "mupirocin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "masapon",
+    "generic_name": "alpha chymotrypsin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "mecolzine",
+    "generic_name": "mesalazin (mesalamin)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "medivernol 2g",
+    "generic_name": "ceftriaxon",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "methylergometrine maleate injection 0,2mg - 1ml",
+    "generic_name": "methyl ergometrin maleat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "methylprednisolone normon 40 mg powder for injectable solution",
+    "generic_name": "methyl prednisolon",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "metronidazol kabi",
+    "generic_name": "metronidazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "meve-raz",
+    "generic_name": "meloxicam",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "midored tab",
+    "generic_name": "methyldopa",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "natri clorid 0,9% [500ml-dùng ngoài]",
+    "generic_name": "natri clorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "neubatel",
+    "generic_name": "gabapentin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "nevirapine oral suspension 50mg/5ml lọ 100ml",
+    "generic_name": "nevirapine oral suspension 50mg/5ml lọ 100ml",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "nicardipine aguettant 10mg/10ml",
+    "generic_name": "nicardipin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "noradrenaline base aguettant 1mg/ml",
+    "generic_name": "nor-epinephrin (nor- adrenalin)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "nutriflex peri",
+    "generic_name": "acid amin + glucose + điện giải (*)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "octreotid",
+    "generic_name": "octreotid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "oxacillin 1g",
+    "generic_name": "oxacilin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "samaca",
+    "generic_name": "natri hyaluronat",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "sodium chloride 0,9%",
+    "generic_name": "natri clorid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "sunfloxacin 750mg/150ml",
+    "generic_name": "levofloxacin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tenamyd-cefotaxime 1000",
+    "generic_name": "cefotaxim (dưới dạng cefotaxim natri)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "tinidazol kabi",
+    "generic_name": "tinidazol",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "toulalan",
+    "generic_name": "itoprid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "urizatilin 1g",
+    "generic_name": "cloxacilin",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vik 1 inj.",
+    "generic_name": "phytomenadion (vitamin k1)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vincopane",
+    "generic_name": "hyoscin butylbromid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vinzix 40mg",
+    "generic_name": "furosemid",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
+  },
+  {
+    "brand_name": "vitamin b12",
+    "generic_name": "vitamin b12 (cyanocobalamin, hydroxocobalamin)",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
   }
 ]

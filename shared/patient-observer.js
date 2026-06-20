@@ -98,6 +98,66 @@ HIS.PatientObserver = (function () {
     /**
      * Phát sự kiện khi phát hiện row mới được chọn
      */
+    function _extractMaBN(tr) {
+        if (!tr) return '';
+        const maBNEl = tr.querySelector(
+            "td[aria-describedby$='_MABENHNHAN'], " +
+            "td[aria-describedby$='_MABN'], " +
+            "td[aria-describedby$='_BENHNHANID'], " +
+            "td[aria-describedby*='MABENHNHAN'], " +
+            "td[aria-describedby*='BENHNHANID']"
+        );
+        if (maBNEl && maBNEl.textContent.trim()) {
+            return maBNEl.textContent.trim();
+        }
+        return '';
+    }
+
+    function _extractNamSinh(tr) {
+        if (!tr) return '';
+        const namSinhEl = tr.querySelector(
+            "td[aria-describedby$='_NAMSINH'], " +
+            "td[aria-describedby$='_NAM_SINH'], " +
+            "td[aria-describedby*='NAMSINH']"
+        );
+        if (namSinhEl && namSinhEl.textContent.trim()) {
+            return namSinhEl.textContent.trim();
+        }
+        const cells = tr.querySelectorAll('td');
+        for (const cell of cells) {
+            const txt = cell.textContent.trim();
+            if (/^\d{4}$/.test(txt)) {
+                const yr = parseInt(txt, 10);
+                if (yr >= 1900 && yr <= 2100) return txt;
+            }
+        }
+        return '';
+    }
+
+    function _extractDiagnosis(tr) {
+        if (!tr) return '';
+        const diagEl = tr.querySelector(
+            "td[aria-describedby$='_CHANDOAN'], " +
+            "td[aria-describedby$='_KHAMBENH_CHANDOAN'], " +
+            "td[aria-describedby$='_MACDC'], " +
+            "td[aria-describedby*='CHANDOAN']"
+        );
+        if (diagEl && diagEl.textContent.trim()) {
+            return diagEl.textContent.trim();
+        }
+        const cells = tr.querySelectorAll('td');
+        if (cells && cells.length > 8) {
+            const val = cells[8].textContent.trim();
+            if (val && !/^\d+$/.test(val) && val.length > 5) {
+                return val;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Phát sự kiện khi phát hiện row mới được chọn
+     */
     function _handleSelection(rowElement) {
         if (!rowElement) return;
         const rowId = _getRowId(rowElement);
@@ -106,12 +166,18 @@ HIS.PatientObserver = (function () {
 
         _lastSelectedId = rowId;
         const patientName = _extractPatientName(rowElement);
+        const maBN = _extractMaBN(rowElement);
+        const namSinh = _extractNamSinh(rowElement);
+        const diagnosis = _extractDiagnosis(rowElement);
 
         HIS.EventBus.emit('patient:selected', {
             rowId: rowId,
             maBA: maBA,
+            maBN: maBN,
+            namSinh: namSinh,
             rowElement: rowElement,
-            patientName: patientName
+            patientName: patientName,
+            diagnosis: diagnosis
         });
 
         // Broadcast to Side Panel
@@ -124,12 +190,16 @@ HIS.PatientObserver = (function () {
             chrome.runtime.sendMessage({ 
                 type: 'PATIENT_SELECTED', 
                 patientId: maBA,
-                patientName: patientName
+                maBA: maBA,
+                maBN: maBN,
+                namSinh: namSinh,
+                patientName: patientName,
+                diagnosis: diagnosis
             }).catch(() => {});
         }
 
         if (HIS.Logger) {
-            HIS.Logger.info('Observer', `👤 Đã chọn: ${patientName || rowId}`);
+            HIS.Logger.info('Observer', `👤 Đã chọn: ${patientName || rowId} (BA: ${maBA}, BN: ${maBN})`);
         }
     }
 

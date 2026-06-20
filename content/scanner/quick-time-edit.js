@@ -288,6 +288,51 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
     }
 
     /**
+     * Tự động tìm và đóng hộp thoại (dialog) HIS khi người dùng tắt bảng điều khiển Aladinn
+     */
+    function closeHisDialog(activeDoc) {
+        // 1. Thử tìm nút "Đóng" bên trong iframe của HIS trước
+        const live = findLiveIframeInputs(activeDoc);
+        if (live && live.doc) {
+            const buttons = Array.from(live.doc.querySelectorAll('button, a, input[type="button"]'));
+            const closeBtn = buttons.find(btn => {
+                const txt = (btn.textContent || btn.value || '').trim();
+                return txt === 'Đóng' || txt === 'Close';
+            });
+            if (closeBtn) {
+                closeBtn.click();
+                return;
+            }
+        }
+
+        // 2. Fallback: Tìm nút đóng dạng chữ X của dialog wrapper ở bất kỳ document nào
+        let targetDocs = [document];
+        try {
+            if (window.top && window.top.document) targetDocs.push(window.top.document);
+        } catch (_e) {}
+        if (activeDoc && !targetDocs.includes(activeDoc)) targetDocs.push(activeDoc);
+
+        for (const doc of targetDocs) {
+            if (!doc) continue;
+            try {
+                const dialogs = Array.from(doc.querySelectorAll('.ui-dialog, .jBox-wrapper, .jBox-container'));
+                const activeDialog = dialogs.find(d => {
+                    if (d.style.display === 'none') return false;
+                    const text = d.textContent || '';
+                    return text.includes('Sửa ngày trả kết quả') || text.includes('Sửa thời gian trả kết quả');
+                });
+                if (activeDialog) {
+                    const xBtn = activeDialog.querySelector('.ui-dialog-titlebar-close, .jBox-closeButton, [class*="close"]');
+                    if (xBtn) {
+                        xBtn.click();
+                        return;
+                    }
+                }
+            } catch (_e) {}
+        }
+    }
+
+    /**
      * Hiển thị UI thiết lập thông số tính toán (Realtime)
      */
     function showRealtimePrompt(activeDoc) {
@@ -478,7 +523,10 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
         });
         overlay.querySelector('#aqt-su').onclick = () => { stepMins=Math.min(60,stepMins+1); overlay.querySelector('#aqt-sv').textContent=stepMins; recalc(); };
         overlay.querySelector('#aqt-sd').onclick = () => { stepMins=Math.max(1,stepMins-1); overlay.querySelector('#aqt-sv').textContent=stepMins; recalc(); };
-        overlay.querySelector('#aqt-x').onclick = () => overlay.remove();
+        overlay.querySelector('#aqt-x').onclick = () => {
+            overlay.remove();
+            closeHisDialog(activeDoc);
+        };
 
         // Double-click on time values to edit directly
         overlay.addEventListener('dblclick', (e) => {
@@ -525,6 +573,49 @@ window.Aladinn.Scanner.QuickTimeEdit = (function () {
 
         updPreview();
         setTimeout(syncToHIS, 300);
+
+        // Periodically check if the HIS dialog is still open. If it is closed, remove the Aladinn panel.
+        const checkDialogClosed = setInterval(() => {
+            if (!activeDoc.getElementById('aladinn-time-prompt')) {
+                clearInterval(checkDialogClosed);
+                return;
+            }
+
+            let targetDocs = [document];
+            try {
+                if (window.top && window.top.document) targetDocs.push(window.top.document);
+            } catch(_e) {}
+            if (activeDoc && !targetDocs.includes(activeDoc)) targetDocs.push(activeDoc);
+
+            let dialogFound = false;
+            for (const doc of targetDocs) {
+                if (!doc) continue;
+                try {
+                    const dialogs = Array.from(doc.querySelectorAll('.ui-dialog, .jBox-wrapper, .jBox-container'));
+                    const activeDialog = dialogs.find(d => {
+                        if (d.style.display === 'none' || d.style.visibility === 'hidden') return false;
+                        const rect = d.getBoundingClientRect();
+                        if (rect.width === 0 || rect.height === 0) return false;
+                        
+                        const text = d.textContent || '';
+                        return text.includes('Sửa ngày trả kết quả') || text.includes('Sửa thời gian trả kết quả');
+                    });
+                    if (activeDialog) {
+                        dialogFound = true;
+                        break;
+                    }
+                } catch(_e) {}
+            }
+
+            if (!dialogFound) {
+                clearInterval(checkDialogClosed);
+                const aqtPanel = activeDoc.getElementById('aladinn-time-prompt');
+                if (aqtPanel) {
+                    aqtPanel.remove();
+                    if (Logger) Logger.info('Scanner.QuickTime', 'Tự động đóng bảng Auto Giờ BHYT vì hộp thoại HIS đã đóng');
+                }
+            }
+        }, 500);
     }
 
     function waitForIframeReady(activeDoc, attempts, callback) {

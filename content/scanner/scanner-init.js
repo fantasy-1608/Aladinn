@@ -3513,15 +3513,31 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 }
                 if (!contextDiag) contextDiag = 'Chưa rõ chẩn đoán';
 
-                // 2. Thuốc (chỉ lấy ngày gần nhất — thuốc ĐANG sử dụng)
-                const latestDrugDate = Object.keys(drugsByDate).sort((a, b) => {
-                    const pa = a.split('/').reverse().join(''); const pb = b.split('/').reverse().join('');
-                    return pb.localeCompare(pa); // mới nhất trước
-                })[0] || null;
-                const currentDrugs = latestDrugDate ? (drugsByDate[latestDrugDate] || []) : drugs;
-                const uniqueCurrentDrugs = [...new Map(currentDrugs.map(d => [d.TENTHUOC, d])).values()];
-                const contextDrugs = uniqueCurrentDrugs
-                    .map(d => {
+                // 2. Thuốc (Toàn đợt, kèm theo ngày sử dụng để AI thấy diễn tiến thuốc)
+                const drugDatesMap = new Map(); // name -> { details: obj, dates: Set<string> }
+                for (const dt of Object.keys(drugsByDate)) {
+                    for (const d of drugsByDate[dt]) {
+                        const name = d.TENTHUOC || '';
+                        if (!name) continue;
+                        if (!drugDatesMap.has(name)) {
+                            drugDatesMap.set(name, { details: d, dates: new Set() });
+                        }
+                        drugDatesMap.get(name).dates.add(dt);
+                    }
+                }
+                
+                // Nếu API trả về thuốc không có ngày, nhét vào fallback
+                for (const d of drugs) {
+                    const name = d.TENTHUOC || '';
+                    if (!name) continue;
+                    if (!drugDatesMap.has(name)) {
+                        drugDatesMap.set(name, { details: d, dates: new Set(['Không rõ ngày']) });
+                    }
+                }
+
+                const contextDrugs = Array.from(drugDatesMap.values())
+                    .map(item => {
+                        const d = item.details;
                         let entry = d.TENTHUOC || '';
                         if (!entry) return '';
                         if (d.HAMLUONG?.trim()) entry += ` ${d.HAMLUONG.trim()}`;
@@ -3530,6 +3546,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                         if (d.DUONGDUNG?.trim()) parts.push(d.DUONGDUNG.trim());
                         if (d.CACHDUNG?.trim() && d.CACHDUNG.trim() !== d.DUONGDUNG?.trim()) parts.push(d.CACHDUNG.trim());
                         if (parts.length > 0) entry += ` (${parts.join(', ')})`;
+                        
+                        // Tính ngày dùng thuốc
+                        const sortedDates = Array.from(item.dates).sort((a, b) => {
+                            if (a === 'Không rõ ngày') return 1;
+                            if (b === 'Không rõ ngày') return -1;
+                            const pa = a.split('/').reverse().join(''); const pb = b.split('/').reverse().join('');
+                            return pa.localeCompare(pb); // cũ đến mới
+                        });
+                        
+                        const shortDates = sortedDates.map(sd => sd.length >= 10 ? sd.substring(0, 5) : sd);
+                        entry += ` [Dùng ngày: ${shortDates.join(', ')}]`;
                         return entry;
                     })
                     .filter(Boolean).join('; ');

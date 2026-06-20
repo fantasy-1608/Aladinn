@@ -6,7 +6,7 @@
 import { runtimeRuleIndex } from './runtime-rule-index.js';
 
 export const KB_SCHEMA_VERSION = 5; // Bumped for Pipeline v1.0 — forces full re-seed
-export const KB_SEED_VERSION = '2026-05-02-pipeline-v9-full'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
+export const KB_SEED_VERSION = '2026-06-19-nhic-seed-446-rules'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
 
 const DB_NAME = 'AladinnCDS';
 const META_STORE = 'meta';
@@ -74,13 +74,26 @@ function requestToPromise(request) {
     });
 }
 
-async function fetchJson(path) {
-    const url = chrome.runtime.getURL(path);
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to load ${path}: ${response.status}`);
+const REMOTE_BASE_URL = 'https://raw.githubusercontent.com/fantasy-1608/Aladinn/main/public/cds-data';
+
+async function fetchJson(filename, useRemote = false) {
+    const url = useRemote ? `${REMOTE_BASE_URL}/${filename}` : chrome.runtime.getURL(`cds-data/${filename}`);
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    try {
+        const response = await fetch(url, useRemote ? { 
+            signal: controller.signal,
+            cache: 'no-cache' 
+        } : undefined);
+        clearTimeout(id);
+        if (!response.ok) {
+            throw new Error(`Failed to load ${filename}: ${response.status}`);
+        }
+        return await response.json();
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
     }
-    return response.json();
 }
 
 async function getMetaValue(db, key) {
@@ -113,8 +126,8 @@ async function replaceStore(db, storeName, rows) {
     await transactionComplete(tx);
 }
 
-async function seedKnowledgeBase(db) {
-    const dataPath = 'cds-data';
+async function seedKnowledgeBase(db, useRemote = false) {
+    console.log(`[Aladinn CDS] Seeding database using ${useRemote ? 'REMOTE' : 'LOCAL'} files...`);
     const [
         drugGeneric,
         brandGenericMap,
@@ -125,20 +138,20 @@ async function seedKnowledgeBase(db) {
         insuranceFormulary,
         insuranceRules
     ] = await Promise.all([
-        fetchJson(`${dataPath}/drug_generic.json`),
-        fetchJson(`${dataPath}/brand_generic_map.json`),
-        fetchJson(`${dataPath}/condition_group_icd_map.json`),
-        fetchJson(`${dataPath}/ddi_rules.json`),
-        fetchJson(`${dataPath}/drug_disease_rules.json`),
-        fetchJson(`${dataPath}/allergy_rules.json`),
-        fetchJson(`${dataPath}/insurance_formulary.json`),
-        fetchJson(`${dataPath}/insurance_rules.json`)
+        fetchJson('drug_generic.json', useRemote),
+        fetchJson('brand_generic_map.json', useRemote),
+        fetchJson('condition_group_icd_map.json', useRemote),
+        fetchJson('ddi_rules.json', useRemote),
+        fetchJson('drug_disease_rules.json', useRemote),
+        fetchJson('allergy_rules.json', useRemote),
+        fetchJson('insurance_formulary.json', useRemote),
+        fetchJson('insurance_rules.json', useRemote)
     ]);
 
     // Pipeline v1.0 files — fetch with fallback to empty array
     let renalRules = [], drugLabRules = [];
-    try { renalRules = await fetchJson(`${dataPath}/renal_adjustment_rules.json`); } catch (_e) { console.log('[CDS] renal_adjustment_rules.json not found, skipping'); }
-    try { drugLabRules = await fetchJson(`${dataPath}/drug_lab_rules.json`); } catch (_e) { console.log('[CDS] drug_lab_rules.json not found, skipping'); }
+    try { renalRules = await fetchJson('renal_adjustment_rules.json', useRemote); } catch (_e) { console.log('[CDS] renal_adjustment_rules.json not found, skipping'); }
+    try { drugLabRules = await fetchJson('drug_lab_rules.json', useRemote); } catch (_e) { console.log('[CDS] drug_lab_rules.json not found, skipping'); }
 
     console.log(`[Aladinn CDS] Loaded: ${ddiRules.length} DDI, ${drugDiseaseRules.length} Drug-Disease, ${renalRules.length} Renal, ${drugLabRules.length} Drug-Lab`);
 
@@ -155,24 +168,66 @@ async function seedKnowledgeBase(db) {
         replaceStore(db, DRUG_LAB_RULE_STORE, drugLabRules)
     ]);
 
-    await setMetaValue(db, 'seedVersion', KB_SEED_VERSION);
+    let version = KB_SEED_VERSION;
+    try {
+        const meta = await fetchJson('metadata.json', useRemote);
+        if (meta && meta.ruleset_version) {
+            version = meta.ruleset_version;
+        }
+    } catch (metaErr) {
+        console.log('[Aladinn CDS] Could not load metadata.json, using fallback version:', version);
+    }
+
+    await setMetaValue(db, 'seedVersion', version);
     await setMetaValue(db, 'seededAt', new Date().toISOString());
-    console.log('[Aladinn CDS] 🧞 Database seeded (Pipeline v1.0): DDI + Drug-Disease + Renal + Drug-Lab');
+    console.log(`[Aladinn CDS] 🧞 Database seeded (version: ${version})`);
+    return version;
 }
 
 export async function initializeKnowledgeBase(forceSync = false) {
     try {
         const db = await openDatabase();
         const currentSeedVersion = await getMetaValue(db, 'seedVersion');
-        console.log(`[Aladinn CDS] DB check: stored="${currentSeedVersion}" vs required="${KB_SEED_VERSION}" force=${forceSync}`);
-        if (!forceSync && currentSeedVersion === KB_SEED_VERSION) {
-            console.log('[Aladinn CDS] DB is up-to-date, skipping seed.');
-            await runtimeRuleIndex.init(db);
-            return;
+        console.log(`[Aladinn CDS] DB check: stored="${currentSeedVersion}" force=${forceSync}`);
+
+        let remoteVersion = null;
+        let remoteMeta = null;
+
+        // Try checking remote metadata
+        try {
+            remoteMeta = await fetchJson('metadata.json', true);
+            remoteVersion = remoteMeta ? remoteMeta.ruleset_version : null;
+            console.log(`[Aladinn CDS] Remote ruleset version: "${remoteVersion}"`);
+        } catch (err) {
+            console.log('[Aladinn CDS] Remote version check failed (offline or blocked). Using local fallback check.');
         }
-        console.log('[Aladinn CDS] 🔄 Seeding database...');
-        await seedKnowledgeBase(db);
-        console.log('[Aladinn CDS] ✅ Seed complete.');
+
+        if (remoteVersion) {
+            if (forceSync || currentSeedVersion !== remoteVersion) {
+                console.log(`[Aladinn CDS] 🔄 Remote version mismatch/forceSync, seeding database from REMOTE...`);
+                await seedKnowledgeBase(db, true);
+                console.log('[Aladinn CDS] ✅ Remote seed complete.');
+            } else {
+                console.log('[Aladinn CDS] DB is up-to-date with remote version. Skipping seed.');
+            }
+        } else {
+            // Fallback: Check if we need to seed from local
+            let localVersion = KB_SEED_VERSION;
+            try {
+                const localMeta = await fetchJson('metadata.json', false);
+                if (localMeta && localMeta.ruleset_version) {
+                    localVersion = localMeta.ruleset_version;
+                }
+            } catch (e) {}
+
+            if (forceSync || !currentSeedVersion) {
+                console.log(`[Aladinn CDS] 🔄 Database cold-start, seeding database from LOCAL...`);
+                await seedKnowledgeBase(db, false);
+                console.log('[Aladinn CDS] ✅ Local seed complete.');
+            } else {
+                console.log(`[Aladinn CDS] DB has existing data ("${currentSeedVersion}"). Skipping local seed fallback.`);
+            }
+        }
         await runtimeRuleIndex.init(db);
     } catch (err) {
         console.error('[Aladinn CDS] ❌ initializeKnowledgeBase FAILED:', err);

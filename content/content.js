@@ -552,12 +552,35 @@
         return null;
     }
 
+    let lastRightClickedRowId = null;
+    document.addEventListener('contextmenu', (e) => {
+        const row = e.target.closest('tr.jqgrow, tr.ui-widget-content');
+        const grid = row ? row.closest('table') : null;
+        if (row && grid && (grid.id === 'grdBenhNhan' || grid.id === 'grdDSBenhNhan')) {
+            lastRightClickedRowId = row.id;
+        } else {
+            lastRightClickedRowId = null;
+        }
+    }, true);
+
     // ========================================
     // MESSAGE LISTENER (Unified)
     // ========================================
     if (chrome?.runtime) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const { type, action } = message;
+
+            if (type === 'ALADINN_CONTEXT_MENU_CLICK') {
+                if (lastRightClickedRowId) {
+                    window.postMessage({
+                        type: 'ALADINN_PAGE_CONTEXT_MENU_CLICK',
+                        action: action,
+                        rowId: lastRightClickedRowId
+                    }, window.location.origin);
+                }
+                sendResponse({ success: true });
+                return;
+            }
 
             // Voice module toggle
             if (type === 'TOGGLE_EXTENSION') {

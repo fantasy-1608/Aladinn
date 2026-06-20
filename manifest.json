@@ -9,7 +9,8 @@
         "scripting",
         "storage",
         "tabs",
-        "sidePanel"
+        "sidePanel",
+        "contextMenus"
     ],
     "side_panel": {
         "default_path": "sidepanel/index.html"

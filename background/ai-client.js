@@ -417,26 +417,33 @@ async function resolveApiKey(optionalApiKey = '') {
 
 // getTrustedGeminiBaseUrl removed as per BUG-03
 
-async function callGeminiGenerateContent({ prompt, model, requestId, generationConfig = {}, systemInstruction = null }) {
+async function callGeminiGenerateContent({ prompt, model, requestId, generationConfig = {}, systemInstruction = null, phiOptions = {} }) {
     if (!prompt || typeof prompt !== 'string') {
         throw aiError('Prompt không hợp lệ.', 'AI_INVALID_PAYLOAD');
     }
 
     // 🛡️ [P0-03] SECURITY GUARD: Centralized PHI pipeline
-    const phiResult = PHIPipeline.prepareForAI({ feature: 'summary', payload: prompt });
-    const redactedPrompt = phiResult.redactedText;
-    if (phiResult.report.blocked) {
-        console.warn('[Aladinn Security] Blocked AI request via PHI pipeline.');
-        try {
-            if (typeof chrome !== 'undefined' && chrome.runtime) {
-                chrome.runtime.sendMessage({
-                    type: 'LOG_AUDIT',
-                    auditType: 'phi_pipeline_blocked',
-                    details: { context: 'callGeminiGenerateContent', reasons: phiResult.report.reasons }
-                });
-            }
-        } catch (_e) {}
-        throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
+    let redactedPrompt = prompt;
+    if (!phiOptions.skipPhi) {
+        const phiResult = PHIPipeline.prepareForAI({ 
+            feature: phiOptions.feature || 'summary', 
+            payload: prompt,
+            options: phiOptions.options
+        });
+        redactedPrompt = phiResult.redactedText;
+        if (phiResult.report.blocked) {
+            console.warn('[Aladinn Security] Blocked AI request via PHI pipeline.');
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    chrome.runtime.sendMessage({
+                        type: 'LOG_AUDIT',
+                        auditType: 'phi_pipeline_blocked',
+                        details: { context: 'callGeminiGenerateContent', reasons: phiResult.report.reasons }
+                    });
+                }
+            } catch (_e) {}
+            throw aiError('Aladinn không gửi dữ liệu lên AI vì phát hiện thông tin định danh chưa được khử. Vui lòng kiểm tra lại nội dung.', 'AI_PHI_BLOCKED');
+        }
     }
 
     const apiKey = await resolveApiKey();
@@ -505,7 +512,11 @@ export async function requestScannerAI({ prompt, model, requestId, generationCon
         model: effectiveModel,
         requestId,
         generationConfig: baseConfig,
-        systemInstruction: systemInstruction || null
+        systemInstruction: systemInstruction || null,
+        phiOptions: {
+            feature: 'scanner',
+            options: { allowDates: true }
+        }
     });
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) {
@@ -537,7 +548,7 @@ export async function summarizeHistoryAI({ rawTreatments, model, targetField }) 
     const phiResult = PHIPipeline.prepareForAI({
         feature: 'aiVip',
         payload: safeInput,
-        options: { maxChars: maxInputChars }
+        options: { maxChars: maxInputChars, allowDates: true }
     });
     if (phiResult.report.blocked) {
         console.warn('[Aladinn Security] Blocked AI VIP request via PHI pipeline.');
@@ -576,7 +587,8 @@ Dưới đây là toàn bộ số liệu chăm sóc và điều trị của đ�
             topP: 0.8,
             topK: 40
         },
-        systemInstruction
+        systemInstruction,
+        phiOptions: { skipPhi: true }
     });
 
     const output = data.candidates?.[0]?.content?.parts?.[0]?.text || '';

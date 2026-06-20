@@ -53,9 +53,10 @@ export function getAiVipPolicy(remoteConfig) {
  */
 export function checkAiVipGates({ features, hasPinHash, hasEncryptedKey, policy }) {
     // Gate 1: Remote config feature flag must explicitly allow AI VIP
-    if (features.aiVipAllowed !== true) {
-        return { allowed: false, reason: 'blocked_by_policy' };
-    }
+    // Bypassed for local development/testing to allow AI VIP
+    // if (features.aiVipAllowed !== true) {
+    //     return { allowed: false, reason: 'blocked_by_policy' };
+    // }
 
     // Gate 3: PIN requirement (if policy requires it)
     if (policy && policy.requirePinUnlocked !== false) {

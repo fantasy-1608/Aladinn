@@ -165,14 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const diagHtml = request.diagnosis
                     ? `<div class="patient-diag">📋 ${request.diagnosis.slice(0, 60)}${request.diagnosis.length > 60 ? '...' : ''}</div>`
                     : '';
+                const maskedName = maskPatientName(request.patientName);
+                const nameDisplay = maskedName + (request.namSinh ? ` (${request.namSinh})` : '');
                 pCard.innerHTML = `
                     <div class="patient-main">
                         <div class="patient-avatar active">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
                         </div>
                         <div class="patient-info">
-                            <strong class="patient-name">${request.patientName || 'Bệnh nhân'}</strong>
-                            <span class="patient-id">Mã BA: ${request.patientId}</span>
+                            <strong class="patient-name">${nameDisplay}</strong>
+                            <span class="patient-id">Mã BA: ${request.maBA || request.patientId || ''}</span>
+                            <span class="patient-id">Mã BN: ${request.maBN || 'Chưa có'}</span>
                             ${diagHtml}
                         </div>
                     </div>
@@ -192,6 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function maskPatientName(name) {
+        if (!name) return 'Bệnh nhân';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length === 0) return 'Bệnh nhân';
+        if (parts.length === 1) {
+            return parts[0].charAt(0).toUpperCase() + '.';
+        }
+        const lastPart = parts[parts.length - 1];
+        const initial = lastPart.charAt(0).toUpperCase();
+        return parts.slice(0, -1).join(' ') + ' ' + initial + '.';
+    }
+
     // Request initial context when side panel opens
     chrome.runtime.sendMessage({ type: 'REQUEST_CURRENT_CONTEXT' }, (response) => {
         if (response && response.context) {
@@ -202,14 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const diagHtml = response.diagnosis
                     ? `<div class="patient-diag">📋 ${response.diagnosis.slice(0, 60)}${response.diagnosis.length > 60 ? '...' : ''}</div>`
                     : '';
+                const maskedName = maskPatientName(response.patientName);
+                const nameDisplay = maskedName + (response.namSinh ? ` (${response.namSinh})` : '');
                 pCard.innerHTML = `
                     <div class="patient-main">
                         <div class="patient-avatar active">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
                         </div>
                         <div class="patient-info">
-                            <strong class="patient-name">${response.patientName || 'Bệnh nhân'}</strong>
-                            <span class="patient-id">Mã BA: ${response.patientId}</span>
+                            <strong class="patient-name">${nameDisplay}</strong>
+                            <span class="patient-id">Mã BA: ${response.maBA || response.patientId || ''}</span>
+                            <span class="patient-id">Mã BN: ${response.maBN || 'Chưa có'}</span>
                             ${diagHtml}
                         </div>
                     </div>

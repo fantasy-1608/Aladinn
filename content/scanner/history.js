@@ -768,7 +768,8 @@ const VNPTHistory = (function () {
 
                 console.log('[History] Đang lấy thêm dữ liệu tờ điều trị...');
                 const treatments = await fetchTreatmentForPatient(pid, contextToken);
-                if (treatments && treatments.length > 0) {
+                const pttts = await fetchPtttForPatient(pid, contextToken);
+                if ((treatments && treatments.length > 0) || (pttts && pttts.length > 0)) {
                     hasTreatments = true;
                     // Hàm helper tính độ tương tự giữa 2 chuỗi (Jaccard Similarity đơn giản)
                     /**
@@ -798,7 +799,7 @@ const VNPTHistory = (function () {
                         return intersection / union;
                     };
 
-                    const validTreatments = [...treatments]
+                    const validTreatments = [...(treatments || [])]
                         .filter((/** @type {any} */ t) => t.DIENBIEN || t.DienBien || t.NoiDung)
                         .reverse();
 
@@ -828,7 +829,7 @@ const VNPTHistory = (function () {
                         const lastNode = groupedDienBien[groupedDienBien.length - 1];
                         const similarity = calculateSimilarity(lastNode.content, nd);
 
-                        if (similarity >= 0.6) {
+                        if (similarity >= 0.85) {
                             if (!lastNode.dates.includes(ngay)) {
                                 lastNode.dates.push(ngay);
                             }
@@ -870,11 +871,22 @@ const VNPTHistory = (function () {
                     const qtblText = qtbl ? `${qtbl}\nDiễn biến:\n` : 'Diễn biến:\n';
                     formattedDienBien = dienBienItems ? `${qtblText}${dienBienItems}`.trim() : (qtbl || '');
 
+                    const ptttItems = (pttts || []).map(p => {
+                        const dateStr = (p.NGAYMAUBENHPHAM || p.NGAYTHUCHIEN || '').split(' ')[0] || '';
+                        const name = p.TENDICHVU || p.TEN_DICHVU_KYTHUAT || p.PHUONGPHAPPTTT || '';
+                        if (!name) return '';
+                        return `+ [${dateStr}] Phẫu thuật/Thủ thuật: ${name}`;
+                    }).filter(i => i).join('\n');
+
+                    if (ptttItems) {
+                        formattedDienBien += `\nCác Phẫu thuật/Thủ thuật đã thực hiện:\n${ptttItems}`;
+                    }
+
                     // Lấy diễn biến MỚI NHẤT (entry cuối cùng sau khi sort tăng dần)
                     if (groupedDienBien.length > 0) {
                         tinhTrangRaVien = groupedDienBien[groupedDienBien.length - 1].content;
                     } else {
-                        const latestTreatment = treatments[treatments.length - 1];
+                        const latestTreatment = (treatments || [])[(treatments || []).length - 1];
                         tinhTrangRaVien = latestTreatment?.DIENBIEN || latestTreatment?.DienBien || latestTreatment?.NoiDung || '';
                     }
                 } else if (!isSummaryTab) {
@@ -1047,6 +1059,16 @@ const VNPTHistory = (function () {
         try {
             const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_TREATMENT', { rowId, contextToken }, 8000);
             return res.treatmentList || [];
+        } catch (_err) {
+            return [];
+        }
+    }
+
+    async function fetchPtttForPatient(rowId, contextToken = null) {
+        if (!window.VNPTMessaging) return [];
+        try {
+            const res = await window.VNPTMessaging.sendRequest('REQ_FETCH_PTTT', { rowId, contextToken }, 8000);
+            return res.ptttList || [];
         } catch (_err) {
             return [];
         }

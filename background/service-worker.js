@@ -52,6 +52,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const state = tabContexts.get(tabId) || {};
             state.patientId = message.patientId;
             state.patientName = message.patientName;
+            state.maBA = message.maBA;
+            state.maBN = message.maBN;
+            state.namSinh = message.namSinh;
+            state.diagnosis = message.diagnosis;
             tabContexts.set(tabId, state);
             
             // Forward to side panel
@@ -62,7 +66,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (tabs.length > 0) {
                 const tabId = tabs[0].id;
                 const state = tabContexts.get(tabId) || { context: 'UNKNOWN' };
-                sendResponse({ context: state.context, patientId: state.patientId, patientName: state.patientName, tabId: tabId });
+                sendResponse({ 
+                    context: state.context, 
+                    patientId: state.patientId, 
+                    patientName: state.patientName, 
+                    maBA: state.maBA,
+                    maBN: state.maBN,
+                    namSinh: state.namSinh,
+                    diagnosis: state.diagnosis,
+                    tabId: tabId 
+                });
             } else {
                 sendResponse({ context: 'UNKNOWN' });
             }
@@ -85,6 +98,45 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // ========================================
 // CONTEXT MENU (Optional)
 // ========================================
+function setupContextMenus() {
+    if (!chrome.contextMenus) return;
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({
+            id: 'aladinn_ngoai_tru',
+            title: 'Aladinn - Ngoại trú',
+            contexts: ['all']
+        });
+
+        const items = [
+            { id: 'editHC', title: 'Cập nhật phòng - bác sĩ' },
+            { id: 'updateTT', title: 'Cập nhật thông tin hành chính' },
+            { id: 'viewBN', title: 'Xem thông tin bệnh nhân' },
+            { id: 'openBA', title: 'Mở lại bệnh án cho khoa' },
+            { id: 'lsTheoCongBHYT', title: 'Lịch sử theo cổng BHYT' },
+            { id: 'callbackBN', title: 'Gọi lại bệnh nhân chuyển khoa' },
+            { id: 'closeBA', title: 'Đóng bệnh án được yêu cầu mở' }
+        ];
+
+        items.forEach(item => {
+            chrome.contextMenus.create({
+                id: item.id,
+                parentId: 'aladinn_ngoai_tru',
+                title: item.title,
+                contexts: ['all']
+            });
+        });
+    });
+}
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (tab && tab.id) {
+        chrome.tabs.sendMessage(tab.id, {
+            type: 'ALADINN_CONTEXT_MENU_CLICK',
+            action: info.menuItemId
+        }).catch(() => {});
+    }
+});
+
 // ========================================
 // INSTALLATION & STARTUP
 // ========================================
@@ -109,6 +161,7 @@ chrome.runtime.onInstalled.addListener((details) => {
             }
         });
     }
+    setupContextMenus();
     updateBadge(true);
     // Lên lịch kiểm tra update
     scheduleUpdateCheck();
@@ -122,6 +175,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
+    setupContextMenus();
     updateBadge(true);
     // Lên lịch kiểm tra update khi browser khởi động
     scheduleUpdateCheck();
