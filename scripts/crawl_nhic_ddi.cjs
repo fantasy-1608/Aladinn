@@ -52,17 +52,18 @@ function decodeHtmlEntities(str) {
 function normalizeIngredient(str) {
     if (!str || str === '-') return [];
     
-    // Tách các hoạt chất phối hợp bởi +, /, ;, and
-    const parts = str.split(/[\+\/;]|\band\b/gi);
+    // Tách các hoạt chất phối hợp bởi +, /, ;, ',', and, và
+    const parts = str.split(/[\+\/;,]|\band\b|\b(và)\b/gi);
     const results = [];
     
     for (let part of parts) {
+        if (!part) continue;
         let clean = part.toLowerCase();
         clean = clean.replace(/\([^)]*\)/g, ''); // Bỏ ngoặc đơn
-        clean = clean.replace(/\d+\s*(mg|mcg|ml|g|%)/g, ''); // Bỏ hàm lượng
-        clean = clean.replace(/\b(tablets|tablet|syrup|capsules|capsule|suspension|injection|infusion|solution|cream|ointment|gel|drop|drops|usp|bp|as\s+[\w\s]+)\b/g, '');
+        clean = clean.replace(/\d+\s*(mg|mcg|ml|g|%)/gi, ''); // Bỏ hàm lượng
+        clean = clean.replace(/\b(tablets|tablet|syrup|capsules|capsule|suspension|injection|infusion|solution|cream|ointment|gel|drop|drops|usp|bp|as\s+[\w\s]+)\b/gi, '');
         clean = clean.replace(/\d+/g, ''); // Bỏ số lẻ
-        clean = clean.trim();
+        clean = clean.replace(/^[-.\s]+|[-.\s]+$/g, '');
         if (clean && clean.length > 2) {
             results.push(clean);
         }
