@@ -167,20 +167,13 @@ async function run() {
     console.log(`- Loaded ${nhicIngredients.length} hoạt chất được NHIC hỗ trợ.`);
 
     // 2. Load hospital stock drugs
-    const hospitalDrugsFile = path.join(CDS_DATA, 'raw_drugs.json');
+    const hospitalDrugsFile = path.join(CDS_DATA, 'drug_generic.json');
     if (!fs.existsSync(hospitalDrugsFile)) {
         console.error(`❌ Không tìm thấy file kho thuốc ${hospitalDrugsFile}.`);
         process.exit(1);
     }
-    const hospitalDrugs = JSON.parse(fs.readFileSync(hospitalDrugsFile, 'utf8'));
-    const hospitalActiveIngredients = new Set();
-    for (const drug of hospitalDrugs) {
-        const hcs = normalizeIngredient(drug.hc);
-        for (const hc of hcs) {
-            hospitalActiveIngredients.add(hc);
-        }
-    }
-    console.log(`- Đang xử lý ${hospitalDrugs.length} thuốc trong kho bệnh viện.`);
+    const genericMapJson = JSON.parse(fs.readFileSync(hospitalDrugsFile, 'utf8'));
+    const hospitalActiveIngredients = new Set(Object.keys(genericMapJson));
     console.log(`- Trích xuất được ${hospitalActiveIngredients.size} hoạt chất thô.`);
 
     // 3. Map hospital ingredients to NHIC ingredients

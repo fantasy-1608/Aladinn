@@ -260,6 +260,11 @@ function normalizeToken(input) {
 }
 
 function lookupGeneric(name, genericMap, brandMap) {
+    // 1. Kiểm tra ưu tiên tên gốc chưa qua xử lý (raw string matching)
+    // Rất quan trọng cho các thuốc có kèm hàm lượng trong từ điển (vd: bacqure 500mg)
+    const rawNameLower = name.toLowerCase().trim();
+    if (brandMap.has(rawNameLower)) return brandMap.get(rawNameLower).generic_name.toLowerCase();
+
     const cleaned = normalizeToken(name);
     if (!cleaned) return null;
 
