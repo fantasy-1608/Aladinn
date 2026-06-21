@@ -1,0 +1,1 @@
+{"level":30,"time":1781971712403,"name":"gitnexus","repoCount":5,"repos":["Aladinn","HunterAI","Nurse","Project-OASIS","shared-his"],"msg":"GitNexus: MCP server starting"}
