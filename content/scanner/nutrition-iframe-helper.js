@@ -8,7 +8,7 @@
  */
 (function () {
     'use strict';
-    var PARENT_ORIGIN = '*';
+    var PARENT_ORIGIN = window.location.origin;
 
     // Cleanup listener cũ (tránh duplicate)
     if (window._vnptNutritionHandler) {

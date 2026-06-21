@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = '*';
+    var PARENT_ORIGIN = window.location.origin;
 
     if (window._vnptHoiChanHandler) {
         window.removeEventListener('message', window._vnptHoiChanHandler);

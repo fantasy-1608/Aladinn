@@ -8,7 +8,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = '*';
+    var PARENT_ORIGIN = window.location.origin;
 
     if (window._vnptChuyenVienHandler) {
         window.removeEventListener('message', window._vnptChuyenVienHandler);

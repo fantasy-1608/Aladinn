@@ -485,7 +485,7 @@ const VNPTEmergency = (function () {
             window.addEventListener('message', handleResponse);
 
             if (targetWin) {
-                targetWin.postMessage({ type: cmd, ...payload }, '*');
+                targetWin.postMessage({ type: cmd, ...payload }, window.location.origin);
             } else {
                 clearTimeout(timer);
                 window.removeEventListener('message', handleResponse);

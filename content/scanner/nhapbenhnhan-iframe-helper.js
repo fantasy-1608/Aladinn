@@ -12,7 +12,7 @@
 
 (function () {
     'use strict';
-    var PARENT_ORIGIN = '*';
+    var PARENT_ORIGIN = window.location.origin;
 
     if (window._vnptNhapBenhNhanHandler) {
         window.removeEventListener('message', window._vnptNhapBenhNhanHandler);
