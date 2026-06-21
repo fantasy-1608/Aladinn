@@ -21,10 +21,24 @@ try {
     const existingGenerics = new Set(genericList.map(g => g.generic_name.toLowerCase().trim()));
     const existingBrands = new Set(brandMapList.map(b => b.brand_name.toLowerCase().trim()));
 
-    // Hàm chuẩn hóa hoạt chất (chữ thường, cắt khoảng trắng, chuẩn hóa dấu)
+    // Hàm chuẩn hóa hoạt chất (chữ thường, loại bỏ hàm lượng, dấu ngoặc)
     const cleanGeneric = (hc) => {
         if (!hc || hc === '-') return null;
-        return hc.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+        let text = hc.toLowerCase().replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+        text = text.replace(/\([^)]*\)/g, ' '); // Xóa nội dung trong ngoặc đơn
+        // Xóa các hàm lượng (vd: 500mg, 1g, 10 ml, 1.5%)
+        text = text.replace(/\b\d+([.,]\d+)?\s*(mg|g|mcg|ml|l|ui|iu|mEq|%|\/|\s)+\b/gi, ' ');
+        text = text.replace(/\d+([.,]\d+)?\s*(mg|g|mcg|ml|l|ui|iu|mEq|%)/gi, ' ');
+        
+        // Cắt theo dấu phẩy, dấu cộng, gạch chéo hoặc chữ "và"
+        let parts = text.split(/,|\+|\/|\b(và)\b/);
+        parts = parts.map(p => p && p.trim()).filter(p => p && p !== 'và');
+        
+        // Loại bỏ các ký tự thừa ở 2 đầu và lọc từ quá ngắn
+        parts = parts.map(p => p.trim().replace(/^[-.]+|[-.]+$/g, '')).filter(p => p.length >= 2);
+        
+        if (parts.length === 0) return null;
+        return parts.join(' / ');
     };
 
     let addedGenerics = 0;

@@ -6,7 +6,7 @@
 import { runtimeRuleIndex } from './runtime-rule-index.js';
 
 export const KB_SCHEMA_VERSION = 5; // Bumped for Pipeline v1.0 — forces full re-seed
-export const KB_SEED_VERSION = '2026-06-21-nhic-seed-629-rules'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
+export const KB_SEED_VERSION = '2026-06-21-nhic-seed-690-rules'; // 426 DDI, 27 DDD, 14 Renal, 18 DrugLab, 598 generics
 
 const DB_NAME = 'AladinnCDS';
 const META_STORE = 'meta';
