@@ -6118,5 +6118,13 @@
     "dosage_form": "",
     "route": "",
     "is_primary": true
+  },
+  {
+    "brand_name": "algesin-n",
+    "generic_name": "ketorolac",
+    "strength_text": "",
+    "dosage_form": "",
+    "route": "",
+    "is_primary": true
   }
 ]
