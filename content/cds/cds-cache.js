@@ -1,8 +1,4 @@
-/**
- * 🧞 Aladinn CDS — Cache Manager
- * Lắng nghe và quản lý dữ liệu JSON thu thập được từ AJAX Snooping.
- * Tự động lọc, merge và giới hạn kích thước để đảm bảo hiệu năng.
- */
+import { normalizationCache } from './normalization-cache.js';
 
 class CDSCacheManager {
     constructor() {
@@ -11,6 +7,9 @@ class CDSCacheManager {
     }
 
     reset() {
+        if (typeof normalizationCache !== 'undefined' && normalizationCache) {
+            normalizationCache.clear();
+        }
         this.cache = {
             patientIds: new Set(),
             benhnhanId: null,
