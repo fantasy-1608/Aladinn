@@ -3098,5 +3098,61 @@
   {
     "ten": "Zoliicef",
     "hc": "Cefazolin"
+  },
+  {
+    "ten": "Acyclovir 400mg",
+    "hc": "Aciclovir"
+  },
+  {
+    "ten": "Ashzolid (Linezolid Injection-300ml)",
+    "hc": "Linezolid*"
+  },
+  {
+    "ten": "Cefazolin 2000",
+    "hc": "Cefazolin"
+  },
+  {
+    "ten": "Cefoxitin 2g",
+    "hc": "Cefoxitin"
+  },
+  {
+    "ten": "Cefpodoxim 200mg",
+    "hc": "Cefpodoxim"
+  },
+  {
+    "ten": "Combivent",
+    "hc": "Salbutamol + ipratropium"
+  },
+  {
+    "ten": "Medaxetine 500 mg",
+    "hc": "Cefuroxim"
+  },
+  {
+    "ten": "Medskin Clovir 400",
+    "hc": "Aciclovir"
+  },
+  {
+    "ten": "Nerusyn 3g",
+    "hc": "Ampicilin + sulbactam"
+  },
+  {
+    "ten": "Povidon iodin 10%",
+    "hc": "Povidon iodin"
+  },
+  {
+    "ten": "Simelox",
+    "hc": "Magnesi hydroxyd + nhôm hydroxyd + simethicon"
+  },
+  {
+    "ten": "Sodium Chloride Injection",
+    "hc": "Natri clorid"
+  },
+  {
+    "ten": "Tadaritin",
+    "hc": "Desloratadin"
+  },
+  {
+    "ten": "Tovidex",
+    "hc": "Tobramycin + dexamethason"
   }
 ]
