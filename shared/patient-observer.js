@@ -162,9 +162,11 @@ HIS.PatientObserver = (function () {
         if (!rowElement) return;
         const rowId = _getRowId(rowElement);
         const maBA = _extractMaBA(rowElement) || rowId;
-        if (!rowId || rowId === _lastSelectedId) return;
+        // Dedup by maBA (unique per patient) — NOT by rowId (jqGrid internal, recycled after filter)
+        const dedupKey = maBA + '|' + rowId;
+        if (!rowId || dedupKey === _lastSelectedId) return;
 
-        _lastSelectedId = rowId;
+        _lastSelectedId = dedupKey;
         const patientName = _extractPatientName(rowElement);
         const maBN = _extractMaBN(rowElement);
         const namSinh = _extractNamSinh(rowElement);
@@ -222,6 +224,8 @@ HIS.PatientObserver = (function () {
 
             // ChildList change (grid reload, thêm row mới)
             if (mutation.type === 'childList') {
+                // Reset dedup key — after filter/reload, same jqGrid rowId may map to a different patient
+                _lastSelectedId = '';
                 const activeRow = grid.querySelector(SELECTED_ROW);
                 if (activeRow) {
                     _handleSelection(activeRow);

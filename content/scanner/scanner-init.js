@@ -4,7 +4,7 @@
  * Fits into the Aladinn namespace.
  */
 
-import { normalizeAdmissionExamFields } from './scanner-utils.js';
+import { normalizeAdmissionExamFields, classifyLab, LAB_CATEGORIES, URINE_CODES, AMBIGUOUS_URINE } from './scanner-utils.js';
 import { extractVitals } from './vital-extractor.js';
 
 window.Aladinn = window.Aladinn || {};
@@ -22,11 +22,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         'stroke-width="1.5" fill="none"></polyline>' +
         '</svg></span>';
 
-    function _showABGPopup(pH, pCO2, HCO3, pO2, FiO2, BE, Na, Cl) {
+    function _showABGPopup(pH, pCO2, HCO3, pO2, FiO2, BE, Na, Cl, Lac, isVenous) {
         let step1Html;
         let phStatus;
         let isAcidemia = false;
         let isAlkalemia = false;
+
+        // VBG warning banner
+        let vbgBanner = '';
+        if (isVenous) {
+            vbgBanner = '<div style="background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); padding:8px 12px; margin-bottom:12px; border-radius:6px; font-size:12px; color:#fbbf24; display:flex; align-items:center; gap:6px;"><b>⚠️ KHÍ MÁU TĨNH MẠCH (VBG)</b> — pH VBG ≈ ABG − 0.03, pCO₂ VBG ≈ ABG + 5 mmHg. Giá trị mang tính tham khảo.</div>';
+        }
 
         if (pH !== null && !isNaN(pH)) {
             if (pH < 7.35) { phStatus = '<span style="color:#FFB4AB">Toan máu (Acidemia)</span>'; isAcidemia = true; }
@@ -127,17 +133,34 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     agDetails += '↳ <b>Nguyên nhân (MUDPILES):</b> Toan ceton, Toan lactic, Suy thận, Ngộ độc...<br/>';
                     const deltaAG = AG - 12;
                     const deltaHCO3 = 24 - HCO3;
-                    const deltaRatio = deltaAG / deltaHCO3;
-                    agDetails += `<div style="margin-top:6px;"><b>Delta Ratio (ΔAG/ΔHCO3):</b> ${deltaRatio.toFixed(2)}</div>`;
-                    if (deltaRatio < 0.4) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường (Hyperchloremic)';
-                    else if (deltaRatio < 1) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường';
-                    else if (deltaRatio > 2) agDetails += '↳ Toan CH tăng AG + Kiềm CH';
-                    else agDetails += '↳ Toan CH tăng AG đơn thuần';
+                    const deltaRatio = deltaHCO3 !== 0 ? deltaAG / deltaHCO3 : Infinity;
+                    if (isFinite(deltaRatio)) {
+                        agDetails += `<div style="margin-top:6px;"><b>Delta Ratio (ΔAG/ΔHCO3):</b> ${deltaRatio.toFixed(2)}</div>`;
+                        if (deltaRatio < 0.4) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường (Hyperchloremic)';
+                        else if (deltaRatio < 1) agDetails += '↳ Toan CH tăng AG + Toan CH bình thường';
+                        else if (deltaRatio > 2) agDetails += '↳ Toan CH tăng AG + Kiềm CH';
+                        else agDetails += '↳ Toan CH tăng AG đơn thuần';
+                    }
                 } else {
                     agDetails += '↳ <b>Nguyên nhân (HARDUP):</b> Tiêu chảy, RTA (Toan ống thận), Dò tiêu hóa...';
                 }
+
+                // Lactate display within AG step
+                if (Lac !== null && !isNaN(Lac)) {
+                    const lacStatus = Lac > 4 ? '<span style="color:#FFB4AB">🆘 Tăng nặng — Sốc / Thiếu oxy mô</span>'
+                        : Lac > 2 ? '<span style="color:#fbbf24">⚠️ Tăng — Gợi ý toan lactic</span>'
+                        : '<span style="color:#4ade80">✅ Bình thường</span>';
+                    agDetails += `<div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);"><b>Lactate:</b> ${Lac} mmol/L ➔ ${lacStatus}</div>`;
+                }
             } else {
                 agDetails = '<span style="color:#8C9099; font-style:italic;">(Cần xét nghiệm Na, Cl bên bảng Sinh hóa cùng ngày để tính Anion Gap)</span>';
+                // Still show Lactate if available even without AG
+                if (Lac !== null && !isNaN(Lac)) {
+                    const lacStatus = Lac > 4 ? '<span style="color:#FFB4AB">🆘 Tăng nặng — Sốc / Thiếu oxy mô</span>'
+                        : Lac > 2 ? '<span style="color:#fbbf24">⚠️ Tăng — Gợi ý toan lactic</span>'
+                        : '<span style="color:#4ade80">✅ Bình thường</span>';
+                    agDetails += `<div style="margin-top:8px;"><b>Lactate:</b> ${Lac} mmol/L ➔ ${lacStatus}</div>`;
+                }
             }
 
             const agStepNum = step3Html ? 4 : 3;
@@ -155,13 +178,22 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         if (pO2 !== null && !isNaN(pO2)) {
             if (FiO2 !== null && !isNaN(FiO2)) {
                 let fVal = FiO2 > 1 ? FiO2 / 100 : FiO2;
-                pfRatio = pO2 / fVal;
-                if (pfRatio >= 400) oxyStatus = `<span style="color:#4ade80">✅ Oxy hóa máu tốt (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else if (pfRatio >= 300) oxyStatus = `<span style="color:#fbbf24">⚠️ Oxy hóa máu ranh giới (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else if (pfRatio >= 200) oxyStatus = `<span style="color:#FFB4AB">🚨 ARDS Nhẹ (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else if (pfRatio >= 100) oxyStatus = `<span style="color:#FFB4AB">🆘 ARDS Trung bình (P/F = ${pfRatio.toFixed(0)})</span>`;
-                else oxyStatus = `<span style="color:#FFB4AB">💀 ARDS Nặng (P/F = ${pfRatio.toFixed(0)})</span>`;
-                oxyStatus += ` <span style="font-size:12px; color:#8C9099;">(FiO2: ${FiO2}%)</span>`;
+                if (fVal <= 0 || !isFinite(fVal)) {
+                    // FiO2 = 0 or invalid → cannot compute P/F, show pO2 alone
+                    if (pO2 >= 80) oxyStatus = '<span style="color:#4ade80">✅ Oxy hóa máu bình thường (80-100 mmHg)</span>';
+                    else if (pO2 >= 60) oxyStatus = '<span style="color:#fbbf24">⚠️ Thiếu oxy máu nhẹ (60-79 mmHg)</span>';
+                    else if (pO2 >= 40) oxyStatus = '<span style="color:#FFB4AB">🚨 Thiếu oxy máu trung bình (40-59 mmHg)</span>';
+                    else oxyStatus = '<span style="color:#FFB4AB">🆘 Thiếu oxy máu nặng (<40 mmHg)</span>';
+                    oxyStatus += ' <span style="font-size:12px; color:#8C9099;">(FiO2 không hợp lệ để tính P/F)</span>';
+                } else {
+                    pfRatio = pO2 / fVal;
+                    if (pfRatio >= 400) oxyStatus = `<span style="color:#4ade80">✅ Oxy hóa máu tốt (P/F = ${pfRatio.toFixed(0)})</span>`;
+                    else if (pfRatio >= 300) oxyStatus = `<span style="color:#fbbf24">⚠️ Oxy hóa máu ranh giới (P/F = ${pfRatio.toFixed(0)})</span>`;
+                    else if (pfRatio >= 200) oxyStatus = `<span style="color:#FFB4AB">🚨 ARDS Nhẹ (P/F = ${pfRatio.toFixed(0)})</span>`;
+                    else if (pfRatio >= 100) oxyStatus = `<span style="color:#FFB4AB">🆘 ARDS Trung bình (P/F = ${pfRatio.toFixed(0)})</span>`;
+                    else oxyStatus = `<span style="color:#FFB4AB">💀 ARDS Nặng (P/F = ${pfRatio.toFixed(0)})</span>`;
+                    oxyStatus += ` <span style="font-size:12px; color:#8C9099;">(FiO2: ${FiO2}%)</span>`;
+                }
             } else {
                 if (pO2 >= 80) oxyStatus = '<span style="color:#4ade80">✅ Oxy hóa máu bình thường (80-100 mmHg)</span>';
                 else if (pO2 >= 60) oxyStatus = '<span style="color:#fbbf24">⚠️ Thiếu oxy máu nhẹ (60-79 mmHg)</span>';
@@ -178,6 +210,50 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 ${oxyStatus}
             </div>
         </div>`;
+
+        // A-a Gradient step — only when pO2, pCO2, and FiO2 are available
+        let aaGradientHtml = '';
+        if (pO2 !== null && pCO2 !== null && FiO2 !== null && !isNaN(pO2) && !isNaN(pCO2) && !isNaN(FiO2)) {
+            let fVal = FiO2 > 1 ? FiO2 / 100 : FiO2;
+            if (fVal > 0 && isFinite(fVal)) {
+                const pAO2 = (fVal * 713) - (pCO2 / 0.8);
+                const aaGrad = pAO2 - pO2;
+                // Normal A-a gradient ≈ (Age/4) + 4, or roughly < 15 mmHg for young adults
+                const normalMax = 15; // Conservative default without age
+                let aaStatus;
+                if (aaGrad <= normalMax) {
+                    aaStatus = `<span style="color:#4ade80">✅ Bình thường (${aaGrad.toFixed(1)} mmHg ≤ ${normalMax})</span>`;
+                    aaStatus += '<div style="margin-top:4px; font-size:12px; color:#8C9099;">↳ Thiếu oxy do giảm thông khí hoặc FiO2 thấp (ngoài phổi)</div>';
+                } else {
+                    aaStatus = `<span style="color:#FFB4AB">⚠️ Tăng (${aaGrad.toFixed(1)} mmHg > ${normalMax})</span>`;
+                    aaStatus += '<div style="margin-top:4px; font-size:12px; color:#8C9099;">↳ Bệnh lý tại phổi: Viêm phổi, PE, Xơ phổi, Shunt...</div>';
+                }
+                const aaStepNum = oxyStepNum + 1;
+                aaGradientHtml = `<div style="margin-bottom:12px;">
+                    <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${aaStepNum}️⃣ Bước ${aaStepNum}: A-a Gradient</div>
+                    <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:13px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                        <div style="margin-bottom:6px;"><b>PAO₂</b> = FiO₂ × 713 − pCO₂/0.8 = ${pAO2.toFixed(1)} mmHg</div>
+                        <div style="margin-bottom:6px;"><b>A-a Gradient</b> = PAO₂ − PaO₂ = ${aaGrad.toFixed(1)} mmHg</div>
+                        ${aaStatus}
+                    </div>
+                </div>`;
+            }
+        }
+
+        // Lactate standalone step (when not in toan_chuyen_hoa/toan_hon_hop AG step)
+        let lacStandaloneHtml = '';
+        if (Lac !== null && !isNaN(Lac) && direction !== 'toan_chuyen_hoa' && direction !== 'toan_hon_hop') {
+            const lacStatus = Lac > 4 ? '<span style="color:#FFB4AB">🆘 Tăng nặng (> 4 mmol/L) — Sốc / Thiếu oxy mô / Toan lactic</span>'
+                : Lac > 2 ? '<span style="color:#fbbf24">⚠️ Tăng (> 2 mmol/L) — Theo dõi tưới máu mô</span>'
+                : '<span style="color:#4ade80">✅ Bình thường (0.5 - 2.0 mmol/L)</span>';
+            const lacStepNum = oxyStepNum + (aaGradientHtml ? 1 : 0) + 1;
+            lacStandaloneHtml = `<div style="margin-bottom:12px;">
+                <div style="color:#9ECAFF; font-size:13px; font-weight:700; margin-bottom:4px; text-transform:uppercase;">${lacStepNum}️⃣ Bước ${lacStepNum}: Lactate</div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; font-size:14px; border:1px solid rgba(255,255,255,0.05); color:#cbd5e1;">
+                    <b>Lactate:</b> ${Lac} mmol/L ➔ ${lacStatus}
+                </div>
+            </div>`;
+        }
 
         let suggestHtml = '';
         if (direction === 'toan_ho_hap') suggestHtml = '<b style="color:#E1E2E8">HƯỚNG XỬ TRÍ (Phác đồ BYT):</b><br/>- Giải phóng đường thở, thở oxy (mục tiêu SpO2 88-92% nếu COPD).<br/>- Chỉ định thông khí nhân tạo (NIV/BIPAP hoặc Đặt NKQ) khi pH < 7.25, pCO2 > 50mmHg.<br/>- Điều trị nguyên nhân: Giãn phế quản, Corticosteroid, Kháng sinh (nếu có nhiễm khuẩn).';
@@ -222,11 +298,14 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     <button onclick="document.getElementById('abg-popup-modal').remove()" style="background:none; border:none; color:#8C9099; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
                 </div>
                 <div style="padding:16px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(158,202,255,0.3) transparent;">
+                    ${vbgBanner}
                     ${step1Html}
                     ${step2Html}
                     ${step3Html}
                     ${step4Html}
                     ${step5Html}
+                    ${aaGradientHtml}
+                    ${lacStandaloneHtml}
                     ${suggestHtml}
                     <div style="margin-top:16px; padding:8px 10px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px dashed rgba(140,144,153,0.3);">
                         <div style="color:#8C9099; font-size:11px; line-height:1.5; text-align:center;">⚠️ Kết quả chỉ mang tính <b>gợi ý tham khảo</b>, không thay thế chẩn đoán lâm sàng.<br/>Bác sĩ điều trị chịu trách nhiệm quyết định cuối cùng.</div>
@@ -249,6 +328,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const BE = parseFloat(abgBtn.getAttribute('data-be'));
             const Na = parseFloat(abgBtn.getAttribute('data-na'));
             const Cl = parseFloat(abgBtn.getAttribute('data-cl'));
+            const Lac = parseFloat(abgBtn.getAttribute('data-lac'));
+            const isVenous = abgBtn.getAttribute('data-venous') === 'true';
             
             _showABGPopup(
                 isNaN(pH) ? null : pH, 
@@ -258,7 +339,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 isNaN(FiO2) ? null : FiO2,
                 isNaN(BE) ? null : BE,
                 isNaN(Na) ? null : Na,
-                isNaN(Cl) ? null : Cl
+                isNaN(Cl) ? null : Cl,
+                isNaN(Lac) ? null : Lac,
+                isVenous
             );
         }
     });
@@ -1462,7 +1545,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
     // ╔══════════════════════════════════════════════════════════════════╗
     // ║  SECTION 6: LAB DATA PROCESSING & CLASSIFICATION               ║
     // ║  Pure functions: _parseLabDate, _shortDate, _isAbnormal,       ║
-    // ║  _statusColor, _classifyLab + LAB_CATEGORIES constants.        ║
+    // ║  _statusColor. classifyLab + LAB_CATEGORIES imported from      ║
+    // ║  scanner-utils.js (single source of truth).                    ║
     // ║  Safe to extract & unit-test independently.                    ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
@@ -1489,96 +1573,8 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         return null;
     }
 
-    // Clinical category mapping
-    const LAB_CATEGORIES = {
-        'Huyết học': [
-            'WBC','NEU','NEU%','RBC','HGB','HCT','PLT','MCV','MCH','MCHC',
-            'RDW','RDW-CV','RDW-SD','MPV','PDW','PDW-SD','PCT',
-            'LYM','LYM%','MONO','MONO%','EOS','EOS%','BASO','BASO%',
-            'P-LCR','NLR',
-            'PT','PT%','PT INR','APTT','APTT ratio','Fibrinogen','INR','TT','D-Dimer',
-            'ABO','Rh'
-        ],
-        'Nước tiểu': [
-            'SG','pH','LEU','BLD','NIT','PRO','UBG',
-            'GLU niệu','BIL niệu','KET niệu',
-            'Protein niệu','Glucose niệu','Hồng cầu niệu','Bạch cầu niệu',
-            'Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng'
-        ],
-        'Khí máu': [
-            'pH','pCO2','pO2','HCO3act','HCO3std','BE(ecf)','BE(B)','ctCO2','O2SAT','pO2/FIO2','pO2(A-a)(T)','pO2(a/A)(T)','Temp','ctHb','FIO2','RI'
-        ],
-        'Sinh hóa': [
-            'Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT',
-            'Bilirubin','Protein','Albumin','CRP','LDH','CK','Amylase','Lipase',
-            'Acid Uric','Cholesterol','Triglycerid','HDL','LDL','HbA1c',
-            'Cortisol','Procalcitonin','Troponin','BNP','NT-proBNP',
-            'Na','K','Cl','Ca','Mg','Phospho'
-        ]
-    };
-
-    // Urine-specific short codes — distinguish from biochem (GLU, BIL, KET, PRO)
-    const URINE_CODES = new Set(['SG','LEU','BLD','NIT','UBG']);
-    // These short codes overlap — must check testName for "nước tiểu" context
-    const AMBIGUOUS_URINE = new Set(['GLU','BIL','KET','PRO']);
-
-    function _classifyLab(code, testName, value) {
-        const cUp = (code || '').toUpperCase().trim();
-        const tUp = (testName || '').toUpperCase();
-        const vUp = (value || '').toUpperCase().trim();
-        const combined = cUp + ' ' + tUp;
-
-        // Xử lý riêng pH vì rất dễ nhầm giữa Nước tiểu và Khí máu
-        if (cUp === 'PH' || tUp === 'PH') {
-            if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
-            if (combined.includes('MÁU') || combined.includes('KHÍ') || combined.includes('BLOOD')) return 'Khí máu';
-            // Khí máu pH thường có nhiều chữ số thập phân (vd: 7.539, 7.35), còn nước tiểu thường ngắn (6.0, 7.5)
-            if (vUp && vUp.includes('.') && vUp.split('.')[1].length >= 2) return 'Khí máu';
-            // Default to Nước tiểu if no other clue
-            return 'Nước tiểu';
-        }
-
-        // 1. Explicit urine short codes
-        if (URINE_CODES.has(cUp)) return 'Nước tiểu';
-
-        // 2. Ambiguous codes — decide by test name context OR result value pattern
-        if (AMBIGUOUS_URINE.has(cUp)) {
-            // 2a. testName chứa keyword nước tiểu
-            if (tUp.includes('NƯỚC TIỂU') || tUp.includes('NIỆU') || tUp.includes('URIN')
-                || tUp.includes('TỔNG PHÂN TÍCH') || tUp.includes('10 THÔNG SỐ')
-                || tUp.includes('DIPSTICK')) return 'Nước tiểu';
-            // 2b. Giá trị định tính (chỉ nước tiểu mới có)
-            //     Mở rộng: SMALL, LARGE, MODERATE, TRACE, 1+ 2+ 3+ 4+, ÂM TÍNH, DƯƠNG TÍNH
-            if (vUp && /^(ÂM TÍNH|DƯƠNG TÍNH|TRACE|SMALL|LARGE|MODERATE|NEGATIVE|POSITIVE|NEG|POS|NORMAL|\d*\+{1,4})$/i.test(vUp)) return 'Nước tiểu';
-            // 2c. testName không chứa suffix máu/huyết/serum → hầu hết là dipstick nước tiểu
-            //     Ví dụ HIS trả code="PRO" testName="PRO" (≤5 ký tự, không có từ máu)
-            if (!tUp.includes('MÁU') && !tUp.includes('HUYẾT') && !tUp.includes('PLASMA') && !tUp.includes('SERUM')) {
-                if (tUp.trim() === cUp || tUp.trim().length <= 5) return 'Nước tiểu';
-            }
-            return 'Sinh hóa';
-        }
-
-        // 3. Vietnamese keyword matching
-        if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
-        if (combined.includes('HUYẾT ĐỒ') || combined.includes('TẾ BÀO MÁU') || combined.includes('CÔNG THỨC MÁU') ||
-            combined.includes('ĐÔNG MÁU') || combined.includes('NHÓM MÁU') || combined.includes('HUYẾT HỌC')) return 'Huyết học';
-        if (combined.includes('KHÍ MÁU') || combined.includes('KHI MAU')) return 'Khí máu';
-        if (combined.includes('SINH HÓA') || combined.includes('HÓA SINH') || combined.includes('HOẠT ĐỘ') ||
-            combined.includes('ĐỊNH LƯỢNG') || combined.includes('ĐỘ LỌC') || combined.includes('ĐIỆN GIẢI')) return 'Sinh hóa';
-
-        // 4. Keyword list matching
-        for (const [cat, keywords] of Object.entries(LAB_CATEGORIES)) {
-            for (const kw of keywords) {
-                const kwU = kw.toUpperCase();
-                if (/^[A-Z0-9%-]+$/.test(kwU)) {
-                    if (new RegExp(`\\b${kwU.replace('%','\\%')}\\b`).test(combined)) return cat;
-                } else {
-                    if (combined.includes(kwU)) return cat;
-                }
-            }
-        }
-        return 'Sinh hóa';
-    }
+    // LAB_CATEGORIES, URINE_CODES, AMBIGUOUS_URINE, classifyLab
+    // → Imported from scanner-utils.js (single source of truth)
 
     // ╔══════════════════════════════════════════════════════════════════╗
     // ║  SECTION 7: LAB TIMELINE MODAL (Full Clinical Dashboard)       ║
@@ -1636,7 +1632,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
         for (const l of labs) {
             if (!l.sheetDate) continue;
             datesSet.add(l.sheetDate);
-            const cat = _classifyLab(l.code || '', l.testName || '', l.value || '');
+            const cat = classifyLab(l.code || '', l.testName || '', l.value || '');
             const cName = l.code || '—';
             if (!grouped[cat]) grouped[cat] = {};
             if (!grouped[cat][cName]) grouped[cat][cName] = { unit: l.unit, refMin: l.refMin, refMax: l.refMax, refDisplay: l.refDisplay, values: {} };
@@ -1712,6 +1708,17 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
             const subCatKeys = Object.keys(subCats).sort((a,b) => catOrder.indexOf(a) - catOrder.indexOf(b));
             if (subCatKeys.length === 0) continue;
 
+            // Compute per-category dates — only dates where this category has at least one value
+            const catDatesSet = new Set();
+            for (const sc of Object.keys(subCats)) {
+                for (const k of Object.keys(subCats[sc])) {
+                    for (const d of Object.keys(subCats[sc][k].values)) {
+                        catDatesSet.add(d);
+                    }
+                }
+            }
+            const catDates = [...catDatesSet].sort((a, b) => _parseLabDate(a) - _parseLabDate(b));
+
             let mIndicatorsCount = 0;
             let mHasAbn = false;
             let mRowsHtml = '';
@@ -1729,7 +1736,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 // Sub-category header for "Huyết học" to distinguish Tế bào máu, Đông máu, Nhóm máu
                 if (mCat === 'Huyết học' && subCat !== 'Huyết học') {
                      const subName = subCat.replace('Huyết học (', '').replace(')', '');
-                     mRowsHtml += `<tr><td colspan="${sortedDates.length + 2}" style="padding:6px 10px; background:#f8fafc; color:#1e5494; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; border:1px solid #cccccc; position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
+                     mRowsHtml += `<tr><td colspan="${catDates.length + 2}" style="padding:6px 10px; background:#f8fafc; color:#1e5494; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; border:1px solid #cccccc; position:sticky; left:0; z-index:2;">▪ ${subName}</td></tr>`;
                 }
 
                 const sortedIndicators = Object.entries(indicators).sort((a, b) => {
@@ -1879,7 +1886,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     }
 
                     // Re-check each cell's status using derived reference
-                    for (const d of sortedDates) {
+                    for (const d of catDates) {
                         const cell = data.values[d];
                         if (cell && !cell.status) {
                             const numVal = parseFloat(String(cell.value).replace(',', '.'));
@@ -1905,7 +1912,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     
                     const stickyBg = rowIdx % 2 === 0 ? '#ffffff' : '#f9f9f9';
 
-                    const trendPoints = sortedDates.map(d => {
+                    const trendPoints = catDates.map(d => {
                         const cell = data.values[d];
                         return {
                             date: _shortDate(d),
@@ -1919,7 +1926,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                     mRowsHtml += `<td style="padding:6px 10px; color:#333333; font-weight:${rowHasAbnFinal ? '700' : '400'}; white-space:nowrap; position:sticky; left:0; background:${stickyBg}; z-index:1; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc; ${leftBorderFinal}">${displayName}</td>`;
                     mRowsHtml += `<td style="padding:6px 8px; color:#666666; font-size:12.6px; white-space:nowrap; background:${stickyBg}; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${refText}</td>`;
 
-                    for (const d of sortedDates) {
+                    for (const d of catDates) {
                         const cell = data.values[d];
                         if (cell) {
                             const sc = _statusColor(cell.status);
@@ -1944,8 +1951,9 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 
                 let abgButtonHtml = '';
                 if (mCat === 'Khí máu') {
-                    let val_pH = 'null', val_pCO2 = 'null', val_HCO3 = 'null', val_pO2 = 'null', val_FiO2 = 'null', val_BE = 'null', val_Na = 'null', val_Cl = 'null';
-                    const latestD = sortedDates[sortedDates.length - 1];
+                    let val_pH = 'null', val_pCO2 = 'null', val_HCO3 = 'null', val_pO2 = 'null', val_FiO2 = 'null', val_BE = 'null', val_Na = 'null', val_Cl = 'null', val_Lac = 'null';
+                    let isVenousSample = false;
+                    const latestD = catDates[catDates.length - 1];
                     if (latestD) {
                         for (const sc of Object.keys(subCats)) {
                             for (const k of Object.keys(subCats[sc])) {
@@ -1956,19 +1964,45 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                                 if (up === 'PO2' && subCats[sc][k].values[latestD]) val_pO2 = parseFloat(subCats[sc][k].values[latestD].value);
                                 if (up === 'FIO2' && subCats[sc][k].values[latestD]) val_FiO2 = parseFloat(subCats[sc][k].values[latestD].value);
                                 if ((up === 'BE(B)' || up === 'BE(ECF)') && subCats[sc][k].values[latestD]) val_BE = parseFloat(subCats[sc][k].values[latestD].value);
+                                if ((up === 'LAC' || up === 'LACTATE') && subCats[sc][k].values[latestD]) val_Lac = parseFloat(subCats[sc][k].values[latestD].value);
                             }
+                            // Detect VBG: check subcategory name for venous keywords
+                            const scUp = sc.toUpperCase();
+                            if (scUp.includes('TĨNH MẠCH') || scUp.includes('VENOUS') || scUp.includes('VBG')) isVenousSample = true;
                         }
+                        // Na/Cl: try same date first, then fallback to nearest date ≤ 24h
                         if (masterGrouped['Sinh hóa']) {
+                            const latestTime = _parseLabDate(latestD);
                             for (const sc of Object.keys(masterGrouped['Sinh hóa'])) {
                                 for (const k of Object.keys(masterGrouped['Sinh hóa'][sc])) {
                                     const up = k.toUpperCase();
-                                    if (up === 'NA' && masterGrouped['Sinh hóa'][sc][k].values[latestD]) val_Na = parseFloat(masterGrouped['Sinh hóa'][sc][k].values[latestD].value);
-                                    if (up === 'CL' && masterGrouped['Sinh hóa'][sc][k].values[latestD]) val_Cl = parseFloat(masterGrouped['Sinh hóa'][sc][k].values[latestD].value);
+                                    if (up === 'NA' || up === 'CL') {
+                                        const data = masterGrouped['Sinh hóa'][sc][k];
+                                        // Try exact date first
+                                        if (data.values[latestD]) {
+                                            if (up === 'NA') val_Na = parseFloat(data.values[latestD].value);
+                                            if (up === 'CL') val_Cl = parseFloat(data.values[latestD].value);
+                                        } else {
+                                            // Fallback: find nearest date within 24h
+                                            let bestDate = null, bestDiff = Infinity;
+                                            for (const d of Object.keys(data.values)) {
+                                                const diff = Math.abs(_parseLabDate(d) - latestTime);
+                                                if (diff < bestDiff && diff <= 86400000) { // 24h in ms
+                                                    bestDiff = diff;
+                                                    bestDate = d;
+                                                }
+                                            }
+                                            if (bestDate) {
+                                                if (up === 'NA' && val_Na === 'null') val_Na = parseFloat(data.values[bestDate].value);
+                                                if (up === 'CL' && val_Cl === 'null') val_Cl = parseFloat(data.values[bestDate].value);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    abgButtonHtml = `<button class="aladinn-abg-btn" data-ph="${val_pH}" data-pco2="${val_pCO2}" data-hco3="${val_HCO3}" data-po2="${val_pO2}" data-fio2="${val_FiO2}" data-be="${val_BE}" data-na="${val_Na}" data-cl="${val_Cl}" style="margin-left:auto; background:#ffffff; border:1px solid #1e5494; color:#1e5494; padding:4px 10px; border-radius:0px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.1s;" onmouseover="this.style.background='#edf4fc';" onmouseout="this.style.background='#ffffff';" title="Mở Popup phân tích Khí máu ngày gần nhất">⚡️ Đọc Nâng Cao</button>`;
+                    abgButtonHtml = `<button class="aladinn-abg-btn" data-ph="${val_pH}" data-pco2="${val_pCO2}" data-hco3="${val_HCO3}" data-po2="${val_pO2}" data-fio2="${val_FiO2}" data-be="${val_BE}" data-na="${val_Na}" data-cl="${val_Cl}" data-lac="${val_Lac}" data-venous="${isVenousSample}" style="margin-left:auto; background:#ffffff; border:1px solid #1e5494; color:#1e5494; padding:4px 10px; border-radius:0px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.1s;" onmouseover="this.style.background='#edf4fc';" onmouseout="this.style.background='#ffffff';" title="Mở Popup phân tích Khí máu ngày gần nhất">⚡️ Đọc Nâng Cao</button>`;
                 }
 
                 tablesHtml += `<div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f2f5f8; border-bottom:2px solid #1e5494;">
@@ -1983,7 +2017,7 @@ window.Aladinn.Scanner = window.Aladinn.Scanner || {};
                 tablesHtml += `<thead><tr>
                   <th style="padding:7px 10px; text-align:left; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; position:sticky; left:0; z-index:2; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">Chỉ số</th>
                   <th style="padding:7px 10px; text-align:left; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; position:sticky; left:0; z-index:2; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">Ref</th>`;
-                for (const d of sortedDates) {
+                for (const d of catDates) {
                     tablesHtml += `<th style="padding:7px 8px; text-align:right; background:#f2f5f8; color:#333333; font-size:12px; font-weight:700; white-space:nowrap; border-bottom:1px solid #cccccc; border-right:1px solid #cccccc;">${_shortDate(d)}</th>`;
                 }
                 tablesHtml += '</tr></thead><tbody>';

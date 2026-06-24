@@ -327,3 +327,142 @@ describe('LAB_CATEGORIES', () => {
         expect(nt).toContain('Nitrit');
     });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION: classifyLab — Khí máu classification
+// ═══════════════════════════════════════════════════════════════
+describe('classifyLab — Khí máu', () => {
+    // ── Core ABG parameters ──
+    it('pCO2 → Khí máu', () => {
+        expect(classifyLab('pCO2', 'pCO2', '42')).toBe('Khí máu');
+    });
+
+    it('pO2 → Khí máu', () => {
+        expect(classifyLab('pO2', 'pO2', '95')).toBe('Khí máu');
+    });
+
+    it('HCO3act → Khí máu', () => {
+        expect(classifyLab('HCO3act', 'HCO3 actual', '24')).toBe('Khí máu');
+    });
+
+    it('HCO3std → Khí máu', () => {
+        expect(classifyLab('HCO3std', 'HCO3 standard', '23')).toBe('Khí máu');
+    });
+
+    it('BE(ecf) → Khí máu', () => {
+        expect(classifyLab('BE(ecf)', 'BE(ecf)', '-1.5')).toBe('Khí máu');
+    });
+
+    it('FIO2 → Khí máu', () => {
+        expect(classifyLab('FIO2', 'FIO2', '21')).toBe('Khí máu');
+    });
+
+    it('O2SAT → Khí máu', () => {
+        expect(classifyLab('O2SAT', 'O2SAT', '98')).toBe('Khí máu');
+    });
+
+    // ── Lactate (newly added) ──
+    it('Lac → Khí máu', () => {
+        expect(classifyLab('Lac', 'Lactate', '1.5')).toBe('Khí máu');
+    });
+
+    it('Lactate → Khí máu', () => {
+        expect(classifyLab('Lactate', 'Lactate máu', '3.2')).toBe('Khí máu');
+    });
+
+    it('Lactic Acid → Khí máu', () => {
+        expect(classifyLab('Lactic Acid', 'Lactic Acid', '2.1')).toBe('Khí máu');
+    });
+
+    // ── P/F ratio aliases ──
+    it('pO2/FIO2 → Khí máu', () => {
+        expect(classifyLab('pO2/FIO2', 'pO2/FIO2', '350')).toBe('Khí máu');
+    });
+
+    it('P/F → Khí máu', () => {
+        expect(classifyLab('P/F', 'P/F ratio', '420')).toBe('Khí máu');
+    });
+
+    // ── pH disambiguation ──
+    it('pH với testName chứa "khí máu" → Khí máu', () => {
+        expect(classifyLab('pH', 'pH khí máu', '7.42')).toBe('Khí máu');
+    });
+
+    it('pH với testName chứa "nước tiểu" → Nước tiểu', () => {
+        expect(classifyLab('pH', 'pH nước tiểu', '6.5')).toBe('Nước tiểu');
+    });
+
+    it('pH với testName chứa "niệu" → Nước tiểu', () => {
+        expect(classifyLab('pH', 'pH niệu', '7.0')).toBe('Nước tiểu');
+    });
+
+    it('pH giá trị 7.42 (≥2 decimal) → Khí máu (heuristic)', () => {
+        expect(classifyLab('pH', 'pH', '7.42')).toBe('Khí máu');
+    });
+
+    it('pH giá trị 7.539 (3 decimal) → Khí máu (heuristic)', () => {
+        expect(classifyLab('pH', 'pH', '7.539')).toBe('Khí máu');
+    });
+
+    it('pH giá trị 6.0 (1 decimal) → Nước tiểu (default)', () => {
+        expect(classifyLab('pH', 'pH', '6.0')).toBe('Nước tiểu');
+    });
+
+    it('pH giá trị 7.5 (1 decimal) → Nước tiểu (default)', () => {
+        expect(classifyLab('pH', 'pH', '7.5')).toBe('Nước tiểu');
+    });
+
+    it('pH với testName chứa "BLOOD" → Khí máu', () => {
+        expect(classifyLab('pH', 'Blood Gas pH', '7.35')).toBe('Khí máu');
+    });
+
+    it('pH không có context rõ ràng, no decimal → Nước tiểu (default)', () => {
+        expect(classifyLab('pH', 'pH', '')).toBe('Nước tiểu');
+    });
+
+    // ── Vietnamese keyword matching ──
+    it('testName chứa "Khí máu" → Khí máu', () => {
+        expect(classifyLab('XYZ', 'Xét nghiệm Khí máu', '7.4')).toBe('Khí máu');
+    });
+
+    it('testName chứa "KHI MAU" (no diacritics) → Khí máu', () => {
+        expect(classifyLab('XYZ', 'Xet nghiem KHI MAU', '42')).toBe('Khí máu');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SECTION: classifyLab — Edge cases & regressions
+// ═══════════════════════════════════════════════════════════════
+describe('classifyLab — Edge cases', () => {
+    it('Empty code and testName → Sinh hóa (default)', () => {
+        expect(classifyLab('', '', '')).toBe('Sinh hóa');
+    });
+
+    it('null/undefined inputs → Sinh hóa (default)', () => {
+        expect(classifyLab(null, undefined, null)).toBe('Sinh hóa');
+    });
+
+    it('Na → Sinh hóa (not Khí máu)', () => {
+        expect(classifyLab('Na', 'Natri máu', '140')).toBe('Sinh hóa');
+    });
+
+    it('Cl → Sinh hóa (not Khí máu)', () => {
+        expect(classifyLab('Cl', 'Chloride', '100')).toBe('Sinh hóa');
+    });
+
+    it('WBC → Huyết học', () => {
+        expect(classifyLab('WBC', 'WBC', '10.5')).toBe('Huyết học');
+    });
+
+    it('SG → Nước tiểu', () => {
+        expect(classifyLab('SG', 'SG', '1.025')).toBe('Nước tiểu');
+    });
+
+    it('GLU with urinary context → Nước tiểu', () => {
+        expect(classifyLab('GLU', 'Glucose nước tiểu', 'ÂM TÍNH')).toBe('Nước tiểu');
+    });
+
+    it('GLU with blood context → Sinh hóa', () => {
+        expect(classifyLab('GLU', 'Glucose máu', '5.6')).toBe('Sinh hóa');
+    });
+});

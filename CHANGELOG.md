@@ -7,6 +7,26 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.2.2] — 2026-06-24
+
+### 🛠️ Sửa lỗi & Cải tiến (Bug Fixes & Improvements)
+
+- **Patient Observer (Theo dõi bệnh nhân)**:
+  - Khắc phục lỗi không nhận diện được việc chuyển đổi bệnh nhân khi áp dụng bộ lọc trên lưới danh mục (do jqGrid tái sử dụng `rowId`). Sử dụng khoá phức hợp gồm mã bệnh án và rowId (`maBA + '|' + rowId`) để định danh duy nhất bệnh nhân.
+  - Tự động reset trạng thái bệnh nhân cũ khi có thay đổi danh sách hiển thị (`childList` mutation) để tránh bỏ sót sự kiện đổi bệnh nhân khi tải lại lưới.
+
+- **Clinical Scanner (Bộ quét dữ liệu lâm sàng)**:
+  - **Điện giải đồ**: Hỗ trợ tìm kiếm thông minh giá trị Na và Cl từ kết quả gần nhất trong vòng 24 giờ nếu không tìm thấy kết quả khớp chính xác thời gian với mẫu khí máu.
+  - **Khí máu nâng cao (ABG)**: Tích hợp chỉ số Lactate (`Lac`, `Lactate`, `Lactic Acid`) và cờ đánh dấu mẫu máu tĩnh mạch (`data-venous`) vào nút phân tích khí máu nâng cao.
+  - **Nhận diện pH thông minh**: Phân loại chính xác chỉ số pH giữa Khí máu (Blood Gas) và Nước tiểu (Urine) dựa trên từ khoá trong tên xét nghiệm (niệu, nước tiểu, khí máu, blood) và số chữ số thập phân (khí máu thường $\ge$ 2 chữ số thập phân, nước tiểu thường ngắn hạn 1 chữ số thập phân).
+  - Bổ sung tỷ lệ P/F (`P/F`, `PaO2/FiO2`) vào danh mục Khí máu.
+  - Sửa lỗi hiển thị dữ liệu bảng kết quả CLS theo mảng ngày cụ thể của từng danh mục (`catDates`) thay vì mảng ngày sắp xếp chung (`sortedDates`).
+
+- **Unit Tests**:
+  - Bổ sung bộ kiểm thử tự động toàn diện kiểm tra tính đúng đắn của logic phân loại xét nghiệm (`classifyLab`) đối với các chỉ số khí máu, pH và các trường hợp biên nguy cơ cao.
+
+---
+
 ## [2.2.0] — 2026-06-15
 
 ### ✨ Tính năng mới (New Features)

@@ -191,7 +191,10 @@ export const LAB_CATEGORIES = {
         'Nitrit','Ketone','Bilirubin niệu','Urobilinogen','Tỷ trọng'
     ],
     'Khí máu': [
-        'pH','pCO2','pO2','HCO3act','HCO3std','BE(ecf)','BE(B)','ctCO2','O2SAT','pO2/FIO2','pO2(A-a)(T)','pO2(a/A)(T)','Temp','ctHb','FIO2','RI'
+        'pH','pCO2','pO2','HCO3act','HCO3std','BE(ecf)','BE(B)','ctCO2','O2SAT',
+        'pO2/FIO2','P/F','PaO2/FiO2',
+        'pO2(A-a)(T)','pO2(a/A)(T)','Temp','ctHb','FIO2','RI',
+        'Lac','Lactate','Lactic Acid'
     ],
     'Sinh hóa': [
         'Glucose','Ure','Creatinin','eGFR','AST','ALT','GPT','GOT','GGT',
@@ -210,6 +213,16 @@ export function classifyLab(code, testName, value) {
     const tUp = (testName || '').toUpperCase();
     const vUp = (value || '').toUpperCase().trim();
     const combined = cUp + ' ' + tUp;
+
+    // 0. Xử lý riêng pH vì rất dễ nhầm giữa Nước tiểu và Khí máu
+    if (cUp === 'PH' || tUp === 'PH') {
+        if (combined.includes('NƯỚC TIỂU') || combined.includes('NIỆU') || combined.includes('URIN')) return 'Nước tiểu';
+        if (combined.includes('MÁU') || combined.includes('KHÍ') || combined.includes('BLOOD')) return 'Khí máu';
+        // Khí máu pH thường có nhiều chữ số thập phân (vd: 7.539, 7.35), còn nước tiểu thường ngắn (6.0, 7.5)
+        if (vUp && vUp.includes('.') && vUp.split('.')[1].length >= 2) return 'Khí máu';
+        // Default to Nước tiểu if no other clue
+        return 'Nước tiểu';
+    }
 
     // 1. Explicit urine short codes
     if (URINE_CODES.has(cUp)) return 'Nước tiểu';
