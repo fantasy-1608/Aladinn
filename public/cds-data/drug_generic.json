@@ -3886,5 +3886,125 @@
     "pharmacologic_class": "unknown",
     "therapeutic_class": "unknown",
     "is_active": true
+  },
+  {
+    "generic_name": "clobetasol propionat",
+    "generic_name_en": "clobetasol propionat",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "ebastin",
+    "generic_name_en": "ebastin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "fluconazol",
+    "generic_name_en": "fluconazol",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "đảng sâm / bạch linh / bạch truật / cam thảo / trần bì / bán hạ chế / sa nhân / mộc hương / gừng tươi",
+    "generic_name_en": "đảng sâm / bạch linh / bạch truật / cam thảo / trần bì / bán hạ chế / sa nhân / mộc hương / gừng tươi",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "indomethacin",
+    "generic_name_en": "indomethacin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "amylase / lipase / protease",
+    "generic_name_en": "amylase / lipase / protease",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "tacrolimus",
+    "generic_name_en": "tacrolimus",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "lisinopril",
+    "generic_name_en": "lisinopril",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "sulfasalazin",
+    "generic_name_en": "sulfasalazin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "vildagliptin / metformin",
+    "generic_name_en": "vildagliptin / metformin",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "calcipotriol",
+    "generic_name_en": "calcipotriol",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "đan sâm / tam thất",
+    "generic_name_en": "đan sâm / tam thất",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "proparacain hydroclorid",
+    "generic_name_en": "proparacain hydroclorid",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "etomidat",
+    "generic_name_en": "etomidat",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
+  },
+  {
+    "generic_name": "rivaroxaban",
+    "generic_name_en": "rivaroxaban",
+    "atc_code": "",
+    "pharmacologic_class": "unknown",
+    "therapeutic_class": "unknown",
+    "is_active": true
   }
 ]

@@ -60,6 +60,7 @@ Aladinn is a Chrome Extension Manifest V3 for VNPT HIS. It assists clinicians wi
 8. Never use LLM output as the sole authority for writeback.
 9. Fail closed on uncertainty.
 10. Preserve existing user-facing behavior unless a task explicitly requires changing it.
+11. **CDS alerts are ADVISORY ONLY** — Never block, prevent, disable, or interfere with any clinician operation on HIS. No modal popups, no disabled buttons, no prevented form submissions. Even for contraindications, only display severe warnings. The physician always has final authority.
 
 ### Legal Compliance (Pháp Luật Bảo Mật Y Tế Việt Nam)
 

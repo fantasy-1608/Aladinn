@@ -11,6 +11,7 @@ import './storage.js';
 import './shortcuts.js';
 import './realtime.js';
 import './dashboard.js';
+import './ward-overview.js';
 import './ui.js';
 import './integration.js';
 import './export.js';

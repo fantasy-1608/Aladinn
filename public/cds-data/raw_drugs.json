@@ -3154,5 +3154,197 @@
   {
     "ten": "Tovidex",
     "hc": "Tobramycin + dexamethason"
+  },
+  {
+    "ten": "A.T ASCORBIC Syrup",
+    "hc": "Vitamin C"
+  },
+  {
+    "ten": "A.T Alugela",
+    "hc": "Aluminum phosphat"
+  },
+  {
+    "ten": "Agicetam 800",
+    "hc": "Piracetam"
+  },
+  {
+    "ten": "Alfutor Er Tablets 10mg",
+    "hc": "Alfuzosin"
+  },
+  {
+    "ten": "Ambroxol Auxilto 30 mg",
+    "hc": "Ambroxol"
+  },
+  {
+    "ten": "Ameproxen 500",
+    "hc": "Naproxen"
+  },
+  {
+    "ten": "Bacterocin Oint",
+    "hc": "Mupirocin"
+  },
+  {
+    "ten": "Bersola Cream",
+    "hc": "Clobetasol propionat"
+  },
+  {
+    "ten": "Bihasal 5",
+    "hc": "Bisoprolol"
+  },
+  {
+    "ten": "Bipp Zinc powder",
+    "hc": "Kẽm gluconat"
+  },
+  {
+    "ten": "Bisoprolol 2,5mg",
+    "hc": "Bisoprolol"
+  },
+  {
+    "ten": "Canasone C.B.",
+    "hc": "Clotrimazol + betamethason"
+  },
+  {
+    "ten": "Combiwave SF 250",
+    "hc": "Salmeterol + fluticason propionat"
+  },
+  {
+    "ten": "Ebarsun",
+    "hc": "Ivermectin"
+  },
+  {
+    "ten": "Ebastel 10 mg",
+    "hc": "Ebastin"
+  },
+  {
+    "ten": "Espumisan Capsules",
+    "hc": "Simethicon"
+  },
+  {
+    "ten": "Felodipine STELLA 2.5 mg retard",
+    "hc": "Felodipin"
+  },
+  {
+    "ten": "Fluconazole STELLA 150 mg",
+    "hc": "Fluconazol"
+  },
+  {
+    "ten": "Gliclada 30mg",
+    "hc": "Gliclazid"
+  },
+  {
+    "ten": "Hương sa lục quân",
+    "hc": "Đảng sâm, Bạch linh, Bạch truật, Cam thảo, Trần bì,Bán hạ chế, Sa nhân, Mộc hương, Gừng tươi"
+  },
+  {
+    "ten": "Imedoxim 100",
+    "hc": "Cefpodoxim"
+  },
+  {
+    "ten": "Indocollyre",
+    "hc": "Indomethacin"
+  },
+  {
+    "ten": "Irbesartan HCT 150/12.5mg",
+    "hc": "Irbesartan + hydroclorothiazid"
+  },
+  {
+    "ten": "Isosorbid",
+    "hc": "Isosorbid dinitrat"
+  },
+  {
+    "ten": "Kernadol 650mg Tablets",
+    "hc": "Paracetamol (acetaminophen)"
+  },
+  {
+    "ten": "METFORMIN HCL 850/SITAGLIPTIN 50",
+    "hc": "Sitagliptin + metformin"
+  },
+  {
+    "ten": "Meloxicam",
+    "hc": "Meloxicam"
+  },
+  {
+    "ten": "Mudisil 250",
+    "hc": "Terbinafin (hydroclorid)"
+  },
+  {
+    "ten": "Olanzapin",
+    "hc": "Olanzapin"
+  },
+  {
+    "ten": "Pancres",
+    "hc": "Amylase + lipase + protease"
+  },
+  {
+    "ten": "Pracetam 1200",
+    "hc": "Piracetam"
+  },
+  {
+    "ten": "Quantopic 0.03%",
+    "hc": "Tacrolimus"
+  },
+  {
+    "ten": "SaVi Lisinopril 5",
+    "hc": "Lisinopril"
+  },
+  {
+    "ten": "SaViDopril Plus",
+    "hc": "Perindopril + indapamid"
+  },
+  {
+    "ten": "Salazidin Gr 500mg",
+    "hc": "Sulfasalazin"
+  },
+  {
+    "ten": "Smecta",
+    "hc": "Diosmectit"
+  },
+  {
+    "ten": "Stilaren",
+    "hc": "Vildagliptin + metformin"
+  },
+  {
+    "ten": "Tamunix",
+    "hc": "Etodolac"
+  },
+  {
+    "ten": "Trozimed",
+    "hc": "Calcipotriol"
+  },
+  {
+    "ten": "Venokern 500mg viên nén bao phim",
+    "hc": "Diosmin + hesperidin"
+  },
+  {
+    "ten": "Vigentin 875mg/125mg",
+    "hc": "Amoxicilin + acid clavulanic"
+  },
+  {
+    "ten": "Đan sâm - Tam thất",
+    "hc": "Đan sâm, Tam thất"
+  },
+  {
+    "ten": "Alcaine 0,5% 15ml",
+    "hc": "Proparacain hydroclorid"
+  },
+  {
+    "ten": "Ampicillin/Sulbactam 1,5 g",
+    "hc": "Ampicilin + sulbactam"
+  },
+  {
+    "ten": "Coveram 5mg/5mg",
+    "hc": "Perindopril + amlodipin"
+  },
+  {
+    "ten": "Etomidate-Lipuro",
+    "hc": "Etomidat"
+  },
+  {
+    "ten": "Hemotocin",
+    "hc": "Carbetocin"
+  },
+  {
+    "ten": "Rivacryst",
+    "hc": "Rivaroxaban"
   }
 ]

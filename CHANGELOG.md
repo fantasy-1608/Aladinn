@@ -9,6 +9,14 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ## [2.2.2] — 2026-06-24
 
+### ✨ Tính năng mới
+
+- **Tổng quan khoa**:
+  - Thêm nút `Tổng quan khoa` trên Side Panel khi đang ở danh sách bệnh nhân nội trú.
+  - Đọc chẩn đoán từ tờ điều trị mới nhất và phân nhóm cần chú ý, cần theo dõi, thiếu dữ liệu và thường quy.
+  - Bảo vệ tải HIS bằng quét tuần tự một bệnh nhân/lần, nghỉ 2 giây, giới hạn 50 bệnh nhân, cho phép hủy và tự dừng sau 3 lỗi liên tiếp.
+  - Không gửi dữ liệu bệnh nhân ra dịch vụ AI và không lưu kết quả quét lâu dài.
+
 ### 🛠️ Sửa lỗi & Cải tiến (Bug Fixes & Improvements)
 
 - **Patient Observer (Theo dõi bệnh nhân)**:

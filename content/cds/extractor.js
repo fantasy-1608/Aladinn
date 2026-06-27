@@ -812,6 +812,10 @@ export const CDSExtractor = {
             'dây truyền', 'bộ dây', 'catheter',
             'băng keo', 'gạc', 'bông', 'găng tay',
             'dung dịch rửa', 'nước rửa tay', 'povidone', 'betadine',
+            // Dịch vụ kỹ thuật, thủ thuật, phẫu thuật, khám bệnh
+            'thay băng', 'cắt chỉ', 'vết mổ', 'khâu vết thương',
+            'khám bệnh', 'giường bệnh', 'tiền giường', 'phẫu thuật', 'thủ thuật',
+            'siêu âm', 'x-quang', 'xquang', 'nội soi', 'xét nghiệm', 'điện tim', 'chụp ct', 'chụp cắt lớp', 'mri'
         ];
         const nameLower = name.toLowerCase();
         if (NOT_DRUGS.some(nd => nameLower.includes(nd))) return '';

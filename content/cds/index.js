@@ -9,6 +9,9 @@ import { CDSExtractor, CDSCacheManager } from './extractor.js';
 import { analyzeLocally, runBhytAuditRules, icdMatchesRequirement } from './engine.js';
 import { CDSUI } from './ui.js';
 import { CDSPerformance } from './performance-diagnostics.js';
+import { MedRecEngine } from './med-rec.js';
+import { DosageAlertEngine } from './dosage-alerts.js';
+import { CDSAnalytics } from './cds-analytics.js';
 console.log('[Aladinn CDS] 📦 Module loaded.');
 
 let isCDSEnabled = true;

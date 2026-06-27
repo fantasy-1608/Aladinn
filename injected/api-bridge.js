@@ -576,6 +576,94 @@
         return orders;
     }
 
+    function _wardOverviewDateValue(value) {
+        const parts = String(value || '').split(/[/\s:]/).map(Number);
+        if (parts.length < 5 || parts.some((part, index) => index < 5 && !Number.isFinite(part))) return 0;
+        return new Date(parts[2], parts[1] - 1, parts[0], parts[3], parts[4], parts[5] || 0).getTime();
+    }
+
+    function _diagnosisFromTreatmentRecord(record) {
+        if (!record || typeof record !== 'object') return '';
+        const primary = _cleanHisText(_firstValue(record, [
+            'CHANDOAN', 'CHUANDOAN', 'TENCHANDOAN', 'TENCHUANDOAN',
+            'BENHCHINH', 'TENBENHCHINH', 'TENBENH'
+        ]));
+        const primaryCode = _cleanHisText(_firstValue(record, [
+            'MABENHCHINH', 'MACHANDOAN', 'MAICD', 'MABENH', 'ICD'
+        ]));
+        const secondary = _cleanHisText(_firstValue(record, [
+            'BENHKEMTHEO', 'BENH_KEM_THEO', 'CHANDOANKEMTHEO',
+            'CHUANDOANKEMTHEO', 'CHANDOAN_KEMTHEO', 'TENBENHKEMTHEO'
+        ]));
+        const main = primaryCode && primary && !primary.includes(primaryCode)
+            ? `${primaryCode}-${primary}`
+            : (primary || primaryCode);
+        if (!secondary || main.includes(secondary)) return main;
+        return [main, secondary].filter(Boolean).join('; ');
+    }
+
+    async function _latestTreatmentRow(rowData, benhnhanId) {
+        const candidates = Array.from(new Set([
+            rowData.HOSOBENHANID || rowData.HSBAID,
+            rowData.KHAMBENHID || rowData.MADIEUTRI,
+            rowData.TIEPNHANID
+        ].filter(value => value !== undefined && value !== null && String(value).trim() !== '')));
+        for (const candidate of candidates) {
+            const options = [
+                { name: '[0]', value: '' },
+                { name: '[1]', value: String(benhnhanId) },
+                { name: '[2]', value: '4' },
+                { name: '[3]', value: String(candidate) }
+            ];
+            const rows = await _fetchHisPagingRows('NT.024.DSPHIEU', options, 3, 'sidx=NGAYMAUBENHPHAM&sord=desc');
+            if (rows.length === 0) continue;
+            return [...rows].sort((a, b) => (
+                _wardOverviewDateValue(b.NGAYMAUBENHPHAM || b.NGAY_Y_LENH || b.NGAY)
+                - _wardOverviewDateValue(a.NGAYMAUBENHPHAM || a.NGAY_Y_LENH || a.NGAY)
+            ))[0];
+        }
+        return null;
+    }
+
+    async function _latestDiagnosisWithFallback(latest) {
+        let diagnosis = _diagnosisFromTreatmentRecord(latest);
+        const sheetId = latest?.MAUBENHPHAMID || latest?.PHIEUID || latest?.ID;
+        if (diagnosis || !sheetId) return diagnosis;
+        try {
+            const detail = await _asyncCallSpO('NT.024.2.DETAIL', String(sheetId), 0);
+            const records = _parseHisRows(detail);
+            diagnosis = records.map(_diagnosisFromTreatmentRecord).filter(Boolean).join('; ');
+        } catch (_) {
+            return '';
+        }
+        return diagnosis;
+    }
+
+    async function fetchLatestTreatmentDiagnosis(rowId, requestId) {
+        try {
+            const { rowData, effectiveRowId } = resolveActiveGrid(rowId, { strict: true });
+            const benhnhanId = rowData.BENHNHANID || '';
+            if (!effectiveRowId || !benhnhanId) {
+                sendResult('FETCH_LATEST_TREATMENT_DIAGNOSIS_RESULT', rowId, {
+                    success: true, latestDiagnosis: '', latestTreatmentDate: '', dataStatus: 'MISSING_CONTEXT'
+                }, requestId);
+                return;
+            }
+            const latest = await _latestTreatmentRow(rowData, benhnhanId);
+            const latestDiagnosis = latest ? await _latestDiagnosisWithFallback(latest) : '';
+            sendResult('FETCH_LATEST_TREATMENT_DIAGNOSIS_RESULT', rowId, {
+                success: true,
+                latestDiagnosis,
+                latestTreatmentDate: latest?.NGAYMAUBENHPHAM || latest?.NGAY_Y_LENH || latest?.NGAY || '',
+                dataStatus: latest ? 'FOUND' : 'NO_TREATMENT_SHEET'
+            }, requestId);
+        } catch (_) {
+            sendResult('FETCH_LATEST_TREATMENT_DIAGNOSIS_RESULT', rowId, {
+                success: false, latestDiagnosis: '', latestTreatmentDate: '', error: 'HIS_READ_FAILED'
+            }, requestId);
+        }
+    }
+
     const READ_ONLY_INTENTS = new Set([
         'REQ_FETCH_HISTORY',
         'REQ_FETCH_ROOM',
@@ -590,6 +678,7 @@
         'REQ_FETCH_BHYT_TIMES',
         'REQ_PREFETCH_DIAGNOSES',
         'REQ_FETCH_CLINICAL_SUMMARY',
+        'REQ_FETCH_LATEST_TREATMENT_DIAGNOSIS',
         'REQ_FETCH_PATIENT_DEMOGRAPHICS'
     ]);
 
@@ -673,6 +762,9 @@
                 break;
             case 'REQ_FETCH_CLINICAL_SUMMARY':
                 fetchClinicalSummary(event.data.rowId, event.data.requestId);
+                break;
+            case 'REQ_FETCH_LATEST_TREATMENT_DIAGNOSIS':
+                fetchLatestTreatmentDiagnosis(event.data.rowId, event.data.requestId);
                 break;
             case 'REQ_FETCH_PATIENT_DEMOGRAPHICS':
                 fetchPatientDemographics(event.data.rowId, event.data.requestId);

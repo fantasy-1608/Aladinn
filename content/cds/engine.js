@@ -19,6 +19,7 @@ import {
 import { injectCalculatedEgfr } from './egfr-alerts.js';
 import { runtimeRuleIndex } from './runtime-rule-index.js';
 import { normalizationCache } from './normalization-cache.js';
+import { runDosageAlerts } from './dosage-alerts.js';
 
 // Feature flags
 let cds_runtime_rule_index = true;
@@ -1061,6 +1062,9 @@ export async function analyzeLocally(context, filterLow = true) {
         const criticalLabAlerts = runCriticalLabAlerts(enrichedContext);
         const orderSetAlerts = runOrderSetRules(normalized);
 
+        // Phase 3: Dosage Intelligence alerts
+        const dosageAlerts = runDosageAlerts(enrichedContext);
+
         allAlerts = dedupeAlerts([
             ...noDiagnosisAlerts,
             ...duplicateTherapyAlerts,
@@ -1068,7 +1072,8 @@ export async function analyzeLocally(context, filterLow = true) {
             ...drugDiseaseAlerts,
             ...insuranceAlerts,
             ...criticalLabAlerts,
-            ...orderSetAlerts
+            ...orderSetAlerts,
+            ...dosageAlerts
         ]);
     } else {
         const db = await openDatabase();
@@ -1095,6 +1100,9 @@ export async function analyzeLocally(context, filterLow = true) {
             });
         }
 
+        // Phase 3: Dosage Intelligence alerts
+        const dosageAlerts = runDosageAlerts(enrichedContext);
+
         allAlerts = dedupeAlerts([
             ...noDiagnosisAlerts,
             ...runDuplicateTherapyRules(normalized, genericMap),
@@ -1102,7 +1110,8 @@ export async function analyzeLocally(context, filterLow = true) {
             ...runDrugDiseaseRules(drugDiseaseRules, normalized, enrichedContext, drugLabRules, renalRules),
             ...runInsuranceRules(insuranceFormulary, insuranceRules, normalized, enrichedContext),
             ...runCriticalLabAlerts(enrichedContext),
-            ...runOrderSetRules(normalized)
+            ...runOrderSetRules(normalized),
+            ...dosageAlerts
         ]);
     }
 

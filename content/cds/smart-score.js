@@ -528,6 +528,389 @@ export const SmartScoreEngine = {
                 if (total > 0) { risk = 'KHÔNG THỂ LOẠI TRỪ (≥ 1 điểm)'; color = 'red'; rec = 'Yêu cầu bất động cột sống cổ và chụp phim (X-Quang hoặc CT) để khảo sát tổn thương.'; }
                 return { total, risk, rec, color };
             }
+        },
+
+        CHA2DS2VASc: {
+            id: 'CHA2DS2VASc',
+            name: 'Thang điểm CHA₂DS₂-VASc (Nguy cơ Đột quỵ do Rung nhĩ)',
+            description: 'Đánh giá nguy cơ thuyên tắc huyết khối ở bệnh nhân rung nhĩ không do bệnh van tim để quyết định kháng đông.',
+            icdPrefixes: ['I48'],
+            criteria: {
+                chf: { label: 'Suy tim sung huyết / EF ≤ 40% (C)', val: 1, type: 'checkbox', default: false },
+                hypertension: { label: 'Tăng huyết áp (H)', val: 1, type: 'checkbox', default: false },
+                age75: { label: 'Tuổi ≥ 75 (A₂)', val: 2, type: 'checkbox', default: false },
+                diabetes: { label: 'Đái tháo đường (D)', val: 1, type: 'checkbox', default: false },
+                stroke: { label: 'Tiền sử Đột quỵ / TIA / Thuyên tắc (S₂)', val: 2, type: 'checkbox', default: false },
+                vascular: { label: 'Bệnh mạch máu (NMCT cũ, PAD, mảng xơ ĐMC) (V)', val: 1, type: 'checkbox', default: false },
+                age65: { label: 'Tuổi 65 – 74 (A)', val: 1, type: 'checkbox', default: false },
+                sex: { label: 'Giới tính Nữ (Sc)', val: 1, type: 'checkbox', default: false }
+            },
+            calculate: (vals) => {
+                let total = 0;
+                if (vals.chf) total += 1;
+                if (vals.hypertension) total += 1;
+                if (vals.age75) total += 2;
+                if (vals.diabetes) total += 1;
+                if (vals.stroke) total += 2;
+                if (vals.vascular) total += 1;
+                if (vals.age65) total += 1;
+                if (vals.sex) total += 1;
+
+                let risk = 'Nguy cơ THẤP (0 điểm Nam, 1 điểm Nữ)';
+                let rec = 'Không cần kháng đông. Xem xét Aspirin hoặc không điều trị.';
+                let color = 'green';
+                if (total >= 2) {
+                    risk = `Nguy cơ CAO (${total} điểm)`;
+                    rec = 'Khuyến cáo MẠNH kháng đông đường uống (Warfarin hoặc NOAC: Rivaroxaban, Apixaban, Dabigatran, Edoxaban). INR mục tiêu 2.0 – 3.0 nếu dùng Warfarin.';
+                    color = 'red';
+                } else if (total === 1) {
+                    risk = 'Nguy cơ TRUNG BÌNH (1 điểm)';
+                    rec = 'Cân nhắc kháng đông đường uống (ưu tiên NOAC hơn Aspirin). Đánh giá nguy cơ chảy máu (HAS-BLED) trước khi quyết định.';
+                    color = 'yellow';
+                }
+                return { total, risk, rec, color };
+            }
+        },
+
+        HASBLED: {
+            id: 'HASBLED',
+            name: 'Thang điểm HAS-BLED (Nguy cơ Chảy máu do Kháng đông)',
+            description: 'Đánh giá nguy cơ xuất huyết nặng ở bệnh nhân rung nhĩ đang dùng kháng đông.',
+            icdPrefixes: ['I48'],
+            criteria: {
+                hypertension: { label: 'Tăng huyết áp không kiểm soát (HA tâm thu > 160 mmHg) (H)', val: 1, type: 'checkbox', default: false },
+                abnormal_renal: { label: 'Suy thận (Creatinine ≥ 200 µmol/L, lọc máu, ghép thận) (A)', val: 1, type: 'checkbox', default: false },
+                abnormal_liver: { label: 'Suy gan (Xơ gan, Bilirubin > 2×, AST/ALT > 3×) (A)', val: 1, type: 'checkbox', default: false },
+                stroke: { label: 'Tiền sử Đột quỵ (S)', val: 1, type: 'checkbox', default: false },
+                bleeding: { label: 'Tiền sử Xuất huyết hoặc thiên hướng chảy máu (B)', val: 1, type: 'checkbox', default: false },
+                labile_inr: { label: 'INR dao động (TTR < 60%) (L)', val: 1, type: 'checkbox', default: false },
+                elderly: { label: 'Tuổi > 65 (E)', val: 1, type: 'checkbox', default: false },
+                drugs: { label: 'Dùng thuốc ảnh hưởng (Aspirin, NSAIDs) (D)', val: 1, type: 'checkbox', default: false },
+                alcohol: { label: 'Lạm dụng rượu (≥ 8 đơn vị/tuần) (D)', val: 1, type: 'checkbox', default: false }
+            },
+            calculate: (vals) => {
+                let total = 0;
+                if (vals.hypertension) total += 1;
+                if (vals.abnormal_renal) total += 1;
+                if (vals.abnormal_liver) total += 1;
+                if (vals.stroke) total += 1;
+                if (vals.bleeding) total += 1;
+                if (vals.labile_inr) total += 1;
+                if (vals.elderly) total += 1;
+                if (vals.drugs) total += 1;
+                if (vals.alcohol) total += 1;
+
+                let risk = 'Nguy cơ chảy máu THẤP (0 – 2 điểm)';
+                let rec = 'Nguy cơ chảy máu chấp nhận được. Có thể dùng kháng đông an toàn với theo dõi thường quy.';
+                let color = 'green';
+                if (total >= 3) {
+                    risk = `Nguy cơ chảy máu CAO (${total} điểm)`;
+                    rec = 'Thận trọng cao khi dùng kháng đông. Kiểm soát các yếu tố nguy cơ có thể thay đổi được (HA, rượu, NSAIDs). Theo dõi sát INR hoặc cân nhắc NOAC. HAS-BLED CAO không phải chống chỉ định kháng đông.';
+                    color = 'red';
+                }
+                return { total, risk, rec, color };
+            }
+        },
+
+        MELD: {
+            id: 'MELD',
+            name: 'Thang điểm MELD (Bệnh Gan Giai đoạn Cuối)',
+            description: 'Đánh giá mức độ nặng của bệnh gan mạn tính và ưu tiên ghép gan. MELD cao hơn = tiên lượng xấu hơn.',
+            icdPrefixes: ['K70', 'K71', 'K72', 'K73', 'K74', 'K75', 'K76', 'B18', 'C22'],
+            criteria: {
+                bilirubin: {
+                    label: 'Bilirubin toàn phần (mg/dL)',
+                    type: 'select',
+                    options: [
+                        { val: 1.0, text: '1.0 mg/dL (17 µmol/L)' },
+                        { val: 2.0, text: '2.0 mg/dL (34 µmol/L)' },
+                        { val: 3.0, text: '3.0 mg/dL (51 µmol/L)' },
+                        { val: 5.0, text: '5.0 mg/dL (85 µmol/L)' },
+                        { val: 10.0, text: '10.0 mg/dL (171 µmol/L)' },
+                        { val: 20.0, text: '20.0 mg/dL (342 µmol/L)' }
+                    ],
+                    default: 1.0
+                },
+                creatinine: {
+                    label: 'Creatinine máu (mg/dL)',
+                    type: 'select',
+                    options: [
+                        { val: 0.8, text: '0.8 mg/dL (71 µmol/L)' },
+                        { val: 1.0, text: '1.0 mg/dL (88 µmol/L)' },
+                        { val: 1.5, text: '1.5 mg/dL (133 µmol/L)' },
+                        { val: 2.0, text: '2.0 mg/dL (177 µmol/L)' },
+                        { val: 3.0, text: '3.0 mg/dL (265 µmol/L)' },
+                        { val: 4.0, text: '4.0 mg/dL (354 µmol/L)' }
+                    ],
+                    default: 1.0
+                },
+                inr: {
+                    label: 'INR',
+                    type: 'select',
+                    options: [
+                        { val: 1.0, text: '1.0' },
+                        { val: 1.2, text: '1.2' },
+                        { val: 1.5, text: '1.5' },
+                        { val: 2.0, text: '2.0' },
+                        { val: 2.5, text: '2.5' },
+                        { val: 3.0, text: '3.0' },
+                        { val: 4.0, text: '4.0' }
+                    ],
+                    default: 1.0
+                },
+                dialysis: { label: 'Lọc máu ≥ 2 lần/tuần trong 7 ngày qua', val: 0, type: 'checkbox', default: false }
+            },
+            calculate: (vals) => {
+                // MELD = 10 × (0.957 × ln(Creatinine) + 0.378 × ln(Bilirubin) + 1.120 × ln(INR) + 0.643)
+                let cr = Math.max(Number(vals.creatinine || 1.0), 1.0);
+                if (vals.dialysis) cr = 4.0; // Cap at 4.0 if on dialysis
+                cr = Math.min(cr, 4.0);
+                const bili = Math.max(Number(vals.bilirubin || 1.0), 1.0);
+                const inr = Math.max(Number(vals.inr || 1.0), 1.0);
+
+                let meld = 10 * (0.957 * Math.log(cr) + 0.378 * Math.log(bili) + 1.120 * Math.log(inr) + 0.643);
+                meld = Math.round(Math.min(Math.max(meld, 6), 40)); // Clamp 6-40
+
+                let risk = `MELD ${meld} — Tỷ lệ tử vong 3 tháng thấp`;
+                let rec = 'Tiên lượng tương đối tốt. Tiếp tục theo dõi định kỳ và điều trị bệnh gan nền.';
+                let color = 'green';
+                if (meld >= 25) {
+                    risk = `MELD ${meld} — Tỷ lệ tử vong 3 tháng 76%+`;
+                    rec = 'Tiên lượng rất xấu. Ưu tiên đánh giá ghép gan khẩn cấp. Hội chẩn Gan mật.';
+                    color = 'red';
+                } else if (meld >= 18) {
+                    risk = `MELD ${meld} — Tỷ lệ tử vong 3 tháng ~20%`;
+                    rec = 'Tiên lượng xấu. Chuyển tuyến đánh giá ghép gan. Theo dõi sát diễn tiến.';
+                    color = 'red';
+                } else if (meld >= 10) {
+                    risk = `MELD ${meld} — Tỷ lệ tử vong 3 tháng ~6%`;
+                    rec = 'Bệnh gan trung bình. Tối ưu hóa điều trị nội khoa, theo dõi MELD mỗi 1-3 tháng.';
+                    color = 'yellow';
+                }
+                return { total: meld, risk, rec, color };
+            }
+        },
+
+        NEWS2: {
+            id: 'NEWS2',
+            name: 'Thang điểm NEWS2 (Cảnh báo Sớm Quốc gia)',
+            description: 'Phát hiện sớm diễn tiến xấu ở bệnh nhân nội trú. Được RCP (UK) khuyến cáo cho mọi BN nội trú người lớn.',
+            icdPrefixes: [], // Áp dụng cho TẤT CẢ bệnh nhân nội trú — luôn hiển thị
+            alwaysAvailable: true,
+            criteria: {
+                respRate: {
+                    label: 'Nhịp thở (lần/phút)',
+                    type: 'select',
+                    options: [
+                        { val: 3, text: '≤ 8' },
+                        { val: 1, text: '9 – 11' },
+                        { val: 0, text: '12 – 20' },
+                        { val: 2, text: '21 – 24' },
+                        { val: 3, text: '≥ 25' }
+                    ],
+                    default: 0
+                },
+                spo2Scale1: {
+                    label: 'SpO₂ % (Thang 1 — KHÔNG thở O₂ mục tiêu)',
+                    type: 'select',
+                    options: [
+                        { val: 3, text: '≤ 91%' },
+                        { val: 2, text: '92 – 93%' },
+                        { val: 1, text: '94 – 95%' },
+                        { val: 0, text: '≥ 96%' }
+                    ],
+                    default: 0
+                },
+                airOrOxygen: { label: 'Đang thở Oxy', val: 2, type: 'checkbox', default: false },
+                systolicBP: {
+                    label: 'Huyết áp tâm thu (mmHg)',
+                    type: 'select',
+                    options: [
+                        { val: 3, text: '≤ 90' },
+                        { val: 2, text: '91 – 100' },
+                        { val: 1, text: '101 – 110' },
+                        { val: 0, text: '111 – 219' },
+                        { val: 3, text: '≥ 220' }
+                    ],
+                    default: 0
+                },
+                pulse: {
+                    label: 'Nhịp tim (lần/phút)',
+                    type: 'select',
+                    options: [
+                        { val: 3, text: '≤ 40' },
+                        { val: 1, text: '41 – 50' },
+                        { val: 0, text: '51 – 90' },
+                        { val: 1, text: '91 – 110' },
+                        { val: 2, text: '111 – 130' },
+                        { val: 3, text: '≥ 131' }
+                    ],
+                    default: 0
+                },
+                consciousness: {
+                    label: 'Tri giác (ACVPU)',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: 'Tỉnh táo (Alert)' },
+                        { val: 3, text: 'Lú lẫn mới xuất hiện (Confusion)' },
+                        { val: 3, text: 'Đáp ứng với lời nói (Voice)' },
+                        { val: 3, text: 'Đáp ứng với đau (Pain)' },
+                        { val: 3, text: 'Không đáp ứng (Unresponsive)' }
+                    ],
+                    default: 0
+                },
+                temperature: {
+                    label: 'Nhiệt độ (°C)',
+                    type: 'select',
+                    options: [
+                        { val: 3, text: '≤ 35.0' },
+                        { val: 1, text: '35.1 – 36.0' },
+                        { val: 0, text: '36.1 – 38.0' },
+                        { val: 1, text: '38.1 – 39.0' },
+                        { val: 2, text: '≥ 39.1' }
+                    ],
+                    default: 0
+                }
+            },
+            calculate: (vals) => {
+                let total = Number(vals.respRate || 0)
+                    + Number(vals.spo2Scale1 || 0)
+                    + (vals.airOrOxygen ? 2 : 0)
+                    + Number(vals.systolicBP || 0)
+                    + Number(vals.pulse || 0)
+                    + Number(vals.consciousness || 0)
+                    + Number(vals.temperature || 0);
+
+                let risk = 'Thấp (0 – 4 điểm)';
+                let rec = 'Theo dõi sinh hiệu định kỳ mỗi 4 – 6 giờ.';
+                let color = 'green';
+
+                // Kiểm tra có tham số đơn lẻ nào = 3 (Red score) hay không
+                const anyRed = [vals.respRate, vals.spo2Scale1, vals.systolicBP, vals.pulse, vals.consciousness, vals.temperature]
+                    .some(v => Number(v) === 3);
+
+                if (total >= 7) {
+                    risk = `Nguy hiểm — CRITICAL (${total} điểm)`;
+                    rec = 'KHẨN CẤP: Kích hoạt đội phản ứng nhanh (RRT/MET). Theo dõi sinh hiệu liên tục. Hội chẩn ICU.';
+                    color = 'red';
+                } else if (total >= 5 || anyRed) {
+                    risk = `Trung bình – Cao (${total} điểm${anyRed ? ', có tham số đỏ' : ''})`;
+                    rec = 'KHẨN: Đánh giá lâm sàng cấp bởi bác sĩ trực. Theo dõi sinh hiệu mỗi 1 giờ. Cân nhắc chuyển ICU.';
+                    color = 'red';
+                } else if (total >= 1) {
+                    risk = `Thấp (${total} điểm)`;
+                    rec = 'Theo dõi sinh hiệu tối thiểu mỗi 4 – 6 giờ. Báo bác sĩ nếu thay đổi.';
+                    color = total >= 3 ? 'yellow' : 'green';
+                }
+                return { total, risk, rec, color };
+            }
+        },
+
+        SOFA: {
+            id: 'SOFA',
+            name: 'Thang điểm SOFA (Đánh giá Suy Tạng Tuần tự)',
+            description: 'Đánh giá mức độ rối loạn chức năng đa cơ quan ở bệnh nhân ICU. Dùng để chẩn đoán Sepsis (theo Sepsis-3).',
+            icdPrefixes: ['A40', 'A41', 'R65', 'J96', 'N17', 'K72'],
+            criteria: {
+                respiration: {
+                    label: 'Hô hấp — PaO₂/FiO₂ (mmHg)',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: '≥ 400' },
+                        { val: 1, text: '300 – 399' },
+                        { val: 2, text: '200 – 299' },
+                        { val: 3, text: '100 – 199 (có hỗ trợ hô hấp)' },
+                        { val: 4, text: '< 100 (có hỗ trợ hô hấp)' }
+                    ],
+                    default: 0
+                },
+                coagulation: {
+                    label: 'Đông máu — Tiểu cầu (×10³/µL)',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: '≥ 150' },
+                        { val: 1, text: '100 – 149' },
+                        { val: 2, text: '50 – 99' },
+                        { val: 3, text: '20 – 49' },
+                        { val: 4, text: '< 20' }
+                    ],
+                    default: 0
+                },
+                liver: {
+                    label: 'Gan — Bilirubin (mg/dL)',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: '< 1.2 (< 20 µmol/L)' },
+                        { val: 1, text: '1.2 – 1.9 (20 – 32 µmol/L)' },
+                        { val: 2, text: '2.0 – 5.9 (33 – 101 µmol/L)' },
+                        { val: 3, text: '6.0 – 11.9 (102 – 204 µmol/L)' },
+                        { val: 4, text: '≥ 12.0 (> 204 µmol/L)' }
+                    ],
+                    default: 0
+                },
+                cardiovascular: {
+                    label: 'Tim mạch — Huyết áp / Vận mạch',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: 'MAP ≥ 70 mmHg' },
+                        { val: 1, text: 'MAP < 70 mmHg' },
+                        { val: 2, text: 'Dopamine ≤ 5 hoặc Dobutamine (bất kỳ liều)' },
+                        { val: 3, text: 'Dopamine > 5 hoặc Epinephrine ≤ 0.1 hoặc Norepinephrine ≤ 0.1' },
+                        { val: 4, text: 'Dopamine > 15 hoặc Epinephrine > 0.1 hoặc Norepinephrine > 0.1' }
+                    ],
+                    default: 0
+                },
+                cns: {
+                    label: 'Thần kinh trung ương — GCS',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: 'GCS 15' },
+                        { val: 1, text: 'GCS 13 – 14' },
+                        { val: 2, text: 'GCS 10 – 12' },
+                        { val: 3, text: 'GCS 6 – 9' },
+                        { val: 4, text: 'GCS < 6' }
+                    ],
+                    default: 0
+                },
+                renal: {
+                    label: 'Thận — Creatinine (mg/dL) hoặc lượng nước tiểu',
+                    type: 'select',
+                    options: [
+                        { val: 0, text: '< 1.2 (< 110 µmol/L)' },
+                        { val: 1, text: '1.2 – 1.9 (110 – 170 µmol/L)' },
+                        { val: 2, text: '2.0 – 3.4 (171 – 299 µmol/L)' },
+                        { val: 3, text: '3.5 – 4.9 (300 – 440 µmol/L) hoặc nước tiểu < 500 mL/ngày' },
+                        { val: 4, text: '≥ 5.0 (> 440 µmol/L) hoặc nước tiểu < 200 mL/ngày' }
+                    ],
+                    default: 0
+                }
+            },
+            calculate: (vals) => {
+                let total = Number(vals.respiration || 0)
+                    + Number(vals.coagulation || 0)
+                    + Number(vals.liver || 0)
+                    + Number(vals.cardiovascular || 0)
+                    + Number(vals.cns || 0)
+                    + Number(vals.renal || 0);
+
+                let risk = `SOFA ${total} — Tỷ lệ tử vong < 10%`;
+                let rec = 'Rối loạn chức năng tạng nhẹ. Tiếp tục theo dõi và điều trị nguyên nhân.';
+                let color = 'green';
+                if (total >= 12) {
+                    risk = `SOFA ${total} — Tỷ lệ tử vong > 80%`;
+                    rec = 'Suy đa tạng nghiêm trọng. Hồi sức tích cực tối đa. Hội chẩn đa chuyên khoa và trao đổi tiên lượng với gia đình.';
+                    color = 'red';
+                } else if (total >= 7) {
+                    risk = `SOFA ${total} — Tỷ lệ tử vong 30 – 50%`;
+                    rec = 'Suy đa tạng nặng. Đánh giá lại mỗi 24h. Tối ưu kháng sinh, hồi sức dịch, vận mạch.';
+                    color = 'red';
+                } else if (total >= 3) {
+                    risk = `SOFA ${total} — Tỷ lệ tử vong 10 – 30%`;
+                    rec = 'Rối loạn chức năng tạng trung bình. Đánh giá Sepsis (SOFA ≥ 2 + nhiễm trùng = Sepsis theo Sepsis-3). Theo dõi sát.';
+                    color = 'yellow';
+                }
+                return { total, risk, rec, color };
+            }
         }
     },
 
@@ -699,6 +1082,125 @@ export const SmartScoreEngine = {
                 } else {
                     ev.missingLabs.hgbM = true;
                     ev.missingLabs.hgbF = true;
+                }
+            }
+
+            // === AUTO-FILL LOGIC CHO 5 SCORES MỚI ===
+
+            if (id === 'CHA2DS2VASc') {
+                if (patientAge > 0) {
+                    ev.prefilled.age75 = patientAge >= 75;
+                    ev.prefilled.age65 = patientAge >= 65 && patientAge < 75;
+                }
+                const gender = context?.patient?.gender;
+                if (gender) {
+                    const g = String(gender).toLowerCase();
+                    ev.prefilled.sex = g.includes('nữ') || g === 'female' || g === 'f';
+                }
+                // Auto-detect THA từ ICD
+                ev.prefilled.hypertension = icdCodes.some(c => c.startsWith('I10') || c.startsWith('I11') || c.startsWith('I12') || c.startsWith('I13') || c.startsWith('I15'));
+                // Auto-detect ĐTĐ từ ICD
+                ev.prefilled.diabetes = icdCodes.some(c => c.startsWith('E10') || c.startsWith('E11') || c.startsWith('E12') || c.startsWith('E13') || c.startsWith('E14'));
+                // Auto-detect suy tim từ ICD
+                ev.prefilled.chf = icdCodes.some(c => c.startsWith('I50'));
+                // Auto-detect đột quỵ cũ từ ICD
+                ev.prefilled.stroke = icdCodes.some(c => c.startsWith('I63') || c.startsWith('I64') || c.startsWith('G45'));
+            } else if (id === 'HASBLED') {
+                if (patientAge > 0) {
+                    ev.prefilled.elderly = patientAge > 65;
+                }
+                // Auto-detect suy thận từ labs
+                const crLab = labMap['creatinine'];
+                if (crLab) {
+                    const unit = String(crLab.unit || '').toLowerCase();
+                    let valUmol = crLab.value;
+                    if (unit.includes('mg') || unit.includes('dl')) valUmol = crLab.value * 88.4;
+                    ev.prefilled.abnormal_renal = valUmol >= 200;
+                }
+                // Auto-detect đột quỵ từ ICD
+                ev.prefilled.stroke = icdCodes.some(c => c.startsWith('I63') || c.startsWith('I64') || c.startsWith('G45'));
+            } else if (id === 'MELD') {
+                const biliLab = labMap['bilirubin'] || labMap['BiliT'] || labMap['Bilirubin toàn phần'];
+                if (biliLab) {
+                    let valMgDl = biliLab.value;
+                    const unit = String(biliLab.unit || '').toLowerCase();
+                    if (unit.includes('umol') || unit.includes('µmol') || valMgDl > 25) {
+                        valMgDl = biliLab.value / 17.1;
+                    }
+                    // Find closest option
+                    const opts = [1.0, 2.0, 3.0, 5.0, 10.0, 20.0];
+                    ev.prefilled.bilirubin = opts.reduce((prev, curr) => Math.abs(curr - valMgDl) < Math.abs(prev - valMgDl) ? curr : prev);
+                } else {
+                    ev.missingLabs.bilirubin = true;
+                }
+
+                const crLab2 = labMap['creatinine'];
+                if (crLab2) {
+                    let valMgDl = crLab2.value;
+                    const unit = String(crLab2.unit || '').toLowerCase();
+                    if (unit.includes('umol') || unit.includes('µmol') || valMgDl > 15) {
+                        valMgDl = crLab2.value / 88.4;
+                    }
+                    const opts = [0.8, 1.0, 1.5, 2.0, 3.0, 4.0];
+                    ev.prefilled.creatinine = opts.reduce((prev, curr) => Math.abs(curr - valMgDl) < Math.abs(prev - valMgDl) ? curr : prev);
+                } else {
+                    ev.missingLabs.creatinine = true;
+                }
+
+                const inrLab = labMap['inr'] || labMap['INR'];
+                if (inrLab) {
+                    const opts = [1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0];
+                    ev.prefilled.inr = opts.reduce((prev, curr) => Math.abs(curr - inrLab.value) < Math.abs(prev - inrLab.value) ? curr : prev);
+                } else {
+                    ev.missingLabs.inr = true;
+                }
+            } else if (id === 'NEWS2') {
+                // NEWS2: luôn available cho BN nội trú
+                if (sys.alwaysAvailable) {
+                    ev.suggested = true;
+                }
+            } else if (id === 'SOFA') {
+                // Auto-fill platelet
+                const pltLab = labMap['PLT'] || labMap['plt'] || labMap['platelet'];
+                if (pltLab) {
+                    const v = pltLab.value;
+                    if (v < 20) ev.prefilled.coagulation = 4;
+                    else if (v < 50) ev.prefilled.coagulation = 3;
+                    else if (v < 100) ev.prefilled.coagulation = 2;
+                    else if (v < 150) ev.prefilled.coagulation = 1;
+                    else ev.prefilled.coagulation = 0;
+                } else {
+                    ev.missingLabs.coagulation = true;
+                }
+
+                // Auto-fill bilirubin
+                const sofaBili = labMap['bilirubin'] || labMap['BiliT'];
+                if (sofaBili) {
+                    let v = sofaBili.value;
+                    const unit = String(sofaBili.unit || '').toLowerCase();
+                    if (unit.includes('umol') || unit.includes('µmol') || v > 25) v = v / 17.1;
+                    if (v >= 12.0) ev.prefilled.liver = 4;
+                    else if (v >= 6.0) ev.prefilled.liver = 3;
+                    else if (v >= 2.0) ev.prefilled.liver = 2;
+                    else if (v >= 1.2) ev.prefilled.liver = 1;
+                    else ev.prefilled.liver = 0;
+                } else {
+                    ev.missingLabs.liver = true;
+                }
+
+                // Auto-fill creatinine → renal
+                const sofaCr = labMap['creatinine'];
+                if (sofaCr) {
+                    let v = sofaCr.value;
+                    const unit = String(sofaCr.unit || '').toLowerCase();
+                    if (unit.includes('umol') || unit.includes('µmol') || v > 15) v = v / 88.4;
+                    if (v >= 5.0) ev.prefilled.renal = 4;
+                    else if (v >= 3.5) ev.prefilled.renal = 3;
+                    else if (v >= 2.0) ev.prefilled.renal = 2;
+                    else if (v >= 1.2) ev.prefilled.renal = 1;
+                    else ev.prefilled.renal = 0;
+                } else {
+                    ev.missingLabs.renal = true;
                 }
             }
 
