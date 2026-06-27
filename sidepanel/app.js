@@ -107,10 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentContextEl.textContent = 'Danh sách bệnh nhân';
             actionZone.innerHTML = `
                 <div class="action-grid">
-                    <button class="sys-btn glass-btn btn-success-glass" id="sp-btn-ward-overview" style="grid-column: 1 / -1;">
-                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-7"/></svg>
-                        Tổng quan khoa
-                    </button>
                     <button class="sys-btn glass-btn btn-success-glass" id="sp-btn-ai-summary" style="grid-column: 1 / -1;">
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
                         Tóm tắt CLS + Thuốc
@@ -125,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             `;
-            document.getElementById('sp-btn-ward-overview')?.addEventListener('click', () => executeContentFunction('showWardOverview', null, '⚠️ Không thể mở Tổng quan khoa'));
             document.getElementById('sp-btn-scan-bhyt')?.addEventListener('click', () => executeContentFunction('startScanning', getScanParams('bhyt')));
             document.getElementById('sp-btn-scan-pttt')?.addEventListener('click', () => executeContentFunction('startScanning', getScanParams('pttt')));
             document.getElementById('sp-btn-ai-summary')?.addEventListener('click', () => executeContentFunction('showAiLabSummary'));
