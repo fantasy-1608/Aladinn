@@ -615,14 +615,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // ---- CDS SYNC ----
     if (type === 'FORCE_CDS_SYNC') {
-        chrome.storage.local.remove('vnpt_cds_data', () => {
-            const ok = !chrome.runtime.lastError;
-            const err = chrome.runtime.lastError?.message;
-            chrome.storage.local.set({
-                lastSuccessfulCdsSyncAt: ok ? new Date().toISOString() : null,
-                lastCdsSyncStatus: ok ? 'success' : 'error'
-            }, () => {
-                sendResponse({ ok, error: err });
+        chrome.tabs.query({}, (tabs) => {
+            const promises = tabs
+                .filter(tab => tab.url && tab.url.includes('vncare.vn'))
+                .map(tab => {
+                    return chrome.scripting.executeScript({
+                        target: { tabId: tab.id, allFrames: true },
+                        func: () => window.postMessage({ type: 'FORCE_CDS_SYNC' }, '*')
+                    }).catch(() => {});
+                });
+                
+            Promise.all(promises).then(() => {
+                sendResponse({ ok: true });
             });
         });
         return true;
