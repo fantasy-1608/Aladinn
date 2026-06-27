@@ -77,7 +77,10 @@ function requestToPromise(request) {
 const REMOTE_BASE_URL = 'https://raw.githubusercontent.com/fantasy-1608/Aladinn/main/public/cds-data';
 
 async function fetchJson(filename, useRemote = false) {
-    const url = useRemote ? `${REMOTE_BASE_URL}/${filename}` : chrome.runtime.getURL(`cds-data/${filename}`);
+    let url = useRemote ? `${REMOTE_BASE_URL}/${filename}` : chrome.runtime.getURL(`cds-data/${filename}`);
+    if (useRemote) {
+        url += `?t=${Date.now()}`; // Cache-buster for GitHub CDN
+    }
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
     try {
