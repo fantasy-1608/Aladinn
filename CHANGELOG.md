@@ -7,6 +7,19 @@ và tuân theo [Semantic Versioning](https://semver.org/lang/vi/).
 
 ---
 
+## [2.2.3] — 2026-06-27
+
+### ✨ Tính năng mới & Cải tiến
+
+- **C.D.S (Hỗ trợ Quyết định Lâm sàng)**:
+  - Thêm cơ chế Cache-Buster (Vượt bộ đệm GitHub CDN) cho tính năng cập nhật luật tương tác thuốc OTA, đảm bảo mỗi khi bấm cập nhật là lấy được dữ liệu ngay lập tức.
+  - Sửa lỗi nút "Đồng bộ dữ liệu C.D.S ngay lập tức" trong mục Cài đặt hoạt động không chính xác do cơ chế cũ (đã đổi sang cơ chế broadcast `FORCE_CDS_SYNC` toàn trang).
+  - Loại bỏ các loại vắc xin (Lao, Uốn ván, Viêm gan B) và hoá chất y tế không thuộc danh mục thuốc (Sulfat đồng) ra khỏi logic quét C.D.S nhằm tăng độ phản hồi, tránh cảnh báo lỗi.
+  - Cập nhật CSDL tương tác thuốc mới nhất của NHIC (Ngày 27/06/2026).
+
+### 🗑️ Đã gỡ bỏ
+- **Hệ thống**: Gỡ bỏ hoàn toàn tính năng "Tổng quan khoa" (Scanner) không thực tế để tối ưu trải nghiệm và độ nhẹ của mã nguồn.
+
 ## [2.2.2] — 2026-06-24
 
 ### ✨ Tính năng mới
